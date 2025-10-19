@@ -1075,7 +1075,7 @@ useEffect(() => {
     );
   }
 
-  const isNew = item.createdAt && Date.now() - item.createdAt < 1000 * 60 * 60 * 24 * 7;
+  const isNew = !!item && Date.now() - (item?.createdAt ?? 0) < 1000 * 60 * 60 * 24 * 7;
   const isHot = likeCount > 100;
 
   // ------------------------------------------------------------------
