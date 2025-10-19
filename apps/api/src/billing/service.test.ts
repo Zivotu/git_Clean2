@@ -1,6 +1,9 @@
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
-import Fastify from 'fastify';
+import Fastify, {
+  type FastifyInstance,
+  type FastifyPluginAsync,
+} from 'fastify';
 import rawBody from 'fastify-raw-body';
 import {
   stripe,
@@ -27,9 +30,21 @@ const required = [
   collection: (_name: string) => ({ doc: () => ({ set: async () => {} }) }),
 };
 
-mock.module('../index.js', { app: { log: { warn: () => {}, info: () => {} } } });
+async function registerBillingRoutes(app: FastifyInstance) {
+  const { default: billingRoutes } = (await import(
+    '../routes/billing.js'
+  )) as unknown as {
+    default: FastifyPluginAsync;
+  };
+  await app.register(billingRoutes);
+}
 
-const service = await import('./service.js');
+// mock.module('../index.js', { app: { log: { warn: () => {}, info: () => {} } } } as any);
+
+let service: any;
+test.before(async () => {
+  service = (await import('./service.js')).default;
+});
 
 test('listPackages retrieves price and currency', async (t) => {
   const original = [...service.PACKAGES];
@@ -212,6 +227,7 @@ test('createSubscriptionByPriceId configures tax, descriptors and receipts', asy
     'user1',
     'sub@example.com',
   );
+  assert.ok('id' in session);
   assert.equal(session.id, 'cs_sub_123');
   assert.equal(createMock.mock.callCount(), 1);
 });
@@ -987,24 +1003,23 @@ test('syncSubscription deactivates removed items', async (t) => {
   assert.equal(listMock.mock.callCount(), 1);
   assert.equal(upsertMock.mock.callCount(), 2);
   const deactivatedCall = upsertMock.mock.calls.find(
-    (c) => c.arguments[0].id === 'appSubs-si_2',
+    (c: any) => c.arguments[0].id === 'appSubs-si_2',
   );
   assert.ok(deactivatedCall);
   assert.equal(deactivatedCall.arguments[0].active, false);
 });
 
-test('POST /billing/refund returns refund result', async (t) => {
+test('POST /billing/refund refunds a payment', async (t) => {
   const app = Fastify();
-  const createMock = t.mock.method(
-    stripe.refunds,
-    'create',
-    async (params: any) => {
-      assert.equal(params.payment_intent, 'pi_789');
-      return { id: 're_789' } as any;
-    },
-  );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  app.addHook('preHandler', (req, _reply, done) => {
+    (req as any).authUser = { uid: 'user1', role: 'user', claims: {} };
+    done();
+  });
+  const createMock = t.mock.method(service, 'refundWithConnect', async (paymentIntentId: string) => {
+    assert.equal(paymentIntentId, 'pi_789');
+    return { id: 're_789' };
+  });
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/refund',
@@ -1025,8 +1040,7 @@ test('POST /billing/subscriptions returns alreadySubscribed', async (t) => {
   t.mock.method(service, 'createSubscriptionByPriceId', async () => ({
     alreadySubscribed: true,
   }) as any);
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions',
@@ -1055,8 +1069,7 @@ test('POST /billing/subscriptions creates subscription session by priceId', asyn
       return { id: 'cs_basic', url: 'https://stripe.com' } as any;
     },
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions',
@@ -1104,8 +1117,7 @@ test('POST /billing/subscriptions/app creates app subscription session', async (
       return { id: 'cs_app', url: 'https://stripe.com' } as any;
     },
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions/app',
@@ -1122,7 +1134,7 @@ test('POST /billing/subscriptions/app creates app subscription session', async (
 });
 
 test('createAppSubscription falls back to ensure price when missing', async (t) => {
-  const apps = [{ id: '123', slug: 'todo-app', price: 5, author: { uid: 'creator1' } }];
+  const apps: any[] = [{ id: '123', slug: 'todo-app', price: 5, author: { uid: 'creator1' } }];
   t.mock.method(service.dbAccess, 'getAppByIdOrSlug', async () => apps[0] as any);
   t.mock.method(service.dbAccess, 'readApps', async () => apps as any);
   t.mock.method(service.dbAccess, 'readCreators', async () => [] as any);
@@ -1176,8 +1188,7 @@ test('POST /billing/subscriptions/creator creates creator subscription session',
       return { id: 'cs_creator', url: 'https://stripe.com' } as any;
     },
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions/creator',
@@ -1192,8 +1203,7 @@ test('POST /billing/subscriptions/creator creates creator subscription session',
 test('POST /billing/stripe/webhook forwards raw body to stripe', async (t) => {
   const app = Fastify();
   await app.register(rawBody, { field: 'rawBody', global: false, encoding: 'utf8' });
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
 
   const payload = '{"test":1}';
   const signature = 'sig_test';
@@ -1238,7 +1248,7 @@ test('listInvoices returns sorted invoices and next payment date', async (t) => 
   }) as any);
   const result = await service.listInvoices('cus_123');
   assert.deepEqual(
-    result.invoices.map((i) => i.id),
+    result.invoices.map((i: any) => i.id),
     ['in_1', 'in_2'],
   );
   assert.equal(
@@ -1261,8 +1271,7 @@ test('GET /billing/invoices returns invoice list', async (t) => {
     data: [],
     has_more: false,
   }) as any);
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'GET',
     url: '/billing/invoices?customerId=cus_123',
@@ -1363,8 +1372,7 @@ test('POST /billing/subscriptions/upgrade updates subscription', async (t) => {
       return { id: 'sub_up', status: 'active' } as any;
     },
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions/upgrade',
@@ -1394,8 +1402,7 @@ test('POST /billing/subscriptions/downgrade updates subscription', async (t) => 
       return { id: 'sub_down', status: 'active' } as any;
     },
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions/downgrade',
@@ -1414,8 +1421,7 @@ test('POST /billing/subscriptions/cancel cancels subscription', async (t) => {
     'update',
     async () => ({ id: 'sub_cancel', status: 'active' } as any),
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/subscriptions/cancel',
@@ -1440,8 +1446,7 @@ test('POST /billing/sync-checkout rejects mismatched checkout session', async (t
     client_reference_id: 'user2',
     metadata: { userId: 'user2' },
   }) as any);
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/sync-checkout?session_id=cs_test',
@@ -1498,7 +1503,7 @@ test('POST /billing/sync-checkout logs event and /billing/history returns it', a
   t.mock.method(service.dbAccess, 'upsertEntitlement', async () => {});
   t.mock.method(service.dbAccess, 'readApps', async () => []);
   t.mock.method(service.dbAccess, 'readCreators', async () => []);
-  t.mock.method(service.dbAccess, 'logBillingEvent', async (ev) => {
+  t.mock.method(service.dbAccess, 'logBillingEvent', async (ev: any) => {
     events.push(ev);
   });
   t.mock.method(service.dbAccess, 'addPaymentRecord', async () => {});
@@ -1506,8 +1511,7 @@ test('POST /billing/sync-checkout logs event and /billing/history returns it', a
   t.mock.method(dbMod, 'listBillingEventsForUser', async (uid: string) =>
     events.filter((e) => e.userId === uid),
   );
-  const billingRoutes = (await import('../routes/billing.js')).default;
-  await app.register(billingRoutes);
+  await registerBillingRoutes(app);
   const res = await app.inject({
     method: 'POST',
     url: '/billing/sync-checkout?session_id=cs_ok',

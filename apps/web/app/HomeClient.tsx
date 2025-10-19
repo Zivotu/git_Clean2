@@ -17,6 +17,7 @@ import { useEntitlements } from '@/hooks/useEntitlements';
 import { useI18n } from '@/lib/i18n-provider';
 import type { Listing as ApiListing } from '@/lib/types';
 import { resolvePreviewUrl } from '@/lib/preview';
+import SplashScreen from '@/components/layout/SplashScreen';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 export {};
 type HomeClientProps = {
@@ -453,6 +454,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
 
   return (
     <div className="min-h-screen text-gray-900 bg-white">
+      <SplashScreen />
       <section className="max-w-7xl mx-auto px-4 pt-12 pb-6">
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">

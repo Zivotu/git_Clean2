@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -39,6 +39,8 @@ type LlmReport = {
 
 type ReviewItem = {
   id: string;
+  buildId?: string;
+  pendingBuildId?: string;
   title: string;
   description?: string;
   previewUrl?: string;
@@ -59,6 +61,13 @@ type ReviewItem = {
   networkPolicy?: string;
   networkDomains?: string[];
   networkPolicyReason?: string;
+  state?: BuildState;
+  moderation?: {
+    status?: 'approved' | 'rejected';
+    by?: string | null;
+    at?: number;
+    reason?: string | null;
+  };
 };
 
 type BuildState =
@@ -98,12 +107,14 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [report, setReport] = useState<LlmReport | null>(null);
   const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
-  const [currentId, setCurrentId] = useState<string | null>(null);
+  const [currentBuildId, setCurrentBuildId] = useState<string | null>(null);
+  const [currentIdentifier, setCurrentIdentifier] = useState<string | null>(null);
   const [currentItem, setCurrentItem] = useState<ReviewItem | null>(null);
-  const [tab, setTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [tab, setTab] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'deleted'>('all');
   const [search, setSearch] = useState('');
   const [showRaw, setShowRaw] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [llmEnabled, setLlmEnabled] = useState<boolean | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const [zipReady, setZipReady] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -112,57 +123,146 @@ export default function AdminDashboard() {
   const [policy, setPolicy] = useState<{ camera?: boolean; microphone?: boolean; geolocation?: boolean; clipboardRead?: boolean; clipboardWrite?: boolean } | null>(null);
   const [policySaving, setPolicySaving] = useState(false);
 
+  const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
+    if (!item) return null;
+    return item.buildId || item.pendingBuildId || null;
+  };
 
-  const viewReport = async (id: string) => {
-    setCurrentId(id);
-    setCurrentItem(items.find((it) => it.id === id) || null);
+  const ensureAdminClaim = (claims: Record<string, any> | undefined | null): boolean => {
+    if (!claims) return false;
+    if (claims.admin === true) return true;
+    if (claims.role && String(claims.role).toLowerCase() === 'admin') return true;
+    if (claims.isAdmin === true) return true;
+    return false;
+  };
+
+  const deriveDownloadBase = (item: ReviewItem | null, fallback: string): string => {
+    const raw = item?.slug || item?.title || fallback;
+    if (!raw) return fallback;
+    const safe = String(raw)
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/gi, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+    return safe || fallback;
+  };
+
+
+  const [artifacts, setArtifacts] = useState<any | null>(null);
+  const showDetails = Boolean(currentItem) || Boolean(currentBuildId);
+
+  const closeDetails = () => {
+    setReport(null);
+    setShowRaw(false);
+    setCurrentItem(null);
+    setCurrentBuildId(null);
+    setCurrentIdentifier(null);
+    setArtifacts(null);
+    setTimeline([]);
+    setPolicy(null);
+    setZipReady(false);
+    setPreviewSrc(null);
+    setLlmTimeout(false);
+  };
+
+  const previewLink = currentBuildId
+    ? joinUrl(API_URL, `/review/builds/${currentBuildId}/index.html`)
+    : null;
+  const manifestLink =
+    artifacts?.manifest?.exists && artifacts.manifest.url
+      ? joinUrl(API_URL, artifacts.manifest.url)
+      : null;
+  const astLink =
+    artifacts?.ast?.exists && artifacts.ast.url
+      ? joinUrl(API_URL, artifacts.ast.url)
+      : null;
+  const importsLink =
+    artifacts?.imports?.exists && artifacts.imports.url
+      ? joinUrl(API_URL, artifacts.imports.url)
+      : null;
+  const transformPlanLink =
+    artifacts?.transformPlan?.exists && artifacts.transformPlan.url
+      ? joinUrl(API_URL, artifacts.transformPlan.url)
+      : null;
+  const transformReportLink =
+    artifacts?.transformReport?.exists && artifacts.transformReport.url
+      ? joinUrl(API_URL, artifacts.transformReport.url)
+      : null;
+
+  const viewReport = async (identifier: string) => {
+    const match =
+      items.find(
+        (it) =>
+          it.buildId === identifier ||
+          it.pendingBuildId === identifier ||
+          it.appId === identifier ||
+          it.id === identifier ||
+          it.slug === identifier,
+      ) || null;
+    setCurrentIdentifier(identifier);
+    setCurrentItem(match);
     setShowRaw(false);
     setReport(null);
     setPreviewSrc(null);
     setZipReady(false);
     setTimeline([]);
     setLlmTimeout(false);
+    setArtifacts(null);
+    setCurrentBuildId(null);
     try {
       let idx: any = {};
       try {
-        idx = await apiGet<any>(`/review/artifacts/${id}`, { auth: true });
+        idx = await apiGet<any>(`/review/artifacts/${identifier}`, { auth: true });
       } catch {}
+      setArtifacts(idx);
+      const resolvedBuildId = idx.buildId || resolveItemTarget(match) || '';
+      setCurrentBuildId(resolvedBuildId || null);
       setZipReady(Boolean(idx.bundle?.exists));
-      if (!idx.bundle?.exists) pollZip(id);
-      const preview = idx.preview?.exists
-        ? idx.preview.url?.startsWith('http')
-          ? idx.preview.url
-          : joinUrl(API_URL, idx.preview.url)
-        : joinUrl(API_URL, '/assets/preview-placeholder.svg');
+      if (resolvedBuildId && !idx.bundle?.exists) pollZip(resolvedBuildId);
+      const preview =
+        resolvePreviewUrl(match?.previewUrl) ||
+        (idx.previewIndex?.exists
+          ? idx.previewIndex.url?.startsWith('http')
+            ? idx.previewIndex.url
+            : joinUrl(API_URL, idx.previewIndex.url)
+          : null) ||
+        joinUrl(API_URL, '/assets/preview-placeholder.svg');
       setPreviewSrc(preview);
-      try {
-        const buildJson = await apiGet<any>(`/review/builds/${id}`, { auth: true });
-        setTimeline(buildJson.timeline || []);
-      } catch {}
-      try {
-        const pol = await apiGet<any>(`/review/builds/${id}/policy`, { auth: true });
-        setPolicy(pol || {});
-      } catch {}
-      try {
-        const json = await apiGet<any>(`/review/builds/${id}/llm`, { auth: true });
-        setReport(json);
-        if (json.status === 'generating') {
-          pollReport(id);
-        }
-      } catch (e) {
-        if (e instanceof ApiError) {
-          if (e.status === 404) {
-            setReport({ status: 'not_ready' });
-          } else if (e.status === 503) {
-            setReport({ status: 'generating' });
-            pollReport(id);
+      if (resolvedBuildId) {
+        try {
+          const buildJson = await apiGet<any>(`/review/builds/${resolvedBuildId}`, { auth: true });
+          setTimeline(buildJson.timeline || []);
+        } catch {}
+        try {
+          const pol = await apiGet<any>(`/review/builds/${resolvedBuildId}/policy`, { auth: true });
+          setPolicy(pol || {});
+        } catch {}
+        if (llmEnabled !== false) {
+          try {
+            const json = await apiGet<any>(`/review/builds/${resolvedBuildId}/llm`, { auth: true });
+            setReport(json);
+            if (json.status === 'generating') {
+              pollReport(resolvedBuildId);
+            }
+          } catch (e) {
+            if (e instanceof ApiError) {
+              if (e.status === 404) {
+                setReport({ status: 'not_ready' });
+              } else if (e.status === 503) {
+                setReport({ status: 'generating' });
+                pollReport(resolvedBuildId);
+              }
+            }
           }
+        } else {
+          setReport({ status: 'not_ready' });
         }
       }
     } catch {}
   };
 
   const pollReport = (id: string, attempt = 0): void => {
+    if (currentBuildId !== id) return;
     if (attempt >= 30) {
       setRegeneratingId(null);
       setLlmTimeout(true);
@@ -188,7 +288,8 @@ export default function AdminDashboard() {
   };
 
   const pollZip = (id: string, attempt = 0): void => {
-    if (attempt >= 30 || id !== currentId) return;
+    if (currentBuildId !== id) return;
+    if (attempt >= 30) return;
     setTimeout(async () => {
       try {
         const idx = await apiGet<any>(`/review/artifacts/${id}`, { auth: true });
@@ -203,34 +304,66 @@ export default function AdminDashboard() {
     }, 2000);
   };
 
-  async function downloadCode(id: string) {
-    const res = await apiGetRaw(`/review/code/${id}`, { auth: true });
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${id}.tar.gz`;
-    a.click();
-    URL.revokeObjectURL(url);
+  async function downloadCode(id?: string) {
+    const target = id || currentBuildId;
+    if (!target) {
+      alert('Bundle nije spreman.');
+      return;
+    }
+    try {
+      const basePath = `/review/code/${target}`;
+      let res = await apiGetRaw(`${basePath}?format=zip`, { auth: true });
+      if (res.status === 404) {
+        alert('Artefakti ove aplikacije još nisu spremni. Pričekaj dovršetak builda ili ponovno pokreni build pa pokušaj opet.');
+        return;
+      }
+      if (!res.ok) {
+        res = await apiGetRaw(basePath, { auth: true });
+        if (res.status === 404) {
+          alert('Artefakti ove aplikacije još nisu spremni. Pričekaj dovršetak builda ili ponovno pokreni build pa pokušaj opet.');
+          return;
+        }
+        if (!res.ok) throw new Error(`download_failed_${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const base = deriveDownloadBase(currentItem, target);
+      if (res.headers.get('content-type') === 'application/zip') {
+        a.download = `${base}-bundle.zip`;
+      } else {
+        a.download = `${base}.tar.gz`;
+      }
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Preuzimanje nije uspjelo. Pokušaj ponovno kasnije.');
+    }
   }
 
   const triggerLlm = async (id: string) => {
+    if (llmEnabled === false) {
+      alert('LLM analiza je trenutno isključena.');
+      return;
+    }
     setRegeneratingId(id);
     setLlmTimeout(false);
     try {
       await apiPost(`/review/builds/${id}/llm`, {}, { auth: true });
-      if (id === currentId) pollReport(id);
+      if (id === currentBuildId) pollReport(id);
       await load();
-      if (id === currentId) await viewReport(id);
+      if (id === currentBuildId) await viewReport(id);
     } catch (e) {
-      if (id === currentId)
+      if (id === currentBuildId)
         setReport({ status: 'error', error: { code: e instanceof ApiError && e.code ? e.code : 'UNKNOWN' } });
       setRegeneratingId(null);
     }
   };
 
   const regenerate = async () => {
-    if (currentId) await triggerLlm(currentId);
+    if (currentBuildId) await triggerLlm(currentBuildId);
   };
 
   const load = useCallback(async (cursor?: string): Promise<number | undefined> => {
@@ -265,40 +398,63 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const token = await user.getIdTokenResult();
-          setIsAdmin(Boolean(token.claims?.admin));
-        } catch {
-          setIsAdmin(false);
+      if (!user) {
+        setIsAdmin(false);
+        setLlmEnabled(null);
+        return;
+      }
+      try {
+        const token = await user.getIdTokenResult();
+        const adminClaim = ensureAdminClaim(token.claims);
+        setIsAdmin(adminClaim);
+        if (!adminClaim) {
+          setError('Access denied – sign in as admin or ask to be whitelisted.');
+          setLlmEnabled(null);
+          return;
+        }
+        if (llmEnabled === null) {
+          try {
+            const cfg = await apiGet<any>('/review/config', { auth: true });
+            setLlmEnabled(Boolean(cfg.llmReviewEnabled));
+          } catch {
+            setLlmEnabled(null);
+          }
         }
         let status = await load();
         if (status === 401) {
           try {
-            await auth?.currentUser?.getIdToken(true);
+            await auth.currentUser?.getIdToken(true);
           } catch {}
           status = await load();
           if (status === 401) {
             setError('Access denied – sign in as admin or ask to be whitelisted.');
           }
         }
-      } else {
+      } catch {
         setIsAdmin(false);
+        setLlmEnabled(null);
+        setError('Access denied – sign in as admin or ask to be whitelisted.');
       }
     });
     return () => unsubscribe();
-  }, [tab, load]);
+  }, [auth, load, llmEnabled]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     const t = setInterval(() => {
       load();
     }, 10000);
     return () => clearInterval(t);
-  }, [tab, load]);
+  }, [isAdmin, load]);
 
-  const approve = async (id: string) => {
-    await apiPost(`/review/approve/${id}`, {}, { auth: true });
-    setItems((prev) => prev.filter((it) => it.id !== id));
+  const approve = async (item: ReviewItem) => {
+    const target = resolveItemTarget(item);
+    if (!target) {
+      alert('Nema aktivnog builda za odobriti.');
+      return;
+    }
+    await apiPost(`/review/approve/${target}`, {}, { auth: true });
+    setItems((prev) => prev.filter((it) => it.id !== item.id));
     alert('Approved');
     setTab('approved');
     if (items.length === 1 && nextCursor) {
@@ -306,11 +462,55 @@ export default function AdminDashboard() {
     }
   };
 
-  const reject = async (id: string) => {
+  const reject = async (item: ReviewItem) => {
+    const target = resolveItemTarget(item);
+    if (!target) {
+      alert('Nema aktivnog builda za odbijanje.');
+      return;
+    }
     const reason = prompt('Reason for rejection?') || 'No reason provided';
-    await apiPost(`/review/reject/${id}`, { reason }, { auth: true });
+    await apiPost(`/review/reject/${target}`, { reason }, { auth: true });
     alert('Rejected');
     await load();
+  };
+
+  const deleteApp = async (item: ReviewItem) => {
+    const sure = window.confirm('Are you sure you want to delete this app?');
+    if (!sure) return;
+    const target = item.id || item.slug || resolveItemTarget(item);
+    if (!target) return;
+    try {
+      await apiPost(`/review/builds/${target}/delete`, {}, { auth: true });
+      setItems((prev) => prev.filter((x) => x.id !== item.id));
+      alert('Deleted');
+    } catch (e) {
+      alert('Failed to delete');
+    }
+  };
+
+  const forceDeleteApp = async (item: ReviewItem) => {
+    const sure = window.confirm('PERMANENTLY DELETE this app and its build? This cannot be undone.');
+    if (!sure) return;
+    const target = resolveItemTarget(item) || item.id;
+    try {
+      await apiPost(`/review/builds/${target}/force-delete`, {}, { auth: true });
+      setItems((prev) => prev.filter((x) => x.id !== item.id));
+      alert('Deleted permanently');
+    } catch (e) {
+      alert('Failed to delete permanently');
+    }
+  };
+
+  const restoreApp = async (item: ReviewItem) => {
+    const target = item.id || item.slug || resolveItemTarget(item);
+    if (!target) return;
+    try {
+      await apiPost(`/review/builds/${target}/restore`, {}, { auth: true });
+      setItems((prev) => prev.filter((x) => x.id !== item.id));
+      alert('Restored');
+    } catch (e) {
+      alert('Failed to restore');
+    }
   };
 
 const filtered = items.filter((it) =>
@@ -355,7 +555,7 @@ return (
       <div className="p-4 space-y-4">
         <h1 className="text-xl font-bold">Admin Review</h1>
         <div className="flex gap-4">
-          {(['pending', 'approved', 'rejected'] as const).map((t) => (
+          {(['all', 'pending', 'approved', 'rejected', 'deleted'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -370,10 +570,21 @@ return (
             placeholder="Search"
             className="ml-auto border px-2 py-1 rounded"
           />
+          {search && (
+            <button onClick={() => setSearch('')} className="px-2 py-1 border rounded">
+              Clear
+            </button>
+          )}
           <button onClick={() => load()} className="px-2 py-1 border rounded">
             Refresh
           </button>
         </div>
+        <div className="text-xs text-gray-500">Pronađeno {filtered.length} aplikacija</div>
+        {llmEnabled === false && (
+          <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            AI provjera je privremeno isključena. Objave čekaju ručni pregled.
+          </div>
+        )}
         <table className="min-w-full text-sm">
           <thead>
             <tr>
@@ -391,9 +602,12 @@ return (
             {filtered.map((it) => {
               const imgSrc = resolvePreviewUrl(it.previewUrl);
               const hasPreview = Boolean(imgSrc);
+              const actionTarget = resolveItemTarget(it);
+              const detailId = actionTarget || '';
+              const isRegenerating = actionTarget ? regeneratingId === actionTarget : false;
               return (
                 <tr key={it.id} className="border-t">
-                  <td className="p-2">{it.id}</td>
+                  <td className="p-2">{it.appId}</td>
                   <td className="p-2">
                     {hasPreview ? (
                       <Image
@@ -412,7 +626,15 @@ return (
                     )}
                   </td>
                   <td className="p-2">{it.title}</td>
-                  <td className="p-2">{it.ownerEmail || '-'}</td>
+                  <td className="p-2">
+                    {it.ownerEmail ? (
+                      <a href={`mailto:${it.ownerEmail}`} className="text-emerald-600 underline">
+                        {it.ownerEmail}
+                      </a>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
                   <td className="p-2">{it.submittedAt ? new Date(it.submittedAt).toLocaleString() : '-'}</td>
                   <td className="p-2">
                     {it.networkPolicy || '-'}
@@ -425,7 +647,9 @@ return (
                     )}
                   </td>
                   <td className="p-2">
-                    {it.llm?.status === 'complete' ? (
+                    {llmEnabled === false ? (
+                      <span className="text-xs text-gray-500">LLM disabled</span>
+                    ) : it.llm?.status === 'complete' ? (
                       <>
                         {it.llm.data?.publishRecommendation && (
                           <span
@@ -465,56 +689,85 @@ return (
                         <span className="text-xs text-gray-600">
                           LLM waiting{it.llmAttempts ? ` (${it.llmAttempts})` : ''}
                         </span>
-                        <button
-                          onClick={() => triggerLlm(it.id)}
-                          className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                          disabled={regeneratingId === it.id}
-                        >
-                          {regeneratingId === it.id ? 'Running...' : 'Try again'}
-                        </button>
+                        {actionTarget && (
+                          <button
+                            onClick={() => triggerLlm(actionTarget)}
+                            className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                            disabled={isRegenerating}
+                          >
+                            {isRegenerating ? 'Running...' : 'Try again'}
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
-                  <td className="p-2 flex gap-2">
-                    <button
-                      onClick={() => approve(it.id)}
-                      className="px-2 py-1 bg-emerald-600 text-white rounded"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => reject(it.id)}
-                      className="px-2 py-1 bg-red-600 text-white rounded"
-                    >
-                      Reject
-                    </button>
-                    {regeneratingId === it.id ? (
-                      <span className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
+                  <td className="p-2 flex flex-wrap gap-2">
+                    {tab === 'deleted' ? (
+                      <>
+                        <button
+                          onClick={() => restoreApp(it)}
+                          className="px-2 py-1 bg-emerald-600 text-white rounded"
+                        >
+                          Restore
+                        </button>
+                        <button
+                          onClick={() => forceDeleteApp(it)}
+                          className="px-2 py-1 bg-black text-white rounded"
+                          title="Permanently delete"
+                        >
+                          Delete Permanently
+                        </button>
+                      </>
                     ) : (
-                      <button
-                        onClick={() => viewReport(it.id)}
-                        className="px-2 py-1 bg-gray-200 rounded"
-                      >
-                        Details
-                      </button>
+                      <>
+                        <button
+                          onClick={() => approve(it)}
+                          className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                          disabled={!actionTarget}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => reject(it)}
+                          className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50"
+                          disabled={!actionTarget}
+                        >
+                          Reject
+                        </button>
+                        {isRegenerating ? (
+                          <span className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                          <button
+                            onClick={() => detailId && viewReport(detailId)}
+                            className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
+                            disabled={!detailId}
+                          >
+                            Details
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteApp(it)}
+                          className="px-2 py-1 bg-black text-white rounded"
+                          title="Delete"
+                        >
+                          Delete
+                        </button>
+                        {it.playUrl && (
+                          <button
+                            onClick={() => {
+                              if (typeof window === 'undefined') return;
+                              const url = it.playUrl!.startsWith('http')
+                                ? it.playUrl!
+                                : new URL(it.playUrl!, window.location.origin).toString();
+                              window.open(url, '_blank', 'noopener');
+                            }}
+                            className="px-2 py-1 border rounded"
+                          >
+                            Play
+                          </button>
+                        )}
+                      </>
                     )}
-                    <button
-                      onClick={async () => {
-                        const sure = window.confirm('PERMANENTLY DELETE this app and its build? This cannot be undone.');
-                        if (!sure) return;
-                        try {
-                          await apiPost(`/review/builds/${it.id}/delete`, {}, { auth: true });
-                          setItems((prev) => prev.filter((x) => x.id !== it.id));
-                          alert('Deleted');
-                        } catch (e) {
-                          alert('Failed to delete');
-                        }
-                      }}
-                      className="px-2 py-1 bg-black text-white rounded"
-                      title="Permanently delete"
-                    >
-                      Delete Permanently
-                    </button>
                   </td>
                 </tr>
               );
@@ -532,15 +785,12 @@ return (
           </div>
         )}
       </div>
-      {report && (
+      {showDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 max-w-2xl max-h-[80vh] overflow-auto rounded space-y-2">
             <button
               className="mb-2 text-sm text-red-600"
-              onClick={() => {
-                setReport(null);
-                setShowRaw(false);
-              }}
+              onClick={closeDetails}
             >
               Close
             </button>
@@ -590,6 +840,40 @@ return (
                     <span>Objavljeno: {new Date(currentItem.publishedAt).toLocaleString()}</span>
                   )}
                 </div>
+                <div className="text-xs text-gray-600 flex flex-wrap gap-2 mt-2">
+                  {currentBuildId && (
+                    <span className="flex items-center gap-1">
+                      Build ID:
+                      <code className="bg-gray-100 rounded px-1 py-px">{currentBuildId}</code>
+                      <button
+                        type="button"
+                        className="px-1 py-px border rounded"
+                        onClick={() => {
+                          const clip = navigator?.clipboard;
+                          if (clip?.writeText) {
+                            void clip.writeText(currentBuildId).catch(() => {});
+                          }
+                        }}
+                      >
+                        Copy
+                      </button>
+                    </span>
+                  )}
+                  {currentIdentifier && currentIdentifier !== currentBuildId && (
+                    <span>Traženi ID: {currentIdentifier}</span>
+                  )}
+                  {currentItem.pendingBuildId && currentItem.pendingBuildId !== currentBuildId && (
+                    <span>Pending build: {currentItem.pendingBuildId}</span>
+                  )}
+                </div>
+                {currentItem.moderation && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    Moderacija: {currentItem.moderation.status || 'pending'}
+                    {currentItem.moderation.reason ? ` · ${currentItem.moderation.reason}` : ''}
+                    {currentItem.moderation.by ? ` · ${currentItem.moderation.by}` : ''}
+                    {currentItem.moderation.at ? ` · ${new Date(currentItem.moderation.at).toLocaleString()}` : ''}
+                  </div>
+                )}
                 {currentItem.playUrl && (
                   <div className="text-xs mt-1">
                     <a href={currentItem.playUrl} target="_blank" className="text-emerald-600 underline">
@@ -599,23 +883,78 @@ return (
                 )}
               </div>
             )}
-            {currentId && (
-              zipReady ? (
-                <button
-                  onClick={() => downloadCode(currentId!)}
-                  className="text-sm underline block mb-2 text-emerald-600"
-                >
-                  Download code
-                </button>
-              ) : (
-                <div
-                  className="text-sm text-gray-400 mb-2 flex items-center"
-                  title="Bundle not ready"
-                >
-                  <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></span>
-                  Preparing bundle…
+            {currentBuildId ? (
+              <div className="flex flex-col gap-1 mb-2">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  {previewLink && (
+                    <a
+                      href={previewLink}
+                      target="_blank"
+                      className="px-2 py-1 border rounded text-emerald-600"
+                    >
+                      Otvori preview
+                    </a>
+                  )}
+                  <button
+                    onClick={() => downloadCode()}
+                    className="px-2 py-1 border rounded bg-emerald-50 text-emerald-700"
+                  >
+                    Preuzmi bundle (.zip)
+                  </button>
+                  {manifestLink && (
+                    <a href={manifestLink} target="_blank" className="px-2 py-1 border rounded">
+                      Manifest
+                    </a>
+                  )}
+                  {astLink && (
+                    <a href={astLink} target="_blank" className="px-2 py-1 border rounded">
+                      AST
+                    </a>
+                  )}
+                  {importsLink && (
+                    <a href={importsLink} target="_blank" className="px-2 py-1 border rounded">
+                      Imports
+                    </a>
+                  )}
+                  {transformPlanLink && (
+                    <a href={transformPlanLink} target="_blank" className="px-2 py-1 border rounded">
+                      Transform plan
+                    </a>
+                  )}
+                  {transformReportLink && (
+                    <a href={transformReportLink} target="_blank" className="px-2 py-1 border rounded">
+                      Transform report
+                    </a>
+                  )}
                 </div>
-              )
+                {!zipReady && (
+                  <div className="text-xs text-gray-500">
+                    Bundle se još priprema – ZIP će uvijek sadržavati metapodatke te eventualno README dok artefakati ne budu spremni.
+                  </div>
+                )}
+                {!zipReady && currentIdentifier && (
+                  <div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await apiPost(`/review/builds/${currentIdentifier}/rebuild`, {}, { auth: true });
+                          alert('Build queued. Refreshing…');
+                          await viewReport(currentIdentifier);
+                        } catch {
+                          alert('Failed to queue build');
+                        }
+                      }}
+                      className="px-2 py-1 border rounded"
+                    >
+                      Run build again
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-xs text-red-600 mb-2">
+                Build artefakti nisu dostupni za ovaj unos.
+              </div>
             )}
             {timeline.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 mb-2">
@@ -623,7 +962,7 @@ return (
                   <div key={t.at} className="flex items-center">
                     <span className={timelineClass(t.state)}>{t.state}</span>
                     {idx < timeline.length - 1 && (
-                      <span className="timeline-arrow timeline-arrow-active">→</span>
+                      <span className="timeline-arrow timeline-arrow-active">?</span>
                     )}
                   </div>
                 ))}
@@ -648,7 +987,7 @@ return (
                 )}
               </div>
             )}
-            {currentId && (
+            {currentBuildId && (
               <div className="text-sm mb-2">
                 <div className="font-semibold">Dozvole (Permissions-Policy)</div>
                 <div className="flex flex-wrap gap-3 mt-1">
@@ -687,10 +1026,10 @@ return (
                 <div className="mt-2">
                   <button
                     onClick={async () => {
-                      if (!currentId || !policy) return;
+                      if (!currentBuildId || !policy) return;
                       setPolicySaving(true);
                       try {
-                        await fetch(`${API_URL}/review/builds/${currentId}/policy`, {
+                        await fetch(`${API_URL}/review/builds/${currentBuildId}/policy`, {
                           method: 'POST',
                           credentials: 'include',
                           headers: await buildHeaders(true),
@@ -714,13 +1053,13 @@ return (
             {currentItem?.llmAttempts !== undefined && (
               <div className="text-sm mb-2">LLM attempts: {currentItem.llmAttempts}</div>
             )}
-            {(regeneratingId === currentId || report?.status === 'generating') && (
+            {((currentBuildId && regeneratingId === currentBuildId) || report?.status === 'generating') && (
               llmTimeout ? (
                 <div className="space-y-2">
                   <div className="text-sm">Čekamo AI servis…</div>
                   <button
                     onClick={() => {
-                      if (currentId) pollReport(currentId);
+                      if (currentBuildId) pollReport(currentBuildId);
                       setLlmTimeout(false);
                     }}
                     className="px-2 py-1 bg-emerald-600 text-white rounded"
@@ -735,16 +1074,23 @@ return (
                 </div>
               )
             )}
-            {report?.status === 'not_ready' && (
+            {report?.status === 'not_ready' && currentBuildId && (
               <div className="space-y-2">
                 <p className="text-sm">No report available.</p>
                 <button
                   onClick={regenerate}
                   className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                  disabled={regeneratingId === currentId}
+                  disabled={regeneratingId === currentBuildId || llmEnabled === false}
                 >
-                  {regeneratingId === currentId ? 'Analiza…' : 'Pokreni LLM analizu'}
+                  {regeneratingId === currentBuildId
+                    ? 'Analiza…'
+                    : llmEnabled === false
+                    ? 'LLM isključen'
+                    : 'Pokreni LLM analizu'}
                 </button>
+                {llmEnabled === false && (
+                  <p className="text-xs text-gray-500">Uključi AI provjeru u konfiguraciji kako bi izvještaj bio dostupan.</p>
+                )}
               </div>
             )}
             {report?.status === 'complete' && (
@@ -805,9 +1151,9 @@ return (
                 <button
                   onClick={regenerate}
                   className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                  disabled={regeneratingId === currentId}
+                  disabled={regeneratingId === currentBuildId}
                 >
-                  {regeneratingId === currentId ? 'Analiza…' : 'Run again'}
+                  {regeneratingId === currentBuildId ? 'Analiza…' : 'Run again'}
                 </button>
               </div>
             )}

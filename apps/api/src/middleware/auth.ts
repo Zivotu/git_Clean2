@@ -68,3 +68,28 @@ export function requireRole(allowed: string | string[] = 'admin') {
     }
   };
 }
+
+export function requireAmbassador() {
+  return async (req: FastifyRequest, reply: FastifyReply) => {
+    if (!req.authUser?.uid) {
+      return reply.code(401).send({ error: 'unauthenticated' });
+    }
+    try {
+      const { db } = await import('../db.js');
+      const userRef = db.collection('users').doc(req.authUser.uid);
+      const userDoc = await userRef.get();
+
+      if (!userDoc.exists) {
+        return reply.code(403).send({ error: 'forbidden' });
+      }
+
+      const userData = userDoc.data() as any;
+      if (userData.ambassador?.status !== 'approved') {
+        return reply.code(403).send({ error: 'not_an_ambassador' });
+      }
+    } catch (error) {
+      req.log.error(error, 'requireAmbassador check failed');
+      return reply.code(500).send({ error: 'internal_server_error' });
+    }
+  };
+}

@@ -13,8 +13,8 @@ export default function UserProfileClient({ username }: { username: string }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where('username', '==', username));
+        const usersRef = collection(db, 'creators');
+        const q = query(usersRef, where('handle', '==', username));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           setUser(querySnapshot.docs[0].data());

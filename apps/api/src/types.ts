@@ -50,6 +50,7 @@ export interface AppRecord {
   createdAt: number;
   updatedAt?: number;
   publishedAt?: number;
+  deletedAt?: number;
   playUrl: string;
   previewUrl?: string | null;
   likesCount?: number;
@@ -71,4 +72,88 @@ export interface ArchivedVersion {
   buildId: string;
   version: number;
   archivedAt: number;
+}
+
+// --- AMBASSADOR PROGRAM TYPES ---
+
+export type AmbassadorApplicationStatus = 'pending' | 'approved' | 'rejected';
+export type PayoutStatus = 'pending' | 'processing' | 'paid' | 'rejected';
+
+/**
+ * Represents the 'ambassador' object nested within a user document.
+ */
+export interface AmbassadorInfo {
+  status: AmbassadorApplicationStatus;
+  promoCode?: string;
+  socialLinks?: Record<string, string>;
+  motivation?: string;
+  primaryPlatform?: string;
+  audienceSize?: string;
+  appliedAt: number;
+  approvedAt?: number;
+  rejectedAt?: number;
+  adminNotes?: string;
+  marketingKitUrl?: string;
+  dashboardUrl?: string;
+  payoutEmail?: string;
+  earnings: {
+    currentBalance: number;
+    totalEarned: number;
+  };
+}
+
+/**
+ * Represents the 'referredBy' object nested within a user document.
+ */
+export interface ReferredByInfo {
+  ambassadorUid: string;
+  promoCode: string;
+  redeemedAt: number;
+}
+
+/**
+ * Represents the main user model in the 'users' collection.
+ */
+export interface User {
+  uid: string;
+  handle?: string;
+  email?: string;
+  displayName?: string;
+  photoURL?: string;
+  ambassador?: AmbassadorInfo;
+  referredBy?: ReferredByInfo;
+  [key: string]: any;
+}
+
+/**
+ * Represents a document in the 'promoCodes' collection.
+ */
+export interface PromoCode {
+  code: string;
+  ambassadorUid: string;
+  benefit: {
+    type: 'free_gold_trial';
+    durationDays: number;
+  };
+  isActive: boolean;
+  usageCount: number;
+  paidConversionsCount: number;
+  totalRevenueGenerated: number;
+}
+
+/**
+ * Represents a document in the 'payouts' collection.
+ */
+export interface Payout {
+  payoutId: string;
+  ambassadorUid: string;
+  amount: number;
+  status: PayoutStatus;
+  requestedAt: number;
+  paidAt?: number;
+  method: 'PayPal';
+  transactionId?: string;
+  note?: string;
+  rejectedAt?: number;
+  paypalEmail?: string;
 }

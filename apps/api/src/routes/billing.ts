@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import {
   createOrReuseAccount,
@@ -32,7 +32,7 @@ import {
 import { ForbiddenError } from '../lib/errors.js';
 
 /** Register billing and Stripe routes. */
-export default async function billingRoutes(app: FastifyInstance) {
+const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
   app.get('/billing/packages', async (req, reply) => {
     const pkgs = await listPackages();
     reply.send(pkgs);
@@ -495,6 +495,8 @@ export default async function billingRoutes(app: FastifyInstance) {
       return reply.send({ received: true });
     },
   );
-}
+};
+
+export default billingRoutes;
 
 

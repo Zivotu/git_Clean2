@@ -44,6 +44,7 @@ import ownerRoutes from './routes/owner.js';
 import versionRoutes from './routes/version.js';
 import entitlementsRoutes from './routes/entitlements.js';
 import storageRoutes from './routes/storage.js';
+import ambassadorRoutes from './routes/ambassador.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
 import localDevRoutes from './localdev/routes.js';
 import { startLocalDevWorker } from './localdev/worker.js';
@@ -94,13 +95,55 @@ export async function createServer() {
     'env'
   );
 
+  const defaultOrigins = [
+    'https://thesara.space',
+    'https://www.thesara.space',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://[::1]:3000',
+  ];
+  const corsOrigins = Array.from(new Set([...ALLOWED_ORIGINS, ...defaultOrigins])).filter(
+    Boolean,
+  );
+
+  const exactOrigins = new Set<string>();
+  const wildcardOrigins: RegExp[] = [];
+
+  const escapeRegex = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  for (const origin of corsOrigins) {
+    const lower = origin.toLowerCase();
+    if (origin.includes('*')) {
+      const pattern = `^${escapeRegex(origin).replace(/\\\*/g, '.*')}$`;
+      try {
+        wildcardOrigins.push(new RegExp(pattern, 'i'));
+      } catch {
+        // Ignore invalid patterns to avoid crashing CORS middleware
+      }
+    } else {
+      exactOrigins.add(lower);
+    }
+  }
+
+  const isOriginAllowed = (origin?: string | null) => {
+    if (!origin) return true;
+    const lower = origin.toLowerCase();
+    if (exactOrigins.has(lower)) return true;
+    return wildcardOrigins.some((rx) => rx.test(origin));
+  };
+
   await app.register(cors, {
-    origin: [
-      'https://thesara.space',
-      'https://www.thesara.space',
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-    ],
+    origin: (origin, callback) => {
+      if (!origin) {
+        // Allow requests with no origin (like mobile apps or curl)
+        return callback(null, true);
+      }
+      if (isOriginAllowed(origin)) {
+        return callback(null, origin); // Pass the origin string back
+      }
+      return callback(new Error('Not allowed by CORS'), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
@@ -160,17 +203,15 @@ export async function createServer() {
     done();
   });
 
-  const staticAllowedOrigins = new Set([
-    ...ALLOWED_ORIGINS,
-    'https://thesara.space',
-    'https://www.thesara.space',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-  ]);
-
   app.addHook('onSend', (req, reply, _payload, done) => {
-    const url = req.url || req.raw?.url || '';
+    const origin = req.headers.origin as string | undefined;
+    if (origin && isOriginAllowed(origin)) {
+      reply.header('Access-Control-Allow-Origin', origin);
+      reply.header('Access-Control-Allow-Credentials', 'true');
+      reply.header('Vary', 'Origin');
+    }
 
+    const url = req.url || req.raw?.url || '';
     if (
       url.startsWith('/assets') ||
       url.startsWith('/builds') ||
@@ -178,14 +219,8 @@ export async function createServer() {
       url.startsWith('/uploads')
     ) {
       reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
-
-      const origin = req.headers.origin as string | undefined;
-      if (origin && staticAllowedOrigins.has(origin)) {
-        reply.header('Access-Control-Allow-Origin', origin);
-        reply.header('Vary', 'Origin');
-        reply.header('Access-Control-Allow-Credentials', 'true');
-      }
     }
+
     done();
   });
 
@@ -382,11 +417,9 @@ export async function createServer() {
     res.setHeader('Referrer-Policy', 'no-referrer');
 
     const origin = res.req?.headers?.origin as string | undefined;
-    if (origin && staticAllowedOrigins.has(origin)) {
+    if (origin && isOriginAllowed(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
-    } else if (ALLOWED_ORIGINS.length > 0) {
-      res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGINS[0]);
     }
     res.setHeader('Vary', 'Origin');
   };
@@ -461,6 +494,7 @@ export async function createServer() {
   await app.register(storageRoutes);
   await app.register(listingsRoutes);
   await app.register(accessRoutes);
+  await app.register(ambassadorRoutes);
   await app.register(versionRoutes);
   await app.register(oglasiRoutes);
   await app.register(buildRoutes);

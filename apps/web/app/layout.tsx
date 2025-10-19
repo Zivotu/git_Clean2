@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import './__name-shim';
 import './globals.css';
+
 import Header from '@/components/Header';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/auth';
@@ -27,6 +28,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="min-h-screen bg-white text-gray-900">
+
         <ChunkErrorBoundary>
           <AuthProvider>
             <I18nRootProvider locale={locale} messages={messages}>
@@ -39,4 +41,3 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     </html>
   );
 }
-

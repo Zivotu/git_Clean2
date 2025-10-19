@@ -2,11 +2,10 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getConfig } from '../config.js';
 import { getBucket } from '../storage.js';
-import { getBuildDir } from '../paths.js';
+import { getBuildDir, PREVIEW_ROOT } from '../paths.js';
 import { AppError } from '../lib/errors.js';
 import { fileExists, dirExists } from '../lib/fs.js';
 import * as tar from 'tar';
-import { getBucket } from '../storage.js';
 import type { SafePublishResult } from '../safePublish.js';
 
 export type BuildState =
@@ -181,6 +180,10 @@ export interface BuildArtifacts {
   manifest: ArtifactInfo;
   llm: ArtifactInfo;
   bundle: ArtifactInfo;
+  imports: ArtifactInfo;
+  transformPlan: ArtifactInfo;
+  transformReport: ArtifactInfo;
+  previewIndex: ArtifactInfo;
   networkPolicy?: string;
   networkPolicyReason?: string;
 }
@@ -190,6 +193,9 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
   const buildDir = path.join(dir, 'build');
   const astPath = path.join(buildDir, 'AST_SUMMARY.json');
   const manifestPath = path.join(buildDir, 'manifest_v1.json');
+  const planPath = path.join(buildDir, 'transform_plan_v1.json');
+  const reportPath = path.join(buildDir, 'transform_report_v1.json');
+  const importsPath = path.join(buildDir, 'imports_v1.json');
   const llmPath = path.join(dir, 'llm.json');
   const rec = await readBuild(id);
   const bucket = getBucket();
@@ -198,6 +204,9 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
   // Also expose bundle if local build directory exists (pre-publish fallback)
   const localBundleDir = path.join(getBuildDir(id), 'bundle');
   const localBundleExists = await dirExists(localBundleDir);
+
+  const previewPath = path.join(PREVIEW_ROOT, id, 'index.html');
+  const previewExists = await fileExists(previewPath);
 
   return {
     preview: { exists: false },
@@ -212,6 +221,18 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
       : { exists: false },
     bundle: bundleExists || localBundleExists
       ? { exists: true, url: `/review/code/${id}` }
+      : { exists: false },
+    imports: (await fileExists(importsPath))
+      ? { exists: true, url: `/builds/${id}/build/imports_v1.json` }
+      : { exists: false },
+    transformPlan: (await fileExists(planPath))
+      ? { exists: true, url: `/builds/${id}/build/transform_plan_v1.json` }
+      : { exists: false },
+    transformReport: (await fileExists(reportPath))
+      ? { exists: true, url: `/builds/${id}/build/transform_report_v1.json` }
+      : { exists: false },
+    previewIndex: previewExists
+      ? { exists: true, url: `/review/builds/${id}/index.html` }
       : { exists: false },
     networkPolicy: rec?.networkPolicy,
     networkPolicyReason: rec?.networkPolicyReason,

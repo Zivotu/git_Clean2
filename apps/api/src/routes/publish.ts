@@ -274,7 +274,7 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         const base: AppRecord = {
           id: String(listingId),
           slug,
-          buildId,
+          pendingBuildId: buildId,
           title: body.title || '',
           description: body.description || '',
           tags: [],
