@@ -624,29 +624,42 @@ useEffect(() => {
 
   // Load listing data
   useEffect(() => {
+    const normalizedSlug = (slug ?? '').trim();
+    if (!normalizedSlug) {
+      return;
+    }
+    let cancelled = false;
     const load = async () => {
       setLoading(true);
       try {
-        const url = `${API_URL}/listing/${slug}${user?.uid ? `?uid=${user.uid}` : ''}`;
+        const encodedSlug = encodeURIComponent(normalizedSlug);
+        const url = `${API_URL}/listing/${encodedSlug}${user?.uid ? `?uid=${user.uid}` : ''}`;
         const res = await fetch(url, {
           cache: 'no-store',
           credentials: 'include',
           headers: await buildHeaders(false),
         });
+        if (cancelled) return;
         if (res.status === 401) {
           const err = await res.json().catch(() => null);
+          if (cancelled) return;
           if (err?.error === 'pin_required') {
-            router.replace(slug ? `/paywall?slug=${encodeURIComponent(slug)}` : '/paywall');
+            if (!cancelled) {
+              router.replace(`/paywall?slug=${encodedSlug}`);
+            }
             return;
           }
           throw new Error(`GET failed ${res.status}`);
         }
         if (res.status === 403) {
-          router.replace(`/paywall?slug=${encodeURIComponent(slug)}&e=forbidden`);
+          if (!cancelled) {
+            router.replace(`/paywall?slug=${encodedSlug}&e=forbidden`);
+          }
           return;
         }
         if (!res.ok) throw new Error(`GET failed ${res.status}`);
         const json = await res.json();
+        if (cancelled) return;
         const it: Listing | undefined = json.item;
         if (it) {
           setItem(it);
@@ -670,6 +683,7 @@ useEffect(() => {
           setItem(null);
         }
       } catch (e) {
+        if (cancelled) return;
         handleFetchError(e, 'Failed to load app details');
         setItem(null);
         setToast({
@@ -677,10 +691,15 @@ useEffect(() => {
           type: 'error',
         });
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
-    load();
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [slug, buildHeaders, user?.uid, router]);
 
   const imgSrc = useMemo(() => {
