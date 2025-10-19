@@ -1056,7 +1056,7 @@ useEffect(() => {
     );
   }
 
-  if (hasFetched && !item) {
+  if (!item) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white flex items-center justify-center">
         <div className="text-center">
