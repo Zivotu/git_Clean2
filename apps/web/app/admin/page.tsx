@@ -125,7 +125,7 @@ export default function AdminDashboard() {
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
     if (!item) return null;
-    return item.buildId || item.pendingBuildId || null;
+    return item.buildId || item.pendingBuildId || (item as any).id || null;
   };
 
   const ensureAdminClaim = (claims: Record<string, any> | undefined | null): boolean => {

@@ -302,6 +302,7 @@ function AppDetailClient() {
 
   const [item, setItem] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -626,6 +627,9 @@ useEffect(() => {
   useEffect(() => {
     const normalizedSlug = (slug ?? '').trim();
     if (!normalizedSlug) {
+      setLoading(false);
+      setHasFetched(true);
+      setItem(null);
       return;
     }
     let cancelled = false;
@@ -693,6 +697,7 @@ useEffect(() => {
       } finally {
         if (!cancelled) {
           setLoading(false);
+          setHasFetched(true);
         }
       }
     };
@@ -700,7 +705,7 @@ useEffect(() => {
     return () => {
       cancelled = true;
     };
-  }, [slug, buildHeaders, user?.uid, router]);
+  }, [slug, buildHeaders, user?.uid, router, API_URL]);
 
   const imgSrc = useMemo(() => {
     const shouldForcePlaceholder = Boolean(
@@ -1031,7 +1036,7 @@ useEffect(() => {
   }, [item, reportText, buildHeaders]);
 
   // Loading state
-  if (loading) {
+  if (!hasFetched || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white">
         <div className="max-w-6xl mx-auto p-8">
@@ -1051,7 +1056,7 @@ useEffect(() => {
     );
   }
 
-  if (!item) {
+  if (hasFetched && !item) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white flex items-center justify-center">
         <div className="text-center">
