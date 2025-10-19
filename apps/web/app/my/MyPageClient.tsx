@@ -18,6 +18,7 @@ import {
   useConnectStatus,
   startStripeOnboarding,
 } from '@/hooks/useConnectStatus';
+import { playHref } from '@/lib/urls';
 
 // ————————————————————————————————————————
 // Types
@@ -362,9 +363,7 @@ export default function MyProjectsPage() {
   };
 
   const copyLink = (it: Listing) => {
-    const url = new URL('/play', window.location.origin);
-    url.searchParams.set('appId', it.id);
-    const href = url.toString();
+    const href = new URL(playHref(it.id, { run: 1 }), window.location.origin).toString();
     navigator.clipboard.writeText(href).then(() => {
       setToast({ message: 'Link copied to clipboard!', type: 'success' });
     });

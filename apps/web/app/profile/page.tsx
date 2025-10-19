@@ -27,6 +27,7 @@ import {
   openStripeDashboard,
 } from '@/hooks/useConnectStatus';
 import AmbassadorSection from '@/components/AmbassadorSection';
+import { playHref } from '@/lib/urls';
 
 interface ProfileData {
   items: Listing[];
@@ -831,7 +832,7 @@ export default function ProfilePage() {
                   </div>
                     <div className="flex gap-2">
                       <a
-                        href={`/play?appId=${encodeURIComponent(app.id)}&run=1`}
+                        href={playHref(app.id, { run: 1 })}
                         target="_blank"
                         rel="noreferrer"
                         className={buttonVariants({ className: 'text-sm' })}

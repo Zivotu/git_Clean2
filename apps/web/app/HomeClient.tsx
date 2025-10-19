@@ -17,6 +17,7 @@ import { useEntitlements } from '@/hooks/useEntitlements';
 import { useI18n } from '@/lib/i18n-provider';
 import type { Listing as ApiListing } from '@/lib/types';
 import { resolvePreviewUrl } from '@/lib/preview';
+import { playHref } from '@/lib/urls';
 import SplashScreen from '@/components/layout/SplashScreen';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 export {};
@@ -156,7 +157,8 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
           )}
           <div className="mt-5 flex flex-wrap gap-3">
             <Link
-              href={{ pathname: '/play', query: { appId: data.id, run: '1' } }}
+              href={playHref(data.id, { run: 1 })}
+              prefetch={false}
               target="_blank"
               rel="noreferrer"
               className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700"

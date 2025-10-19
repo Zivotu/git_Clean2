@@ -7,6 +7,7 @@ import { API_URL } from '@/lib/config';
 import type { AccessMode } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
+import { playHref } from '@/lib/urls';
 
 function Toast({
   message,
@@ -400,16 +401,19 @@ function PaywallClient() {
 
   async function openPlayNow() {
     // Open via frontend route so auth/session is handled and player iframe resolves correctly
-    const url = new URL('/play', window.location.origin);
-    if (slug) url.searchParams.set('appId', slug);
-    url.searchParams.set('run', '1');
+    const targetId = slug || (appNumericId != null ? String(appNumericId) : '');
+    if (!targetId) return;
+
+    const params: Record<string, string | number | boolean | null | undefined> = { run: 1 };
     if (user) {
       try {
         const token = await user.getIdToken();
-        url.searchParams.set('token', token);
+        params.token = token;
       } catch {}
     }
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+
+    const href = new URL(playHref(targetId, params), window.location.origin).toString();
+    window.open(href, '_blank', 'noopener,noreferrer');
   }
 
   async function subscribeAllAccess() {

@@ -30,6 +30,7 @@ import {
   uploadPresetPreview,
 } from '@/lib/previewClient';
 import { resolvePreviewUrl } from '@/lib/preview';
+import { playHref } from '@/lib/urls';
 
 // ------------------------------------------------------------------
 // Types
@@ -1022,8 +1023,7 @@ useEffect(() => {
   // Copy link to clipboard
   const copyLink = useCallback(() => {
     if (!item) return;
-    const url = new URL('/play', window.location.origin);
-    url.searchParams.set('appId', item.id);
+    const url = new URL(playHref(item.id), window.location.origin);
     navigator.clipboard.writeText(url.toString()).then(() => {
       setCopySuccess(true);
       setToast({ message: 'Link copied to clipboard!', type: 'success' });
@@ -1262,7 +1262,7 @@ useEffect(() => {
                 </button>
               ) : (
                 <a
-                  href={`/play?appId=${encodeURIComponent(item.id)}&run=1`}
+                  href={playHref(item.id, { run: 1 })}
                   target="_blank"
                   rel="noreferrer"
                   className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
@@ -1381,7 +1381,7 @@ useEffect(() => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8 z-10">
                   {user ? (
                     <a
-                      href={`/play?appId=${encodeURIComponent(item.id)}&run=1`}
+                      href={playHref(item.id, { run: 1 })}
                       target="_blank"
                       rel="noreferrer"
                       className="px-6 py-3 rounded-full bg-white/95 backdrop-blur text-gray-900 font-medium shadow-lg hover:bg-white transform hover:scale-105 transition"

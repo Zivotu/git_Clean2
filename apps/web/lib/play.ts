@@ -1,5 +1,6 @@
-﻿import { onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { playHref } from '@/lib/urls';
 
 async function resolveCurrentUser(): Promise<User | null> {
   const authInstance = auth;
@@ -23,7 +24,6 @@ async function resolveCurrentUser(): Promise<User | null> {
 export async function getPlayUrl(id: string): Promise<string> {
   const user = await resolveCurrentUser();
   const token = user ? await user.getIdToken() : undefined;
-  const params = new URLSearchParams({ appId: id, run: '1' });
-  if (token) params.append('token', token);
-  return `/play?${params.toString()}`;
+  return playHref(id, { run: 1, token });
 }
+
