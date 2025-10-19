@@ -1,4 +1,7 @@
-import 'dotenv/config';
+import { config as dotenv } from 'dotenv';
+import fs from 'node:fs';
+import fsSync from 'node:fs';
+import path from 'node:path';
 import fastify, {
   type FastifyRequest,
   type FastifyReply,
@@ -11,9 +14,6 @@ import csrf from '@fastify/csrf-protection';
 import fastifyStatic from '@fastify/static';
 import multipart from '@fastify/multipart';
 import rawBody from 'fastify-raw-body';
-import fs from 'node:fs';
-import fsSync from 'node:fs';
-import path from 'node:path';
 import { BUNDLE_ROOT, PREVIEW_ROOT } from './paths.js';
 import './shims/registerSwcHelpers.js';
 import { getConfig, ALLOWED_ORIGINS } from './config.js';
@@ -54,6 +54,19 @@ import metricsPlugin from './plugins/metrics.js';
 import swaggerPlugin from './plugins/swagger.js';
 import rateLimitPlugin from './plugins/rateLimit.js';
 import roomsSyncV1Routes from './routes/roomsV1/index.js';
+
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
+const candidatePaths = [
+  path.resolve(process.cwd(), envFile),
+  path.resolve(__dirname, `../${envFile}`),
+  path.resolve(__dirname, `../../${envFile}`),
+];
+for (const candidate of candidatePaths) {
+  if (fs.existsSync(candidate)) {
+    dotenv({ path: candidate });
+    break;
+  }
+}
 
 export let app: FastifyInstance;
 
