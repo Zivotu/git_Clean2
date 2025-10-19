@@ -652,7 +652,11 @@ useEffect(() => {
     const fetchListing = async () => {
       try {
         const encodedSlug = encodeURIComponent(normalizedSlug);
-        const url = `${API_URL}/listing/${encodedSlug}${user?.uid ? `?uid=${user.uid}` : ''}`;
+        const basePath = `/api/listing/${encodedSlug}`;
+        const url =
+          user?.uid && user.uid
+            ? `${basePath}?uid=${encodeURIComponent(user.uid)}`
+            : basePath;
         const res = await fetch(url, {
           cache: 'no-store',
           credentials: 'include',

@@ -18,9 +18,10 @@ export async function getListingBySlug(
 ): Promise<Listing | null> {
   const encodedSlug = encodeURIComponent(slug);
   const candidates = [
-    `/apps?slug=${encodedSlug}`,
+    `/listing/${encodedSlug}`,
     `/listing?slug=${encodedSlug}`,
     `/apps/${encodedSlug}`,
+    `/apps?slug=${encodedSlug}`,
   ];
   for (const baseUrl of candidates) {
     try {
