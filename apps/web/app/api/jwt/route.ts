@@ -23,11 +23,16 @@ export async function POST(req: Request) {
       )
     }
 
-    const token = jwt.sign(
-      { sub: userId, role, iss: 'thesara-web' },
-      secret,
-      { algorithm: 'HS256', expiresIn: '15m' }
-    )
+    const signOptions: jwt.SignOptions = {
+      algorithm: 'HS256',
+      expiresIn: '15m',
+      issuer: process.env.JWT_ISSUER || 'thesara-api',
+    }
+    if (process.env.JWT_AUDIENCE) {
+      signOptions.audience = process.env.JWT_AUDIENCE
+    }
+
+    const token = jwt.sign({ sub: userId, role }, secret, signOptions)
 
     return NextResponse.json({ ok: true, token })
   } catch (err: any) {

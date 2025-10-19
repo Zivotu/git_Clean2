@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
+import jwt from 'jsonwebtoken';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -44,7 +45,48 @@ const plugin: FastifyPluginAsync = async (app) => {
       req.authUser = { uid: decoded.uid, role, claims: decoded };
       if (debug) app.log.info({ hasAuth: true, uid: decoded.uid, role }, 'auth');
     } catch (err) {
-      if (debug) app.log.info({ hasAuth: true, error: 'invalid' }, 'auth');
+      if (debug) app.log.info({ hasAuth: true, error: 'invalid', fallback: 'jwt' }, 'auth');
+      const fallbackSecret = process.env.JWT_SECRET;
+      if (fallbackSecret) {
+        try {
+          const verifyOptions: jwt.VerifyOptions = {
+            algorithms: ['HS256'],
+            issuer: process.env.JWT_ISSUER || 'thesara-api',
+          };
+          if (process.env.JWT_AUDIENCE) {
+            verifyOptions.audience = process.env.JWT_AUDIENCE;
+          }
+          const fallbackClaims = jwt.verify(token, fallbackSecret, verifyOptions) as
+            | (jwt.JwtPayload & Record<string, any>)
+            | string;
+          if (typeof fallbackClaims === 'string') {
+            throw new Error('Unexpected string payload in JWT fallback verification');
+          }
+          const uid =
+            (typeof fallbackClaims.sub === 'string' && fallbackClaims.sub) ||
+            (typeof fallbackClaims.uid === 'string' && fallbackClaims.uid);
+          if (uid) {
+            const role =
+              typeof fallbackClaims.role === 'string'
+                ? fallbackClaims.role
+                : fallbackClaims.admin === true
+                ? 'admin'
+                : 'user';
+            if (fallbackClaims.uid !== uid) {
+              (fallbackClaims as Record<string, any>).uid = uid;
+            }
+            req.authUser = {
+              uid,
+              role,
+              claims: fallbackClaims as unknown as DecodedIdToken,
+            };
+            if (debug) app.log.info({ hasAuth: true, uid, role, source: 'jwt' }, 'auth');
+            return;
+          }
+        } catch (jwtErr) {
+          reply.log.debug({ err: jwtErr }, 'auth:jwt_fallback_failed');
+        }
+      }
       reply.log.debug({ err }, 'auth:verify_failed');
       return reply.code(401).send({ error: 'invalid auth token' });
     }
