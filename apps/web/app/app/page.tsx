@@ -34,6 +34,9 @@ import { resolvePreviewUrl } from '@/lib/preview';
 // ------------------------------------------------------------------
 // Types
 // ------------------------------------------------------------------
+type ListingStatus = 'pending_review' | 'approved' | 'rejected' | 'published' | 'draft' | 'pending_review_llm';
+type ListingState = 'active' | 'archived' | 'deleted' | string;
+
 type Listing = {
   id: string;
   slug: string;
@@ -50,10 +53,10 @@ type Listing = {
   likedByMe?: boolean;
   playsCount?: number;
   maxConcurrentPins?: number;
-  state?: 'active' | 'inactive';
+  state?: ListingState;
   pin?: string;
   price?: number;
-  status?: 'draft' | 'published' | 'approved' | 'pending-review' | 'rejected';
+  status?: ListingStatus;
   moderation?: { status?: string; reasons?: string[] };
   translations?: Record<string, { title?: string; description?: string }>;
 };
@@ -302,6 +305,7 @@ function AppDetailClient() {
 
   const [item, setItem] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -339,6 +343,7 @@ function AppDetailClient() {
   const [likeCount, setLikeCount] = useState(0);
   const [likeBusy, setLikeBusy] = useState(false);
 
+  const fetchAbortRef = useRef<AbortController | null>(null);
   const previewInputRef = useRef<HTMLInputElement | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
@@ -455,6 +460,8 @@ useEffect(() => {
   const connect = useConnectStatus();
   const canMonetize =
     connect?.payouts_enabled && (connect.requirements_due ?? 0) === 0;
+  const canViewUnpublished = canEdit || isAdmin;
+  const isPublished = item?.status === 'published';
   const previewDisplayUrl = useMemo(
     () =>
       previewChoice === 'custom' && customPreview?.dataUrl
@@ -626,44 +633,59 @@ useEffect(() => {
   // Load listing data
   useEffect(() => {
     const normalizedSlug = (slug ?? '').trim();
+    setFetchError(null);
+
     if (!normalizedSlug) {
+      fetchAbortRef.current?.abort();
+      fetchAbortRef.current = null;
+      setItem(null);
       setLoading(false);
       setHasFetched(true);
-      setItem(null);
       return;
     }
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
+
+    fetchAbortRef.current?.abort();
+    const controller = new AbortController();
+    fetchAbortRef.current = controller;
+    setLoading(true);
+
+    const fetchListing = async () => {
       try {
         const encodedSlug = encodeURIComponent(normalizedSlug);
         const url = `${API_URL}/listing/${encodedSlug}${user?.uid ? `?uid=${user.uid}` : ''}`;
         const res = await fetch(url, {
           cache: 'no-store',
           credentials: 'include',
+          signal: controller.signal,
           headers: await buildHeaders(false),
         });
-        if (cancelled) return;
+
+        if (controller.signal.aborted) return;
+
         if (res.status === 401) {
-          const err = await res.json().catch(() => null);
-          if (cancelled) return;
-          if (err?.error === 'pin_required') {
-            if (!cancelled) {
-              router.replace(`/paywall?slug=${encodedSlug}`);
-            }
+          const errBody = await res.json().catch(() => null);
+          if (controller.signal.aborted) return;
+          if (errBody?.error === 'pin_required') {
+            router.replace(`/paywall?slug=${encodedSlug}`);
             return;
           }
           throw new Error(`GET failed ${res.status}`);
         }
+
         if (res.status === 403) {
-          if (!cancelled) {
+          if (!controller.signal.aborted) {
             router.replace(`/paywall?slug=${encodedSlug}&e=forbidden`);
           }
           return;
         }
-        if (!res.ok) throw new Error(`GET failed ${res.status}`);
+
+        if (!res.ok) {
+          throw new Error(`GET failed ${res.status}`);
+        }
+
         const json = await res.json();
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
+
         const it: Listing | undefined = json.item;
         if (it) {
           setItem(it);
@@ -686,31 +708,32 @@ useEffect(() => {
         } else {
           setItem(null);
         }
-      } catch (e) {
-        if (cancelled) return;
+      } catch (e: any) {
+        if (controller.signal.aborted) return;
         handleFetchError(e, 'Failed to load app details');
         setItem(null);
+        setFetchError(e?.message || 'failed_to_load');
         setToast({
           message: 'Failed to load app details. Please check the API URL and server status.',
           type: 'error',
         });
       } finally {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           setLoading(false);
           setHasFetched(true);
         }
       }
     };
-    void load();
+
+    void fetchListing();
+
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [slug, buildHeaders, user?.uid, router, API_URL]);
+  }, [slug, buildHeaders, user?.uid, router]);
 
   const imgSrc = useMemo(() => {
-    const shouldForcePlaceholder = Boolean(
-      item?.status && !['published', 'approved'].includes(item.status) && !canEdit,
-    );
+    const shouldForcePlaceholder = Boolean(item?.status && !isPublished && !canViewUnpublished);
     if (shouldForcePlaceholder) {
       return `${API_URL}/assets/preview-placeholder.svg`;
     }
@@ -720,7 +743,7 @@ useEffect(() => {
       return `${resolved}${separator}v=${imgVersion}`;
     }
     return resolved;
-  }, [canEdit, item?.status, item?.previewUrl, imgVersion]);
+  }, [canViewUnpublished, isPublished, item?.status, item?.previewUrl, imgVersion]);
 
   const hasUnsavedPreview = useMemo(() => {
     if (!canEdit) return false;
@@ -1067,6 +1090,9 @@ useEffect(() => {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">{tApp('notFound')}</h2>
           <p className="text-gray-600 mb-6">The app you&apos;re looking for doesn&apos;t exist or has been removed.</p>
+          {fetchError && (
+            <p className="text-sm text-gray-500 mb-6">Došlo je do pogreške pri dohvaćanju podataka. Pokušajte ponovno kasnije.</p>
+          )}
           <Link href="/" className="px-6 py-3 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 transition inline-block">
             {tApp('backToMarketplace')}
           </Link>
@@ -1077,6 +1103,7 @@ useEffect(() => {
 
   const isNew = !!item && Date.now() - (item?.createdAt ?? 0) < 1000 * 60 * 60 * 24 * 7;
   const isHot = likeCount > 100;
+  const showStatusNotice = !!item && !isPublished;
 
   // ------------------------------------------------------------------
   // Main UI
@@ -1095,6 +1122,13 @@ useEffect(() => {
       {/* Main Content */}
       <main className="max-w-6xl mx-auto p-4 md:p-8">
         <AdSlot className="mb-6" />
+        {showStatusNotice && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {canViewUnpublished
+              ? 'Ova aplikacija trenutačno nije javna. Pregled omogućen jer ste vlasnik ili administrator.'
+              : 'Ova aplikacija trenutačno nije javno dostupna.'}
+          </div>
+        )}
         {/* App Info Header */}
         <div className="mb-8">
           <div className="flex items-start justify-between gap-4">
@@ -1290,7 +1324,7 @@ useEffect(() => {
           </div>
         </div>
 
-        { canEdit && (item.status === 'pending-review' || item.status === 'rejected') && (
+        { canEdit && (item.status === 'pending_review' || item.status === 'rejected') && (
           <div
             className={`mb-8 p-4 rounded-xl border ${
               item.status === 'rejected'
