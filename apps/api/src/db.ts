@@ -10,7 +10,19 @@ import type { Oglas } from './models/Oglas.js';
 import type { EntitlementType } from '@loopyway/entitlements';
 export type { AppRecord } from './types.js';
 
-function getFirebaseCredential(): admin.credential.Credential {
+function getFirebaseInitOptions(): admin.AppOptions {
+  const projectIdFromEnv =
+    process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
+
+  // When the Firestore emulator is enabled we don't need real credentials. Instead we only
+  // provide a projectId so firebase-admin talks to the emulator endpoint. This lets local
+  // development proceed without placing service account files on disk.
+  if (process.env.FIREBASE_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST) {
+    return {
+      projectId: projectIdFromEnv || 'thesara-local',
+    } satisfies admin.AppOptions;
+  }
+
   const fromEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   // 1. Lokalno (i preporučeno na serveru): JSON datoteka iz env varijable
@@ -27,31 +39,38 @@ function getFirebaseCredential(): admin.credential.Credential {
     if (!serviceAccount.privateKey || !serviceAccount.clientEmail) {
       throw new Error('Invalid service account JSON: missing private_key or client_email');
     }
-    return admin.credential.cert(serviceAccount as admin.ServiceAccount);
+    return {
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+      projectId: projectIdFromEnv,
+    } satisfies admin.AppOptions;
   }
 
   // 2. Server (fallback): Učitavanje iz standardnih putanja
   const jsonDefaultPath = '/etc/thesara/creds/firebase-sa.json';
   if (fs.existsSync(jsonDefaultPath)) {
-    return admin.credential.cert(jsonDefaultPath);
+    return {
+      credential: admin.credential.cert(jsonDefaultPath),
+      projectId: projectIdFromEnv,
+    } satisfies admin.AppOptions;
   }
 
   const pemDefaultPath = '/etc/thesara/creds/firebase-sa.pem';
   if (fs.existsSync(pemDefaultPath)) {
-    return admin.credential.cert({
-      projectId: 'createx-e0ccc',
-      clientEmail: 'firebase-adminsdk-fbsvc@createx-e0ccc.iam.gserviceaccount.com',
-      privateKey: fs.readFileSync(pemDefaultPath, 'utf8'),
-    });
+    return {
+      credential: admin.credential.cert({
+        projectId: 'createx-e0ccc',
+        clientEmail: 'firebase-adminsdk-fbsvc@createx-e0ccc.iam.gserviceaccount.com',
+        privateKey: fs.readFileSync(pemDefaultPath, 'utf8'),
+      }),
+      projectId: projectIdFromEnv,
+    } satisfies admin.AppOptions;
   }
 
   throw new Error('No Firebase credentials found. Set GOOGLE_APPLICATION_CREDENTIALS or place firebase-sa.json/pem in /etc/thesara/creds/.');
 }
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: getFirebaseCredential(),
-  });
+  admin.initializeApp(getFirebaseInitOptions());
 }
 
 export const db = admin.firestore();
