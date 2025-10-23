@@ -1,8 +1,6 @@
 import path from 'node:path';
-import { config as dotenvConfig } from 'dotenv';
 
 // IMPORTANT: Load environment variables before any other code.
-dotenvConfig({ path: path.resolve(__dirname, `../.env`) });
 
 import fs from 'node:fs';
 import fsSync from 'node:fs';
@@ -49,6 +47,7 @@ import ownerRoutes from './routes/owner.js';
 import versionRoutes from './routes/version.js';
 import entitlementsRoutes from './routes/entitlements.js';
 import storageRoutes from './routes/storage.js';
+import roomsBridge from './routes/rooms-bridge.js';
 import ambassadorRoutes from './routes/ambassador.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
 import localDevRoutes from './localdev/routes.js';
@@ -103,7 +102,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   const config = getConfig();
   await ensureDbInitialized();
 
-  app = fastify({ logger: true });
+  app = fastify({ logger: true, bodyLimit: 256 * 1024 });
   app.log.info(
     { PORT: config.PORT, NODE_ENV: process.env.NODE_ENV, BUNDLE_ROOT, PREVIEW_ROOT },
     'env'
@@ -220,8 +219,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   app.addHook('onSend', (req, reply, _payload, done) => {
     const origin = req.headers.origin as string | undefined;
     if (origin && isOriginAllowed(origin)) {
-      reply.header('Access-Control-Allow-Origin', origin);
-      reply.header('Access-Control-Allow-Credentials', 'true');
+      // The @fastify/cors plugin handles these headers automatically.
+      // We only need to ensure Vary is set.
       reply.header('Vary', 'Origin');
     }
 
@@ -506,6 +505,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(uploadRoutes);
   await app.register(publishRoutes);
   await app.register(storageRoutes);
+  await app.register(roomsBridge);
   await app.register(listingsRoutes);
   await app.register(accessRoutes);
   await app.register(ambassadorRoutes);
@@ -646,6 +646,10 @@ void (async () => {
     } catch (err) {
       console.error(err);
       process.exit(1);
+    }
+  }
+})();
+ss.exit(1);
     }
   }
 })();

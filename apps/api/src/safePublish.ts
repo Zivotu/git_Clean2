@@ -92,22 +92,6 @@ export class SafePublishPipeline {
         const indexPath = path.join(dir, 'index.html');
         try {
           await fs.promises.access(indexPath);
-          const roomsAllowlist = Array.isArray(cfg.THESARA_ROOMS_KEYS)
-            ? cfg.THESARA_ROOMS_KEYS
-            : [];
-          let detectedRoomsKeys: string[] = [];
-          if (cfg.PUBLISH_ROOMS_AUTOBRIDGE && roomsAllowlist.length) {
-            detectedRoomsKeys = await detectRoomsStorageKeys(dir, roomsAllowlist);
-            if (detectedRoomsKeys.length) {
-              this.log.info?.(
-                { id: appId, roomsKeys: detectedRoomsKeys },
-                'publish:rooms_autobridge_detected',
-              );
-            } else {
-              this.log.info?.({ id: appId }, 'publish:rooms_autobridge_skipped_no_keys');
-            }
-          }
-
           const report = await transformHtmlLite({
             indexPath,
             rootDir: dir,
@@ -116,8 +100,6 @@ export class SafePublishPipeline {
             vendorMaxBytes: cfg.PUBLISH_VENDOR_MAX_DOWNLOAD_BYTES,
             vendorTimeoutMs: cfg.PUBLISH_VENDOR_TIMEOUT_MS,
             failOnInlineHandlers: cfg.PUBLISH_CSP_AUTOFIX_STRICT,
-            autoBridgeRooms: cfg.PUBLISH_ROOMS_AUTOBRIDGE && detectedRoomsKeys.length > 0,
-            roomsStorageKeys: detectedRoomsKeys,
             apiBase: cfg.PUBLIC_BASE,
           });
           this.log.info(

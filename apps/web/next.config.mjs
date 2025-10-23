@@ -55,6 +55,30 @@ const baseConfig = {
       { source: '/:segment/favicon.ico', destination: '/favicon.ico' },
     ];
   },
+  async headers() {
+    return [
+      {
+        source: '/play/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline'",
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_HOST || 'https://api.thesara.space'}`,
+              `frame-src ${process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space'}`,
+              "img-src 'self' data: https:",
+              "frame-ancestors 'none'",
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 if (SAFE_PUBLISH_ENABLED && isDev) {

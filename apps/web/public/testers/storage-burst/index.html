@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Thesara Storage Burst Tester</title>
+<button id="burst">Burst 20 setItem</button>
+<pre id="log"></pre>
+<script>
+  const log = (m) => (document.getElementById('log').textContent += m + "\n");
+  document.getElementById('burst').onclick = () => {
+    for (let i = 0; i < 20; i++) localStorage.setItem('k'+i, 'v'+Date.now());
+    log('scheduled 20 updates');
+  };
+  window.addEventListener('storage', () => log('[storage] event received'));
+</script>

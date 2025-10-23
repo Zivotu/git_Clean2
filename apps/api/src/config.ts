@@ -56,12 +56,7 @@ export const STRIPE_AUTOMATIC_TAX =
 export const PUBLISH_STATIC_BUILDER = process.env.PUBLISH_STATIC_BUILDER !== '0';
 export const PUBLISH_CSP_AUTOFIX = process.env.PUBLISH_CSP_AUTOFIX !== '0';
 export const PUBLISH_CSP_AUTOFIX_STRICT = process.env.PUBLISH_CSP_AUTOFIX_STRICT === '1';
-export const PUBLISH_ROOMS_AUTOBRIDGE =
-  process.env.PUBLISH_ROOMS_AUTOBRIDGE !== '0';
-export const THESARA_ROOMS_KEYS = (process.env.THESARA_ROOMS_KEYS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
+
 export const PUBLISH_VENDOR_MAX_MB = Number(process.env.PUBLISH_VENDOR_MAX_MB ?? '20');
 export const PUBLISH_VENDOR_TIMEOUT_MS = Number(process.env.PUBLISH_VENDOR_TIMEOUT_MS ?? '15000');
 
@@ -83,8 +78,7 @@ export const CONFIG = {
   PUBLISH_CSP_AUTOFIX_STRICT,
   PUBLISH_VENDOR_MAX_MB,
   PUBLISH_VENDOR_TIMEOUT_MS,
-  PUBLISH_ROOMS_AUTOBRIDGE,
-  THESARA_ROOMS_KEYS,
+  
 };
 
 function getEnv(key: string, def?: string): string {
@@ -338,7 +332,6 @@ export function getConfig() {
     PUBLISH_CSP_AUTOFIX_STRICT: publishCspAutofixStrict,
     PUBLISH_VENDOR_MAX_DOWNLOAD_BYTES: Math.max(0, publishVendorMaxMb * 1024 * 1024),
     PUBLISH_VENDOR_TIMEOUT_MS: publishVendorTimeoutMs,
-    PUBLISH_ROOMS_AUTOBRIDGE,
-    THESARA_ROOMS_KEYS,
+
   };
 }

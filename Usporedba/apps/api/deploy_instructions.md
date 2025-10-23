@@ -100,8 +100,6 @@ PUBLISH_CSP_AUTOFIX=1
 PUBLISH_CSP_AUTOFIX_STRICT=0
 PUBLISH_VENDOR_MAX_MB=20
 PUBLISH_VENDOR_TIMEOUT_MS=15000
-PUBLISH_ROOMS_AUTOBRIDGE=1
-THESARA_ROOMS_KEYS=shopping/rooms/v1,shopping/session/v1
 
 # Firebase/Google (primjer)
 GOOGLE_APPLICATION_CREDENTIALS=/etc/thesara/creds/firebase-sa.json
@@ -298,8 +296,6 @@ pm2 save
 `
 
 > **
-
-> **Rooms auto-bridge**: pobrini se da `.env.production` ima `PUBLISH_ROOMS_AUTOBRIDGE=1` i `THESARA_ROOMS_KEYS=shopping/rooms/v1,shopping/session/v1`. Naredba `pnpm --filter @loopyway/api exec prisma db push` kreira/azurira tablicu `RoomBridge` (koriste je rute `/rooms/v1/bridge/*`), a publish pipeline automatski generira `thesara-rooms-config.js` i `thesara-rooms-bridge.js` kada ZIP koristi dopuštene localStorage ključeve.
 
 ### 6.3. Kada mijenjaš Nginx
 

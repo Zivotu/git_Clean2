@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { joinUrl } from '@/lib/url';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 import { auth } from '@/lib/firebase';
-
+import { getJwt, setInitialJwt, fetchSnapshot, patchStorage, makeNamespace, BatchItem } from '@/lib/storage/snapshot-loader';
 
 type BuildStatusResponse = {
   state?: string;
@@ -16,10 +16,6 @@ type BuildStatusResponse = {
 
 type ListingResponse = {
   item?: { buildId?: string; authorEmail?: string; owner?: string };
-};
-
-type StorageItemResponse = {
-  value: string | null;
 };
 
 export default function ClientPlayPage({ appId }: { appId: string }) {
@@ -32,6 +28,9 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
   const [effectiveToken, setEffectiveToken] = useState<string | undefined>(token ?? undefined);
 
   const [signedToken, setSignedToken] = useState<string | undefined>();
+  const [storageSnapshot, setStorageSnapshot] = useState<Record<string, unknown> | null>(null);
+  const storageVersionRef = useRef<string | null>(null);
+  const [isShimReady, setShimReady] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,62 +86,140 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
     }
   }, [effectiveToken]);
 
-  const storageClient = useMemo(() => {
-    const headers: Record<string, string> = { 'X-Thesara-App-Id': appId };
-    if (effectiveToken) {
-      headers.Authorization = `Bearer ${effectiveToken}`;
-    }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (!auth.currentUser) return;
 
-    return {
-      getItem: async (roomId: string, key: string) => {
+    const bootstrap = async () => {
         try {
-          const res = await apiFetch<StorageItemResponse>(
-            `/storage/item?roomId=${encodeURIComponent(roomId)}&key=${encodeURIComponent(key)}`,
-            {
-              auth: true,
-              headers,
-            },
-          );
-          return res?.value ?? null;
-        } catch (error) {
-          if (error instanceof ApiError && error.status === 404) {
-            return null;
-          }
-          throw error;
+            const ns = makeNamespace(auth.currentUser.uid, appId);
+            const jwt = await getJwt();
+            await setInitialJwt(jwt);
+            const { snapshot, version } = await fetchSnapshot(jwt, ns);
+            setStorageSnapshot(snapshot);
+            storageVersionRef.current = version;
+        } catch (err) {
+            console.error('[storage] Failed to fetch initial snapshot:', err);
+            setError('Failed to load app data.');
         }
-      },
-      setItem: (roomId: string, key: string, value: string) =>
-        apiFetch('/storage/item', {
-          method: 'POST',
-          auth: true,
-          headers,
-          body: { roomId, key, value },
-        }),
-      removeItem: (roomId: string, key: string) =>
-        apiFetch(`/storage/item?roomId=${encodeURIComponent(roomId)}&key=${encodeURIComponent(key)}`, {
-          method: 'DELETE',
-          auth: true,
-          headers,
-        }),
     };
-  }, [appId, effectiveToken]);
+    bootstrap();
+  }, [appId, signedToken]);
 
-  const handleIframeLoad = () => {
+  const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current;
-    if (!iframe?.contentWindow) {
-      console.error('Could not access iframe content window.');
-      setError('Failed to initialize the app environment.');
+    if (!iframe?.contentWindow || !storageSnapshot) {
       return;
     }
-    // Inject the Thesara client
-    console.info('[Thesara] iframe sandbox: OFF; storage: parent->API via cookies/token');
-    (iframe.contentWindow as any).thesara = {
-      storage: storageClient,
-      appId,
-      authToken: signedToken,
+    console.log('[storage] Iframe loaded. Sending init snapshot.');
+    iframe.contentWindow.postMessage(
+      { type: 'thesara:storage:init', snapshot: storageSnapshot },
+      '*'
+    );
+  }, [storageSnapshot]);
+
+  // Message listener for events from the iframe shim
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      const iframe = iframeRef.current;
+      if (event.source !== iframe?.contentWindow) {
+        return; // Ignore messages from other sources
+      }
+
+      const msg = event.data;
+      if (!msg || typeof msg !== 'object') return;
+
+      switch (msg.type) {
+        case 'thesara:shim:ready':
+          console.log('[storage] Shim is ready.');
+          setShimReady(true);
+          if (storageSnapshot) {
+            handleIframeLoad();
+          }
+          break;
+
+        case 'thesara:storage:flush': {
+          if (!auth.currentUser || !signedToken || !storageVersionRef.current) {
+            console.warn('[storage] Flush received but user/token/version is not ready.');
+            return;
+          }
+          const batch = msg.batch as BatchItem[];
+          if (!batch || batch.length === 0) return;
+
+          console.log(`[storage] Flushing batch of ${batch.length} items.`);
+          const ns = makeNamespace(auth.currentUser.uid, appId);
+
+          try {
+            const { newVersion, newSnapshot } = await patchStorage(
+              signedToken,
+              ns,
+              storageVersionRef.current,
+              batch
+            );
+            console.log(`[storage] PATCH successful. New version: ${newVersion}`);
+            storageVersionRef.current = newVersion;
+
+            // Use the snapshot from the PATCH response if available, otherwise refetch.
+            const snapshotToBroadcast = newSnapshot ?? (await fetchSnapshot(signedToken, ns)).snapshot;
+
+            setStorageSnapshot(snapshotToBroadcast);
+
+            // Broadcast the update to other tabs
+            const bc = new BroadcastChannel(`storage-${appId}`);
+            bc.postMessage({ 
+              type: 'thesara:storage:update', 
+              snapshot: snapshotToBroadcast, 
+              version: newVersion 
+            });
+            bc.close();
+
+          } catch (err) {
+            console.error('[storage] Failed to patch storage after retries:', err);
+            // Optionally show a non-intrusive toast to the user
+          }
+          break;
+        }
+      }
     };
-    console.info('thesara.storage injected', !!(iframe.contentWindow as any)?.thesara?.storage);
-  };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [appId, signedToken, storageSnapshot, handleIframeLoad]);
+
+  // BroadcastChannel listener for multi-tab sync
+  useEffect(() => {
+    const bc = new BroadcastChannel(`storage-${appId}`);
+
+    const handleBroadcast = (event: MessageEvent) => {
+      const msg = event.data;
+      if (msg?.type === 'thesara:storage:update') {
+        console.log('[storage] Received broadcast update from another tab.');
+        storageVersionRef.current = msg.version;
+        setStorageSnapshot(msg.snapshot);
+
+        // Forward the new snapshot to our iframe
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: 'thesara:storage:sync', snapshot: msg.snapshot },
+          '*'
+        );
+      }
+    };
+
+    bc.addEventListener('message', handleBroadcast);
+    return () => {
+      bc.removeEventListener('message', handleBroadcast);
+      bc.close();
+    };
+  }, [appId]);
+
+  // beforeunload handler to flush pending changes
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      iframeRef.current?.contentWindow?.postMessage({ type: 'thesara:storage:flush-now' }, '*');
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,7 +276,6 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
           }
         }
 
-        // Best-effort fetch of manifest to list reported network domains
         try {
           const manifestUrl = joinUrl(API_URL, `/builds/${safeId}/build/manifest_v1.json`);
           const res = await fetch(manifestUrl, { cache: 'no-store', credentials: 'include' });
@@ -214,8 +290,6 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
         }
 
         if (cancelled) return;
-        // Construct the direct path to the build's root to avoid server-side redirects.
-        // The static server will automatically serve index.html from this directory.
         const qp = effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : '';
         const bundleUrl = `/builds/${safeId}/bundle/index.html${qp}`;
         const legacyUrl = `/builds/${safeId}/build/index.html${qp}`;
@@ -246,7 +320,6 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
     }
   }, [appUrl, loading, error]);
 
-  // Effect to fetch HTML when appUrl is ready
   useEffect(() => {
     if (!appUrl) {
       return;
@@ -281,9 +354,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
         const htmlContent = await response.text();
         if (cancelled) return;
 
-        // After redirects, the final URL is what we need for the <base> tag
         const finalUrl = new URL(response.url);
-        // The base path must be a directory, so it must end with a '/'
         const pathname = finalUrl.pathname;
         const basePath = pathname.substring(0, pathname.lastIndexOf('/') + 1);
 
@@ -293,6 +364,18 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
         if (!head) {
           throw new Error('App HTML is missing a <head> element.');
         }
+
+        // Inject the meta-CSP for defense-in-depth
+        const cspMeta = parsedDocument.createElement('meta');
+        cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
+        cspMeta.setAttribute('content', "default-src 'none'; script-src 'self' https://apps.thesara.space; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; connect-src 'none';");
+        head.prepend(cspMeta);
+
+        // Inject the storage shim script
+        const shimScript = parsedDocument.createElement('script');
+        shimScript.src = '/shim.js';
+        shimScript.defer = true;
+        head.appendChild(shimScript);
 
         const baseElement = head.querySelector('base') ?? parsedDocument.createElement('base');
 
@@ -313,117 +396,13 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
           head.insertBefore(baseElement, head.firstChild);
         }
 
-        const isExternalUrl = (value: string) => /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(value);
-
-        const resolveBundleUrl = (value: string) => {
-          if (!value) return null;
-          const trimmed = value.trim();
-          if (!trimmed || isExternalUrl(trimmed) || !trimmed.startsWith('/')) {
-            return null;
-          }
-          const stripped = trimmed.replace(/^\/+/, '');
-          return `${normalizedBaseHref}${stripped}`;
-        };
-
-        const assetLinkRels = new Set([
-          'stylesheet',
-          'preload',
-          'modulepreload',
-          'icon',
-          'shortcut icon',
-          'apple-touch-icon',
-          'manifest',
-        ]);
-
-        parsedDocument.querySelectorAll<HTMLScriptElement>('script[src]').forEach((script) => {
-          const resolved = resolveBundleUrl(script.getAttribute('src') ?? '');
-          if (resolved) {
-            script.setAttribute('src', resolved);
-          }
-        });
-
-        parsedDocument.querySelectorAll<HTMLLinkElement>('link[href]').forEach((link) => {
-          const rel = link.getAttribute('rel');
-          const relTokens = rel?.split(/\s+/).map((token) => token.toLowerCase()).filter(Boolean) ?? [];
-          if (relTokens.length && !relTokens.some((token) => assetLinkRels.has(token))) {
-            return;
-          }
-          const resolved = resolveBundleUrl(link.getAttribute('href') ?? '');
-          if (resolved) {
-            link.setAttribute('href', resolved);
-          }
-        });
-
-        const importMapScripts = Array.from(
-          parsedDocument.querySelectorAll<HTMLScriptElement>('script[type="importmap"]'),
-        );
-
-        const additionalImports: Record<string, string> = {
-          react: 'https://esm.sh/react@18',
-          'react/jsx-dev-runtime': 'https://esm.sh/react@18/jsx-dev-runtime',
-          'react-dom': 'https://esm.sh/react-dom@18',
-          'react-dom/client': 'https://esm.sh/react-dom@18/client',
-          'framer-motion': 'https://esm.sh/framer-motion@10',
-          'html-to-image': 'https://esm.sh/html-to-image@1.11.11',
-          recharts: 'https://esm.sh/recharts@2',
-        };
-
-        let extendedExistingMap = false;
-        for (const script of importMapScripts) {
-          const content = script.textContent?.trim();
-          if (!content) continue;
-          try {
-            const parsed = JSON.parse(content);
-            if (!parsed || typeof parsed !== 'object') continue;
-            const imports = (parsed.imports ?? {}) as Record<string, string>;
-            parsed.imports = { ...imports, ...additionalImports };
-            script.textContent = `${JSON.stringify(parsed, null, 2)}
-`;
-            extendedExistingMap = true;
-            break;
-          } catch {
-            // Ignore JSON parse errors and continue to next import map
-          }
-        }
-
-        if (!extendedExistingMap) {
-          const script = parsedDocument.createElement('script');
-          script.setAttribute('type', 'importmap');
-          script.textContent = `${JSON.stringify({ imports: additionalImports }, null, 2)}
-`;
-          head.insertBefore(script, baseElement.nextSibling);
-        }
-
         const serializedHtml = parsedDocument.documentElement?.outerHTML ?? htmlContent;
         const hasDoctype = /^<!doctype/i.test(htmlContent);
         const finalHtml = `${hasDoctype ? '<!DOCTYPE html>\n' : ''}${serializedHtml}`;
 
         if (cancelled) return;
 
-        const prelude = `
-          <script>
-            (function(){
-              try {
-                var w = window;
-                w.thesara = w.thesara || {};
-                w.thesara.appId = ${JSON.stringify(appId)};
-                w.thesara.authToken = ${JSON.stringify(signedToken)};
-                w.thesara.storage = w.thesara.storage || {
-                  getItem: function(){ return Promise.reject(new Error('thesara.storage not ready')); },
-                  setItem: function(){ return Promise.reject(new Error('thesara.storage not ready')); },
-                  removeItem: function(){ return Promise.reject(new Error('thesara.storage not ready')); }
-                };
-              } catch(e) { /* no-op */ }
-            })();
-          </script>
-        `;
-
-        const withPrelude = finalHtml.replace(
-          /<head(\s*)>/i,
-          (m) => `${m}\n${prelude}`
-        );
-
-        setIframeHtml(withPrelude);
+        setIframeHtml(finalHtml);
         setLoading(false);
       } catch (err: any) {
         if (cancelled) return;
@@ -444,16 +423,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
     };
   }, [appUrl, fallbackAppUrl, buildId, signedToken, appId]);
 
-  useEffect(() => {
-    const w = iframeRef.current?.contentWindow as any;
-    if (!w) return;
-    w.thesara = w.thesara || {};
-    w.thesara.appId = appId;
-    w.thesara.authToken = signedToken;
-    w.thesara.storage = storageClient;
-  }, [appId, signedToken, storageClient]);
-
-  if (loading) {
+  if (loading || (auth.currentUser && !storageSnapshot)) {
     return (
       <div style={{ padding: 24 }}>
         <h1>Loading app...</h1>
@@ -483,7 +453,6 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
         </div>
       );
     }
-    // Don't show "Build not found" while HTML is loading
     if (!loading) {
       return (
         <div style={{ padding: 24 }}>
@@ -491,7 +460,6 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
         </div>
       );
     }
-    // Otherwise, the main loading indicator is already showing
     return null;
   }
 
@@ -534,6 +502,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
       srcDoc={iframeHtml}
       onLoad={handleIframeLoad}
       style={{ border: 'none', width: '100%', height: '100vh' }}
+      sandbox="allow-scripts allow-popups allow-forms"
     />
   );
 }

@@ -595,29 +595,5 @@ export class RoomsService {
     return { room: toRoomSummary(room) };
   }
 
-  async loadBridgeState(appId: string, userId: string, storageKey: string): Promise<string | null> {
-    const existing = await prisma.roomBridge.findUnique({
-      where: { appId_userId_storageKey: { appId, userId, storageKey } },
-    });
-    return existing?.payload ?? null;
-  }
-
-  async saveBridgeState(
-    appId: string,
-    userId: string,
-    storageKey: string,
-    payload: string | null,
-  ): Promise<void> {
-    if (!payload || !payload.trim()) {
-      await prisma.roomBridge.deleteMany({
-        where: { appId, userId, storageKey },
-      });
-      return;
-    }
-    await prisma.roomBridge.upsert({
-      where: { appId_userId_storageKey: { appId, userId, storageKey } },
-      create: { appId, userId, storageKey, payload },
-      update: { payload },
-    });
-  }
+  
 }

@@ -78,17 +78,7 @@ model IdempotencyKey {
   @@unique([key, scope])
 }
 
-model RoomBridge {
-  id         String   @id @default(cuid())
-  appId      String
-  userId     String
-  storageKey String
-  payload    String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
 
-  @@unique([appId, userId, storageKey])
-}
 
 model AppStorage {
   id        String   @id @default(cuid())

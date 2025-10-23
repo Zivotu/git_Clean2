@@ -19,8 +19,7 @@ import type { Role } from '@prisma/client';
 const service = new RoomsService();
 const baseConfig = getConfig();
 const { ROOMS_V1: roomsConfig } = baseConfig;
-const PUBLISH_ROOMS_AUTOBRIDGE = !!(baseConfig as any).PUBLISH_ROOMS_AUTOBRIDGE;
-const THESARA_ROOMS_KEYS = (baseConfig as any).THESARA_ROOMS_KEYS;
+
 
 function parseIfMatch(request: any): number | undefined {
   const raw = request.headers?.['if-match'];
@@ -138,73 +137,7 @@ const routes: FastifyPluginAsync = async (app) => {
     },
   );
 
-  const bridgeLoadSchema = z.object({
-    appId: z.string().trim().min(1).max(120),
-    key: z.string().trim().min(1).max(180),
-  });
-  const bridgeSaveSchema = bridgeLoadSchema.extend({
-    payload: z
-      .union([z.string(), z.null()])
-      .optional()
-      .refine(
-        (val) => (typeof val === 'string' ? val.length <= 200_000 : true),
-        'payload too large (200k max)',
-      ),
-  });
-
-  app.post(`${prefix}/bridge/load`, async (request, reply) => {
-    if (!PUBLISH_ROOMS_AUTOBRIDGE) {
-      return reply.code(404).send({ code: 'bridge_disabled', message: 'Rooms auto-bridge disabled' });
-    }
-    const uid = request.authUser?.uid;
-    if (!uid) {
-      return reply.code(401).send({ code: 'unauthorized', message: 'Authentication required' });
-    }
-    try {
-      const body = bridgeLoadSchema.parse(request.body);
-      if (
-        Array.isArray(THESARA_ROOMS_KEYS) &&
-        THESARA_ROOMS_KEYS.length &&
-        !THESARA_ROOMS_KEYS.includes(body.key)
-      ) {
-        return reply.code(403).send({ code: 'bridge_key_not_allowed', message: 'Storage key not allowed' });
-      }
-      const payload = await service.loadBridgeState(body.appId, uid, body.key);
-      return reply.send({ payload });
-    } catch (err) {
-      if (err instanceof HttpError) {
-        return reply.code(err.statusCode).send({ code: err.code, message: err.message });
-      }
-      throw err;
-    }
-  });
-
-  app.post(`${prefix}/bridge/save`, async (request, reply) => {
-    if (!PUBLISH_ROOMS_AUTOBRIDGE) {
-      return reply.code(404).send({ code: 'bridge_disabled', message: 'Rooms auto-bridge disabled' });
-    }
-    const uid = request.authUser?.uid;
-    if (!uid) {
-      return reply.code(401).send({ code: 'unauthorized', message: 'Authentication required' });
-    }
-    try {
-      const body = bridgeSaveSchema.parse(request.body);
-      if (
-        Array.isArray(THESARA_ROOMS_KEYS) &&
-        THESARA_ROOMS_KEYS.length &&
-        !THESARA_ROOMS_KEYS.includes(body.key)
-      ) {
-        return reply.code(403).send({ code: 'bridge_key_not_allowed', message: 'Storage key not allowed' });
-      }
-      await service.saveBridgeState(body.appId, uid, body.key, body.payload ?? null);
-      return reply.send({ ok: true });
-    } catch (err) {
-      if (err instanceof HttpError) {
-        return reply.code(err.statusCode).send({ code: err.code, message: err.message });
-      }
-      throw err;
-    }
-  });
+  
 
   app.post(
     `${prefix}/:roomCode/join`,
@@ -374,6 +307,87 @@ const routes: FastifyPluginAsync = async (app) => {
         const expectedVersion = parseIfMatch(request);
         const result = await service.deleteItem(roomCode, itemId, {
           expectedVersion,
+        });
+        return reply.send(result);
+      } catch (err) {
+        if (err instanceof HttpError) {
+          return reply.code(err.statusCode).send({
+            code: err.code,
+            message: err.message,
+          });
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.post(
+    `${prefix}/:roomCode/finalize`,
+    {
+      schema: { tags: ['rooms'] },
+      config: { rateLimit: { max: roomsConfig.rateLimitMax } },
+      preHandler: app.authenticateRoom,
+    },
+    async (request, reply) => {
+      try {
+        const roomCode = roomCodeSchema.parse((request.params as any).roomCode);
+        const body = finalizeBodySchema.parse(request.body ?? {});
+        const session = request.roomSession!;
+        const expectedVersion = parseIfMatch(request);
+        const idempotencyKey = parseIdempotencyKey(request);
+        const result = await service.finalizePurchase(roomCode, body, {
+          expectedVersion,
+          idempotencyKey,
+          actor: sessionToActor(session),
+        });
+        return reply.send(result);
+      } catch (err) {
+        if (err instanceof HttpError) {
+          return reply.code(err.statusCode).send({
+            code: err.code,
+            message: err.message,
+          });
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.post(
+    `${prefix}/:roomCode/rotate-pin`,
+    {
+      schema: { tags: ['rooms'] },
+      config: { rateLimit: { max: roomsConfig.rateLimitMax } },
+      preHandler: app.authenticateRoom,
+    },
+    async (request, reply) => {
+      try {
+        const roomCode = roomCodeSchema.parse((request.params as any).roomCode);
+        const body = rotatePinBodySchema.parse(request.body);
+        const session = request.roomSession!;
+        const expectedVersion = parseIfMatch(request);
+        const result = await service.rotatePin(
+          roomCode,
+          body,
+          sessionToActor(session),
+          { expectedVersion },
+        );
+        return reply.send(result);
+      } catch (err) {
+        if (err instanceof HttpError) {
+          return reply.code(err.statusCode).send({
+            code: err.code,
+            message: err.message,
+          });
+        }
+        throw err;
+      }
+    },
+  );
+};
+
+export default routes;
+edVersion,
         });
         return reply.send(result);
       } catch (err) {

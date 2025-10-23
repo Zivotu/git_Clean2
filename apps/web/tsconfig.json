@@ -21,6 +21,9 @@
       "@/*": [
         "./*"
       ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
       "@loopyway/entitlements": ["../../packages/entitlements/index.d.ts"]
     },
     "plugins": [

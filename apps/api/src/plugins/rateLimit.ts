@@ -4,11 +4,11 @@ import type { FastifyPluginAsync } from 'fastify';
 import { getConfig } from '../config.js';
 
 const plugin: FastifyPluginAsync = fp(async (app) => {
-  const { ROOMS_V1 } = getConfig();
   await app.register(rateLimit, {
-    global: false,
-    max: ROOMS_V1.rateLimitMax,
+    global: true,
+    max: 120,
     timeWindow: '1 minute',
+    keyGenerator: (req: any) => req.authUser?.uid || req.ip,
     addHeaders: {
       'x-ratelimit-limit': true,
       'x-ratelimit-remaining': true,

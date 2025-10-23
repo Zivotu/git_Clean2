@@ -1,17 +1,6 @@
-import { Suspense } from 'react';
-import ClientPlayPage from '../ClientPlayPage';
+import PlayPageClient from './PlayPageClient';
 
-export default async function PlayAppPage({
-  params,
-}: {
-  params: Promise<{ appId?: string }>;
-}) {
-  const { appId = '' } = await params;
-
-  return (
-    <Suspense fallback={null}>
-      <ClientPlayPage appId={appId} />
-    </Suspense>
-  );
+export default async function Page({ params }: { params: Promise<{ appId: string }> }) {
+  const { appId } = await params;
+  return <PlayPageClient appId={appId} />;
 }
-

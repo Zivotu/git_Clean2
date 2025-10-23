@@ -1,160 +1,225 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+// apps/api/src/routes/storage.ts
+import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
-import type { PrismaClient } from '@prisma/client';
-import { prisma } from '../prisma/client.js';
-import { getAppByIdOrSlug } from '../db.js';
-import type { AppRecord } from '../types.js';
+import { getBucket } from '../storage.js';
+import { requireRole } from '../middleware/auth.js';
 
-type AppStorageKey = {
-  appId: string;
-  roomId: string;
-  key: string;
-};
+// Whitelist za CORS (prod + dev)
+const ALLOWED_ORIGINS = new Set([
+  'https://thesara.space',
+  'https://apps.thesara.space',
+  'http://localhost:3000',
+]);
 
-type AppStorageRecord = AppStorageKey & {
-  id: string;
-  value: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type AppStorageWhereUnique = { app_storage_app_room_key: AppStorageKey };
-
-type AppStorageDelegate = {
-  upsert(args: {
-    where: AppStorageWhereUnique;
-    update: { value: string };
-    create: AppStorageKey & { value: string };
-  }): Promise<AppStorageRecord>;
-  findUnique(args: { where: AppStorageWhereUnique }): Promise<AppStorageRecord | null>;
-  deleteMany(args: { where: AppStorageKey }): Promise<{ count: number }>;
-};
-
-type PrismaClientWithAppStorage = PrismaClient & { appStorage: AppStorageDelegate };
-
-function assertHasAppStorage(client: PrismaClient): asserts client is PrismaClientWithAppStorage {
-  const delegate = (client as Partial<PrismaClientWithAppStorage>).appStorage;
-  if (typeof delegate?.upsert !== 'function') {
-    throw new Error(
-      'Prisma client is missing the appStorage delegate. Did you run "pnpm --filter @loopyway/api prisma:generate"?',
-    );
-  }
+function setCors(reply: any, origin?: string) {
+  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://thesara.space';
+  reply.header('Access-Control-Allow-Origin', allow);
+  reply.header('Vary', 'Origin');
+  reply.header('Access-Control-Allow-Headers', 'Authorization, If-Match, Content-Type');
+  reply.header('Access-Control-Expose-Headers', 'ETag'); // Expose ETag
+  reply.header('Access-Control-Allow-Methods', 'GET, PATCH, OPTIONS');
+  reply.header('Access-Control-Max-Age', '600');
 }
 
-declare module 'fastify' {
-  interface FastifyRequest {
-    storageContext?: {
-      appId: string;
-      appRecord: AppRecord;
-      userId: string;
-    };
-  }
+function stripQuotes(etag: string | string[] | undefined): string | undefined {
+  if (!etag) return undefined;
+  const v = Array.isArray(etag) ? etag[0] : etag;
+  return v.replace(/^"|"$/g, '');
 }
 
-const BODY_SCHEMA = z.object({
-  roomId: z.string().trim().min(1).max(120),
-  key: z.string().trim().min(1).max(256),
-  value: z.string(),
+// Zod schemas for validation
+const SetOperation = z.object({
+  op: z.literal('set'),
+  key: z.string().min(1).max(256),
+  value: z.any(), // Further validation for size is done in the handler
 });
-
-const QUERY_SCHEMA = z.object({
-  roomId: z.string().trim().min(1).max(120),
-  key: z.string().trim().min(1).max(256),
+const DelOperation = z.object({
+  op: z.literal('del'),
+  key: z.string().min(1).max(256),
 });
+const ClearOperation = z.object({ op: z.literal('clear') });
 
-function normalizeAppHeader(header: unknown): string | null {
-  if (!header) return null;
-  if (Array.isArray(header)) {
-    const [first] = header;
-    return typeof first === 'string' && first.trim().length ? first.trim() : null;
-  }
-  if (typeof header !== 'string') return null;
-  const trimmed = header.trim();
-  return trimmed.length ? trimmed : null;
-}
+const PatchBodySchema = z.array(z.union([SetOperation, DelOperation, ClearOperation])).max(100);
+type PatchBody = z.infer<typeof PatchBodySchema>;
 
-async function resolveStorageContext(
-  req: FastifyRequest,
-  reply: FastifyReply,
-): Promise<{ appId: string; record: AppRecord } | null> {
-  const uid = req.authUser?.uid;
-  if (!uid) {
-    void reply.code(401).send({ error: 'unauthenticated' });
-    return null;
-  }
-  const headerValue = normalizeAppHeader(req.headers['x-thesara-app-id']);
-  if (!headerValue) {
-    void reply.code(400).send({ error: 'missing_app_id' });
-    return null;
-  }
-  const appRecord = await getAppByIdOrSlug(headerValue);
-  if (!appRecord) {
-    void reply.code(404).send({ error: 'app_not_found' });
-    return null;
-  }
-  const storageEnabled =
-    appRecord.capabilities?.storage?.enabled === true ||
-    (Array.isArray(appRecord.capabilities?.features) &&
-      appRecord.capabilities!.features!.includes('storage'));
-  if (!storageEnabled) {
-    void reply.code(403).send({ error: 'storage_not_enabled' });
-    return null;
-  }
-  const appId = String(appRecord.id ?? headerValue);
-  req.storageContext = { appId, appRecord, userId: uid };
-  return { appId, record: appRecord };
-}
-
-export default async function storageRoutes(app: FastifyInstance) {
-  assertHasAppStorage(prisma);
-  const storageClient = prisma.appStorage;
-
-  app.post('/storage/item', async (req, reply) => {
-    const ctx = await resolveStorageContext(req, reply);
-    if (!ctx) return;
-    const parsed = BODY_SCHEMA.safeParse(req.body);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: 'invalid_body', details: parsed.error.flatten() });
-    }
-    const { roomId, key, value } = parsed.data;
-
-    await storageClient.upsert({
-      where: { app_storage_app_room_key: { appId: ctx.appId, roomId, key } },
-      update: { value },
-      create: { appId: ctx.appId, roomId, key, value },
+// Minimalni storage adapter za GCS
+const db = {
+  async get(key: string): Promise<{ data: any; version: string } | null> {
+    const bucket = getBucket();
+    const file = bucket.file(key);
+    const [exists] = await file.exists();
+    if (!exists) return null;
+    const [[metadata], content] = await Promise.all([file.getMetadata(), file.download()]);
+    return { data: JSON.parse(content.toString()), version: String(metadata.generation) };
+  },
+  async set(key: string, data: any, version: string | 0): Promise<string> {
+    const bucket = getBucket();
+    const file = bucket.file(key);
+    const [metadata] = await file.save(JSON.stringify(data), {
+      contentType: 'application/json',
+      preconditionOpts: version ? ({ ifGenerationMatch: version } as any) : undefined,
     });
+    return String(metadata.generation);
+  },
+};
 
-    // Upsert does not tell us whether it inserted or updated, so 200 OK remains correct.
-    return reply.code(200).send({ ok: true });
+export default async function routes(server: FastifyInstance) {
+  // Preflight CORS
+  server.route({
+    method: 'OPTIONS',
+    url: '/storage',
+    handler: async (request, reply) => {
+      setCors(reply, request.headers.origin as string | undefined);
+      return reply.send();
+    },
   });
 
-  app.get('/storage/item', async (req, reply) => {
-    const ctx = await resolveStorageContext(req, reply);
-    if (!ctx) return;
-    const parsed = QUERY_SCHEMA.safeParse(req.query);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: 'invalid_query', details: parsed.error.flatten() });
-    }
-    const { roomId, key } = parsed.data;
-    const where = { app_storage_app_room_key: { appId: ctx.appId, roomId, key } };
-    const existing = await storageClient.findUnique({ where }).catch(() => null);
-    if (!existing) {
-      return reply.code(404).send({ error: 'not_found' });
-    }
-    return reply.code(200).send({ value: existing.value });
+  // Zahtijevaj autentificiranog usera
+  server.addHook('preHandler', requireRole('user'));
+
+  // GET snapshot
+  server.route({
+    method: 'GET',
+    url: '/storage',
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: { ns: { type: 'string' } },
+        required: ['ns'],
+      },
+    },
+    handler: async (request: FastifyRequest<{ Querystring: { ns: string } }>, reply) => {
+      const userId = (request as any).authUser.uid;
+      const { ns } = request.query;
+      const key = `userAppData/${userId}/${ns}.json`;
+      try {
+        const result = await db.get(key);
+        const version = result?.version || '0';
+        const data = result?.data || {};
+        reply.header('ETag', `"${version}"`);
+        setCors(reply, request.headers.origin as string | undefined);
+        return data;
+      } catch (error) {
+        request.log.error({ err: error, userId, ns }, 'Storage GET failed');
+        return reply.status(500).send({ error: 'Internal Server Error' });
+      }
+    },
   });
 
-  app.delete('/storage/item', async (req, reply) => {
-    const ctx = await resolveStorageContext(req, reply);
-    if (!ctx) return;
-    const parsed = QUERY_SCHEMA.safeParse(req.query);
-    if (!parsed.success) {
-      return reply.code(400).send({ error: 'invalid_query', details: parsed.error.flatten() });
-    }
-    const { roomId, key } = parsed.data;
-    await storageClient.deleteMany({
-      where: { appId: ctx.appId, roomId, key },
-    });
-    return reply.code(204).send();
+  // PATCH batch
+  server.route({
+    method: 'PATCH',
+    url: '/storage',
+    config: {
+      rateLimit: {
+        max: 6,
+        timeWindow: '10 seconds',
+        keyGenerator: (req: FastifyRequest<{ Querystring: { ns: string } }>) => {
+          const userId = (req as any).authUser?.uid || 'anon';
+          const ns = req.query.ns || 'default';
+          return `${userId}:${ns}`;
+        },
+        onExceeded: (_req, _key) => {
+          server.metrics.storage_patch_rate_limited_total.inc();
+        },
+      },
+    },
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: { ns: { type: 'string' } },
+        required: ['ns'],
+      },
+    },
+    handler: async (
+      request: FastifyRequest<{ Querystring: { ns: string }; Body: unknown }>,
+      reply,
+    ) => {
+      const end = server.metrics.storage_patch_duration_seconds.startTimer();
+      server.metrics.storage_patch_total.inc();
+
+      const userId = (request as any).authUser.uid;
+      const { ns } = request.query;
+      const key = `userAppData/${userId}/${ns}.json`;
+      const ifMatch = stripQuotes(request.headers['if-match']);
+      let operations: PatchBody;
+
+      const logPayload = { userId, ns, ifMatch };
+
+      if (!ifMatch) {
+        return reply.status(400).send({ error: 'If-Match header is required' });
+      }
+
+      try {
+        operations = PatchBodySchema.parse(request.body);
+      } catch (e: any) {
+        request.log.warn({ ...logPayload, err: e.errors || e }, 'Invalid batch request');
+        return reply.code(400).send({ error: 'Invalid batch format', details: e?.errors });
+      }
+
+      try {
+        const current = await db.get(key);
+        const currentVersion = current?.version || '0';
+
+        if (String(currentVersion) !== String(ifMatch)) {
+          server.metrics.storage_patch_412_total.inc();
+          request.log.info({ ...logPayload, currentVersion }, 'Storage patch conflict (412)');
+          return reply.status(412).send({ error: 'Version mismatch' });
+        }
+
+        let data = current?.data || {};
+        for (const op of operations) {
+          switch (op.op) {
+            case 'set':
+              const valueStr = JSON.stringify(op.value);
+              if (Buffer.byteLength(valueStr, 'utf-8') > 16 * 1024) {
+                const error = `Value for key '${op.key}' exceeds 16KB limit.`;
+                request.log.warn({ ...logPayload, key: op.key }, error);
+                return reply.status(400).send({ error });
+              }
+              data[op.key] = op.value;
+              break;
+            case 'del':
+              delete data[op.key];
+              break;
+            case 'clear':
+              data = {};
+              break;
+          }
+        }
+
+        const dataStr = JSON.stringify(data);
+        if (Buffer.byteLength(dataStr, 'utf-8') > 1_048_576) { // 1 MB limit on final snapshot
+          const error = 'Final snapshot too large (limit 1MB)';
+          request.log.warn({ ...logPayload, size: dataStr.length }, error);
+          return reply.status(413).send({ error });
+        }
+
+        const newVersion = await db.set(key, data, currentVersion || 0);
+        reply.header('ETag', `"${String(newVersion)}"`);
+        setCors(reply, request.headers.origin as string | undefined);
+
+        server.metrics.storage_batch_size.observe(operations.length);
+        server.metrics.storage_patch_success_total.inc();
+        end(); // End duration timer
+
+        request.log.info(
+          { ...logPayload, newVersion, batchSize: operations.length, status: 200 },
+          'Storage patch successful'
+        );
+
+        return { version: newVersion, snapshot: data };
+      } catch (error: any) {
+        end(); // End duration timer
+        if (error?.code === 412 || /Precondition/i.test(String(error?.message))) {
+          server.metrics.storage_patch_412_total.inc();
+          request.log.info({ ...logPayload, currentVersion: ifMatch }, 'Storage patch conflict (412) on write');
+          return reply.status(412).send({ error: 'Version mismatch' });
+        }
+
+        request.log.error({ ...logPayload, err: error }, 'Storage PATCH failed');
+        return reply.status(500).send({ error: 'Internal Server Error' });
+      }
+    },
   });
 }

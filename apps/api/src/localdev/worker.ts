@@ -16,7 +16,7 @@ import { initBuild, updateBuild } from '../models/Build.js';
 import type { AppRecord } from '../types.js';
 import { writeArtifact } from '../utils/artifacts.js';
 import { transformHtmlLite } from '../lib/csp.js';
-import { detectRoomsStorageKeys } from '../lib/roomsBridge.js';
+
 
 type BundleMetadata = {
   name?: string;
@@ -253,18 +253,6 @@ async function rewriteIndexHtml(bundleDir: string, log: (s: string) => void): Pr
 
       const cfg = getConfig();
       if (cfg.PUBLISH_CSP_AUTOFIX !== false) {
-        const roomsAllowlist = Array.isArray(cfg.THESARA_ROOMS_KEYS)
-          ? cfg.THESARA_ROOMS_KEYS
-          : [];
-        let detectedRoomsKeys: string[] = [];
-        if (cfg.PUBLISH_ROOMS_AUTOBRIDGE && roomsAllowlist.length) {
-          detectedRoomsKeys = await detectRoomsStorageKeys(bundleDir, roomsAllowlist, log);
-          if (detectedRoomsKeys.length) {
-            log(`[rooms-bridge] detected storage keys: ${detectedRoomsKeys.join(', ')}`);
-          } else {
-            log('[rooms-bridge] no matching storage keys detected');
-          }
-        }
         const report = await transformHtmlLite({
           indexPath,
           rootDir: bundleDir,
@@ -273,8 +261,6 @@ async function rewriteIndexHtml(bundleDir: string, log: (s: string) => void): Pr
           vendorMaxBytes: cfg.PUBLISH_VENDOR_MAX_DOWNLOAD_BYTES,
           vendorTimeoutMs: cfg.PUBLISH_VENDOR_TIMEOUT_MS,
           failOnInlineHandlers: cfg.PUBLISH_CSP_AUTOFIX_STRICT,
-          autoBridgeRooms: !!cfg.PUBLISH_ROOMS_AUTOBRIDGE && detectedRoomsKeys.length > 0,
-          roomsStorageKeys: detectedRoomsKeys,
           apiBase: cfg.PUBLIC_BASE,
           log: (msg) => log(msg),
         });
