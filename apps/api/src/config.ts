@@ -134,6 +134,46 @@ export function getConfig() {
       'STRIPE_SUCCESS_URL does not contain /billing/success; check your configuration.'
     );
   }
+  const stripeSecretKey = (() => {
+    const value = process.env.STRIPE_SECRET_KEY;
+    if (value && value.trim()) {
+      return value;
+    }
+    if (isProd) {
+      return getEnv('STRIPE_SECRET_KEY');
+    }
+    console.warn(
+      'Missing STRIPE_SECRET_KEY environment variable; using a development dummy key.'
+    );
+    return 'sk_test_dummy';
+  })();
+  const stripeWebhookSecret = (() => {
+    const value = process.env.STRIPE_WEBHOOK_SECRET;
+    if (value && value.trim()) {
+      return value;
+    }
+    if (isProd) {
+      return getEnv('STRIPE_WEBHOOK_SECRET');
+    }
+    console.warn(
+      'Missing STRIPE_WEBHOOK_SECRET environment variable; using a development dummy secret.'
+    );
+    return 'whsec_dummy';
+  })();
+  const stripeDefaultCancelUrl = `${WEB_BASE}/billing/cancel`;
+  const stripeCancelUrl = (() => {
+    const value = process.env.STRIPE_CANCEL_URL;
+    if (value && value.trim()) {
+      return value;
+    }
+    if (isProd) {
+      return getEnv('STRIPE_CANCEL_URL');
+    }
+    console.warn(
+      'Missing STRIPE_CANCEL_URL environment variable; using a development cancel URL derived from WEB_BASE.'
+    );
+    return stripeDefaultCancelUrl;
+  })();
   let IP_SALT = process.env.IP_SALT;
   if (!IP_SALT) {
     console.warn('Missing IP_SALT environment variable; using a temporary random salt.');
@@ -248,10 +288,10 @@ export function getConfig() {
     },
     NODE_ENV: process.env.NODE_ENV || 'development',
     STRIPE: {
-      secretKey: getEnv('STRIPE_SECRET_KEY'),
-      webhookSecret: getEnv('STRIPE_WEBHOOK_SECRET'),
+      secretKey: stripeSecretKey,
+      webhookSecret: stripeWebhookSecret,
       successUrl: STRIPE_SUCCESS_URL,
-      cancelUrl: getEnv('STRIPE_CANCEL_URL'),
+      cancelUrl: stripeCancelUrl,
       platformFeePercent: parseNumberEnv('PLATFORM_FEE_PERCENT', 0),
       goldPriceId: process.env.GOLD_PRICE_ID ?? '',
       noadsPriceId: process.env.NOADS_PRICE_ID ?? '',
