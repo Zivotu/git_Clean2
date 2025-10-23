@@ -10,5 +10,8 @@
     "build:api": "pnpm --filter @loopyway/api build",
     "build:web": "pnpm --filter @loopyway/web build",
     "build": "pnpm run build:api && pnpm run build:web"
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3"
   }
 }

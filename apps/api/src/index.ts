@@ -1,8 +1,13 @@
-import { config as dotenv } from 'dotenv';
+import path from 'node:path';
+import { config as dotenvConfig } from 'dotenv';
+
+// IMPORTANT: Load environment variables before any other code.
+dotenvConfig({ path: path.resolve(__dirname, `../.env`) });
+
 import fs from 'node:fs';
 import fsSync from 'node:fs';
-import path from 'node:path';
-import fastify, {
+import fastify,
+{
   type FastifyRequest,
   type FastifyReply,
   type FastifyInstance,
@@ -55,19 +60,6 @@ import swaggerPlugin from './plugins/swagger.js';
 import rateLimitPlugin from './plugins/rateLimit.js';
 import roomsSyncV1Routes from './routes/roomsV1/index.js';
 
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-const candidatePaths = [
-  path.resolve(process.cwd(), envFile),
-  path.resolve(__dirname, `../${envFile}`),
-  path.resolve(__dirname, `../../${envFile}`),
-];
-for (const candidate of candidatePaths) {
-  if (fs.existsSync(candidate)) {
-    dotenv({ path: candidate });
-    break;
-  }
-}
-
 export let app: FastifyInstance;
 
 export async function createServer() {
@@ -93,7 +85,16 @@ export async function createServer() {
         } catch {}
       }
       if (!copied) {
-        const stub = `import * as React from 'react';\nexport function Card(p:any){return React.createElement('div',{...p, className: (p.className||'')})}\nexport function CardHeader(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}\nexport function CardTitle(p:any){return React.createElement('h3',{...p, className: 'text-lg font-semibold ' + (p.className||'')})}\nexport function CardContent(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}\nexport function Button(p:any){return React.createElement('button',{...p, className: (p.className||'')})}\nexport function Input(p:any){return React.createElement('input',{...p, className: (p.className||'')})}\nexport function Label(p:any){return React.createElement('label',{...p, className: (p.className||'')})}\nexport function Textarea(p:any){return React.createElement('textarea',{...p, className: (p.className||'')})}\nexport function Slider(p:any){return React.createElement('input',{type:'range',...p})}\n`;
+        const stub = `import * as React from 'react';\nexport function Card(p:any){return React.createElement('div',{...p, className: (p.className||'')})}
+export function CardHeader(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}
+export function CardTitle(p:any){return React.createElement('h3',{...p, className: 'text-lg font-semibold ' + (p.className||'')})}
+export function CardContent(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}
+export function Button(p:any){return React.createElement('button',{...p, className: (p.className||'')})}
+export function Input(p:any){return React.createElement('input',{...p, className: (p.className||'')})}
+export function Label(p:any){return React.createElement('label',{...p, className: (p.className||'')})}
+export function Textarea(p:any){return React.createElement('textarea',{...p, className: (p.className||'')})}
+export function Slider(p:any){return React.createElement('input',{type:'range',...p})}
+`;
         fsSync.writeFileSync(dest, stub, 'utf8');
       }
     }
@@ -123,12 +124,12 @@ export async function createServer() {
   const wildcardOrigins: RegExp[] = [];
 
   const escapeRegex = (value: string) =>
-    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    value.replace(/[.*+?^${}()|[\\]/g, '\\$&');
 
   for (const origin of corsOrigins) {
     const lower = origin.toLowerCase();
     if (origin.includes('*')) {
-      const pattern = `^${escapeRegex(origin).replace(/\\\*/g, '.*')}$`;
+      const pattern = `^${escapeRegex(origin).replace(/\\*/g, '.*')}$`;
       try {
         wildcardOrigins.push(new RegExp(pattern, 'i'));
       } catch {
