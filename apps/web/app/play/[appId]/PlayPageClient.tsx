@@ -1,5 +1,6 @@
+"use client"
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getJwt, fetchSnapshot, patchStorage } from '@/lib/storage/snapshot-loader';
+import { getJwt, setInitialJwt, fetchSnapshot, patchStorage } from '@/lib/storage/snapshot-loader';
 
 const APPS_HOST = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false';
@@ -13,7 +14,6 @@ function base64url(bytes: Uint8Array): string {
 }
 
 export default function PlayPageClient({ appId }: { appId: string }) {
-  const { user, loading: authLoading } = useAuth();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [bootstrap, setBootstrap] = useState<{ snapshot: any; version: string } | null>(null);
@@ -22,16 +22,14 @@ export default function PlayPageClient({ appId }: { appId: string }) {
   const bcRef = useRef<BroadcastChannel | null>(null); // BroadcastChannel for multi-tab sync
 
   useEffect(() => {
-    if (authLoading || !SHIM_ENABLED) return;
+    if (!SHIM_ENABLED) return;
 
     let cancelled = false;
     (async () => {
       try {
-        if (!user) {
-          throw new Error('User is not authenticated.');
-        }
         const jwt = await getJwt();
-        const snap = await fetchSnapshot(jwt, user.uid, appId);
+        await setInitialJwt(jwt);
+        const snap = await fetchSnapshot(jwt, appId);
         if (cancelled) return;
 
         storageVersionRef.current = snap.version;
@@ -45,7 +43,7 @@ export default function PlayPageClient({ appId }: { appId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [appId, user, authLoading]);
+  }, [appId]);
 
   const onMessage = useCallback((event: MessageEvent) => {
     const src = iframeRef.current?.contentWindow;
@@ -82,9 +80,9 @@ export default function PlayPageClient({ appId }: { appId: string }) {
 
     switch (msg.type) {
       case 'thesara:storage:flush': {
-        if (user && msg.batch && Array.isArray(msg.batch) && msg.batch.length > 0) {
+        if (msg.batch && Array.isArray(msg.batch) && msg.batch.length > 0) {
           console.log(`[Parent] Flushing ${msg.batch.length} items from iframe.`);
-          patchStorage(user.uid, appId, msg.batch, storageVersionRef.current)
+          patchStorage(appId, msg.batch, storageVersionRef.current)
             .then(newVersion => {
               storageVersionRef.current = newVersion;
               // Acknowledge the flush so the shim can clear its queue
@@ -100,7 +98,7 @@ export default function PlayPageClient({ appId }: { appId: string }) {
       default:
         if (process.env.NODE_ENV !== 'production') console.debug('[Parent] Ignoring unknown msg type', msg.type);
     }
-  }, [appId, user, bootstrap]);
+  }, [appId, bootstrap]);
 
   useEffect(() => {
     if (!SHIM_ENABLED) return;
@@ -118,7 +116,7 @@ export default function PlayPageClient({ appId }: { appId: string }) {
     // The 'thesara:shim:ready' message from the iframe will trigger the init.
   };
 
-  if (authLoading || (!bootstrap && !error)) {
+  if ((!bootstrap && !error)) {
     return <div className="p-6">Loading app...</div>;
   }
 
