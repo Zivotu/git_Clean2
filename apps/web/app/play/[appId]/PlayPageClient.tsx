@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { getJwt, setInitialJwt, fetchSnapshot, patchStorage } from '@/lib/storage/snapshot-loader';
+import { getJwt, setInitialJwt, fetchSnapshot, patchStorage, makeNamespace } from '@/lib/storage/snapshot-loader';
 
 const APPS_HOST = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false';

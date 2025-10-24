@@ -6,7 +6,6 @@ import { apiFetch, ApiError } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { joinUrl } from '@/lib/url';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
-import { auth } from '@/lib/firebase';
 import { getJwt, setInitialJwt, fetchSnapshot, patchStorage, makeNamespace, BatchItem } from '@/lib/storage/snapshot-loader';
 
 type BuildStatusResponse = {
@@ -65,8 +64,8 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               token: effectiveToken,
-              userId: auth?.currentUser?.uid || 'guest',
-              role: (auth?.currentUser as any)?.role || 'user',
+              userId: 'guest',
+              role: 'user',
             }),
           });
           if (!response.ok) {
@@ -88,11 +87,9 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
-    if (!auth.currentUser) return;
-
     const bootstrap = async () => {
         try {
-            const ns = makeNamespace(auth.currentUser.uid, appId);
+            const ns = makeNamespace(appId, undefined);
             const jwt = await getJwt();
             await setInitialJwt(jwt);
             const { snapshot, version } = await fetchSnapshot(jwt, ns);
@@ -139,7 +136,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
           break;
 
         case 'thesara:storage:flush': {
-          if (!auth.currentUser || !signedToken || !storageVersionRef.current) {
+          if (!signedToken || !storageVersionRef.current) {
             console.warn('[storage] Flush received but user/token/version is not ready.');
             return;
           }
@@ -147,7 +144,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
           if (!batch || batch.length === 0) return;
 
           console.log(`[storage] Flushing batch of ${batch.length} items.`);
-          const ns = makeNamespace(auth.currentUser.uid, appId);
+          const ns = makeNamespace(appId, undefined);
 
           try {
             const { newVersion, newSnapshot } = await patchStorage(
@@ -423,7 +420,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
     };
   }, [appUrl, fallbackAppUrl, buildId, signedToken, appId]);
 
-  if (loading || (auth.currentUser && !storageSnapshot)) {
+  if (loading || !storageSnapshot) {
     return (
       <div style={{ padding: 24 }}>
         <h1>Loading app...</h1>
