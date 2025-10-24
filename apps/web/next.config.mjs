@@ -65,15 +65,27 @@ const baseConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_API_HOST || 'https://api.thesara.space'}`,
-              `frame-src ${process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space'}`,
-              "img-src 'self' data: https:",
-              "frame-ancestors 'none'",
-            ].join('; '),
+            value: (() => {
+              const api = process.env.NEXT_PUBLIC_API_HOST || 'https://api.thesara.space';
+              const apps = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
+              const devConnect = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
+              const devImg = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
+              const devFirebase =
+                isDev && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1'
+                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com'
+                  : '';
+              
+              const policies = [
+                "default-src 'self'",
+                `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+                "style-src 'self' 'unsafe-inline'",
+                `connect-src 'self' ${api}${devConnect}${devFirebase}`,
+                `frame-src ${apps}`,
+                `img-src 'self' data: https:${devImg}`,
+                "frame-ancestors 'none'",
+              ];
+              return policies.join('; ');
+            })(),
           },
         ],
       },
