@@ -14,6 +14,12 @@ export const metadata = {
   description: 'Discover, play and publish mini-apps.',
 };
 
+// Firebase/Firestore se ne inicijalizira u parentu radi sigurnosnog modela.
+// Ako je potrebno za dev debug, postavi NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE=1 i učitaj uvjetno:
+if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1') {
+  // import('@/lib/firebase').then(m => m.initFirebase()).catch(() => {})
+}
+
 if (typeof window !== 'undefined') {
   void import('@/lib/apiBase').then(({ API_URL }) => {
     // eslint-disable-next-line no-console
