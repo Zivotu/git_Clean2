@@ -13,6 +13,13 @@ const baseConfig = {
   ...(isStaticExport ? { output: 'export' } : {}),
   reactStrictMode: true,
   trailingSlash: false,
+  webpack: (config, { dev }) => {
+    if (dev) {
+      // Izbjegni eval u DEV → kompatibilno s CSP bez 'unsafe-eval'
+      config.devtool = 'source-map'
+    }
+    return config
+  },
   images: {
     unoptimized: true,
   },
