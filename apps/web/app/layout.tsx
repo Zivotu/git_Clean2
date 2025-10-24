@@ -17,7 +17,7 @@ export const metadata = {
 // Firebase/Firestore se ne inicijalizira u parentu radi sigurnosnog modela.
 // Ako je potrebno za dev debug, postavi NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE=1 i učitaj uvjetno:
 if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1') {
-  // import('@/lib/firebase').then(m => m.initFirebase()).catch(() => {})
+  import('@/lib/firebase').then(m => m.initFirebase()).catch(() => {})
 }
 
 if (typeof window !== 'undefined') {
