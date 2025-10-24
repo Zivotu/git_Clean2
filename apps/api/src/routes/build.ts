@@ -64,7 +64,7 @@ export default async function buildRoutes(app: FastifyInstance) {
     reply.send({ ok: true, ...data });
   });
 
-  app.get('/build/:id/status', async (req, reply) => {
+  app.get('/build/:id/status', { config: { rateLimit: { max: 1000 } } }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const job = await readBuild(id);
     if (!job) return reply.code(404).send({ ok: false, error: 'not_found' });
