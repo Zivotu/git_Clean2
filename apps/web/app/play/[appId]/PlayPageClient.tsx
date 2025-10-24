@@ -20,6 +20,9 @@ export default function PlayPageClient({ appId }: { appId: string }) {
   const storageVersionRef = useRef('0');
   const capRef = useRef<string>(''); // Capability token for iframe communication
   const bcRef = useRef<BroadcastChannel | null>(null); // BroadcastChannel for multi-tab sync
+  const search = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const bootstrapToken = search?.get('token') || undefined
+  const userId = undefined // userId se čita na backendu iz JWT-a; ostavi undefined za app_only ili backend‑derived user
 
   useEffect(() => {
     if (!SHIM_ENABLED) return;
@@ -27,9 +30,10 @@ export default function PlayPageClient({ appId }: { appId: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const jwt = await getJwt();
+        const jwt = bootstrapToken ?? await getJwt();
         await setInitialJwt(jwt);
-        const snap = await fetchSnapshot(jwt, appId);
+        const ns = makeNamespace(appId, userId);
+        const snap = await fetchSnapshot(jwt, ns);
         if (cancelled) return;
 
         storageVersionRef.current = snap.version;
@@ -43,9 +47,9 @@ export default function PlayPageClient({ appId }: { appId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [appId]);
+  }, [appId, bootstrapToken]);
 
-  const onMessage = useCallback((event: MessageEvent) => {
+  const onMessage = useCallback(async (event: MessageEvent) => {
     const src = iframeRef.current?.contentWindow;
     // Security: Must be from our iframe
     if (!src || event.source !== src) {
@@ -82,16 +86,17 @@ export default function PlayPageClient({ appId }: { appId: string }) {
       case 'thesara:storage:flush': {
         if (msg.batch && Array.isArray(msg.batch) && msg.batch.length > 0) {
           console.log(`[Parent] Flushing ${msg.batch.length} items from iframe.`);
-          patchStorage(appId, msg.batch, storageVersionRef.current)
-            .then(newVersion => {
-              storageVersionRef.current = newVersion;
-              // Acknowledge the flush so the shim can clear its queue
-              src.postMessage({ type: 'thesara:shim:ack', cap: capRef.current }, '*');
-            })
-            .catch(err => {
-              console.error('[Parent] Failed to patch storage:', err);
-              // Optional: notify shim of failure if a retry mechanism on its side is desired
-            });
+          try {
+            const jwt = await getJwt()
+            const ns = makeNamespace(appId, userId)
+            const { newVersion } = await patchStorage(jwt, ns, storageVersionRef.current, msg.batch)
+            storageVersionRef.current = newVersion;
+            // Acknowledge the flush so the shim can clear its queue
+            src.postMessage({ type: 'thesara:shim:ack', cap: capRef.current }, '*');
+          } catch (err) {
+            console.error('[Parent] Failed to patch storage:', err);
+            // Optional: notify shim of failure if a retry mechanism on its side is desired
+          }
         }
         break;
       }
