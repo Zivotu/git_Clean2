@@ -1,3 +1,9 @@
+## F11 — Production Hardening
+- **Auth signer:** parent koristi `GET /api/jwt` (ili `?token=`) za kratkotrajni JWT; refresh je re‑sign.
+- **CSP:** prod parent ostaje strogo ograničen (nema Firebase domena). Dev može privremeno dopustiti Firebase domenama uz flag.
+- **Firebase izolacija:** parent ne inicijalizira Firebase; ako je potrebno u devu, radi uvjetno i dinamički.
+- **Namespace:** konfigurirano env varijablom `NEXT_PUBLIC_STORAGE_NS_MODE`.
+
 ## Faza 10 — JWT Refresh & Retry (parent-only)
 
 Sekvenca: `GET /storage` → **401** → `POST /api/auth/refresh` → retry `GET` → **200**. Token se čuva u memoriji parenta, s proaktivnim osvježavanjem (T‑60s) i jedinstvenim refresh lockom. Iframe nikad ne vidi JWT.
