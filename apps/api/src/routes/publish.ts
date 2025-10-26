@@ -6,12 +6,11 @@ import * as esbuild from 'esbuild';
 import { createJob, isJobActive } from '../buildQueue.js';
 import { notifyAdmins } from '../notifier.js';
 import { getBuildDir } from '../paths.js';
-import { readApps, writeApps, type AppRecord, listEntitlements } from '../db.js';
+import { readApps, writeApps, type AppRecord, listEntitlements, prisma } from '../db.js';
 import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile } from '../lib/preview.js';
 import { writeArtifact } from '../utils/artifacts.js';
-import { prisma } from '../db.js';
 import { sseEmitter } from '../lib/sseEmitter.js';
 
 function slugify(input: string): string {
@@ -65,8 +64,8 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
   }
 }
 
-  export default async function publishRoutes(app: FastifyInstance) {
-    const handler = async (req: FastifyRequest, reply: any) => {
+export default async function publishRoutes(app: FastifyInstance) {
+  const handler = async (req: FastifyRequest, reply: any) => {
     req.log.info('publish:received');
     const uid = req.authUser?.uid;
     if (!uid) {
@@ -78,7 +77,6 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
       return reply.code(400).send({ ok: false, error: 'invalid payload' });
     }
 
-    // Accept numeric IDs or slugs; normalize to string for comparisons
     const appId = (body as any).id != null ? String((body as any).id) : undefined;
     const buildId = randomUUID();
     if (isJobActive(buildId)) {
@@ -86,21 +84,16 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
     }
     body.author = body.author || { uid };
 
-      const apps = await readApps();
-      const owned = apps.filter(
-        (a) => a.author?.uid === uid || (a as any).ownerUid === uid,
-      );
-    // When updating, permit matching by id or slug (and tolerate numeric id)
-    const idxOwned = appId
-      ? owned.findIndex((a) => a.id === appId || a.slug === appId)
-      : -1;
+    const apps = await readApps();
+    const owned = apps.filter((a) => a.author?.uid === uid || (a as any).ownerUid === uid);
+    const idxOwned = appId ? owned.findIndex((a) => a.id === appId || a.slug === appId) : -1;
     const existingOwned = idxOwned >= 0 ? owned[idxOwned] : undefined;
-    const isAdmin = (req as any).authUser?.role === 'admin' || (req as any).authUser?.claims?.admin === true;
+    const isAdmin =
+      (req as any).authUser?.role === 'admin' || (req as any).authUser?.claims?.admin === true;
+
     if (!existingOwned && !isAdmin) {
       const ents = await listEntitlements(uid);
-      const gold = ents.some(
-        (e) => e.feature === 'isGold' && e.active !== false,
-      );
+      const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
       const cfg = getConfig();
       const limit = gold ? cfg.GOLD_MAX_APPS_PER_USER : cfg.MAX_APPS_PER_USER;
       const activeOwned = owned.filter((a) => a.state !== 'inactive');
@@ -115,35 +108,36 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
       }
     }
 
-    // Quick guard: block SES/lockdown in browser inline code to avoid white screens
     const code = String(body.inlineCode || '');
-    const sesRe = /(lockdown\s*\(|require\s*\(\s*['"]ses['"]\s*\)|from\s+['"]ses['"]|import\s*\(\s*['"]ses['"]\s*\))/;
+    const sesRe =
+      /(lockdown\s*\(|\brequire\s*\(\s*['"]ses['"]\s*\)|\bfrom\s+['"]ses['"]|import\s*\(\s*['"]ses['"]\s*\))/;
     if (sesRe.test(code)) {
       req.log.info({ reason: 'ses_lockdown' }, 'publish:blocked');
-      return reply
-        .code(400)
-        .send({ ok: false, error: 'ses_lockdown', code: 'ses_lockdown', message: 'SES/lockdown is not supported in the browser. Remove it or guard for server-only.' });
+      return reply.code(400).send({
+        ok: false,
+        error: 'ses_lockdown',
+        code: 'ses_lockdown',
+        message: 'SES/lockdown is not supported in the browser. Remove it or guard for server-only.',
+      });
     }
 
-    let listingId: number | undefined;
-    try {
-      const now = Date.now();
-      const numericIds = apps
-        .map((a) => Number(a.id))
-        .filter((n) => !Number.isNaN(n));
-      // Find existing by id or slug; avoid false negatives when id comes as number
-      const idx = appId ? apps.findIndex((a) => a.id === appId || a.slug === appId) : -1;
-      const existing = idx >= 0 ? apps[idx] : undefined;
-      listingId = existing
-        ? Number(existing.id)
-        : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
+    const now = Date.now();
+    const numericIds = apps
+      .map((a) => Number(a.id))
+      .filter((n) => !Number.isNaN(n));
+    const idx = appId ? apps.findIndex((a) => a.id === appId || a.slug === appId) : -1;
+    const existing = idx >= 0 ? apps[idx] : undefined;
+    const listingId = existing
+      ? Number(existing.id)
+      : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
 
-    await prisma.build.create({
+    try {
+      await prisma.build.create({
         data: {
           id: buildId,
           listingId: String(listingId),
           status: 'queued',
-          mode: 'legacy', // Start as legacy, worker will update
+          mode: 'legacy',
         },
       });
 
@@ -152,28 +146,41 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         event: 'status',
         payload: { status: 'queued' },
       });
-
     } catch (err) {
-        req.log.error({ err }, 'publish:build_record_failed');
-        return reply.code(500).send({ ok: false, error: 'database_error' });
+      req.log.error({ err }, 'publish:build_record_failed');
+      return reply.code(500).send({ ok: false, error: 'database_error' });
     }
 
     try {
       const dir = getBuildDir(buildId);
       await fs.mkdir(dir, { recursive: true });
 
-      // Write only the user's raw code to app.js. The build worker will transpile it.
-      // Write a minimal manifest so the /build/:id/status route doesn't 404 immediately.
-      // The build worker will overwrite this with a proper one.
+      const isHtml = body.inlineCode.trim().toLowerCase().startsWith('<!doctype html>');
+      let indexHtml =
+        '<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><style>html,body{margin:0;padding:0} body{overflow-x:hidden} #root{min-height:100vh}</style></head><body><div id="root"></div><script type="module" src="./app.js"></script></body></html>';
+      let appJs = '';
+
+      if (isHtml) {
+        indexHtml = body.inlineCode;
+        appJs = '';
+      } else {
+        const result = await esbuild.transform(body.inlineCode, {
+          loader: 'tsx',
+          format: 'esm',
+          jsx: 'automatic',
+          jsxDev: process.env.NODE_ENV !== 'production',
+        });
+        appJs = result.code;
+      }
+
       const buildDir = path.join(dir, 'build');
       await fs.mkdir(buildDir, { recursive: true });
-      await fs.writeFile(path.join(buildDir, 'app.js'), body.inlineCode, 'utf8');
+      await fs.writeFile(path.join(buildDir, 'index.html'), indexHtml, 'utf8');
+      await fs.writeFile(path.join(buildDir, 'app.js'), appJs, 'utf8');
 
-      // Also keep top-level copies for debugging/inspection
-      await fs.writeFile(path.join(dir, 'app.js'), body.inlineCode, 'utf8');
+      await fs.writeFile(path.join(dir, 'index.html'), indexHtml, 'utf8');
+      await fs.writeFile(path.join(dir, 'app.js'), appJs, 'utf8');
 
-      // Ensure minimal manifest so the web UI can read /builds/:id/build/manifest_v1.json even
-      // before background workers enrich artifacts. This prevents white screens.
       try {
         const manifest = {
           id: buildId,
@@ -185,7 +192,6 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         };
         const manifestJson = JSON.stringify(manifest, null, 2);
         await fs.writeFile(path.join(buildDir, 'manifest_v1.json'), manifestJson, 'utf8');
-        // Keep artifact index in sync for tooling that relies on it
         await writeArtifact(buildId, 'build/manifest_v1.json', manifestJson);
       } catch (err) {
         req.log?.warn?.({ err, buildId }, 'publish:manifest_write_failed');
@@ -203,37 +209,34 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         .code(503)
         .send({ ok: false, error: 'build_queue_unavailable', message: 'Build queue unavailable' });
     }
-    try {
-      const now = Date.now();
-      const numericIds = apps
-        .map((a) => Number(a.id))
-        .filter((n) => !Number.isNaN(n));
-      // Find existing by id or slug; avoid false negatives when id comes as number
-      const idx = appId ? apps.findIndex((a) => a.id === appId || a.slug === appId) : -1;
-      const existing = idx >= 0 ? apps[idx] : undefined;
-      const existingSlug = existing?.slug;
-      const baseSlug = slugify(body.title || '') || `app-${listingId}`;
-      let slug = existingSlug || baseSlug;
-      if (!existingSlug) {
-        let cnt = 1;
-        while (apps.some((a) => a.slug === slug)) {
-          slug = `${baseSlug}-${cnt++}`;
-        }
-      }
-      const { version, archivedVersions } = computeNextVersion(existing, now);
-      const sanitizeTranslations = (input?: Record<string, { title?: string; description?: string }>) => {
-        const out: Record<string, { description?: string }> = {};
-        for (const [loc, obj] of Object.entries(input || {})) {
-          const l = String(loc).toLowerCase().slice(0, 2);
-          if (!['en','hr','de'].includes(l)) continue;
-          const description = (obj?.description ?? '').toString().trim();
-          if (!description) continue;
-          out[l] = { description };
-        }
-        return out as any;
-      };
 
-      let payloadPreviewUrl: string | undefined;
+    const existingSlug = existing?.slug;
+    const baseSlug = slugify(body.title || '') || `app-${listingId}`;
+    let slug = existingSlug || baseSlug;
+    if (!existingSlug) {
+      let cnt = 1;
+      while (apps.some((a) => a.slug === slug)) {
+        slug = `${baseSlug}-${cnt++}`;
+      }
+    }
+
+    const { version, archivedVersions } = computeNextVersion(existing, now);
+    const sanitizeTranslations = (
+      input?: Record<string, { title?: string; description?: string }>,
+    ) => {
+      const out: Record<string, { description?: string }> = {};
+      for (const [loc, obj] of Object.entries(input || {})) {
+        const l = String(loc).toLowerCase().slice(0, 2);
+        if (!['en', 'hr', 'de'].includes(l)) continue;
+        const description = (obj?.description ?? '').toString().trim();
+        if (!description) continue;
+        out[l] = { description };
+      }
+      return out as any;
+    };
+
+    try {
+      let payloadPreviewUrl: string | undefined = existing?.previewUrl;
       try {
         const parsedPreview = parseDataUrl(body.preview?.dataUrl);
         if (parsedPreview) {
@@ -275,11 +278,13 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         };
         const provided = sanitizeTranslations(body.translations);
         if (Object.keys(provided).length) {
-          // Merge over existing translations
           const current = (existing as any).translations || {};
-          base["translations" as any] = { ...current } as any;
+          (base as any).translations = { ...current } as any;
           for (const [k, v] of Object.entries(provided)) {
-            (base as any).translations[k] = { ...(base as any).translations[k], ...v };
+            (base as any).translations[k] = {
+              ...(base as any).translations[k],
+              ...v,
+            };
           }
         }
         const { next } = ensureListingPreview(base);
@@ -310,13 +315,16 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
           previewUrl: payloadPreviewUrl,
         };
         const provided = sanitizeTranslations(body.translations);
-        if (Object.keys(provided).length) (base as any).translations = provided as any;
+        if (Object.keys(provided).length) {
+          (base as any).translations = provided as any;
+        }
         const { next } = ensureListingPreview(base);
         apps.push(next);
       }
+
       await writeApps(apps);
       req.log.info({ buildId, listingId, slug }, 'publish:created');
-      // Bestâ€‘effort admin notification on submission (with richer context)
+
       try {
         const cfg = getConfig();
         const title = (body.title || '').trim() || `App ${listingId}`;
@@ -325,10 +333,8 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         const claims: any = (req as any).authUser?.claims || {};
         const displayName = claims.name || claims.displayName || undefined;
         const email = claims.email || undefined;
-        const prettyAuthor = [displayName, authorHandle]
-          .filter(Boolean)
-          .join(' Â· ');
-        const subject = `Novo slanje: ${title}${prettyAuthor ? ` â€” ${prettyAuthor}` : ''}`;
+        const prettyAuthor = [displayName, authorHandle].filter(Boolean).join(' · ');
+        const subject = `Novo slanje: ${title}${prettyAuthor ? ` — ${prettyAuthor}` : ''}`;
         const lines: string[] = [];
         lines.push(`Naslov: ${title}`);
         lines.push(`ID: ${listingId}`);
@@ -336,41 +342,46 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         lines.push(`Build ID: ${buildId}`);
         lines.push(`Autor UID: ${authorUid}`);
         if (displayName) lines.push(`Autor: ${displayName}`);
-        if (authorHandle) lines.push(`KorisniÄko ime: @${authorHandle}`);
+        if (authorHandle) lines.push(`Korisničko ime: @${authorHandle}`);
         if (email) lines.push(`E-mail: ${email}`);
         const desc = String(body.description || '').trim();
         if (desc) {
-          const short = desc.length > 300 ? desc.slice(0, 300) + 'â€¦' : desc;
+          const short = desc.length > 300 ? `${desc.slice(0, 300)}…` : desc;
           lines.push('');
           lines.push('Opis:');
           lines.push(short);
         }
         lines.push('');
-        const webBase = (cfg.WEB_BASE || 'http://localhost:3000').replace(///$/, '');
-        const apiBase = (cfg.PUBLIC_BASE || `http://127.0.0.1:${cfg.PORT}`).replace(///$/, '');
+        const cfgWebBase = cfg.WEB_BASE || 'http://localhost:3000';
+        const cfgApiBase = cfg.PUBLIC_BASE || `http://127.0.0.1:${cfg.PORT}`;
+        const webBase = cfgWebBase.replace(/\/$/, '');
+        const apiBase = cfgApiBase.replace(/\/$/, '');
         lines.push('Linkovi:');
-        lines.push(`â€¢ Admin pregled: ${webBase}/admin/`);
-        lines.push(`â€¢ Status builda: ${apiBase}/build/${buildId}/status`);
-        lines.push(`â€¢ DogaÄ‘aji builda (SSE): ${apiBase}/build/${buildId}/events`);
+        lines.push(`• Admin pregled: ${webBase}/admin/`);
+        lines.push(`• Status builda: ${apiBase}/build/${buildId}/status`);
+        lines.push(`• Događaji builda (SSE): ${apiBase}/build/${buildId}/events`);
         await notifyAdmins(subject, lines.join('\n'));
-      } catch {} // Best-effort background translation for core locales
+      } catch (err) {
+        req.log?.warn?.({ err }, 'publish:notify_admins_failed');
+      }
+
       try {
         const { ensureListingTranslations } = await import('../lib/translate.js');
         const created = apps.find((a) => a.id === String(listingId));
         if (created) {
-          // Fire and forget
           void ensureListingTranslations(created as any, ['en', 'hr', 'de']);
         }
-      } catch {} // Return reply.code(202).send({ ok: true, buildId, listingId, slug });
+      } catch (err) {
+        req.log?.warn?.({ err }, 'publish:translations_enqueue_failed');
+      }
+
+      return reply.code(202).send({ ok: true, buildId, listingId, slug });
     } catch (err) {
       req.log.error({ err }, 'publish:listing_write_failed');
-      return reply
-        .code(500)
-        .send({ ok: false, error: 'listing_write_failed' });
+      return reply.code(500).send({ ok: false, error: 'listing_write_failed' });
     }
   };
 
-  // Accept both with and without trailing slash (Next.js dev adds it by default)
   app.post('/publish', handler);
   app.post('/publish/', handler);
   app.post('/createx/publish', handler);

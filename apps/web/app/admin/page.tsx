@@ -345,6 +345,8 @@ export default function AdminDashboard() {
     }
   }, [tab]);
 
+  // `auth` is a module-level singleton from our Firebase wrapper, so it's safe to omit
+  // it from the dependency list and treat the reference as stable.
   useEffect(() => {
     if (!auth) return;
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
