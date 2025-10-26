@@ -7,13 +7,20 @@ const roomsBridgeDeprecated: FastifyPluginAsync = async (app) => {
     docs: '/docs/API_STORAGE.md',
   };
 
-  app.all('/rooms/bridge/*', async (_req, reply) => {
-    reply.code(410).send(gone);
-  });
+  const deprecatedPaths = [
+    '/rooms/bridge',
+    '/rooms/bridge/*',
+    '/rooms/v1/bridge',
+    '/rooms/v1/bridge/*',
+    '/rooms/autobridge',
+    '/rooms/autobridge/*',
+  ];
 
-  app.all('/rooms/v1/bridge/*', async (_req, reply) => {
-    reply.code(410).send(gone);
-  });
+  for (const path of deprecatedPaths) {
+    app.all(path, async (_req, reply) => {
+      reply.code(410).send(gone);
+    });
+  }
 };
 
 export default roomsBridgeDeprecated;

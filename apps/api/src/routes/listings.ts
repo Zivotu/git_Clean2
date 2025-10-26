@@ -23,7 +23,7 @@ function pickLang(req: FastifyRequest): SupportedLocale | undefined {
 }
 
 export default async function listingsRoutes(app: FastifyInstance) {
-  app.get('/listings', async (req: FastifyRequest) => {
+  const listHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { owner, ownerUid } = (req.query as { owner?: string; ownerUid?: string }) || {};
     const ownerId = owner || ownerUid;
 
@@ -56,7 +56,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     }
 
     const lang = pickLang(req);
-    if (!lang) return { items };
+    if (!lang) return reply.send({ items });
     // Best-effort translate missing items for the requested language
     const out = await Promise.all(
       items.map(async (it) => {
@@ -72,8 +72,14 @@ export default async function listingsRoutes(app: FastifyInstance) {
         }
       }),
     );
-    return { items: out };
-  });
+    return reply.send({ items: out });
+  };
+
+  // Primarna ruta
+  app.route({ method: ['GET','HEAD'], url: '/listings', handler: listHandler });
+
+  // Alias za rad iza /api prefiksa (obrambeno, iako hook rješava većinu slučajeva)
+  app.route({ method: ['GET','HEAD'], url: '/api/listings', handler: listHandler });
 
   const DEBUG_LISTING_AUTH = process.env.DEBUG_LISTING_AUTH === '1';
 

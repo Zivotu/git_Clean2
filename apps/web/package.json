@@ -5,16 +5,17 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:ci": "playwright test --reporter=line",
-    "dev": "next dev",
+    "dev": "cross-env PORT=3000 NEXT_PUBLIC_APP_URL=http://localhost:3000 next dev",
     "dev:remote": "cross-env PORT=3000 NEXT_PUBLIC_API_URL=https://api.thesara.space/api INTERNAL_API_URL=https://api.thesara.space/api next dev",
-    "dev:local": "cross-env PORT=3000 NEXT_PUBLIC_LOCAL_API_URL=http://127.0.0.1:8788 INTERNAL_API_URL=http://127.0.0.1:8788 next dev",
+    "dev:local": "cross-env PORT=3000 NEXT_PUBLIC_APP_URL=http://localhost:3000 NEXT_PUBLIC_API_URL=http://127.0.0.1:8788 INTERNAL_API_URL=http://127.0.0.1:8788 next dev",
     "build": "next build",
     "export": "cross-env NEXT_OUTPUT=export next build",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
-    "clean": "rimraf .next"
+    "clean": "rimraf .next node_modules package-lock.json",
+    "reinstall": "npm run clean && npm install"
   },
   "dependencies": {
     "@loopyway/entitlements": "workspace:*",
@@ -36,10 +37,11 @@
     "@types/node": "24.2.1",
     "@types/react": "19.1.9",
     "@types/react-dom": "^19.1.7",
+    "@playwright/test": "^1.45.3",
     "autoprefixer": "10.4.19",
     "cross-env": "^7.0.3",
     "eslint": "8.57.0",
-    "eslint-config-next": "14.2.5",
+    "eslint-config-next": "15.5.4",
     "jsdom": "^24.0.0",
     "postcss": "8.4.38",
     "rimraf": "^5.0.5",

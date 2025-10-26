@@ -21,6 +21,8 @@ export type BuildState =
   | 'pending_review'
   | 'pending_review_llm'
   | 'approved'
+  | 'publishing'
+  | 'publish_failed'
   | 'published'
   | 'rejected'
   | 'failed';

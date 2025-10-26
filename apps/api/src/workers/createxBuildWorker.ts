@@ -8,6 +8,8 @@ import { initBuild, updateBuild } from '../models/Build.js';
 import { getBuildDir } from '../paths.js';
 import { REDIS_URL } from '../config.js';
 import { readApps, writeApps } from '../db.js';
+import { bundlePlayBuild } from '../build/bundler.js';
+import { generateSri } from '../lib/fsx.js';
 
 const QUEUE_NAME = 'createx-build';
 
@@ -203,10 +205,54 @@ async function runBuildProcess(buildId: string): Promise<void> {
     });
   });
 
+  // The createx:build script has finished and populated the 'build' directory.
+  const buildDir = path.resolve('build');
+
+  const { outFile } = await bundlePlayBuild(buildDir);
+  const bundleContent = await fs.readFile(outFile, 'utf-8');
+  const sri = generateSri(bundleContent);
+
+  await rewriteIndexHtml({ buildDir, sri });
+
+  const manifestPath = path.join(buildDir, 'manifest_v1.json');
+  const manifest = {
+    entry: './app.bundle.js',
+    integrity: sri,
+    createdAt: new Date().toISOString(),
+  };
+  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf-8');
+
+
   const src = path.resolve('build');
   const dest = path.join(getBuildDir(buildId), 'build');
   await fs.rm(dest, { recursive: true, force: true });
   await fs.mkdir(dest, { recursive: true });
   await fs.cp(src, dest, { recursive: true });
   await fs.rm(src, { recursive: true, force: true });
+}
+
+async function rewriteIndexHtml({
+  buildDir,
+  sri,
+}: {
+  buildDir: string;
+  sri: string;
+}): Promise<void> {
+  const indexPath = path.join(buildDir, 'index.html');
+  let html = await fs.readFile(indexPath, 'utf-8');
+  const scriptTag = `<script type="module" src="./app.bundle.js" integrity="${sri}" crossorigin="anonymous"></script>`;
+  const scriptRegex = /<script[^>]+src=["'][^"']*app(?:\.bundle)?\.js["'][^>]*><\/script>/i;
+  const inlineModuleRegex = /<script\s+type=["']module["'][^>]*>[\s\S]*?<\/script>/i;
+
+  if (scriptRegex.test(html)) {
+    html = html.replace(scriptRegex, scriptTag);
+  } else if (inlineModuleRegex.test(html)) {
+    html = html.replace(inlineModuleRegex, scriptTag);
+  } else if (html.includes('</body>')) {
+    html = html.replace('</body>', `  ${scriptTag}\n</body>`);
+  } else {
+    html = `${html}\n${scriptTag}\n`;
+  }
+
+  await fs.writeFile(indexPath, html, 'utf-8');
 }

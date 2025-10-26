@@ -1,216 +1,208 @@
 (function () {
-  "use strict";
+  'use strict';
 
-  console.log("[Thesara Shim] Initializing storage proxy...");
+  const parentWindow = window.parent;
+  if (!parentWindow || parentWindow === window) {
+    return;
+  }
 
-  const PING_INTERVAL = 2000; // 2 seconds
+  const FLUSH_INTERVAL = 2000;
   const MAX_BATCH_SIZE = 50;
 
-  let CAP = null; // capability token in closure, not exposed on window
-  let lastPostTs = 0;
+  let CAP = null;
   let awaitingAck = false;
-  let offlineQueue = [];
+  let flushTimer = null;
 
-  let batch = [];
-  let flushTimeout = null;
-  let storageCache = null; // Replaces initialSnapshot
-  let isReady = false; // isReady is still useful
+  const pending = [];
+  const offlineQueue = [];
 
-  const parent = window.parent;
+  const caches = {
+    local: new Map(),
+    session: new Map(),
+  };
 
-  function postFlush(batchToFlush) {
-    if (!CAP) {
-        console.warn("[Thesara Shim] Cannot flush, capability token not set.");
-        return; 
-    }
-    // If offline or waiting for a previous ack, queue this batch.
-    if (!navigator.onLine || awaitingAck) {
-        console.log(`[Thesara Shim] Deferring flush (online: ${navigator.onLine}, awaitingAck: ${awaitingAck}). Queue size: ${offlineQueue.length}`);
-        offlineQueue.push(...batchToFlush);
-        return;
-    }
-    
-    try {
-      parent.postMessage({ type: 'thesara:storage:flush', cap: CAP, batch: batchToFlush }, '*');
-      lastPostTs = Date.now();
-      awaitingAck = true;
-    } catch (e) {
-      console.error("[Thesara Shim] Failed to send batch to parent:", e);
-      // If postMessage fails, re-queue the batch
-      offlineQueue.push(...batchToFlush);
-    }
+  function toStringValue(value) {
+    return value === undefined || value === null ? '' : String(value);
   }
-
-  function flush() {
-    if (batch.length === 0 && offlineQueue.length === 0) {
-      return;
-    }
-    
-    const combinedBatch = [...offlineQueue, ...batch];
-    offlineQueue = [];
-    batch = [];
-
-    if (combinedBatch.length > 0) {
-        postFlush(combinedBatch);
-    }
-
-    if (flushTimeout) {
-      clearTimeout(flushTimeout);
-      flushTimeout = null;
-    }
-  }
-  
-  // More aggressive flush for page unload events
-  function flushNow() {
-      if (flushTimeout) {
-        clearTimeout(flushTimeout);
-        flushTimeout = null;
-      }
-      flush();
-  }
-
 
   function scheduleFlush() {
-    if (flushTimeout) {
-      return; // Already scheduled
-    }
-    flushTimeout = setTimeout(flush, PING_INTERVAL);
+    if (flushTimer !== null) return;
+    flushTimer = setTimeout(flush, FLUSH_INTERVAL);
   }
 
-  function addToBatch(item) {
-    batch.push(item);
-    if (batch.length >= MAX_BATCH_SIZE) {
+  function enqueue(op) {
+    pending.push(op);
+    if (pending.length >= MAX_BATCH_SIZE) {
       flush();
-    } else {
-      scheduleFlush();
+      return;
+    }
+    scheduleFlush();
+  }
+
+  function flush(force) {
+    if (flushTimer !== null) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
+    }
+    if (pending.length === 0 && offlineQueue.length === 0 && !force) return;
+
+    const batch = offlineQueue.splice(0, offlineQueue.length).concat(pending.splice(0, pending.length));
+    if (batch.length === 0) return;
+
+    if (!CAP || awaitingAck) {
+      offlineQueue.push(...batch);
+      return;
+    }
+
+    try {
+      parentWindow.postMessage(
+        { type: 'thesara:storage:flush', cap: CAP, batch },
+        '*',
+      );
+      awaitingAck = true;
+    } catch (err) {
+      console.error('[Thesara Shim] Failed to postMessage batch, queueing offline.', err);
+      offlineQueue.push(...batch);
     }
   }
 
-  const originalSetItem = window.localStorage.setItem;
-  const originalRemoveItem = window.localStorage.removeItem;
-  const originalClear = window.localStorage.clear;
-
-  window.localStorage.setItem = function (key, value) {
-    if (!isReady) {
-      console.warn("[Thesara Shim] setItem called before sync. This change may be lost.");
+  function applySnapshot(scope, snapshot) {
+    const cache = caches[scope];
+    cache.clear();
+    if (!snapshot || typeof snapshot !== 'object') return;
+    for (const key of Object.keys(snapshot)) {
+      cache.set(key, toStringValue(snapshot[key]));
     }
-    const strValue = String(value);
-    addToBatch({ op: 'set', key, value: strValue });
-    originalSetItem.call(localStorage, key, strValue);
-  };
+  }
 
-  window.localStorage.removeItem = function (key) {
-    if (!isReady) {
-      console.warn("[Thesara Shim] removeItem called before sync. This change may be lost.");
+  function exportSnapshot(scope) {
+    const cache = caches[scope];
+    const out = Object.create(null);
+    for (const [key, value] of cache.entries()) {
+      out[key] = value;
     }
-    addToBatch({ op: 'del', key });
-    originalRemoveItem.call(localStorage, key);
-  };
+    return out;
+  }
 
-  window.localStorage.clear = function () {
-    if (!isReady) {
-      console.warn("[Thesara Shim] clear called before sync. This change may be lost.");
+  function createFacade(scope) {
+    const cache = caches[scope];
+    return {
+      get length() {
+        return cache.size;
+      },
+      key(index) {
+        const keys = Array.from(cache.keys());
+        return index >= 0 && index < keys.length ? keys[index] : null;
+      },
+      getItem(key) {
+        if (!cache.has(key)) return null;
+        return cache.get(key);
+      },
+      setItem(key, value) {
+        const str = toStringValue(value);
+        cache.set(key, str);
+        enqueue({ scope, op: 'set', key, value: str });
+      },
+      removeItem(key) {
+        if (!cache.has(key)) return;
+        cache.delete(key);
+        enqueue({ scope, op: 'del', key });
+      },
+      clear() {
+        if (cache.size === 0) return;
+        cache.clear();
+        enqueue({ scope, op: 'clear' });
+      },
+    };
+  }
+
+  const localFacade = createFacade('local');
+  const sessionFacade = createFacade('session');
+
+  Object.defineProperty(window, 'localStorage', {
+    configurable: false,
+    enumerable: true,
+    get() {
+      return localFacade;
+    },
+  });
+
+  Object.defineProperty(window, 'sessionStorage', {
+    configurable: false,
+    enumerable: true,
+    get() {
+      return sessionFacade;
+    },
+  });
+
+  function reconcileSnapshot(payload) {
+    if (!payload || typeof payload !== 'object') {
+      applySnapshot('local', Object.create(null));
+      applySnapshot('session', Object.create(null));
+      return;
     }
-    addToBatch({ op: 'clear' });
-    originalClear.call(localStorage);
-  };
+    if ('local' in payload || 'session' in payload) {
+      applySnapshot('local', payload.local || {});
+      applySnapshot('session', payload.session || {});
+      return;
+    }
+    applySnapshot('local', payload);
+    applySnapshot('session', {});
+  }
 
   function handleMessage(event) {
-    if (event.source !== parent) {
-        console.warn("[Thesara Shim] Ignoring message from non-parent window.");
-        return;
-    }
-
+    if (event.source !== parentWindow) return;
     const msg = event.data;
-    if (!msg || typeof msg !== 'object') {
-      return;
-    }
-
-    // The first message must be 'init' with a capability token
-    if (msg.type === 'thesara:storage:init') {
-      if (typeof msg.cap === 'string' && msg.cap) {
-        CAP = msg.cap;
-        console.log("[Thesara Shim] Capability token received.");
-      } else {
-        console.error("[Thesara Shim] 'init' message received without a capability token. Halting.");
-        return; // Do not proceed without a token
-      }
-      
-      storageCache = msg.snapshot || {};
-      originalClear.call(localStorage);
-      for (const key in storageCache) {
-        if (Object.prototype.hasOwnProperty.call(storageCache, key)) {
-          originalSetItem.call(localStorage, key, storageCache[key]);
-        }
-      }
-      isReady = true;
-      console.log("[Thesara Shim] Storage synchronized.");
-      parent.postMessage({ type: 'thesara:shim:ready', cap: CAP }, '*');
-      return;
-    }
-
-    // After init, all messages must have a matching token
-    if (!CAP || msg.cap !== CAP) {
-        console.warn("[Thesara Shim] Ignoring message with invalid or missing capability token.");
-        return;
-    }
+    if (!msg || typeof msg !== 'object') return;
 
     switch (msg.type) {
-      case 'thesara:shim:ack':
+      case 'thesara:storage:init': {
+        if (typeof msg.cap !== 'string' || !msg.cap) {
+          console.error('[Thesara Shim] init without capability token, ignoring.');
+          return;
+        }
+        CAP = msg.cap;
         awaitingAck = false;
-        console.log("[Thesara Shim] Received ack from parent.");
-        // If there's pending data, try flushing it now
-        if (offlineQueue.length > 0 || batch.length > 0) {
-            scheduleFlush();
-        }
-        break;
-
-      case 'thesara:storage:sync':
-        console.log("[Thesara Shim] Received sync with snapshot:", msg.snapshot);
-        if (flushTimeout) clearTimeout(flushTimeout);
-        batch = [];
-        offlineQueue = []; // Discard pending changes on external sync
-        
-        originalClear.call(localStorage);
-        const snapshot = msg.snapshot || {};
-        storageCache = snapshot;
-        for (const key in snapshot) {
-          if (Object.prototype.hasOwnProperty.call(snapshot, key)) {
-            originalSetItem.call(localStorage, key, snapshot[key]);
-          }
-        }
-        console.log("[Thesara Shim] Storage re-synchronized.");
-        break;
-
-      case 'thesara:storage:flush-now':
-        console.log("[Thesara Shim] Received flush-now request.");
-        flushNow();
-        break;
-
+        offlineQueue.length = 0;
+        pending.length = 0;
+        reconcileSnapshot(msg.snapshot);
+        return;
+      }
+      case 'thesara:storage:sync': {
+        if (!CAP || msg.cap !== CAP) return;
+        reconcileSnapshot(msg.snapshot);
+        awaitingAck = false;
+        flush();
+        return;
+      }
+      case 'thesara:shim:ack': {
+        if (!CAP || msg.cap !== CAP) return;
+        awaitingAck = false;
+        flush();
+        return;
+      }
+      case 'thesara:storage:flush-now': {
+        if (!CAP || msg.cap !== CAP) return;
+        flush(true);
+        return;
+      }
       default:
-        // Ignore unknown messages
-        break;
+        return;
     }
   }
 
   window.addEventListener('message', handleMessage);
-  
-  // Lifecycle hooks
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });
-  window.addEventListener('pagehide', flushNow);
-  window.addEventListener('online', () => { 
-      console.log("[Thesara Shim] Browser is online, attempting to flush queue.");
-      flush(); 
-  });
-  
-  window.addEventListener('unload', () => {
-      // Final attempt to flush before the page disappears.
-      // Note: This is best-effort and may not always succeed.
-      flushNow();
-      window.removeEventListener('message', handleMessage);
-  });
 
-  // No longer announcing readiness here. It will be announced after receiving 'init'.
-  console.log("[Thesara Shim] Shim loaded and waiting for init message from parent.");
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flush(true);
+  });
+  window.addEventListener('pagehide', () => flush(true));
+  window.addEventListener('beforeunload', () => flush(true));
+  window.addEventListener('online', () => flush(true));
 
+  try {
+    parentWindow.postMessage({ type: 'thesara:shim:ready' }, '*');
+  } catch (err) {
+    console.error('[Thesara Shim] Failed to notify parent of readiness.', err);
+  }
 })();

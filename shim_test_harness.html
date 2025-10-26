@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Thesara Shim Test Harness</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; gap: 20px; padding: 10px; background-color: #f0f2f5; }
+        #controls, #logs { flex: 1; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        #logs pre { white-space: pre-wrap; word-wrap: break-word; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; border: 1px solid #e9ecef; }
+        iframe { width: 100%; height: 150px; border: 1px solid #007acc; border-radius: 4px; margin-bottom: 15px; }
+        button { background-color: #007acc; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-right: 10px; font-size: 14px; }
+        button:hover { background-color: #005a9e; }
+        .log-entry { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
+        .log-entry:last-child { border-bottom: none; }
+        .direction { font-weight: bold; }
+        .direction-out { color: #d9534f; }
+        .direction-in { color: #5cb85c; }
+        .direction-sys { color: #f0ad4e; }
+        .timestamp { font-size: 10px; color: #888; float: right; }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h2>Parent Controls</h2>
+        <p>Simulira `PlayPageClient.tsx`.</p>
+        <iframe id="app-iframe" src="./iframe_content.html" onload="onIframeLoad()"></iframe>
+        <button id="trigger-set-item">Trigger `localStorage.setItem` in iframe</button>
+        <button id="trigger-clear">Trigger `localStorage.clear` in iframe</button>
+        <button id="trigger-sync">Simulate `sync` from another tab</button>
+    </div>
+    <div id="logs">
+        <h2>Message Log</h2>
+        <div id="log-container"></div>
+    </div>
+
+    <script>
+        const iframe = document.getElementById('app-iframe');
+        const logContainer = document.getElementById('log-container');
+        let isShimReady = false;
+        let itemCounter = 0;
+        let shimReadyTimeout;
+
+        // Generiramo jedinstveni "capability token" za ovu sesiju
+        const CAPABILITY_TOKEN = `cap_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+
+        function logMessage(direction, type, data = {}) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            let dirClass = 'direction-sys';
+            if (direction === 'OUT') dirClass = 'direction-out';
+            if (direction === 'IN') dirClass = 'direction-in';
+            
+            const time = new Date();
+            const timestamp = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}:${String(time.getSeconds()).padStart(2, '0')}.${String(time.getMilliseconds()).padStart(3, '0')}`;
+
+            entry.innerHTML = `
+                <div>
+                    <span class="timestamp">${timestamp}</span>
+                    <span class="direction ${dirClass}">[${direction}]</span> <strong>${type}</strong>
+                </div>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            logContainer.prepend(entry);
+        }
+
+        function onIframeLoad() {
+            logMessage('SYS', 'IFRAME_LOADED', { src: iframe.src });
+            // Postavi tajmer. Ako se shim ne javi unutar 2 sekunde, nešto nije u redu.
+            shimReadyTimeout = setTimeout(() => {
+                if (!isShimReady) {
+                    logMessage('SYS', 'SHIM_TIMEOUT', { error: "Shim did not send 'thesara:shim:ready' within 2 seconds. It might be broken or blocked." });
+                }
+            }, 2000);
+        }
+
+        // 1. Slušamo poruke iz iframe-a
+        window.addEventListener('message', (event) => {
+            // Stroga provjera izvora poruke
+            if (event.source !== iframe.contentWindow) return;
+
+            const msg = event.data;
+            if (!msg || !msg.type) return;
+            logMessage('IN', msg.type, msg);
+
+            if (msg.type === 'thesara:shim:ready') {
+                isShimReady = true;
+                console.log('Shim is ready. Sending init message.');
+                
+                // 2. Shim je spreman, šaljemo mu inicijalni snapshot i token
+                sendInitMessage();
+            }
+
+            if (msg.type === 'thesara:storage:flush') {
+                // 4. Shim je poslao batch promjena, simuliramo `PATCH` i šaljemo `ack`
+                console.log('Received flush from shim. Simulating API call and sending ack.');
+                
+                // Validacija tokena
+                if (msg.cap !== CAPABILITY_TOKEN) {
+                    console.error('Invalid capability token received from shim!', msg);
+                    return;
+                }
+
+                // Simulacija slanja na API i čekanja odgovora
+                setTimeout(() => {
+                    const ackMessage = { type: 'thesara:shim:ack', cap: CAPABILITY_TOKEN };
+                    iframe.contentWindow.postMessage(ackMessage, '*');
+                    logMessage('OUT', ackMessage.type, ackMessage);
+                }, 500); // 500ms latencije
+            }
+        });
+
+        function sendInitMessage() {
+            const initMessage = {
+                type: 'thesara:storage:init',
+                snapshot: { 'initial_key': 'initial_value', 'loaded_at': new Date().toISOString() },
+                cap: CAPABILITY_TOKEN
+            };
+            iframe.contentWindow.postMessage(initMessage, '*');
+            logMessage('OUT', initMessage.type, initMessage);
+        }
+
+        // 3. Simuliramo akcije unutar iframe-a klikom na gumbe
+        document.getElementById('trigger-set-item').addEventListener('click', () => {
+            if (!isShimReady) return alert('Shim is not ready yet.');
+            itemCounter++;
+            const command = `localStorage.setItem('test_key_${itemCounter}', 'value_${Date.now()}')`;
+            iframe.contentWindow.postMessage({ type: 'harness:exec', command }, '*');
+            logMessage('OUT', 'harness:exec (setItem)', { command });
+        });
+
+        document.getElementById('trigger-clear').addEventListener('click', () => {
+            if (!isShimReady) return alert('Shim is not ready yet.');
+            const command = `localStorage.clear()`;
+            iframe.contentWindow.postMessage({ type: 'harness:exec', command }, '*');
+            logMessage('OUT', 'harness:exec (clear)', { command });
+        });
+
+        document.getElementById('trigger-sync').addEventListener('click', () => {
+            if (!isShimReady) return alert('Shim is not ready yet.');
+            const syncMessage = {
+                type: 'thesara:storage:sync',
+                snapshot: { 'synced_key': `Synced from another tab at ${new Date().toLocaleTimeString()}` },
+                cap: CAPABILITY_TOKEN
+            };
+            iframe.contentWindow.postMessage(syncMessage, '*');
+            logMessage('OUT', syncMessage.type, syncMessage);
+        });
+    </script>
+</body>
+</html>

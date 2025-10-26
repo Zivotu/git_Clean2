@@ -1,4 +1,4 @@
-import process from 'node:process';
+﻿const process = require('process');
 
 const isStaticExport = process.env.NEXT_OUTPUT === 'export';
 const SAFE_PUBLISH_ENABLED = process.env.SAFE_PUBLISH_ENABLED === 'true';
@@ -76,22 +76,16 @@ const baseConfig = {
               const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.thesara.space/api';
               const api = new URL(apiBase).origin;
               const apps = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
-              // Dodani lokalni dev domeni za API
-              const devConnect = isDev ? ` ${process.env.NEXT_PUBLIC_API_BASE_URL} http://127.0.0.1:8788 http://localhost:8788` : '';
-              // Dodani Firebase domeni za dev okruženje
+              const devConnect = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
+              const devImg = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
               const devFirebase =
                 isDev && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1'
-                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com'
+                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com'
                   : '';
-              // Dodani lokalni dev domeni za slike (ako su potrebni)
-              const devImg = isDev ? ` ${process.env.NEXT_PUBLIC_API_BASE_URL} http://127.0.0.1:8788 http://localhost:8788` : '';
               
-              const scriptSrc = ["'self'", "'unsafe-inline'"]
-              if (isDev) scriptSrc.push("'unsafe-eval'")
-
               const policies = [
                 "default-src 'self'",
-                `script-src ${scriptSrc.join(' ')}`,
+                `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
                 "style-src 'self' 'unsafe-inline'",
                 `connect-src 'self' ${api}${devConnect}${devFirebase}`,
                 `frame-src ${apps}`,
@@ -107,21 +101,23 @@ const baseConfig = {
   },
 };
 
-if (SAFE_PUBLISH_ENABLED && isDev) {
-  baseConfig.assetPrefix = '/assets';
-}
-
-let config = baseConfig;
-try {
-  const { withSitemap } = await import('next-sitemap');
-  if (typeof withSitemap === 'function') {
-    config = withSitemap({
-      siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com',
-      generateRobotsTxt: false,
-    })(baseConfig);
+module.exports = async () => {
+  if (SAFE_PUBLISH_ENABLED && isDev) {
+    baseConfig.assetPrefix = '/assets';
   }
-} catch {
-  // next-sitemap not installed
-}
 
-export default config;
+  let config = baseConfig;
+  try {
+    const { withSitemap } = await import('next-sitemap');
+    if (typeof withSitemap === 'function') {
+      config = withSitemap({
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://example.com',
+        generateRobotsTxt: false,
+      })(baseConfig);
+    }
+  } catch {
+    // next-sitemap not installed
+  }
+
+  return config;
+};

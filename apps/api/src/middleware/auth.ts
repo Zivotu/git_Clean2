@@ -2,93 +2,77 @@ import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import jwt from 'jsonwebtoken';
+import { setCors } from '../routes/storage.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
     authUser?: {
       uid: string;
       role: string;
-      claims: DecodedIdToken;
+      claims: DecodedIdToken | jwt.JwtPayload;
     };
   }
 }
 
 const plugin: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', async (req: FastifyRequest, reply: FastifyReply) => {
-    const auth = req.headers['authorization'];
-    const debug = process.env.DEBUG_AUTH === '1';
+    const origin = req.headers.origin as string | undefined;
+    const auth = req.headers.authorization;
 
-    // For development, if no auth header is present, create a mock user.
+    // Dev mock user
     if (!auth && process.env.NODE_ENV !== 'production') {
       req.authUser = {
         uid: 'dev-user',
-        role: 'admin', // Or 'user', depending on what's more convenient for development
+        role: 'admin',
         claims: { uid: 'dev-user', role: 'admin', admin: true } as any,
       };
-      if (debug) app.log.info({ authUser: req.authUser }, 'auth:mock');
       return;
     }
 
-    if (!auth || typeof auth !== 'string') {
-      if (debug) app.log.info({ hasAuth: false }, 'auth');
+    if (!auth || !auth.startsWith('Bearer ')) {
+      // No token, but not an error. 
+      // Routes that require auth will fail later with a 401 in requireRole.
       return;
     }
-    if (!auth.startsWith('Bearer ')) {
-      if (debug) app.log.info({ hasAuth: true, invalid: true }, 'auth');
-      return reply.code(401).send({ error: 'invalid authorization format' });
-    }
-    const token = auth.slice(7).trim();
+
+    const token = auth.substring(7);
+
     try {
       const decoded = await getAuth().verifyIdToken(token);
       const claims: any = decoded;
       const role = claims.role || (claims.admin ? 'admin' : 'user');
       req.authUser = { uid: decoded.uid, role, claims: decoded };
-      if (debug) app.log.info({ hasAuth: true, uid: decoded.uid, role }, 'auth');
-    } catch (err) {
-      if (debug) app.log.info({ hasAuth: true, error: 'invalid', fallback: 'jwt' }, 'auth');
-      const fallbackSecret = process.env.JWT_SECRET;
-      if (fallbackSecret) {
-        try {
-          const verifyOptions: jwt.VerifyOptions = {
-            algorithms: ['HS256'],
-            issuer: process.env.JWT_ISSUER || 'thesara-api',
-          };
-          if (process.env.JWT_AUDIENCE) {
-            verifyOptions.audience = process.env.JWT_AUDIENCE;
-          }
-          const fallbackClaims = jwt.verify(token, fallbackSecret, verifyOptions) as
-            | (jwt.JwtPayload & Record<string, any>)
-            | string;
-          if (typeof fallbackClaims === 'string') {
-            throw new Error('Unexpected string payload in JWT fallback verification');
-          }
-          const uid =
-            (typeof fallbackClaims.sub === 'string' && fallbackClaims.sub) ||
-            (typeof fallbackClaims.uid === 'string' && fallbackClaims.uid);
-          if (uid) {
-            const role =
-              typeof fallbackClaims.role === 'string'
-                ? fallbackClaims.role
-                : fallbackClaims.admin === true
-                ? 'admin'
-                : 'user';
-            if (fallbackClaims.uid !== uid) {
-              (fallbackClaims as Record<string, any>).uid = uid;
-            }
-            req.authUser = {
-              uid,
-              role,
-              claims: fallbackClaims as unknown as DecodedIdToken,
-            };
-            if (debug) app.log.info({ hasAuth: true, uid, role, source: 'jwt' }, 'auth');
-            return;
-          }
-        } catch (jwtErr) {
-          reply.log.debug({ err: jwtErr }, 'auth:jwt_fallback_failed');
+      return;
+    } catch (firebaseError) {
+      req.log.trace({ err: firebaseError }, 'auth: firebase token verification failed, trying fallback');
+    }
+
+    const fallbackSecret = process.env.JWT_SECRET;
+    if (fallbackSecret) {
+      try {
+        const verifyOptions: jwt.VerifyOptions = {
+          algorithms: ['HS256'],
+          issuer: process.env.JWT_ISSUER || 'thesara-api',
+        };
+        const envAud = process.env.JWT_AUDIENCE;
+        if (envAud && envAud.trim()) {
+          (verifyOptions as any).audience = envAud.includes(',')
+            ? envAud.split(',').map(s => s.trim()).filter(Boolean)
+            : envAud.trim();
         }
+        const fallbackClaims = jwt.verify(token, fallbackSecret, verifyOptions) as jwt.JwtPayload;
+        const uid = fallbackClaims.sub || fallbackClaims.uid;
+        if (typeof uid === 'string' && uid) {
+          const role = (fallbackClaims.role as string) || (fallbackClaims.admin ? 'admin' : 'user');
+          req.authUser = { uid, role, claims: fallbackClaims };
+          return;
+        }
+      } catch (jwtError) {
+        req.log.debug({ err: jwtError }, 'auth:jwt_fallback_failed');
+        // Invalid token. Send 401.
+        setCors(reply, origin);
+        return reply.code(401).send({ error: 'Unauthorized', reason: 'invalid_token' });
       }
-      reply.log.debug({ err }, 'auth:verify_failed');
-      return reply.code(401).send({ error: 'invalid auth token' });
     }
   });
 };
@@ -98,22 +82,27 @@ export default fp(plugin);
 export function requireRole(allowed: string | string[] = 'admin') {
   const roles = Array.isArray(allowed) ? allowed : [allowed];
   return async (req: FastifyRequest, reply: FastifyReply) => {
+    const origin = req.headers.origin as string | undefined;
     if (!req.authUser?.uid) {
-      return reply.code(401).send({ error: 'unauthenticated' });
+      setCors(reply, origin);
+      return reply.code(401).send({ error: 'Unauthorized' });
     }
     const role = req.authUser.role;
     const claims = req.authUser.claims as any;
     const isAdmin = claims.admin === true || role === 'admin';
     const ok = isAdmin || roles.includes(role);
     if (!ok) {
-      return reply.code(403).send({ error: 'forbidden' });
+      setCors(reply, origin);
+      return reply.code(403).send({ error: 'Forbidden' });
     }
   };
 }
 
 export function requireAmbassador() {
   return async (req: FastifyRequest, reply: FastifyReply) => {
+    const origin = req.headers.origin as string | undefined;
     if (!req.authUser?.uid) {
+      setCors(reply, origin);
       return reply.code(401).send({ error: 'unauthenticated' });
     }
     try {
@@ -122,15 +111,18 @@ export function requireAmbassador() {
       const userDoc = await userRef.get();
 
       if (!userDoc.exists) {
+        setCors(reply, origin);
         return reply.code(403).send({ error: 'forbidden' });
       }
 
       const userData = userDoc.data() as any;
       if (userData.ambassador?.status !== 'approved') {
+        setCors(reply, origin);
         return reply.code(403).send({ error: 'not_an_ambassador' });
       }
     } catch (error) {
       req.log.error(error, 'requireAmbassador check failed');
+      setCors(reply, origin);
       return reply.code(500).send({ error: 'internal_server_error' });
     }
   };

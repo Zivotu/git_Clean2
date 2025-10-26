@@ -49,12 +49,6 @@ async function apiFetchRaw(path: string, opts: ApiOptions = {}): Promise<Respons
         if (token && !('Authorization' in hdrs)) hdrs['Authorization'] = `Bearer ${token}`;
       }
     } catch {}
-    if (!('Authorization' in hdrs)) {
-      try {
-        const urlToken = new URL(window.location.href).searchParams.get('token');
-        if (urlToken) hdrs['Authorization'] = `Bearer ${urlToken}`;
-      } catch {}
-    }
   }
 
   const isFormData =

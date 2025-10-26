@@ -2,7 +2,8 @@ import * as admin from 'firebase-admin';
 import type { ServiceAccount } from 'firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { CollectionReference, DocumentReference } from 'firebase-admin/firestore';
-import fs from 'fs';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ARCHIVE_TTL_MS } from './lib/versioning.js';
 
 import type { AppRecord } from './types.js';
@@ -23,50 +24,119 @@ function getFirebaseInitOptions(): admin.AppOptions {
     } satisfies admin.AppOptions;
   }
 
-  const fromEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const tried: string[] = [];
+  const logSource = (label: string) => {
+    console.info(`[firebase] Using credentials from ${label}`);
+  };
 
-  // 1. Lokalno (i preporučeno na serveru): JSON datoteka iz env varijable
-  if (fromEnv && fs.existsSync(fromEnv)) {
-    const raw = JSON.parse(fs.readFileSync(fromEnv, 'utf8'));
-
-    // Normalizacija polja i newline znakova u privatnom ključu
-    const serviceAccount = {
-      projectId: raw.project_id || raw.projectId,
+  const buildFromRaw = (raw: any, label: string): admin.AppOptions => {
+    const serviceAccount: ServiceAccount = {
+      projectId: raw.project_id || raw.projectId || projectIdFromEnv,
       clientEmail: raw.client_email || raw.clientEmail,
-      privateKey: (raw.private_key || raw.privateKey || '').replace(/\\n/g, '\n'),
+      privateKey: ((raw.private_key || raw.privateKey || '') as string).replace(/\\n/g, '\n'),
     };
-
-    if (!serviceAccount.privateKey || !serviceAccount.clientEmail) {
-      throw new Error('Invalid service account JSON: missing private_key or client_email');
+    if (!serviceAccount.clientEmail || !serviceAccount.privateKey) {
+      throw new Error('missing private_key or client_email');
     }
+    logSource(label);
     return {
-      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
-      projectId: projectIdFromEnv,
-    } satisfies admin.AppOptions;
+      credential: admin.credential.cert(serviceAccount),
+      projectId: serviceAccount.projectId || projectIdFromEnv,
+    };
+  };
+
+  const tryServiceAccount = (value: string, label: string, parser: () => any) => {
+    tried.push(label);
+    try {
+      const raw = parser();
+      return buildFromRaw(raw, label);
+    } catch (error: any) {
+      console.warn(`[firebase] Failed to use ${label}: ${error?.message || error}`);
+      return undefined;
+    }
+  };
+
+  const fromBase64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  if (fromBase64) {
+    const parsed = () =>
+      JSON.parse(Buffer.from(fromBase64, 'base64').toString('utf8')) as Record<string, unknown>;
+    const appOptions = tryServiceAccount(fromBase64, 'FIREBASE_SERVICE_ACCOUNT_BASE64', parsed);
+    if (appOptions) return appOptions;
   }
 
-  // 2. Server (fallback): Učitavanje iz standardnih putanja
-  const jsonDefaultPath = '/etc/thesara/creds/firebase-sa.json';
-  if (fs.existsSync(jsonDefaultPath)) {
-    return {
-      credential: admin.credential.cert(jsonDefaultPath),
-      projectId: projectIdFromEnv,
-    } satisfies admin.AppOptions;
+  const inlineJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (inlineJson) {
+    const parsed = () => JSON.parse(inlineJson) as Record<string, unknown>;
+    const appOptions = tryServiceAccount(inlineJson, 'FIREBASE_SERVICE_ACCOUNT', parsed);
+    if (appOptions) return appOptions;
   }
 
-  const pemDefaultPath = '/etc/thesara/creds/firebase-sa.pem';
-  if (fs.existsSync(pemDefaultPath)) {
+  const credentialPaths = new Set<string>();
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    credentialPaths.add(path.resolve(process.env.GOOGLE_APPLICATION_CREDENTIALS));
+  }
+  credentialPaths.add(path.resolve(process.cwd(), 'keys', 'firebase-sa.json'));
+
+  const keysDir = path.resolve(process.cwd(), 'keys');
+  if (fs.existsSync(keysDir)) {
+    const firstJson = fs
+      .readdirSync(keysDir)
+      .find((file) => file.toLowerCase().endsWith('.json'));
+    if (firstJson) {
+      credentialPaths.add(path.resolve(keysDir, firstJson));
+    }
+  }
+  credentialPaths.add('/etc/thesara/creds/firebase-sa.json');
+
+  for (const candidate of credentialPaths) {
+    const label = `file:${candidate}`;
+    tried.push(label);
+    if (!candidate || !fs.existsSync(candidate)) continue;
+    try {
+      const raw = JSON.parse(fs.readFileSync(candidate, 'utf8')) as Record<string, unknown>;
+      return buildFromRaw(raw, label);
+    } catch (error: any) {
+      console.warn(`[firebase] Failed to read ${label}: ${error?.message || error}`);
+    }
+  }
+
+  const pemCandidates = [
+    process.env.FIREBASE_SERVICE_ACCOUNT_PEM &&
+      path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PEM),
+    path.join(keysDir, 'firebase-sa.pem'),
+    '/etc/thesara/creds/firebase-sa.pem',
+  ].filter(Boolean) as string[];
+
+  for (const pemPath of pemCandidates) {
+    const label = `pem:${pemPath}`;
+    tried.push(label);
+    if (!fs.existsSync(pemPath)) continue;
+    const clientEmail =
+      process.env.FIREBASE_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL_ADDRESS;
+    const projectId = projectIdFromEnv || process.env.FIREBASE_PROJECT_ID;
+    if (!clientEmail || !projectId) {
+      console.warn(
+        `[firebase] Skipping ${label}: set FIREBASE_CLIENT_EMAIL and FIREBASE_PROJECT_ID to use PEM credentials.`,
+      );
+      continue;
+    }
+    const privateKey = fs.readFileSync(pemPath, 'utf8');
+    logSource(label);
     return {
       credential: admin.credential.cert({
-        projectId: 'createx-e0ccc',
-        clientEmail: 'firebase-adminsdk-fbsvc@createx-e0ccc.iam.gserviceaccount.com',
-        privateKey: fs.readFileSync(pemDefaultPath, 'utf8'),
+        projectId,
+        clientEmail,
+        privateKey,
       }),
-      projectId: projectIdFromEnv,
-    } satisfies admin.AppOptions;
+      projectId,
+    };
   }
 
-  throw new Error('No Firebase credentials found. Set GOOGLE_APPLICATION_CREDENTIALS or place firebase-sa.json/pem in /etc/thesara/creds/.');
+  throw new Error(
+    `No Firebase credentials found. Tried: ${tried.join(
+      ', ',
+    )}. Set FIREBASE_SERVICE_ACCOUNT(_BASE64) or GOOGLE_APPLICATION_CREDENTIALS.`,
+  );
 }
 
 if (!admin.apps.length) {
@@ -388,6 +458,24 @@ export async function writeApps(items: App[]): Promise<void> {
       likes: likesCount ?? 0,
     });
   }
+  await batch.commit();
+}
+
+export async function updateApp(appId: string, payload: Partial<App>): Promise<void> {
+  const appsCol = await getExistingCollection('apps');
+  const { likesCount, playsCount, ...rest } = payload as any;
+
+  const batch = db.batch();
+  batch.update(appsCol.doc(appId), rest);
+
+  if (likesCount !== undefined || playsCount !== undefined) {
+    const metricsCol = await getExistingCollection('metrics');
+    const metricsPayload: Partial<Metric> = {};
+    if (likesCount !== undefined) metricsPayload.likes = likesCount;
+    if (playsCount !== undefined) metricsPayload.plays = playsCount;
+    batch.update(metricsCol.doc(appId), metricsPayload);
+  }
+
   await batch.commit();
 }
 

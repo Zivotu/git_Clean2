@@ -46,6 +46,10 @@
     "node_modules",
     "build",
     "vitest.config.ts",
-    "_app_api_disabled"
+    "_app_api_disabled",
+    "tests", // Dodano za isključivanje cijelog direktorija s testovima
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "playwright.config.ts"
   ]
 }

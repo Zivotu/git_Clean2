@@ -3,18 +3,21 @@
   "private": true,
   "version": "0.0.3",
   "type": "commonjs",
-  "main": "dist/server.cjs",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ./src/preload.ts\" tsx watch src/index.ts",
     "dev:worker": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ./src/preload.ts\" tsx watch src/localdev/worker.run.ts",
-    "build": "tsup --config tsup.config.cjs && node -e \"require('fs').renameSync('dist/index.js', 'dist/server.cjs')\"",
+    "build": "tsup --config tsup.config.cjs",
     "build:tsc": "tsc -p tsconfig.json",
     "start": "node --openssl-legacy-provider dist/index.js",
     "migrate": "cross-env NODE_OPTIONS=--openssl-legacy-provider tsx src/migrate.ts",
     "check:bundle": "node -e \"import('file://'+process.cwd()+'/dist/server.mjs').then(()=>console.log('OK')).catch(e=>{console.error(e);process.exit(1)})\"",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
-    "prisma:seed": "prisma db seed"
+    "prisma:seed": "prisma db seed",
+    "postinstall": "prisma generate",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prestart": "pnpm run build"
   },
   "engines": {
     "node": ">=20"
@@ -69,6 +72,7 @@
   "devDependencies": {
     "@fastify/multipart": "^9.0.3",
     "@types/bcryptjs": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.0",
     "@types/node": "24.2.1",
     "@types/nodemailer": "^7.0.0",
     "cross-env": "^7.0.3",

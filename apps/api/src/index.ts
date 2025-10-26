@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import path from 'node:path';
 
 // IMPORTANT: Load environment variables before any other code.
@@ -33,6 +34,7 @@ import shims from './routes/shims.js';
 import oglasiRoutes from './routes/oglasi.js';
 import { uploadRoutes } from './routes/upload.js';
 import buildRoutes from './routes/build.js';
+import buildAlias from './routes/buildAlias.js';
 import avatarRoutes from './routes/avatar.js';
 import publishRoutes from './routes/publish.js';
 import reviewRoutes from './routes/review.js';
@@ -49,6 +51,7 @@ import entitlementsRoutes from './routes/entitlements.js';
 import storageRoutes from './routes/storage.js';
 import roomsBridge from './routes/rooms-bridge.js';
 import ambassadorRoutes from './routes/ambassador.js';
+import jwtRoutes from './routes/jwt.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
 import localDevRoutes from './localdev/routes.js';
 import { startLocalDevWorker } from './localdev/worker.js';
@@ -58,6 +61,52 @@ import metricsPlugin from './plugins/metrics.js';
 import swaggerPlugin from './plugins/swagger.js';
 import rateLimitPlugin from './plugins/rateLimit.js';
 import roomsSyncV1Routes from './routes/roomsV1/index.js';
+import { buildCsp } from './lib/cspBuilder.js';
+
+type BuildSecurityMetadata = {
+  networkPolicy: string;
+  networkDomains: string[];
+  legacyScript: boolean;
+};
+
+type ManifestCacheEntry = {
+  mtimeMs: number;
+  data: BuildSecurityMetadata;
+};
+
+const manifestMetaCache = new Map<string, ManifestCacheEntry>();
+
+function tryReadManifest(manifestPath: string): BuildSecurityMetadata | null {
+  try {
+    const stat = fsSync.statSync(manifestPath);
+    const cached = manifestMetaCache.get(manifestPath);
+    if (cached && cached.mtimeMs === stat.mtimeMs) {
+      return cached.data;
+    }
+    const raw = fsSync.readFileSync(manifestPath, 'utf-8');
+    const parsed = JSON.parse(raw) ?? {};
+    const entry = String(parsed.entry ?? '').trim();
+    const rawPolicy = parsed.networkPolicy ?? parsed.policy ?? 'NO_NET';
+    const networkPolicy = typeof rawPolicy === 'string' ? rawPolicy : 'NO_NET';
+    const networkDomains = Array.isArray(parsed.networkDomains)
+      ? parsed.networkDomains
+          .map((value: unknown) =>
+            typeof value === 'string' ? value : value != null ? String(value) : null,
+          )
+          .filter((value): value is string => Boolean(value))
+      : [];
+
+    const data: BuildSecurityMetadata = {
+      networkPolicy,
+      networkDomains,
+      legacyScript: !entry || /app\.js$/i.test(entry),
+    };
+    manifestMetaCache.set(manifestPath, { mtimeMs: stat.mtimeMs, data });
+    return data;
+  } catch {
+    return null;
+  }
+}
 
 export let app: FastifyInstance;
 
@@ -122,13 +171,13 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   const exactOrigins = new Set<string>();
   const wildcardOrigins: RegExp[] = [];
 
-  const escapeRegex = (value: string) =>
-    value.replace(/[.*+?^${}()|[\\]/g, '\\$&');
+  const escapeRegExp = (value: string) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   for (const origin of corsOrigins) {
     const lower = origin.toLowerCase();
-    if (origin.includes('*')) {
-      const pattern = `^${escapeRegex(origin).replace(/\\*/g, '.*')}$`;
+    if (lower.includes('*')) {
+      const pattern = `^${escapeRegExp(lower).replace(/\\\*/g, '.*')}$`;
       try {
         wildcardOrigins.push(new RegExp(pattern, 'i'));
       } catch {
@@ -157,7 +206,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       }
       return callback(new Error('Not allowed by CORS'), false);
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
 
@@ -171,16 +220,28 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   app.addHook('onRequest', (req, _reply, done) => {
     try {
       const raw = (req.raw?.url || req.url || '') as string;
-      // 1) Support API behind /api prefix
-      if (raw === '/api' || raw === '/api/') {
-        (req as any).url = '/';
-        if (req.raw) (req.raw as any).url = '/';
-      } else if (raw.startsWith('/api/')) {
-        const stripped = raw.slice(4) || '/';
+      const qIndex = raw.indexOf('?');
+      const rawPath = qIndex >= 0 ? raw.slice(0, qIndex) : raw;
+      const rawQuery = qIndex >= 0 ? raw.slice(qIndex) : '';
+
+      const isStorageApi = rawPath === '/api/storage' || rawPath === '/api/storage/';
+
+      // 1) Ako je točno /api ili /api/ → prebaci na '/'
+      if (!isStorageApi && (rawPath === '/api' || rawPath === '/api/')) {
+        const stripped = '/' + (rawQuery || '');
+        (req as any).url = stripped;
+        if (req.raw) (req.raw as any).url = stripped;
+        return done();
+      }
+
+      // 2) Ako počinje s /api/ → skini prefiks i ostavi query
+      if (!isStorageApi && rawPath.startsWith('/api/')) {
+        const strippedPath = rawPath.slice(4) || '/';
+        const stripped = strippedPath + rawQuery;
         (req as any).url = stripped;
         if (req.raw) (req.raw as any).url = stripped;
       }
-
+      
       // 2) Best-effort: auto-create minimal manifest if missing to avoid 404 white screens
       //    Pattern: /builds/:id/build/manifest_v1.json
       const urlForCheck = ((req as any).url || raw) as string;
@@ -265,168 +326,48 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   // Build artifacts
   const setStaticHeaders = (res: any, pathName?: string) => {
     const cfg = getConfig();
-    const frameAncestors = ["'self'"];
+    const frameAncestors = new Set(["'self'"]);
     try {
-      const webBase = getConfig().WEB_BASE;
+      const webBase = cfg.WEB_BASE;
       if (webBase) {
         const origin = new URL(webBase).origin;
-        if (origin && !frameAncestors.includes(origin)) frameAncestors.push(origin);
+        if (origin) frameAncestors.add(origin);
       }
     } catch {}
     if (process.env.NODE_ENV !== 'production') {
-      frameAncestors.push('http://localhost:3000', 'http://127.0.0.1:3000');
+      frameAncestors.add('http://localhost:3000');
+      frameAncestors.add('http://127.0.0.1:3000');
     }
 
-    // Try to extract buildId from the served file path
-    let buildId: string | undefined;
-    try {
-      const p = String(pathName || '');
-      const m = /[\\\/]builds[\\\/]([^\\\/]+)[\\\/]/.exec(p);
-      buildId = m?.[1];
-    } catch {}
-
-    // Defaults
-    const cdn = (cfg.CDN_BASE || 'https://esm.sh').replace(/\/+$/, '');
-    const cdnOrigin = new URL(cdn).origin;
-    let networkPolicy: 'NO_NET' | 'MEDIA_ONLY' | 'OPEN_NET' = 'NO_NET';
+    let networkPolicy = 'NO_NET';
     let networkDomains: string[] = [];
-    try {
-      if (buildId) {
-        // Read build record for policy
+    let legacyScript = false;
+    if (pathName) {
+      const buildDir = path.dirname(pathName);
+      const manifestPath = path.join(buildDir, 'manifest_v1.json');
+      const manifestMeta = tryReadManifest(manifestPath);
+      if (manifestMeta) {
+        networkPolicy = manifestMeta.networkPolicy || 'NO_NET';
+        networkDomains = manifestMeta.networkDomains || [];
+        legacyScript = manifestMeta.legacyScript;
+      } else {
         try {
-          const recPath = path.join(BUNDLE_ROOT, 'builds', buildId, 'build.json');
-          const raw = fs.readFileSync(recPath, 'utf8');
-          const rec = JSON.parse(raw);
-          if (rec?.networkPolicy) networkPolicy = rec.networkPolicy;
-        } catch {}
-        // Read manifest for domains
-        try {
-          const manPath = path.join(BUNDLE_ROOT, 'builds', buildId, 'build', 'manifest_v1.json');
-          const mraw = fs.readFileSync(manPath, 'utf8');
-          const man = JSON.parse(mraw);
-          if (Array.isArray(man?.networkDomains)) networkDomains = man.networkDomains;
-        } catch {}
-      }
-    } catch {}
-
-    // CSP pieces
-    const scriptDomains: string[] = [
-      "'self'",
-      cfg.EXTERNAL_HTTP_ESM ? cdnOrigin : undefined,
-      'https://js.stripe.com',
-      'https://m.stripe.network',
-    ].filter(Boolean) as string[];
-    if (networkPolicy === 'OPEN_NET') {
-      if (networkDomains.length > 0) {
-        for (const d of networkDomains) {
-          try {
-            const origin = new URL(d.startsWith('http') ? d : `https://${d}`).origin;
-            if (!scriptDomains.includes(origin)) scriptDomains.push(origin);
-          } catch {}
+          legacyScript = !fsSync.existsSync(path.join(buildDir, 'app.bundle.js'));
+        } catch {
+          legacyScript = false;
         }
-      } else {
-        scriptDomains.push('https:');
       }
     }
-    const scriptSrc = scriptDomains.join(' ');
 
-    const styleParts: string[] = ["'self'"];
-    if (!styleParts.includes("'unsafe-inline'")) {
-      styleParts.push("'unsafe-inline'");
-    }
-    if (networkPolicy === 'OPEN_NET') {
-      if (networkDomains.length > 0) {
-        for (const d of networkDomains) {
-          try {
-            const origin = new URL(d.startsWith('http') ? d : `https://${d}`).origin;
-            if (!styleParts.includes(origin)) styleParts.push(origin);
-          } catch {}
-        }
-      } else {
-        styleParts.push('https:');
-      }
-    }
-    const styleSrc = styleParts.join(' ');
-
-    const imgSrc =
-      networkPolicy === 'MEDIA_ONLY' || networkPolicy === 'OPEN_NET'
-        ? "* data: blob:"
-        : "'self' data: blob:";
-    const mediaSrc =
-      networkPolicy === 'MEDIA_ONLY' || networkPolicy === 'OPEN_NET'
-        ? '* blob:'
-        : "'self' blob:";
-    const frameSrc = "'self' https://js.stripe.com https://m.stripe.network";
-    const connectParts: string[] = [
-      "'self'",
-      'https://js.stripe.com',
-      'https://m.stripe.network',
-    ];
-    if (cfg.EXTERNAL_HTTP_ESM) {
-      connectParts.push(cdnOrigin);
-    }
-    if (networkPolicy === 'OPEN_NET') {
-      if (networkDomains.length > 0) {
-        for (const d of networkDomains) {
-          try {
-            const origin = new URL(d.startsWith('http') ? d : `https://${d}`).origin;
-            if (!connectParts.includes(origin)) connectParts.push(origin);
-          } catch {}
-        }
-      } else {
-        connectParts.push('https:');
-      }
-    }
-    const connectSrc = connectParts.join(' ');
-    const baseUri = "'none'";
-    const objectSrc = "'none'";
-
-    const csp = [
-      `default-src 'self'`,
-      `script-src ${scriptSrc}`,
-      `style-src ${styleSrc}`,
-      `img-src ${imgSrc}`,
-      `media-src ${mediaSrc}`,
-      `connect-src ${connectSrc}`,
-      `frame-src ${frameSrc}`,
-      `base-uri ${baseUri}`,
-      `object-src ${objectSrc}`,
-      `frame-ancestors ${frameAncestors.join(' ')}`,
-    ].join('; ');
-
-    // Read opt-in permission policy if present
-    let policy: {
-      camera: boolean;
-      microphone: boolean;
-      geolocation: boolean;
-      clipboardRead: boolean;
-      clipboardWrite: boolean;
-    } = {
-      camera: false,
-      microphone: false,
-      geolocation: false,
-      clipboardRead: false,
-      clipboardWrite: false,
-    };
-    try {
-      if (buildId) {
-        const polPath = path.join(BUNDLE_ROOT, 'builds', buildId, 'policy.json');
-        const raw = fs.readFileSync(polPath, 'utf8');
-        policy = { ...policy, ...JSON.parse(raw) };
-      }
-    } catch {}
-
-    const pp = [
-      `camera=(${policy.camera ? 'self' : ''})`,
-      `microphone=(${policy.microphone ? 'self' : ''})`,
-      `geolocation=(${policy.geolocation ? 'self' : ''})`,
-      `clipboard-read=(${policy.clipboardRead ? 'self' : ''})`,
-      `clipboard-write=(${policy.clipboardWrite ? 'self' : ''})`,
-      `fullscreen=(self)`,
-    ].join(', ');
+    const csp = buildCsp({
+      policy: networkPolicy,
+      networkDomains,
+      frameAncestors: Array.from(frameAncestors),
+      allowCdn: Boolean(cfg.EXTERNAL_HTTP_ESM),
+      legacyScript,
+    });
 
     res.setHeader('Content-Security-Policy', csp);
-    res.setHeader('Permissions-Policy', pp);
     res.setHeader('Referrer-Policy', 'no-referrer');
 
     const origin = res.req?.headers?.origin as string | undefined;
@@ -453,6 +394,9 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       `default-src 'self'; frame-ancestors ${fa.join(' ')}`,
     );
   };
+
+  // Alias for Play assets must execute before the static /builds handler so redirects win over 404s.
+  await app.register(buildAlias);
 
   await app.register(fastifyStatic, {
     root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
@@ -494,6 +438,11 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     return reply.code(401).send({ error: 'unauthenticated' });
   });
 
+  app.get('/_debug/storage-info', async (_req, reply) => {
+       try { const b = await getStorageBackend(); return reply.send(b.debug || { kind: b.kind }); }
+       catch (e:any) { return reply.send({ error: String(e?.message||e) }); }
+     });
+
   // Routes
   await app.register(authDebug);
   await app.register(billingRoutes);
@@ -521,6 +470,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(creatorsRoutes);
   await app.register(trialRoutes);
   await app.register(ownerRoutes);
+  await app.register(jwtRoutes);
 
   if (allowPreview) {
     await app.register(fastifyStatic, {

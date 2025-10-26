@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
 import { getAuth } from 'firebase-admin/auth';
+import { FieldValue } from 'firebase-admin/firestore';
 import { requireRole } from '../middleware/auth.js';
 import { getBucket } from '../storage.js';
 import * as tar from 'tar';
@@ -16,7 +17,7 @@ import {
 import { getConfig, LLM_REVIEW_ENABLED } from '../config.js';
 import { notifyAdmins } from '../notifier.js';
 import { BUNDLE_ROOT } from '../paths.js';
-import { readApps, writeApps } from '../db.js';
+import { readApps, writeApps, updateApp } from '../db.js';
 import { runLlmReviewForBuild } from '../llmReview.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { createJob, isJobActive } from '../buildQueue.js';
@@ -122,7 +123,15 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const { status, cursor } = req.query as { status?: string; cursor?: string };
     const { items, nextCursor } = await listBuilds(cursor ? Number(cursor) : undefined);
     const apps = await readApps();
-    const allowed = ['pending_review', 'pending_review_llm', 'rejected', 'approved', 'published'];
+    const allowed = [
+      'pending_review',
+      'pending_review_llm',
+      'rejected',
+      'approved',
+      'publishing',
+      'publish_failed',
+      'published',
+    ];
 
     let builds = items.filter((b) => allowed.includes(b.state));
     if (status === 'pending') {
@@ -131,6 +140,8 @@ export default async function reviewRoutes(app: FastifyInstance) {
       builds = builds.filter((b) => ['approved', 'published'].includes(b.state));
     } else if (status === 'rejected') {
       builds = builds.filter((b) => b.state === 'rejected');
+    } else if (status === 'failed') {
+      builds = builds.filter((b) => ['failed', 'publish_failed'].includes(b.state));
     }
 
     const cfg = getConfig();
@@ -405,9 +416,11 @@ export default async function reviewRoutes(app: FastifyInstance) {
         } else if (exists) {
           archive.append(file.createReadStream(), { name: 'bundle.tar.gz' });
         } else {
-          archive.append('Bundle artifacts are not currently available for this build.\n', {
-            name: 'README.txt',
-          });
+          archive.append('Bundle artifacts are not currently available for this build.\n',
+            {
+              name: 'README.txt',
+            },
+          );
         }
 
         const llmPath = rec.llmReportPath
@@ -451,77 +464,75 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
     if (!buildId) return reply.code(404).send({ error: 'not_found' });
+
     const rec = resolved?.build ?? (await readBuild(buildId));
     if (!rec) return reply.code(404).send({ error: 'not_found' });
-    await updateBuild(buildId, { state: 'approved' });
+
+    await updateBuild(buildId, { state: 'publishing' });
+
     try {
       await publishBundle(buildId);
       await updateBuild(buildId, { state: 'published' });
-      try {
-        const apps = resolved?.apps ?? (await readApps());
-        let idx =
-          resolved?.appIndex !== undefined && resolved.appIndex >= 0
-            ? resolved.appIndex
-            : apps.findIndex(
-                (a) =>
-                  a.pendingBuildId === buildId ||
-                  a.buildId === buildId ||
-                  a.id === id ||
-                  a.slug === id,
-              );
-        if (idx >= 0) {
-          const now = Date.now();
-          let app = apps[idx];
-          if (app.pendingBuildId === buildId) {
-            const { version, archivedVersions } = computeNextVersion(app, now);
-            app.archivedVersions = archivedVersions;
-            app.version = version;
-            app.buildId = buildId;
-            delete app.pendingBuildId;
-            delete app.pendingVersion;
-          } else if (!app.buildId) {
-            app.buildId = buildId;
-          }
-          app.status = 'published';
-          app.state = 'active';
-          // Ensure published apps are visible in marketplace
-          if ((app as any).visibility !== 'public') {
-            (app as any).visibility = 'public';
-          }
-          app.playUrl = `/play/${app.id}/`;
-          const ensured = ensureListingPreview(app as any);
-          if (ensured.changed) {
-            app = ensured.next as any;
-          }
-          app.publishedAt = now;
-          app.updatedAt = now;
-          (app as any).moderation = {
-            status: 'approved',
-            at: now,
-            by: req.authUser?.uid ?? null,
-          };
-          apps[idx] = app;
-          await writeApps(apps);
-          // Ensure translations exist for supported locales after approval
-          try {
-            const { ensureListingTranslations } = await import('../lib/translate.js');
-            await ensureListingTranslations(app as any, ['en', 'hr', 'de']);
-          } catch {}
+
+      const appIndex = resolved?.appIndex ?? -1;
+      if (appIndex >= 0) {
+        const app = resolved!.apps[appIndex];
+        const now = Date.now();
+        const payload: Record<string, any> = {};
+
+        if (app.pendingBuildId === buildId) {
+          const { version, archivedVersions } = computeNextVersion(app, now);
+          payload.archivedVersions = archivedVersions;
+          payload.version = version;
+          payload.buildId = buildId;
+          payload.pendingBuildId = FieldValue.delete();
+          payload.pendingVersion = FieldValue.delete();
+        } else if (!app.buildId) {
+          payload.buildId = buildId;
         }
-      } catch (err) {
-        req.log.error({ err, id }, 'listing_publish_update_failed');
+
+        payload.status = 'published';
+        payload.state = 'active';
+        if (app.visibility !== 'public') {
+          payload.visibility = 'public';
+        }
+        payload.playUrl = `/play/${app.id}/`;
+
+        const ensured = ensureListingPreview({ ...app, ...payload });
+        if (ensured.changed) {
+          Object.assign(payload, ensured.next);
+        }
+
+        payload.publishedAt = now;
+        payload.updatedAt = now;
+        payload.moderation = {
+          status: 'approved',
+          at: now,
+          by: req.authUser?.uid ?? null,
+        };
+
+        await updateApp(app.id, payload);
+
+        try {
+          const { ensureListingTranslations } = await import('../lib/translate.js');
+          await ensureListingTranslations({ ...app, ...payload }, ['en', 'hr', 'de']);
+        } catch (err) {
+            req.log.warn({ err, appId: app.id }, 'translation_ensure_failed');
+        }
       }
     } catch (err) {
       req.log.error({ err, id }, 'publish_failed');
+      await updateBuild(buildId, { state: 'publish_failed', error: 'publish_failed' });
       return reply.code(500).send({ error: 'publish_failed' });
     }
+
     try {
-      // Best-effort admin notification
       await notifyAdmins(
         'App published',
-        `Build ${buildId} has been approved and published by ${req.authUser?.uid || 'unknown admin'}.`
+        `Build ${buildId} has been approved and published by ${req.authUser?.uid || 'unknown admin'}.`,
       );
     } catch {}
+
     req.log.info({ id: buildId, uid: req.authUser?.uid }, 'review_approved');
     return { ok: true };
   });
@@ -530,48 +541,40 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
-    const rec = buildId ? await readBuild(buildId) : null;
-    if (!rec && !buildId) return reply.code(404).send({ error: 'not_found' });
     const reason = (req.body as any)?.reason;
+
     if (buildId) {
       await updateBuild(buildId, { state: 'rejected', ...(reason ? { error: reason } : {}) });
     }
+
     try {
-      const apps = resolved?.apps ?? (await readApps());
-      let idx =
-        resolved?.appIndex !== undefined && resolved.appIndex >= 0
-          ? resolved.appIndex
-          : apps.findIndex(
-              (a) =>
-                a.pendingBuildId === id ||
-                a.pendingBuildId === buildId ||
-                a.buildId === id ||
-                a.buildId === buildId ||
-                a.id === id ||
-                a.slug === id,
-            );
-      if (idx >= 0) {
-        const app = apps[idx];
+      const appIndex = resolved?.appIndex ?? -1;
+      if (appIndex >= 0) {
+        const app = resolved!.apps[appIndex];
         const now = Date.now();
+        const payload: Record<string, any> = {};
+
         if (buildId && app.pendingBuildId === buildId) {
-          delete app.pendingBuildId;
-          delete app.pendingVersion;
+          payload.pendingBuildId = FieldValue.delete();
+          payload.pendingVersion = FieldValue.delete();
         } else {
-          app.status = 'rejected';
-          app.state = 'inactive';
+          payload.status = 'rejected';
+          payload.state = 'inactive';
         }
-        app.updatedAt = now;
-        (app as any).moderation = {
+
+        payload.updatedAt = now;
+        payload.moderation = {
           status: 'rejected',
           at: now,
           by: req.authUser?.uid ?? null,
           reason: reason || null,
         };
-        await writeApps(apps);
+        await updateApp(app.id, payload);
       }
     } catch (err) {
       req.log.error({ err, id: buildId ?? id }, 'listing_reject_update_failed');
     }
+
     req.log.info({ id: buildId ?? id, uid: req.authUser?.uid, reason }, 'review_rejected');
     return { ok: true };
   });
@@ -613,17 +616,16 @@ export default async function reviewRoutes(app: FastifyInstance) {
   app.post('/review/builds/:id/delete', admin, async (req, reply) => {
     const { id } = req.params as { id: string };
     try {
-      const apps = await readApps();
-      const idx = apps.findIndex(
-        (a: any) => a.buildId === id || a.slug === id || String(a.id) === id,
-      );
-      if (idx >= 0) {
-        apps[idx].deletedAt = Date.now();
-        await writeApps(apps);
+      const resolved = await resolveBuildContext(id);
+      const appIndex = resolved?.appIndex ?? -1;
+      if (appIndex >= 0) {
+        const app = resolved!.apps[appIndex];
+        await updateApp(app.id, { deletedAt: Date.now() });
       }
       return reply.send({ ok: true });
     } catch (err) {
       req.log.error({ err, id }, 'soft_delete_failed');
+      return reply.code(500).send({ ok: false, error: 'soft_delete_failed' });
     }
   });
 

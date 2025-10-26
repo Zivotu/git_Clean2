@@ -136,3 +136,15 @@ As of 2025-10-23, CORS policies on the Fastify API server have been corrected to
 - Shim čuva `cap` u closureu; ne izlaže ga na `window`.
 - Dodan **offline queue** i `ack` poruka; flush na `online`/`visibilitychange`/`pagehide`.
 - Uređen lifecycle (unsubscribe, `BroadcastChannel.close()`).
+
+### Production bundling — verification
+
+- Run `scripts/verify-bundle.ps1 -BuildId <id> -BaseUrl <api>` (or `.sh`) and confirm it reports `BundleSizeBytes` with no bare imports or `react/jsx-dev-runtime`.
+- `GET /builds/<id>/build/manifest_v1.json` should return `entry: "./app.bundle.js"` with an `integrity` value that matches the script tag in `index.html`.
+- `curl -I /builds/<id>/build/index.html` must expose a single CSP stanza for the bundled asset and include `crossorigin="anonymous"`.
+
+## Alias za Play assete
+
+- Zašto: Play loader na web klijentu dohvaća bundle preko `/{appId}/build/*`, dok backend čuva najnoviji build pod `/builds/{buildId}/build/*`. Alias spaja te putanje bez promjena na loaderu.
+- Primjer: `GET /46/build/manifest_v1.json -> 307 -> /builds/<buildId>/build/manifest_v1.json`.
+- Napomena: Redirect je transparentan; CSP zaglavlja, bundling i statički handleri ostaju nepromijenjeni. Stabilni URL `/{listingId}/build/*` služi samo za dohvat zadnjeg `buildId`.

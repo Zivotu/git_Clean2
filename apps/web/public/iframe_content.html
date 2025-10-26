@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Iframe Content</title>
+    <!-- 1. Učitavamo shim PRVI -->
+    <script src="./shim.js"></script>
+    <style>
+        body { font-family: monospace; background-color: #eef; padding: 10px; font-size: 14px; }
+        p { color: #335; margin: 5px 0; }
+        #status { font-weight: bold; }
+        .ok { color: green; }
+        .wait { color: orange; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <p>-- Iframe Content --</p>
+    <p>Status: <span id="status" class="wait">Waiting for init...</span></p>
+    <p>Last command: <span id="last-command">none</span></p>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const commandEl = document.getElementById('last-command');
+
+        // Slušamo posebne poruke od test harnessa za izvršavanje koda
+        window.addEventListener('message', (event) => {
+            if (!event.data || !event.data.type) return;
+
+            if (event.data.type === 'thesara:storage:init') {
+                statusEl.textContent = 'Initialized!';
+                statusEl.className = 'ok';
+            }
+
+            if (event.data.type === 'harness:exec') {
+                commandEl.textContent = event.data.command;
+                eval(event.data.command);
+            }
+        });
+    </script>
+</body>
+</html>
