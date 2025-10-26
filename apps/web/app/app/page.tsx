@@ -768,7 +768,8 @@ useEffect(() => {
     }
   }, [useEditorPreview]);
 
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
+    if (!slug) return;
     setRefreshingSessions(true);
     try {
       const res = await fetch(`${API_URL}/app/${slug}/pin/sessions`, {
@@ -790,7 +791,7 @@ useEffect(() => {
       setRefreshingSessions(false);
       setLastSessionsRefresh(Date.now());
     }
-  }
+  }, [slug, buildHeaders]);
 
   async function revokeSession(sessionId: string) {
     try {
@@ -845,7 +846,7 @@ useEffect(() => {
     loadSessions();
     const intervalId = setInterval(loadSessions, 30000);
     return () => clearInterval(intervalId);
-  }, [item, slug, buildHeaders, user?.uid, isAdmin]);
+  }, [item, user?.uid, isAdmin, loadSessions]);
 
 
 

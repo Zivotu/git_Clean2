@@ -5,8 +5,8 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ./src/preload.ts\" tsx watch src/index.ts",
-    "dev:worker": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ./src/preload.ts\" tsx watch src/localdev/worker.run.ts",
+    "dev": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ts-node/register/transpile-only --require ./src/preload.ts\" tsx watch src/index.ts",
+    "dev:worker": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ts-node/register/transpile-only --require ./src/preload.ts\" tsx watch src/localdev/worker.run.ts",
     "build": "tsup --config tsup.config.cjs",
     "build:tsc": "tsc -p tsconfig.json",
     "start": "node --openssl-legacy-provider dist/index.js",
