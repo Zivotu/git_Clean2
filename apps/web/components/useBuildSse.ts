@@ -17,19 +17,21 @@ export interface SseEvent {
 
 export function useBuildSse(endpoint: string | null) {
   const [events, setEvents] = useState<SseEvent[]>([]);
-  const [status, setStatus] = useState<'idle' | 'connecting' | 'streaming' | 'done' | 'error'>(
-    'idle',
-  );
+  const [status, setStatus] = useState<'idle' | 'connecting' | 'streaming' | 'done' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     if (!endpoint) {
       setStatus('idle');
+      setEvents([]);
+      setError(null);
       return;
     }
+
     setStatus('connecting');
     setError(null);
+    setEvents([]);
 
     const es = new EventSource(endpoint);
     esRef.current = es;
@@ -40,9 +42,9 @@ export function useBuildSse(endpoint: string | null) {
     const handle = (event: MessageEvent, forced?: BuildPhase) => {
       try {
         const data = event.data ? JSON.parse(event.data) : null;
-        const type = (forced ?? (data?.status as BuildPhase)) || 'status_update';
-        push(type, data);
-        if (type === 'final' || type === 'published' || type === 'failed') {
+        const t = (forced ?? (data?.status as BuildPhase)) || 'status_update';
+        push(t, data);
+        if (t === 'final' || t === 'published' || t === 'failed') {
           setStatus('done');
           es.close();
           esRef.current = null;
@@ -55,13 +57,9 @@ export function useBuildSse(endpoint: string | null) {
       }
     };
 
-    const handleMessage = (event: MessageEvent) => handle(event);
-    const handleStatusUpdate = (event: MessageEvent) => handle(event, 'status_update');
-    const handleFinal = (event: MessageEvent) => handle(event, 'final');
-
-    es.addEventListener('message', handleMessage);
-    es.addEventListener('status_update', handleStatusUpdate);
-    es.addEventListener('final', handleFinal);
+    es.addEventListener('message', handle as EventListener);
+    es.addEventListener('status_update', (e) => handle(e as MessageEvent, 'status_update'));
+    es.addEventListener('final', (e) => handle(e as MessageEvent, 'final'));
     es.onerror = () => {
       setError('SSE connection error');
       setStatus('error');
@@ -70,13 +68,11 @@ export function useBuildSse(endpoint: string | null) {
     };
 
     return () => {
-      es.removeEventListener('message', handleMessage);
-      es.removeEventListener('status_update', handleStatusUpdate);
-      es.removeEventListener('final', handleFinal);
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;
       }
+      es.close();
     };
   }, [endpoint]);
 

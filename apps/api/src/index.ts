@@ -174,7 +174,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   const wildcardOrigins: RegExp[] = [];
 
   const escapeRegExp = (value: string) =>
-    value.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    value.replace(/[.*+?^${}()|[\]\/]/g, '\$&');
 
   for (const origin of corsOrigins) {
     const lower = origin.toLowerCase();

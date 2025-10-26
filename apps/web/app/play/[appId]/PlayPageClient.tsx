@@ -161,14 +161,16 @@ function buildSrcDoc(asset: BuildAssetConfig): string {
     if (!mediaSources.includes('https:')) mediaSources.push('https:')
   }
 
+  const unique = (values: string[]) => Array.from(new Set(values));
+
   const directives = [
     "default-src 'none'",
-    `script-src ${Array.from(new Set(scriptSources)).join(' ')}`,
-    `style-src ${Array.from(new Set(styleSources)).join(' ')}`,
-    `img-src ${Array.from(new Set(imgSources)).join(' ')}`,
-    `font-src ${Array.from(new Set(fontSources)).join(' ')}`,
-    `media-src ${Array.from(new Set(mediaSources)).join(' ')}`,
-    `connect-src ${Array.from(new Set(connectSources)).join(' ')}`,
+    `script-src ${unique(scriptSources).join(' ')}`,
+    `style-src ${unique(styleSources).join(' ')}`,
+    `img-src ${unique(imgSources).join(' ')}`,
+    `font-src ${unique(fontSources).join(' ')}`,
+    `media-src ${unique(mediaSources).join(' ')}`,
+    `connect-src ${unique(connectSources).join(' ')}`,
     "frame-src 'none'",
     "base-uri 'none'",
     "object-src 'none'",

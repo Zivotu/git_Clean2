@@ -102,13 +102,6 @@ function timelineClass(state: BuildState): string {
   if (state === 'llm_generating') return 'timeline-step timeline-step-generating';
   return 'timeline-step timeline-step-active';
 }
-const timelineArrowClass = (state: BuildState): string => {
-  if (state === 'llm_waiting' || state === 'llm_generating') {
-    return 'timeline-arrow';
-  }
-  return 'timeline-arrow timeline-arrow-active';
-};
-
 function BuildTimeline({ buildId }: { buildId: string }) {
   const API = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
   const { events, status, error } = useBuildSse(`${API}/review/builds/${buildId}/events`);
@@ -394,7 +387,7 @@ export default function AdminDashboard() {
       }
     });
     return () => unsubscribe();
-  }, [auth, load, llmEnabled]);
+  }, [load, llmEnabled]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -919,7 +912,9 @@ return (
                   <div key={`${t.state}-${idx}`} className="flex items-center">
                     <span className={timelineClass(t.state)}>{t.state}</span>
                     {idx < timeline.length - 1 && (
-                      <span className="timeline-arrow timeline-arrow-active">?</span>
+                      <span className="timeline-arrow timeline-arrow-active" aria-hidden="true">
+                        →
+                      </span>
                     )}
                   </div>
                 ))}

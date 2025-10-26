@@ -304,6 +304,9 @@ function AppDetailClient() {
   const { messages } = useI18n();
   const tApp = useCallback((k: string) => messages[`App.${k}`] || k, [messages]);
 
+  const userId = user?.uid ?? null;
+  const normalizedSlug = useMemo(() => (slug ?? '').trim(), [slug]);
+
   const [item, setItem] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -633,7 +636,6 @@ useEffect(() => {
 
   // Load listing data
   useEffect(() => {
-    const normalizedSlug = (slug ?? '').trim();
     setFetchError(null);
 
     if (!normalizedSlug) {
@@ -654,10 +656,9 @@ useEffect(() => {
       try {
         const encodedSlug = encodeURIComponent(normalizedSlug);
         const basePath = `/api/listing/${encodedSlug}`;
-        const url =
-          user?.uid && user.uid
-            ? `${basePath}?uid=${encodeURIComponent(user.uid)}`
-            : basePath;
+        const url = userId
+          ? `${basePath}?uid=${encodeURIComponent(userId)}`
+          : basePath;
         const res = await fetch(url, {
           cache: 'no-store',
           credentials: 'include',
@@ -735,7 +736,7 @@ useEffect(() => {
     return () => {
       controller.abort();
     };
-  }, [slug, buildHeaders, user?.uid, router]);
+  }, [normalizedSlug, buildHeaders, userId, router]);
 
   const imgSrc = useMemo(() => {
     const shouldForcePlaceholder = Boolean(item?.status && !isPublished && !canViewUnpublished);
@@ -769,10 +770,10 @@ useEffect(() => {
   }, [useEditorPreview]);
 
   const loadSessions = useCallback(async () => {
-    if (!slug) return;
+    if (!normalizedSlug) return;
     setRefreshingSessions(true);
     try {
-      const res = await fetch(`${API_URL}/app/${slug}/pin/sessions`, {
+      const res = await fetch(`${API_URL}/app/${normalizedSlug}/pin/sessions`, {
         cache: 'no-store',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -791,11 +792,12 @@ useEffect(() => {
       setRefreshingSessions(false);
       setLastSessionsRefresh(Date.now());
     }
-  }, [slug, buildHeaders]);
+  }, [normalizedSlug, buildHeaders]);
 
   async function revokeSession(sessionId: string) {
+    if (!normalizedSlug) return;
     try {
-      const res = await fetch(`${API_URL}/app/${slug}/pin/sessions/${sessionId}/revoke`, {
+      const res = await fetch(`${API_URL}/app/${normalizedSlug}/pin/sessions/${sessionId}/revoke`, {
         method: 'POST',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -817,8 +819,9 @@ useEffect(() => {
 
   async function rotatePin() {
     setRotatingPin(true);
+    if (!normalizedSlug) return;
     try {
-      const res = await fetch(`${API_URL}/app/${slug}/pin/rotate`, {
+      const res = await fetch(`${API_URL}/app/${normalizedSlug}/pin/rotate`, {
         method: 'POST',
         credentials: 'include',
         headers: await buildHeaders(false),
