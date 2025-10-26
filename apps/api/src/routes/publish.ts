@@ -1,4 +1,4 @@
-﻿import { randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -11,6 +11,8 @@ import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile } from '../lib/preview.js';
 import { writeArtifact } from '../utils/artifacts.js';
+import { prisma } from '../db.js';
+import { sseEmitter } from '../lib/sseEmitter.js';
 
 function slugify(input: string): string {
   return input
@@ -115,7 +117,7 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
 
     // Quick guard: block SES/lockdown in browser inline code to avoid white screens
     const code = String(body.inlineCode || '');
-    const sesRe = /(\blockdown\s*\(|\brequire\s*\(\s*['\"]ses['\"]\s*\)|\bfrom\s+['\"]ses['\"]|import\s*\(\s*['\"]ses['\"]\s*\))/;
+    const sesRe = /(lockdown\s*\(|require\s*\(\s*['"]ses['"]\s*\)|from\s+['"]ses['"]|import\s*\(\s*['"]ses['"]\s*\))/;
     if (sesRe.test(code)) {
       req.log.info({ reason: 'ses_lockdown' }, 'publish:blocked');
       return reply
@@ -123,36 +125,52 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         .send({ ok: false, error: 'ses_lockdown', code: 'ses_lockdown', message: 'SES/lockdown is not supported in the browser. Remove it or guard for server-only.' });
     }
 
+    let listingId: number | undefined;
+    try {
+      const now = Date.now();
+      const numericIds = apps
+        .map((a) => Number(a.id))
+        .filter((n) => !Number.isNaN(n));
+      // Find existing by id or slug; avoid false negatives when id comes as number
+      const idx = appId ? apps.findIndex((a) => a.id === appId || a.slug === appId) : -1;
+      const existing = idx >= 0 ? apps[idx] : undefined;
+      listingId = existing
+        ? Number(existing.id)
+        : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
+
+    await prisma.build.create({
+        data: {
+          id: buildId,
+          listingId: String(listingId),
+          status: 'queued',
+          mode: 'legacy', // Start as legacy, worker will update
+        },
+      });
+
+      sseEmitter.emit('build_event', {
+        buildId,
+        event: 'status',
+        payload: { status: 'queued' },
+      });
+
+    } catch (err) {
+        req.log.error({ err }, 'publish:build_record_failed');
+        return reply.code(500).send({ ok: false, error: 'database_error' });
+    }
+
     try {
       const dir = getBuildDir(buildId);
       await fs.mkdir(dir, { recursive: true });
 
-      const isHtml = body.inlineCode.trim().toLowerCase().startsWith('<!doctype html>');
-      let indexHtml = '<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><style>html,body{margin:0;padding:0} body{overflow-x:hidden} #root{min-height:100vh}</style></head><body><div id="root"></div><script type="module" src="./app.js"></script></body></html>';
-      let appJs = '';
-
-      if (isHtml) {
-        indexHtml = body.inlineCode;
-        appJs = '';
-      } else {
-        const result = await esbuild.transform(body.inlineCode, {
-          loader: 'tsx',
-          format: 'esm',
-          jsx: 'automatic',
-          jsxDev: process.env.NODE_ENV !== 'production',
-        });
-        appJs = result.code;
-      }
-
-      // Write a minimal build layout expected by downstream steps
+      // Write only the user's raw code to app.js. The build worker will transpile it.
+      // Write a minimal manifest so the /build/:id/status route doesn't 404 immediately.
+      // The build worker will overwrite this with a proper one.
       const buildDir = path.join(dir, 'build');
       await fs.mkdir(buildDir, { recursive: true });
-      await fs.writeFile(path.join(buildDir, 'index.html'), indexHtml, 'utf8');
-      await fs.writeFile(path.join(buildDir, 'app.js'), appJs, 'utf8');
+      await fs.writeFile(path.join(buildDir, 'app.js'), body.inlineCode, 'utf8');
 
       // Also keep top-level copies for debugging/inspection
-      await fs.writeFile(path.join(dir, 'index.html'), indexHtml, 'utf8');
-      await fs.writeFile(path.join(dir, 'app.js'), appJs, 'utf8');
+      await fs.writeFile(path.join(dir, 'app.js'), body.inlineCode, 'utf8');
 
       // Ensure minimal manifest so the web UI can read /builds/:id/build/manifest_v1.json even
       // before background workers enrich artifacts. This prevents white screens.
@@ -185,7 +203,6 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
         .code(503)
         .send({ ok: false, error: 'build_queue_unavailable', message: 'Build queue unavailable' });
     }
-    let listingId: number | undefined;
     try {
       const now = Date.now();
       const numericIds = apps
@@ -194,9 +211,6 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
       // Find existing by id or slug; avoid false negatives when id comes as number
       const idx = appId ? apps.findIndex((a) => a.id === appId || a.slug === appId) : -1;
       const existing = idx >= 0 ? apps[idx] : undefined;
-      listingId = existing
-        ? Number(existing.id)
-        : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
       const existingSlug = existing?.slug;
       const baseSlug = slugify(body.title || '') || `app-${listingId}`;
       let slug = existingSlug || baseSlug;
@@ -332,15 +346,14 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
           lines.push(short);
         }
         lines.push('');
-        const webBase = (cfg.WEB_BASE || 'http://localhost:3000').replace(/\/$/, '');
-        const apiBase = (cfg.PUBLIC_BASE || `http://127.0.0.1:${cfg.PORT}`).replace(/\/$/, '');
+        const webBase = (cfg.WEB_BASE || 'http://localhost:3000').replace(///$/, '');
+        const apiBase = (cfg.PUBLIC_BASE || `http://127.0.0.1:${cfg.PORT}`).replace(///$/, '');
         lines.push('Linkovi:');
         lines.push(`â€¢ Admin pregled: ${webBase}/admin/`);
         lines.push(`â€¢ Status builda: ${apiBase}/build/${buildId}/status`);
         lines.push(`â€¢ DogaÄ‘aji builda (SSE): ${apiBase}/build/${buildId}/events`);
         await notifyAdmins(subject, lines.join('\n'));
-      } catch {}
-      // Best-effort background translation for core locales
+      } catch {} // Best-effort background translation for core locales
       try {
         const { ensureListingTranslations } = await import('../lib/translate.js');
         const created = apps.find((a) => a.id === String(listingId));
@@ -348,8 +361,7 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
           // Fire and forget
           void ensureListingTranslations(created as any, ['en', 'hr', 'de']);
         }
-      } catch {}
-      return reply.code(202).send({ ok: true, buildId, listingId, slug });
+      } catch {} // Return reply.code(202).send({ ok: true, buildId, listingId, slug });
     } catch (err) {
       req.log.error({ err }, 'publish:listing_write_failed');
       return reply
@@ -364,5 +376,3 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
   app.post('/createx/publish', handler);
   app.post('/createx/publish/', handler);
 }
-
-

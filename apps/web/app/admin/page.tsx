@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -8,6 +8,7 @@ import { auth } from '@/lib/firebase';
 import { API_URL } from '@/lib/config';
 import Logo from '@/components/Logo';
 import { resolvePreviewUrl } from '@/lib/preview';
+import { useBuildSse } from '@/components/useBuildSse';
 
 async function buildHeaders(withJson: boolean): Promise<Record<string, string>> {
   const headers: Record<string, string> = withJson
@@ -101,6 +102,31 @@ function timelineClass(state: BuildState): string {
   if (state === 'llm_generating') return 'timeline-step timeline-step-generating';
   return 'timeline-step timeline-step-active';
 }
+const timelineArrowClass = (state: BuildState): string => {
+  if (state === 'llm_waiting' || state === 'llm_generating') {
+    return 'timeline-arrow';
+  }
+  return 'timeline-arrow timeline-arrow-active';
+};
+
+function BuildTimeline({ buildId }: { buildId: string }) {
+  const API = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
+  const { events, status, error } = useBuildSse(`${API}/review/builds/${buildId}/events`);
+  return (
+    <div className="mt-3 border rounded p-3">
+      <div className="text-sm opacity-70">SSE: {status}{error ? ` — ${error}` : ''}</div>
+      <ol className="mt-2 space-y-1 text-sm">
+        {events.map(e => (
+          <li key={e.at}>
+            <span className="inline-block w-28 font-mono">{new Date(e.at).toLocaleTimeString()}</span>
+            <span className="inline-block w-24">{e.type}</span>
+            <span className="opacity-60">{e.payload?.reason || ''}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [items, setItems] = useState<ReviewItem[]>([]);
@@ -119,8 +145,7 @@ export default function AdminDashboard() {
   const [zipReady, setZipReady] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
-  const [llmTimeout, setLlmTimeout] = useState(false);
-  const [policy, setPolicy] = useState<{ camera?: boolean; microphone?: boolean; geolocation?: boolean; clipboardRead?: boolean; clipboardWrite?: boolean } | null>(null);
+  const [policy, setPolicy] = useState<{ camera?: boolean; microphone?: boolean; geolocation?: boolean; clipboardRead?: boolean; clipboardWrite?: boolean; } | null>(null);
   const [policySaving, setPolicySaving] = useState(false);
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
@@ -147,7 +172,6 @@ export default function AdminDashboard() {
     return safe || fallback;
   };
 
-
   const [artifacts, setArtifacts] = useState<any | null>(null);
   const showDetails = Boolean(currentItem) || Boolean(currentBuildId);
 
@@ -162,7 +186,6 @@ export default function AdminDashboard() {
     setPolicy(null);
     setZipReady(false);
     setPreviewSrc(null);
-    setLlmTimeout(false);
   };
 
   const previewLink = currentBuildId
@@ -206,9 +229,9 @@ export default function AdminDashboard() {
     setPreviewSrc(null);
     setZipReady(false);
     setTimeline([]);
-    setLlmTimeout(false);
     setArtifacts(null);
     setCurrentBuildId(null);
+
     try {
       let idx: any = {};
       try {
@@ -218,7 +241,6 @@ export default function AdminDashboard() {
       const resolvedBuildId = idx.buildId || resolveItemTarget(match) || '';
       setCurrentBuildId(resolvedBuildId || null);
       setZipReady(Boolean(idx.bundle?.exists));
-      if (resolvedBuildId && !idx.bundle?.exists) pollZip(resolvedBuildId);
       const preview =
         resolvePreviewUrl(match?.previewUrl) ||
         (idx.previewIndex?.exists
@@ -237,71 +259,8 @@ export default function AdminDashboard() {
           const pol = await apiGet<any>(`/review/builds/${resolvedBuildId}/policy`, { auth: true });
           setPolicy(pol || {});
         } catch {}
-        if (llmEnabled !== false) {
-          try {
-            const json = await apiGet<any>(`/review/builds/${resolvedBuildId}/llm`, { auth: true });
-            setReport(json);
-            if (json.status === 'generating') {
-              pollReport(resolvedBuildId);
-            }
-          } catch (e) {
-            if (e instanceof ApiError) {
-              if (e.status === 404) {
-                setReport({ status: 'not_ready' });
-              } else if (e.status === 503) {
-                setReport({ status: 'generating' });
-                pollReport(resolvedBuildId);
-              }
-            }
-          }
-        } else {
-          setReport({ status: 'not_ready' });
-        }
       }
     } catch {}
-  };
-
-  const pollReport = (id: string, attempt = 0): void => {
-    if (currentBuildId !== id) return;
-    if (attempt >= 30) {
-      setRegeneratingId(null);
-      setLlmTimeout(true);
-      return;
-    }
-    setTimeout(async () => {
-      try {
-        const json = await apiGet<any>(`/review/builds/${id}/llm`, { auth: true });
-        if (json.status === 'generating') {
-          setReport(json);
-          pollReport(id, attempt + 1);
-        } else {
-          setReport(json);
-          setRegeneratingId(null);
-        }
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 503) {
-          setReport({ status: 'generating' });
-        }
-        pollReport(id, attempt + 1);
-      }
-    }, 2000);
-  };
-
-  const pollZip = (id: string, attempt = 0): void => {
-    if (currentBuildId !== id) return;
-    if (attempt >= 30) return;
-    setTimeout(async () => {
-      try {
-        const idx = await apiGet<any>(`/review/artifacts/${id}`, { auth: true });
-        if (idx.bundle?.exists) {
-          setZipReady(true);
-        } else {
-          pollZip(id, attempt + 1);
-        }
-      } catch {
-        pollZip(id, attempt + 1);
-      }
-    }, 2000);
   };
 
   async function downloadCode(id?: string) {
@@ -349,10 +308,8 @@ export default function AdminDashboard() {
       return;
     }
     setRegeneratingId(id);
-    setLlmTimeout(false);
     try {
       await apiPost(`/review/builds/${id}/llm`, {}, { auth: true });
-      if (id === currentBuildId) pollReport(id);
       await load();
       if (id === currentBuildId) await viewReport(id);
     } catch (e) {
@@ -959,7 +916,7 @@ return (
             {timeline.length > 0 && (
               <div className="flex flex-wrap items-center gap-1 mb-2">
                 {timeline.map((t, idx) => (
-                  <div key={t.at} className="flex items-center">
+                  <div key={`${t.state}-${idx}`} className="flex items-center">
                     <span className={timelineClass(t.state)}>{t.state}</span>
                     {idx < timeline.length - 1 && (
                       <span className="timeline-arrow timeline-arrow-active">?</span>
@@ -968,6 +925,7 @@ return (
                 ))}
               </div>
             )}
+            {currentItem?.buildId ? <BuildTimeline buildId={currentItem.buildId} /> : null}
             {currentItem?.networkPolicy && (
               <div className="text-sm mb-2">
                 <div>
@@ -1052,27 +1010,6 @@ return (
             )}
             {currentItem?.llmAttempts !== undefined && (
               <div className="text-sm mb-2">LLM attempts: {currentItem.llmAttempts}</div>
-            )}
-            {((currentBuildId && regeneratingId === currentBuildId) || report?.status === 'generating') && (
-              llmTimeout ? (
-                <div className="space-y-2">
-                  <div className="text-sm">Čekamo AI servis…</div>
-                  <button
-                    onClick={() => {
-                      if (currentBuildId) pollReport(currentBuildId);
-                      setLlmTimeout(false);
-                    }}
-                    className="px-2 py-1 bg-emerald-600 text-white rounded"
-                  >
-                    Try again
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
-                  <span className="text-sm">Analiza u tijeku…</span>
-                </div>
-              )
             )}
             {report?.status === 'not_ready' && currentBuildId && (
               <div className="space-y-2">

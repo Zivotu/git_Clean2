@@ -48,7 +48,7 @@ type Listing = {
   accessMode?: AccessMode;
   playUrl: string;
   previewUrl?: string | null;
-  createdAt?: number;
+  createdAt: number;
   author?: { uid?: string; name?: string; photo?: string; handle?: string };
   likesCount?: number;
   likedByMe?: boolean;
@@ -302,7 +302,7 @@ function AppDetailClient() {
   const { user } = useAuth();
   const name = getDisplayName(user);
   const { messages } = useI18n();
-  const tApp = (k: string) => messages[`App.${k}`] || k;
+  const tApp = useCallback((k: string) => messages[`App.${k}`] || k, [messages]);
 
   const [item, setItem] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -743,7 +743,7 @@ useEffect(() => {
       return `${API_URL}/assets/preview-placeholder.svg`;
     }
     const resolved = resolvePreviewUrl(item?.previewUrl);
-    if (item?.previewUrl?.startsWith('/uploads/')) {
+    if (resolved?.includes('/uploads/')) {
       const separator = resolved.includes('?') ? '&' : '?';
       return `${resolved}${separator}v=${imgVersion}`;
     }

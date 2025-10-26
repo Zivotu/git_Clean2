@@ -27,28 +27,53 @@ function resolveTargetListing(apps: AppRecord[], listingId: string): AppRecord |
   );
 }
 
+import { setCors } from './storage.js';
+
 export default async function buildAlias(app: FastifyInstance): Promise<void> {
   if ((app as any).__thesara_buildAlias_registered) return;
   (app as any).__thesara_buildAlias_registered = true;
 
-  app.get<{ Params: BuildAliasParams }>('/:listingId/build/*', async (req, reply) => {
-    const { listingId } = req.params;
-    const tailSegments = sanitizeTail(req.params['*']);
+  app.route<{ Params: BuildAliasParams }>({
+    method: ['GET', 'HEAD', 'OPTIONS'],
+    url: '/:listingId/build/*',
+    handler: async (req, reply) => {
+      if (req.method === 'OPTIONS') {
+        setCors(reply, req.headers.origin);
+        return reply.code(204).send();
+      }
 
-    const apps = await readApps(['buildId', 'pendingBuildId', 'slug']);
-    const target = resolveTargetListing(apps, listingId);
-    const buildId = target?.buildId || target?.pendingBuildId;
+      const { listingId } = req.params;
+      const tailSegments = sanitizeTail(req.params['*']);
 
-    if (!target || !buildId) {
-      return reply.code(404).send({ error: 'Not found' });
-    }
+      const apps = await readApps(['buildId', 'pendingBuildId', 'slug']);
+      const target = resolveTargetListing(apps, listingId);
+      const buildId = target?.buildId || target?.pendingBuildId;
 
-    const encodedId = encodeURIComponent(buildId);
-    const encodedTail = tailSegments.map((segment) => encodeURIComponent(segment)).join('/');
-    const location = encodedTail
-      ? `/builds/${encodedId}/build/${encodedTail}`
-      : `/builds/${encodedId}/build/`;
+      const logProps = {
+        listingId,
+        buildId,
+        tail: req.params['*'],
+        method: req.method,
+      };
 
-    return reply.redirect(307, location);
+      if (!target || !buildId) {
+        req.log.warn(logProps, 'Build alias not found');
+        return reply.code(404).send({ error: 'Not found' });
+      }
+
+      const encodedId = encodeURIComponent(buildId);
+      const encodedTail = tailSegments.map((segment) => encodeURIComponent(segment)).join('/');
+      const location = encodedTail
+        ? `/builds/${encodedId}/build/${encodedTail}`
+        : `/builds/${encodedId}/build/`;
+
+      req.log.info({ ...logProps, location }, 'Redirecting build alias');
+
+      if (req.method === 'HEAD') {
+        return reply.code(307).header('Location', location).send();
+      } else {
+        return reply.redirect(307, location);
+      }
+    },
   });
 }

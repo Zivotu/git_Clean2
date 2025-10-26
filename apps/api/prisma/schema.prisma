@@ -93,3 +93,15 @@ model AppStorage {
   @@index([appId, roomId, key], name: "app_storage_lookup_idx")
   @@map("app_storage")
 }
+
+model Build {
+  id          String   @id @default(cuid())
+  listingId   String
+  status      String   // "queued", "bundling", "verifying", "success", "failed"
+  mode        String   // "bundled", "legacy"
+  reason      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([listingId])
+}

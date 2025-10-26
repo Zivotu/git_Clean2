@@ -52,6 +52,8 @@ import storageRoutes from './routes/storage.js';
 import roomsBridge from './routes/rooms-bridge.js';
 import ambassadorRoutes from './routes/ambassador.js';
 import jwtRoutes from './routes/jwt.js';
+import buildEventsRoutes from './routes/buildEvents.js';
+import testingRoutes from './routes/testing.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
 import localDevRoutes from './localdev/routes.js';
 import { startLocalDevWorker } from './localdev/worker.js';
@@ -133,8 +135,7 @@ export async function createServer() {
         } catch {}
       }
       if (!copied) {
-        const stub = `import * as React from 'react';\nexport function Card(p:any){return React.createElement('div',{...p, className: (p.className||'')})}
-export function CardHeader(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}
+        const stub = `import * as React from 'react';\nexport function Card(p:any){return React.createElement('div',{...p, className: (p.className||'')})}\nexport function CardHeader(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}
 export function CardTitle(p:any){return React.createElement('h3',{...p, className: 'text-lg font-semibold ' + (p.className||'')})}
 export function CardContent(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}
 export function Button(p:any){return React.createElement('button',{...p, className: (p.className||'')})}
@@ -164,20 +165,21 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     'http://127.0.0.1:3000',
     'http://[::1]:3000',
   ];
-  const corsOrigins = Array.from(new Set([...ALLOWED_ORIGINS, ...defaultOrigins])).filter(
-    Boolean,
-  );
+  const corsOrigins = Array.from(new Set([...ALLOWED_ORIGINS, ...defaultOrigins])).
+    filter(
+      Boolean,
+    );
 
   const exactOrigins = new Set<string>();
   const wildcardOrigins: RegExp[] = [];
 
   const escapeRegExp = (value: string) =>
-    value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    value.replace(/[.*+?^${}()|[\\\]/g, '\\$&');
 
   for (const origin of corsOrigins) {
     const lower = origin.toLowerCase();
     if (lower.includes('*')) {
-      const pattern = `^${escapeRegExp(lower).replace(/\\\*/g, '.*')}$`;
+      const pattern = `^${escapeRegExp(lower).replace(/\\*/g, '.*')}$`;
       try {
         wildcardOrigins.push(new RegExp(pattern, 'i'));
       } catch {
@@ -208,6 +210,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
+    exposedHeaders: ['ETag', 'X-Storage-Backend'],
+    allowedHeaders: ['Authorization', 'If-Match', 'X-Thesara-App-Id', 'Content-Type'],
   });
 
   await app.register(metricsPlugin);
@@ -242,37 +246,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         if (req.raw) (req.raw as any).url = stripped;
       }
       
-      // 2) Best-effort: auto-create minimal manifest if missing to avoid 404 white screens
-      //    Pattern: /builds/:id/build/manifest_v1.json
-      const urlForCheck = ((req as any).url || raw) as string;
-      const m = /^\/builds\/([^\/]+)\/build\/manifest_v1\.json(?:[?#].*)?$/.exec(urlForCheck);
-      if (m && m[1]) {
-        try {
-          const buildId = decodeURIComponent(m[1]);
-          const cfg = getConfig();
-          const buildDir = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', buildId, 'build');
-          const manPath = path.join(buildDir, 'manifest_v1.json');
-          try {
-            fs.accessSync(manPath);
-          } catch {
-            // Create minimal manifest if app.js exists
-            try {
-              const appJs = path.join(buildDir, 'app.js');
-              fs.accessSync(appJs);
-              fs.mkdirSync(buildDir, { recursive: true });
-              const manifest = {
-                id: buildId,
-                entry: 'app.js',
-                name: buildId,
-                description: '',
-                networkPolicy: 'NO_NET',
-                networkDomains: [],
-              };
-              fs.writeFileSync(manPath, JSON.stringify(manifest, null, 2), 'utf8');
-            } catch {}
-          }
-        } catch {}
-      }
+
+
     } catch {}
     done();
   });
@@ -439,7 +414,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   });
 
   app.get('/_debug/storage-info', async (_req, reply) => {
-       try { const b = await getStorageBackend(); return reply.send(b.debug || { kind: b.kind }); }
+       try { const b = await getStorageBackend(); return reply.send(b.debug || { kind: b.kind }); } 
        catch (e:any) { return reply.send({ error: String(e?.message||e) }); }
      });
 
@@ -471,6 +446,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(trialRoutes);
   await app.register(ownerRoutes);
   await app.register(jwtRoutes);
+  await app.register(buildEventsRoutes);
 
   if (allowPreview) {
     await app.register(fastifyStatic, {
@@ -482,6 +458,10 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       setHeaders: setPreviewHeaders,
       allowedPath: (pathname) => !/\/llm(?:\/|$)/.test(pathname),
     });
+  }
+
+  if (process.env.NODE_ENV === 'test') {
+    await app.register(testingRoutes);
   }
 
   // Health endpoint

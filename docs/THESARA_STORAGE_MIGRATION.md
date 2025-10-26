@@ -48,9 +48,22 @@ done
 ## Faza 7 — CI & QA Automation
 
 - Dodan GitHub Actions workflow `E2E (Playwright)` koji se pokreće na svakom PR‑u i pushu na `main`.
-- Testovi koriste `BASE_URL` iz `secrets.E2E_BASE_URL` ili default `https://thesara.space`.
 - Artefakti (report, trace, video) uploadaju se na fail radi bržeg debugiranja.
 - Preporuka: postaviti ovaj job kao **Required** u branch protection pravilima.
+
+### Ključni E2E scenariji
+
+1.  **412 Conflict & Retry Test**:
+    -   **Setup**: Otvoriti dvije instance (taba) iste Play aplikacije.
+    -   **Akcija A**: Prva instanca uspješno izvrši `PATCH` operaciju.
+    -   **Akcija B**: Druga instanca pokuša `PATCH` s istim (sada zastarjelim) `If-Match` headerom.
+    -   **Assert 1**: API vraća `412 Precondition Failed`.
+    -   **Assert 2**: Klijent u drugoj instanci detektira 412, automatski radi `GET` za novi ETag i stanje, ponavlja `PATCH` operaciju (replay) i dobiva `200 OK`. U konzoli nema `uncaught` grešaka.
+
+2.  **Legacy CSP Test**:
+    -   **Setup**: Programski se kreira build koji rezultira s `entry: "app.js"` u manifestu (bez bundlea i SRI hasha).
+    -   **Akcija**: Učitati Play stranicu s tim buildom.
+    -   **Assert**: Aplikacija se ispravno renderira. U konzoli nema CSP grešaka, što potvrđuje da je relaksirana CSP politika ispravno primijenjena i dovoljna za rad aplikacije.
 
 ## Faza 6 — Deprecation & Cleanup
 
@@ -148,3 +161,46 @@ As of 2025-10-23, CORS policies on the Fastify API server have been corrected to
 - Zašto: Play loader na web klijentu dohvaća bundle preko `/{appId}/build/*`, dok backend čuva najnoviji build pod `/builds/{buildId}/build/*`. Alias spaja te putanje bez promjena na loaderu.
 - Primjer: `GET /46/build/manifest_v1.json -> 307 -> /builds/<buildId>/build/manifest_v1.json`.
 - Napomena: Redirect je transparentan; CSP zaglavlja, bundling i statički handleri ostaju nepromijenjeni. Stabilni URL `/{listingId}/build/*` služi samo za dohvat zadnjeg `buildId`.
+
+---
+
+## Faza 12 — SSE & Real-time UI
+
+Kako bi se poboljšalo korisničko iskustvo prilikom objave aplikacije, uvodi se real-time praćenje statusa builda putem Server-Sent Events (SSE).
+
+### SSE Endpoint
+
+-   **Ruta**: `GET /build/:buildId/events`
+-   **Headers**: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`. CORS mora biti ispravno konfiguriran.
+-   **Eventi**: Server šalje događaje u `event: <ime>\ndata: <json>\n\n` formatu.
+    -   `event: status_update`: Šalje se za svaku fazu build procesa.
+        -   `data: {"status":"queued"}`
+        -   `data: {"status":"analyze"}`
+        -   `data: {"status":"build"}`
+        -   `data: {"status":"bundle"}`
+        -   `data: {"status":"verify"}`
+        -   `data: {"status":"ai_scan"}`
+        -   `data: {"status":"llm_generating"}`
+    -   `event: llm_report`: Šalje kompletan AI izvještaj kada je gotov.
+    -   `event: final`: Označava kraj procesa.
+        -   `data: {"status":"published", "buildId": "...", "listingId": "..."}`
+        -   `data: {"status":"failed", "reason": "...", "buildId": "..."}`
+
+### UI Integracija
+
+-   **Povezivanje**: Klijent koristi `EventSource` za spajanje na `/build/:buildId/events`.
+-   **UX**:
+    -   Tijekom procesa prikazuje se poruka "Publishing..." s detaljem trenutne faze (npr., "Bundling...").
+    -   Na `final` event sa statusom `success`, prikazuje se CTA gumb "Open Play".
+    -   Na `final` event sa statusom `failed`, prikazuje se poruka o grešci s `reason` i opcijama "Retry" ili "View Logs". Na `llm_report` se ažurira prikaz AI analize.
+-   **Robusnost**: U slučaju prekida SSE konekcije, klijent automatski pokušava ponovno spajanje (npr., uz exponential backoff).
+
+---
+
+## Definition of Done (DoD)
+
+-   [x] **SSE**: Server implementira `/build/:buildId/events`. UI prikazuje real-time status builda i podržava reconnect.
+-   [ ] **E2E Testovi**: Playwright suite prolazi, uključujući "zeleni" put, **412 conflict/retry scenarij** i **legacy CSP scenarij**.
+-   [ ] **CSP Dokumentacija**: Dokumentacija je usklađena sa stvarnom implementacijom.
+-   [ ] **Smoke Testovi**: Svi brzi testovi (HEAD/GET na artefakte, boot bez CSP grešaka) prolaze nakon svakog deploya.
+-   [ ] **Build Status API**: Sustav koristi perzistirani status builda umjesto dinamičkog mijenjanja manifesta.

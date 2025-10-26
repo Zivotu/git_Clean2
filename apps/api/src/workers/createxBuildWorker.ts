@@ -1,15 +1,16 @@
-﻿import { randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Queue, Worker } from 'bullmq';
-import { initBuild, updateBuild } from '../models/Build.js';
 import { getBuildDir } from '../paths.js';
 import { REDIS_URL } from '../config.js';
 import { readApps, writeApps } from '../db.js';
 import { bundlePlayBuild } from '../build/bundler.js';
 import { generateSri } from '../lib/fsx.js';
+import { prisma } from '../db.js';
+import { sseEmitter } from '../lib/sseEmitter.js';
 
 const QUEUE_NAME = 'createx-build';
 
@@ -63,12 +64,6 @@ function createNoopHandle(): BuildWorkerHandle {
   return { close: async () => {} };
 }
 
-function logState(id: string, state: string) {
-  const payload = { id, state };
-  if (state === 'failed') console.error(payload, 'build:state');
-  else console.info(payload, 'build:state');
-}
-
 async function ensureStorageCapabilityFlag(buildId: string): Promise<void> {
   try {
     const apps = await readApps();
@@ -115,7 +110,6 @@ export async function enqueueCreatexBuild(buildId: string = randomUUID()): Promi
   if (!queue) {
     throw queueDisabled();
   }
-  await initBuild(buildId);
   await queue.add('build', { buildId });
   return buildId;
 }
@@ -139,21 +133,40 @@ export function startCreatexBuildWorker(): BuildWorkerHandle {
     async (job) => {
       const { buildId } = job.data as { buildId: string };
       try {
-        await updateBuild(buildId, { state: 'build', progress: 0 });
-        logState(buildId, 'build');
+        await prisma.build.update({ where: { id: buildId }, data: { status: 'bundling' } });
+        sseEmitter.emit('build_event', { buildId, event: 'status', payload: { status: 'bundling' } });
+
         await runBuildProcess(buildId);
+
+        await prisma.build.update({ where: { id: buildId }, data: { status: 'verifying' } });
+        sseEmitter.emit('build_event', { buildId, event: 'status', payload: { status: 'verifying' } });
+
         await ensureStorageCapabilityFlag(buildId);
-        // Hand off to review queue; admin can approve to move to published
-        await updateBuild(buildId, { state: 'pending_review', progress: 100 });
-        logState(buildId, 'pending_review');
+        
+        const finalBuild = await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'success', mode: 'bundled' },
+        });
+
+        sseEmitter.emit('build_event', {
+          buildId,
+          event: 'final',
+          payload: { status: 'success', buildId, listingId: finalBuild.listingId },
+        });
+
       } catch (err: any) {
         console.error({ buildId, err }, 'build:error');
-        await updateBuild(buildId, {
-          state: 'failed',
-          progress: 100,
-          error: err?.message,
+        const reason = err?.message || 'Unknown error';
+        const finalBuild = await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'failed', reason },
         });
-        logState(buildId, 'failed');
+
+        sseEmitter.emit('build_event', {
+          buildId,
+          event: 'final',
+          payload: { status: 'failed', reason, buildId, listingId: finalBuild.listingId },
+        });
       }
     },
     { connection: queueConnection },
@@ -220,7 +233,8 @@ async function runBuildProcess(buildId: string): Promise<void> {
     integrity: sri,
     createdAt: new Date().toISOString(),
   };
-  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf-8');
+  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}
+`, 'utf-8');
 
 
   const src = path.resolve('build');

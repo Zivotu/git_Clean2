@@ -154,64 +154,52 @@ function buildSrcDoc(asset: BuildAssetConfig): string {
   const escapedParentOrigin = escapeAttribute(parentOrigin || '')
   const escapedAppOrigin = escapeAttribute(appOrigin || '')
   const escapedShimSrc = escapeAttribute(shimUrl)
+  const styleNonce = Math.random().toString(36).slice(2);
 
-  const scriptSources: string[] = ["'self'"]
-  if (appOrigin) {
-    scriptSources.push(escapedAppOrigin)
-  }
-  if (parentOrigin) {
-    scriptSources.push(escapedParentOrigin)
-  }
+  const scriptSources: string[] = ["'self'"];
+  if (escapedAppOrigin) scriptSources.push(escapedAppOrigin);
+  if (escapedParentOrigin) scriptSources.push(escapedParentOrigin);
+
+  const styleSources: string[] = ["'self'", `'nonce-${styleNonce}'`];
+  if (escapedAppOrigin) styleSources.push(escapedAppOrigin);
+  if (escapedParentOrigin) styleSources.push(escapedParentOrigin);
+
+  const connectSources: string[] = ["'self'"];
+  if (escapedAppOrigin) connectSources.push(escapedAppOrigin);
+
+  const imgSources: string[] = ["'self'", 'data:', 'blob:', 'https:'];
+  const fontSources: string[] = ["'self'", 'data:'];
+  const mediaSources: string[] = ["'self'", 'blob:'];
 
   if (asset.relaxedCsp) {
-    scriptSources.push("'unsafe-inline'", "'unsafe-eval'", 'https:')
+    if (!scriptSources.includes("'unsafe-inline'")) scriptSources.push("'unsafe-inline'");
+    if (!styleSources.includes("'unsafe-inline'")) styleSources.push("'unsafe-inline'");
+    if (!connectSources.includes('https:')) connectSources.push('https:');
+    if (!mediaSources.includes('https:')) mediaSources.push('https:');
   }
-
-  const styleNonce = createNonce()
-  const styleSources: string[] = ["'self'", `'nonce-${styleNonce}'`]
-  if (appOrigin) {
-    styleSources.push(escapedAppOrigin)
-  }
-  if (parentOrigin) {
-    styleSources.push(escapedParentOrigin)
-  }
-  if (asset.relaxedCsp) {
-    if (!styleSources.includes("'unsafe-inline'")) {
-      styleSources.push("'unsafe-inline'")
-    }
-    styleSources.push('https:')
-  }
-
-  const imgSources = asset.relaxedCsp
-    ? ["'self'", 'data:', 'blob:', 'https:']
-    : ["'self'", 'data:', 'https:']
-  const fontSources = ["'self'", 'data:']
-  const mediaSources = asset.relaxedCsp
-    ? ["'self'", 'blob:', 'https:']
-    : ["'self'", 'blob:']
-  const connectSources = asset.relaxedCsp
-    ? Array.from(new Set(["'self'", 'https:', escapedAppOrigin].filter(Boolean)))
-    : ["'none'"]
 
   const directives = [
     "default-src 'none'",
     `script-src ${Array.from(new Set(scriptSources)).join(' ')}`,
     `style-src ${Array.from(new Set(styleSources)).join(' ')}`,
-    `img-src ${imgSources.join(' ')}`,
-    `font-src ${fontSources.join(' ')}`,
-    `media-src ${mediaSources.join(' ')}`,
-    `connect-src ${connectSources.join(' ')}`,
+    `img-src ${Array.from(new Set(imgSources)).join(' ')}`,
+    `font-src ${Array.from(new Set(fontSources)).join(' ')}`,
+    `media-src ${Array.from(new Set(mediaSources)).join(' ')}`,
+    `connect-src ${Array.from(new Set(connectSources)).join(' ')}`,
     "frame-src 'none'",
-    `base-uri 'self'${appOrigin ? ` ${escapedAppOrigin}` : ''}`,
+    "base-uri 'none'",
     "object-src 'none'",
-  ]
+    `frame-ancestors 'self'${escapedParentOrigin ? ` ${escapedParentOrigin}` : ''}`,
+  ];
 
-  const csp = escapeAttribute(directives.join('; '))
+  const csp = directives.join('; ');
 
-  const attrs = [`type="module"`, `src="${scriptSrc}"`]
+  const attrs: string[] = [
+    `type="module"`,
+    `src="${scriptSrc}"`,
+  ];
   if (!asset.relaxedCsp && asset.integrity) {
-    const integrity = escapeAttribute(asset.integrity)
-    attrs.push(`integrity="${integrity}"`, 'crossorigin="anonymous"')
+    attrs.push(`integrity="${asset.integrity}"`, 'crossorigin="anonymous"');
   }
 
   return [
@@ -486,61 +474,4 @@ export default function PlayPageClient({ appId }: { appId: string }) {
           (item) =>
             item &&
             typeof item === 'object' &&
-            (item.scope === 'local' || item.scope === 'session') &&
-            (item.op === 'set' || item.op === 'del' || item.op === 'clear'),
-        )
-        void handleFlush(batch)
-      }
-    },
-    [handleFlush],
-  )
-
-  useEffect(() => {
-    if (!SHIM_ENABLED) return
-    window.addEventListener('message', onMessage)
-    const frame = iframeRef.current
-
-    const flushBeforeUnload = () => {
-      if (frame?.contentWindow && capRef.current) {
-        frame.contentWindow.postMessage(
-          { type: 'thesara:storage:flush-now', cap: capRef.current },
-          '*',
-        )
-      }
-    }
-
-    window.addEventListener('beforeunload', flushBeforeUnload)
-
-    return () => {
-      window.removeEventListener('message', onMessage)
-      window.removeEventListener('beforeunload', flushBeforeUnload)
-      bcRef.current?.close()
-      bcRef.current = null
-    }
-  }, [onMessage])
-
-  if (!SHIM_ENABLED) {
-    return <div className="p-6">App storage is temporarily unavailable.</div>
-  }
-
-  if (loading) {
-    return <div className="p-6">Loading app…</div>
-  }
-
-  if (error) {
-    return <div className="p-6">Error: {error}</div>
-  }
-
-  if (!srcDoc) {
-    return <div className="p-6">Preparing app bootstrap…</div>
-  }
-
-  return (
-    <iframe
-      ref={iframeRef}
-      srcDoc={srcDoc}
-      sandbox="allow-scripts allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox"
-      style={{ width: '100%', height: '100%', border: 'none' }}
-    />
-  )
-}
+            (item.scope === 'local
