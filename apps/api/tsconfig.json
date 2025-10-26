@@ -3,7 +3,7 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "moduleResolution": "NodeNext",
     "allowJs": false,
     "strict": true,
     "noEmit": true,
@@ -15,7 +15,7 @@
       "@/*": ["./*"],
       "@loopyway/entitlements": ["../../packages/entitlements/index.d.ts"]
     },
-    "types": ["node", "nodemailer"],
+    "types": ["node"],
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "scripts/**/*.ts"],

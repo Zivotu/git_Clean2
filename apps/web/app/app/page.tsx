@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState, useRef, useCallback, ChangeEven
 import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import Link from 'next/link';
+import Image from 'next/image';
 import { API_URL } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
@@ -1364,16 +1365,19 @@ useEffect(() => {
           {/* Preview */}
           <div className="space-y-4">
             <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
-              <div className="relative">
+              <div className="relative aspect-video">
                 {activePreviewSrc && !previewDisplayFailed ? (
-                  <img
+                  <Image
                     src={activePreviewSrc}
                     alt={item.title}
-                    className="w-full aspect-video object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 50vw, 100vw"
+                    unoptimized
                     onError={useEditorPreview ? undefined : () => setPreviewDisplayFailed(true)}
                   />
                 ) : (
-                  <div className="w-full aspect-video bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-medium">
+                  <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm font-medium text-slate-500">
                     {tApp('previewGraphicHint')}
                   </div>
                 )}
@@ -1438,7 +1442,14 @@ useEffect(() => {
                               isSelected ? 'border-emerald-500 ring-2 ring-emerald-400' : 'border-gray-200 hover:border-emerald-300'
                             }`}
                           >
-                        <img src={preset} alt="" className="w-full aspect-video object-cover" />
+                        <Image
+                          src={preset}
+                          alt=""
+                          width={320}
+                          height={180}
+                          className="w-full object-cover"
+                          unoptimized
+                        />
                         {isSelected && <div className="absolute inset-0 bg-emerald-600/10 pointer-events-none" />}
                         {presetOverlayLabel && (
                           <div className="absolute inset-x-0 bottom-0 bg-slate-900/80 text-white text-xs font-semibold text-center leading-snug py-1.5 px-3 break-words">
@@ -1497,10 +1508,12 @@ useEffect(() => {
                     <div className="rounded-xl border border-gray-200 overflow-hidden">
                   {previewChoice === 'custom' && customPreview?.dataUrl ? (
                     <div className="relative aspect-video bg-gray-100">
-                      <img
+                      <Image
                         src={customPreview.dataUrl}
                         alt="Custom preview"
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     </div>
                   ) : (
