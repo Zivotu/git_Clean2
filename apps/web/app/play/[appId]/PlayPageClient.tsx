@@ -35,6 +35,24 @@ type BuildAssetConfig = {
   relaxedCsp: boolean
 }
 
+function createNonce(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    if (typeof btoa === 'function') {
+      let binary = ''
+      bytes.forEach((b) => {
+        binary += String.fromCharCode(b)
+      })
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    }
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+  return Math.random().toString(36).slice(2)
+}
+
 function escapeAttribute(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 }
@@ -113,17 +131,57 @@ async function resolveBuildAsset(appId: string): Promise<BuildAssetConfig> {
 function buildSrcDoc(asset: BuildAssetConfig): string {
   const baseHref = ensureTrailingSlash(asset.baseHref)
   const escapedBase = escapeAttribute(baseHref)
-  const appOrigin = escapeAttribute(new URL(baseHref).origin)
-  const parentOrigin = typeof window !== 'undefined' ? window.location.origin : ''
-  const escapedParentOrigin = escapeAttribute(parentOrigin || '')
   const entry = asset.entry.replace(/^\.\//, '')
-  const scriptSrc = escapeAttribute(`${baseHref}${entry}`)
+  const appScriptUrl = new URL(entry, baseHref)
+  const appOrigin = appScriptUrl.origin
+  const parentOrigin = (() => {
+    if (typeof window === 'undefined') return ''
+    try {
+      return new URL(window.location.href).origin
+    } catch {
+      return window.location.origin || ''
+    }
+  })()
+  const shimUrl = (() => {
+    if (typeof window === 'undefined') return '/shim.js'
+    try {
+      return new URL('/shim.js', window.location.href).toString()
+    } catch {
+      return '/shim.js'
+    }
+  })()
+  const scriptSrc = escapeAttribute(appScriptUrl.toString())
+  const escapedParentOrigin = escapeAttribute(parentOrigin || '')
+  const escapedAppOrigin = escapeAttribute(appOrigin || '')
+  const escapedShimSrc = escapeAttribute(shimUrl)
 
-  const scriptSources = ["'self'"]
+  const scriptSources: string[] = ["'self'"]
   if (appOrigin) {
-    scriptSources.push(appOrigin)
+    scriptSources.push(escapedAppOrigin)
   }
-  const styleSources = ["'self'", "'unsafe-inline'"]
+  if (parentOrigin) {
+    scriptSources.push(escapedParentOrigin)
+  }
+
+  if (asset.relaxedCsp) {
+    scriptSources.push("'unsafe-inline'", "'unsafe-eval'", 'https:')
+  }
+
+  const styleNonce = createNonce()
+  const styleSources: string[] = ["'self'", `'nonce-${styleNonce}'`]
+  if (appOrigin) {
+    styleSources.push(escapedAppOrigin)
+  }
+  if (parentOrigin) {
+    styleSources.push(escapedParentOrigin)
+  }
+  if (asset.relaxedCsp) {
+    if (!styleSources.includes("'unsafe-inline'")) {
+      styleSources.push("'unsafe-inline'")
+    }
+    styleSources.push('https:')
+  }
+
   const imgSources = asset.relaxedCsp
     ? ["'self'", 'data:', 'blob:', 'https:']
     : ["'self'", 'data:', 'https:']
@@ -131,32 +189,24 @@ function buildSrcDoc(asset: BuildAssetConfig): string {
   const mediaSources = asset.relaxedCsp
     ? ["'self'", 'blob:', 'https:']
     : ["'self'", 'blob:']
-  const connectSources = asset.relaxedCsp ? ["'self'", 'https:'] : ["'none'"]
+  const connectSources = asset.relaxedCsp
+    ? Array.from(new Set(["'self'", 'https:', escapedAppOrigin].filter(Boolean)))
+    : ["'none'"]
 
-  if (escapedParentOrigin) {
-    scriptSources.push(escapedParentOrigin)
-    styleSources.push(escapedParentOrigin)
-  }
+  const directives = [
+    "default-src 'none'",
+    `script-src ${Array.from(new Set(scriptSources)).join(' ')}`,
+    `style-src ${Array.from(new Set(styleSources)).join(' ')}`,
+    `img-src ${imgSources.join(' ')}`,
+    `font-src ${fontSources.join(' ')}`,
+    `media-src ${mediaSources.join(' ')}`,
+    `connect-src ${connectSources.join(' ')}`,
+    "frame-src 'none'",
+    `base-uri 'self'${appOrigin ? ` ${escapedAppOrigin}` : ''}`,
+    "object-src 'none'",
+  ]
 
-  if (asset.relaxedCsp) {
-    scriptSources.push("'unsafe-inline'", "'unsafe-eval'", 'https:')
-    styleSources.push('https:')
-  }
-
-  const csp = escapeAttribute(
-    [
-      "default-src 'none'",
-      `script-src ${scriptSources.join(' ')}`,
-      `style-src ${styleSources.join(' ')}`,
-      `img-src ${imgSources.join(' ')}`,
-      `font-src ${fontSources.join(' ')}`,
-      `media-src ${mediaSources.join(' ')}`,
-      `connect-src ${connectSources.join(' ')}`,
-      "frame-src 'none'",
-      `base-uri 'self'${appOrigin ? ` ${appOrigin}` : ''}`,
-      "object-src 'none'",
-    ].join('; '),
-  )
+  const csp = escapeAttribute(directives.join('; '))
 
   const attrs = [`type="module"`, `src="${scriptSrc}"`]
   if (!asset.relaxedCsp && asset.integrity) {
@@ -164,7 +214,6 @@ function buildSrcDoc(asset: BuildAssetConfig): string {
     attrs.push(`integrity="${integrity}"`, 'crossorigin="anonymous"')
   }
 
-  const shimSrc = escapedParentOrigin ? `${escapedParentOrigin}/shim.js` : '/shim.js'
   return [
     '<!DOCTYPE html>',
     '<html lang="en">',
@@ -172,8 +221,8 @@ function buildSrcDoc(asset: BuildAssetConfig): string {
     '<meta charset="utf-8" />',
     `<meta http-equiv="Content-Security-Policy" content="${csp}">`,
     `<base href="${escapedBase}">`,
-    '<style>html,body{margin:0;padding:0;height:100%;background:#000;color:#fff;}#root{min-height:100%;}</style>',
-    `<script defer src="${shimSrc}"></scr` + 'ipt>',
+    `<style nonce="${escapeAttribute(styleNonce)}">html,body{margin:0;padding:0;height:100%;background:#000;color:#fff;}#root{min-height:100%;}</style>`,
+    `<script defer src="${escapedShimSrc}"></scr` + 'ipt>',
     '</head>',
     '<body>',
     '<div id="root"></div>',
