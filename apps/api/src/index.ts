@@ -91,11 +91,11 @@ function tryReadManifest(manifestPath: string): BuildSecurityMetadata | null {
     const rawPolicy = parsed.networkPolicy ?? parsed.policy ?? 'NO_NET';
     const networkPolicy = typeof rawPolicy === 'string' ? rawPolicy : 'NO_NET';
     const networkDomains = Array.isArray(parsed.networkDomains)
-      ? parsed.networkDomains
+      ? (parsed.networkDomains as unknown[])
           .map((value: unknown) =>
             typeof value === 'string' ? value : value != null ? String(value) : null,
           )
-          .filter((value): value is string => Boolean(value))
+          .filter((value): value is string => !!value)
       : [];
 
     const data: BuildSecurityMetadata = {
@@ -153,6 +153,28 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await ensureDbInitialized();
 
   app = fastify({ logger: true, bodyLimit: 256 * 1024 });
+
+  // HOTFIX: globalni redirect sanitizer za FST_ERR_BAD_STATUS_CODE
+  app.setErrorHandler((err, req, reply) => {
+    const code = (err as any)?.code || '';
+    const msg = (err as any)?.message || '';
+
+    if (code === 'FST_ERR_BAD_STATUS_CODE') {
+      const m = msg.match(/Called reply with an invalid status code: (.*)$/);
+      const loc = m?.[1];
+      if (loc && !reply.sent) {
+        req.log.warn({ loc }, 'hotfix: repaired malformed redirect → 307');
+        return reply.code(307).header('Location', loc).send();
+      }
+    }
+
+    if (!reply.sent) {
+      const status = (err as any)?.statusCode || 500;
+      req.log.error({ err }, 'unhandled error');
+      return reply.code(status).send({ error: 'internal_error' });
+    }
+  });
+
   app.log.info(
     { PORT: config.PORT, NODE_ENV: process.env.NODE_ENV, BUNDLE_ROOT, PREVIEW_ROOT },
     'env'
@@ -227,19 +249,17 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       const qIndex = raw.indexOf('?');
       const rawPath = qIndex >= 0 ? raw.slice(0, qIndex) : raw;
       const rawQuery = qIndex >= 0 ? raw.slice(qIndex) : '';
-
-      const isStorageApi = rawPath === '/api/storage' || rawPath === '/api/storage/';
-
+ 
       // 1) Ako je točno /api ili /api/ → prebaci na '/'
-      if (!isStorageApi && (rawPath === '/api' || rawPath === '/api/')) {
+      if (rawPath === '/api' || rawPath === '/api/') {
         const stripped = '/' + (rawQuery || '');
         (req as any).url = stripped;
         if (req.raw) (req.raw as any).url = stripped;
         return done();
       }
-
+ 
       // 2) Ako počinje s /api/ → skini prefiks i ostavi query
-      if (!isStorageApi && rawPath.startsWith('/api/')) {
+      if (rawPath.startsWith('/api/')) {
         const strippedPath = rawPath.slice(4) || '/';
         const stripped = strippedPath + rawQuery;
         (req as any).url = stripped;
@@ -253,6 +273,14 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   });
 
   app.addHook('onSend', (req, reply, _payload, done) => {
+    const cfg = getConfig();
+    // NOVO: standardizirano mapiranje prema postojećem configu
+    const backendName = (
+      { local: 'local', firebase: 'gcs', r2: 'r2' } as const
+    )[cfg.STORAGE_DRIVER] ?? 'local';
+
+    reply.header('X-Storage-Backend', backendName);
+
     const origin = req.headers.origin as string | undefined;
     if (origin && isOriginAllowed(origin)) {
       // The @fastify/cors plugin handles these headers automatically.
@@ -264,8 +292,10 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     if (
       url.startsWith('/assets') ||
       url.startsWith('/builds') ||
+      url.startsWith('/public/builds') ||
       url.startsWith('/avatar') ||
-      url.startsWith('/uploads')
+      url.startsWith('/uploads') ||
+      url.startsWith('/api/avatar') // Handle proxied avatar route
     ) {
       reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
     }
@@ -381,6 +411,14 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     index: ['index.html'],
     setHeaders: setStaticHeaders,
   });
+  await app.register(fastifyStatic, {
+    root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
+    prefix: '/public/builds/',
+    decorateReply: false,
+    redirect: true,
+    index: ['index.html'],
+    setHeaders: setStaticHeaders,
+  });
 
   await app.register(fastifyStatic, {
     root: config.LOCAL_STORAGE_DIR,
@@ -412,11 +450,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     }
     return reply.code(401).send({ error: 'unauthenticated' });
   });
-
-  app.get('/_debug/storage-info', async (_req, reply) => {
-       try { const b = await getStorageBackend(); return reply.send(b.debug || { kind: b.kind }); } 
-       catch (e:any) { return reply.send({ error: String(e?.message||e) }); }
-     });
 
   // Routes
   await app.register(authDebug);
