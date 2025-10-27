@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
+import { getConfig } from '../config.js';
 
 const ALLOWED_ORIGINS = new Set([
   'https://thesara.space',
@@ -44,19 +45,19 @@ type StoragePatchRoute = StorageRouteQuery & { Body: unknown };
 
 const ensureUser = requireRole('user');
 
-export default async function routes(server: FastifyInstance) {
-  const backend = await getStorageBackend();
+// Helper function to register storage routes under a given prefix
+function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
+  const base = `${prefix}/storage`;
 
-  // The global CORS plugin in index.ts handles OPTIONS and headers.
-  // We just add the backend-specific header here.
-  server.addHook('preHandler', (_req, reply, done) => {
-    reply.header('X-Storage-Backend', backend.kind);
-    done();
+  server.options(base, async (request, reply) => {
+    const origin = request.headers.origin as string | undefined;
+    setCors(reply, origin);
+    return reply.code(204).send();
   });
 
   server.route<StorageRouteQuery>({
     method: 'GET',
-    url: '/storage',
+    url: base,
     schema: {
       querystring: {
         type: 'object',
@@ -66,23 +67,31 @@ export default async function routes(server: FastifyInstance) {
     },
     preHandler: ensureUser,
     handler: async (request, reply) => {
+      const origin = request.headers.origin as string | undefined;
+      setCors(reply, origin);
+
       const userId = (request as any).authUser.uid;
       const { ns } = request.query;
       const key = `${userId}/${ns}`;
       try {
         const { etag, json } = await backend.read(key);
         reply.header('ETag', `"${etag}"`);
+        reply.header('Access-Control-Expose-Headers', 'ETag');
         return json;
-      } catch (error) {
+      } catch (error: any) {
+        if (error instanceof StorageError) {
+          if (error.etag) reply.header('ETag', `"${error.etag}"`);
+          return reply.status(error.statusCode).send({ error: error.message });
+        }
         request.log.error({ err: error, userId, ns }, 'Storage GET failed');
-        return reply.status(500).send({ error: 'Internal Server Error' });
+        return reply.status(500).send({ error: 'internal_error' });
       }
     },
   });
 
   server.route<StoragePatchRoute>({
     method: 'PATCH',
-    url: '/storage',
+    url: base,
     config: {
       rateLimit: {
         max: 6,
@@ -107,6 +116,9 @@ export default async function routes(server: FastifyInstance) {
     },
     preHandler: ensureUser,
     handler: async (request, reply) => {
+      const origin = request.headers.origin as string | undefined;
+      setCors(reply, origin);
+      
       const endTimer = server.metrics.storage_patch_duration_seconds.startTimer();
       server.metrics.storage_patch_total.inc();
 
@@ -136,10 +148,10 @@ export default async function routes(server: FastifyInstance) {
       }
 
       try {
-        // The patch logic is now inside the backend
         const { etag: newEtag, json: resultJson } = await backend.patch(key, operations, ifMatch);
 
         reply.header('ETag', `"${newEtag}"`);
+        reply.header('Access-Control-Expose-Headers', 'ETag');
 
         server.metrics.storage_batch_size.observe(operations.length);
         server.metrics.storage_patch_success_total.inc();
@@ -177,4 +189,20 @@ export default async function routes(server: FastifyInstance) {
       }
     },
   });
+}
+
+
+export default async function routes(server: FastifyInstance) {
+  const cfg = getConfig();
+  const backend = await getStorageBackend();
+  server.log.info({ driver: cfg.STORAGE_DRIVER, backend: backend.debug }, 'Storage backend initialized');
+
+
+  server.addHook('preHandler', (_req, reply, done) => {
+    reply.header('X-Storage-Backend', backend.kind);
+    done();
+  });
+
+  registerStorage(server, '', backend);     // alias for backward compatibility
+  registerStorage(server, '/api', backend); // primary API prefix
 }
