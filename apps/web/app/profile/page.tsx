@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth, getDisplayName } from '@/lib/auth';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Avatar from '@/components/Avatar';
@@ -164,7 +164,7 @@ export default function ProfilePage() {
     async (subId: string) => {
       try {
         const res = await fetch(
-          `${API_URL}/billing/subscription-status?sub_id=${subId}`,
+          `${PUBLIC_API_URL}/billing/subscription-status?sub_id=${subId}`,
           {
             headers: await buildHeaders(false),
             credentials: 'include',
@@ -256,7 +256,7 @@ export default function ProfilePage() {
     setBusy(true);
     try {
       const res = await fetch(
-        `${API_URL}/listings?owner=${encodeURIComponent(user.uid)}`,
+        `${PUBLIC_API_URL}/listings?owner=${encodeURIComponent(user.uid)}`,
         {
           cache: 'no-store',
           credentials: 'include',
@@ -306,7 +306,7 @@ export default function ProfilePage() {
     if (!user) return;
     setUsageBusy(true);
     try {
-      const res = await fetch(`${API_URL}/me/usage`, {
+      const res = await fetch(`${PUBLIC_API_URL}/me/usage`, {
         cache: 'no-store',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -324,7 +324,7 @@ export default function ProfilePage() {
   const loadBillingHistory = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await fetch(`${API_URL}/billing/history`, {
+      const res = await fetch(`${PUBLIC_API_URL}/billing/history`, {
         cache: 'no-store',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -360,7 +360,7 @@ export default function ProfilePage() {
           try {
             let ok = false;
             let title: string | undefined;
-            let res = await fetch(`${API_URL}/listing/${encodeURIComponent(id)}`);
+            let res = await fetch(`${PUBLIC_API_URL}/listing/${encodeURIComponent(id)}`);
             if (res.ok) {
               const j = await res.json();
               title = j?.item?.title as string | undefined;
@@ -369,7 +369,7 @@ export default function ProfilePage() {
               autoCancel.push(s.id);
             }
             if (!ok) {
-              res = await fetch(`${API_URL}/app/${encodeURIComponent(id)}`);
+              res = await fetch(`${PUBLIC_API_URL}/app/${encodeURIComponent(id)}`);
               if (res.ok) {
                 const j2 = await res.json();
                 title = (j2?.title || j2?.item?.title) as string | undefined;
@@ -400,7 +400,7 @@ export default function ProfilePage() {
         setResolvingTitles(false);
       }
     })();
-  }, [activeSubs, resolvingTitles, resolvedTitleIds, autoCanceledIds]);
+  }, [activeSubs, resolvingTitles, resolvedTitleIds, autoCanceledIds, cancelSubscription]);
 
   // Enrich creator-all-access with app count for each creator
   useEffect(() => {
@@ -416,7 +416,7 @@ export default function ProfilePage() {
       const counts: Record<string, number> = {};
       for (const uid of byCreator) {
         try {
-          const res = await fetch(`${API_URL}/listings?owner=${encodeURIComponent(uid)}`, { cache: 'no-store' });
+          const res = await fetch(`${PUBLIC_API_URL}/listings?owner=${encodeURIComponent(uid)}`, { cache: 'no-store' });
           if (res.ok) {
             const j = await res.json();
             counts[uid] = Array.isArray(j?.items) ? j.items.length : 0;
@@ -459,7 +459,7 @@ export default function ProfilePage() {
       const names: Record<string, { name?: string; handle?: string }> = {};
       for (const uid of byCreator) {
         try {
-          const res = await fetch(`${API_URL}/creators/id/${encodeURIComponent(uid)}`, { cache: 'no-store' });
+          const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(uid)}`, { cache: 'no-store' });
           if (res.ok) {
             const j = await res.json();
             names[uid] = { name: j?.displayName || j?.name || j?.handle || undefined, handle: j?.handle };
@@ -531,7 +531,7 @@ export default function ProfilePage() {
 
   async function manageBilling() {
     try {
-      const res = await fetch(`${API_URL}/billing/portal`, {
+      const res = await fetch(`${PUBLIC_API_URL}/billing/portal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -553,7 +553,7 @@ export default function ProfilePage() {
     const subId = id ?? subscription.id;
     if (!user || !subId) return;
     try {
-      const res = await fetch(`${API_URL}/billing/subscriptions/cancel`, {
+      const res = await fetch(`${PUBLIC_API_URL}/billing/subscriptions/cancel`, {
         method: 'POST',
         headers: await buildHeaders(true),
         credentials: 'include',
@@ -872,5 +872,6 @@ export default function ProfilePage() {
     </>
   );
 }
+
 
 

@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 const ALLOWED_HOSTS = [
   'lh3.googleusercontent.com',
@@ -10,7 +10,7 @@ const CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
 const cache = new Map<string, { buffer: Buffer; type: string; expires: number }>();
 
 export default async function avatarRoutes(app: FastifyInstance) {
-  app.get('/avatar/:uid', async (req, reply) => {
+  const avatarHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { url } = (req.query as any) || {};
     if (!url) return reply.code(400).send({ error: 'Missing url' });
     let target: URL;
@@ -27,6 +27,7 @@ export default async function avatarRoutes(app: FastifyInstance) {
       if (cached && cached.expires > Date.now()) {
         reply.type(cached.type);
         reply.header('Cache-Control', 'public, max-age=86400');
+        reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
         return reply.send(cached.buffer);
       }
       const controller = new AbortController();
@@ -39,6 +40,7 @@ export default async function avatarRoutes(app: FastifyInstance) {
       cache.set(url, { buffer, type, expires: Date.now() + CACHE_TTL_MS });
       reply.type(type);
       reply.header('Cache-Control', 'public, max-age=86400');
+      reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
       reply.send(buffer);
     } catch (err: any) {
       if (err?.name === 'AbortError') {
@@ -47,5 +49,8 @@ export default async function avatarRoutes(app: FastifyInstance) {
         reply.code(500).send({ error: 'Fetch failed' });
       }
     }
-  });
+  };
+
+  app.get('/avatar/:uid', avatarHandler);
+  app.get('/api/avatar/:uid', avatarHandler);
 }

@@ -1,9 +1,9 @@
 'use client';
 export const dynamic = 'force-dynamic';
-export {};
+import Image from 'next/image';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -149,7 +149,7 @@ export default function MyProjectsPage() {
       try {
         const current = items.find((it) => it.slug === slug);
         const like = !(current?.likedByMe);
-        const res = await fetch(`${API_URL}/listing/${slug}/like`, {
+        const res = await fetch(`${PUBLIC_API_URL}/listing/${slug}/like`, {
           method: 'POST',
           credentials: 'include',
           headers: await buildHeaders(true),
@@ -199,7 +199,7 @@ export default function MyProjectsPage() {
       if (!window.confirm(`Delete "${item.title}"?`)) return;
       setBusy((prev) => ({ ...prev, [item.slug]: true }));
       try {
-        const res = await fetch(`${API_URL}/listing/${item.slug}`, {
+        const res = await fetch(`${PUBLIC_API_URL}/listing/${item.slug}`, {
           method: 'DELETE',
           credentials: 'include',
           headers: await buildHeaders(false),
@@ -238,7 +238,7 @@ export default function MyProjectsPage() {
       if (user?.uid) {
         try {
           const res = await fetch(
-            `${API_URL}/listings?owner=${encodeURIComponent(user.uid)}&lang=${encodeURIComponent(locale)}`,
+            `${PUBLIC_API_URL}/listings?owner=${encodeURIComponent(user.uid)}&lang=${encodeURIComponent(locale)}`,
             { cache: 'no-store', credentials: 'include', headers: await buildHeaders(false) }
           );
           if (!res.ok) throw new Error(`GET ${res.status}`);
@@ -260,30 +260,57 @@ export default function MyProjectsPage() {
 
   // Load my handle and repo-level price
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       if (!user?.uid) return;
       try {
-        const res = await fetch(`${API_URL}/creators/id/${encodeURIComponent(user.uid)}`);
-        if (!res.ok) return;
+        const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(user.uid)}`);
+        if (cancelled) return;
+
+        if (res.status === 404) {
+          console.info('[MyPageClient] Creator profile not found for this user, which is expected for new users. Showing handle setup form.');
+          setHandle(null);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch creator profile: ${res.status}`);
+        }
+
         const json = await res.json();
+        if (cancelled) return;
+
         const h = json?.handle as string | undefined;
         if (h) {
           setHandle(h);
           try {
-            const r2 = await fetch(`${API_URL}/creators/${encodeURIComponent(h)}`);
+            const r2 = await fetch(`${PUBLIC_API_URL}/creators/${encodeURIComponent(h)}`);
+            if (cancelled) return;
             if (r2.ok) {
               const j2 = await r2.json();
+              if (cancelled) return;
               const p = typeof j2?.allAccessPrice === 'number' ? String(j2.allAccessPrice) : '';
               setAllAccessPrice(p);
               const upd = typeof j2?.allAccessPriceUpdatedAt === 'number' ? j2.allAccessPriceUpdatedAt : null;
               setRepoPriceUpdatedAt(upd);
             }
-          } catch {}
+          } catch (e) {
+            if (cancelled) return;
+            console.warn('[MyPageClient] Failed to fetch creator details by handle', e);
+          }
         } else {
           setHandle(null);
         }
-      } catch {}
+      } catch (e) {
+        if (cancelled) return;
+        console.error('[MyPageClient] Failed to load creator data', e);
+        setHandle(null); // Ensure form is shown on error
+      }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.uid]);
 
   async function saveRepoPrice(e: React.FormEvent) {
@@ -294,7 +321,7 @@ export default function MyProjectsPage() {
       const headers: any = await buildHeaders(true);
       const body: any = {};
       body.allAccessPrice = allAccessPrice.trim() === '' ? 0 : Number(allAccessPrice);
-      const res = await fetch(`${API_URL}/creators/${encodeURIComponent(handle)}`, {
+      const res = await fetch(`${PUBLIC_API_URL}/creators/${encodeURIComponent(handle)}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(body),
@@ -593,9 +620,11 @@ export default function MyProjectsPage() {
                   <div className="relative">
                     <Link href={{ pathname: '/app', query: { slug: it.slug } }} title={it.title}>
                       {hasPreview ? (
-                        <img
+                        <Image
                           src={img}
                           alt={it.title}
+                          width={400}
+                          height={225}
                           className="w-full aspect-video object-cover"
                         />
                       ) : (
@@ -798,7 +827,7 @@ function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
     setBusy(true);
     try {
       const headers: any = await buildHeaders(true);
-      const res = await fetch(`${API_URL}/creators/me/handle`, {
+      const res = await fetch(`${PUBLIC_API_URL}/creators/me/handle`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ handle: h }),
@@ -837,4 +866,5 @@ function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
     </form>
   );
 }
+
 

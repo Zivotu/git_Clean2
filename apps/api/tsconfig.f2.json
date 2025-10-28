@@ -1,0 +1,38 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": [
+    "src/routes/public.ts",
+    "src/routes/buildAlias.ts",
+    "src/routes/jwt.ts",
+    "src/routes/avatar.ts",
+    "src/routes/storage.ts",
+    "src/lib/**/*.ts"
+  ],
+  "exclude": [
+    "src/routes/review.ts",
+    "src/routes/billing.ts",
+    "src/routes/roomsV1/**",
+    "src/billing/**",
+    "src/workers/**",
+    "src/safePublish.ts",
+    "src/users.ts",
+    "src/storageV2.ts",
+    "src/builder/**",
+    "src/buildQueue.ts",
+    "src/**/__tests__/**",
+    "**/*.test.ts",
+    "scripts/**",
+    "New folder/**"
+  ]
+}
+

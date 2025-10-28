@@ -1,3 +1,4 @@
+export { prisma } from './db/prisma.js';
 import * as admin from 'firebase-admin';
 import type { ServiceAccount } from 'firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
@@ -79,9 +80,10 @@ function getFirebaseInitOptions(): admin.AppOptions {
 
   const keysDir = path.resolve(process.cwd(), 'keys');
   if (fs.existsSync(keysDir)) {
-    const firstJson = fs
-      .readdirSync(keysDir)
-      .find((file) => file.toLowerCase().endsWith('.json'));
+    const firstJson =
+      fs
+        .readdirSync(keysDir)
+        .find((file) => file.toLowerCase().endsWith('.json'));
     if (firstJson) {
       credentialPaths.add(path.resolve(keysDir, firstJson));
     }
@@ -116,7 +118,7 @@ function getFirebaseInitOptions(): admin.AppOptions {
     const projectId = projectIdFromEnv || process.env.FIREBASE_PROJECT_ID;
     if (!clientEmail || !projectId) {
       console.warn(
-        `[firebase] Skipping ${label}: set FIREBASE_CLIENT_EMAIL and FIREBASE_PROJECT_ID to use PEM credentials.`,
+        `[firebase] Skipping ${label}: set FIREBASE_CLIENT_EMAIL and FIREBASE_PROJECT_ID to use PEM credentials.`, 
       );
       continue;
     }
@@ -135,7 +137,7 @@ function getFirebaseInitOptions(): admin.AppOptions {
   throw new Error(
     `No Firebase credentials found. Tried: ${tried.join(
       ', ',
-    )}. Set FIREBASE_SERVICE_ACCOUNT(_BASE64) or GOOGLE_APPLICATION_CREDENTIALS.`,
+    )}. Set FIREBASE_SERVICE_ACCOUNT(_BASE64) or GOOGLE_APPLICATION_CREDENTIALS.`, 
   );
 }
 
@@ -454,8 +456,8 @@ export async function writeApps(items: App[]): Promise<void> {
     // should be stored alongside other listing data
     batch.set(appsCol.doc(it.id), rest);
     batch.set(metricsCol.doc(it.id), {
-      plays: playsCount ?? 0,
-      likes: likesCount ?? 0,
+      plays: likesCount ?? 0,
+      likes: playsCount ?? 0,
     });
   }
   await batch.commit();

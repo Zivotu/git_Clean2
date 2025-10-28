@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { getCreatorHandle } from '@/lib/creators';
 import { getPlayUrl } from '@/lib/play';
@@ -148,7 +148,7 @@ const AppCard = React.memo(
         return () => {
           cancelled = true;
         };
-      }, [item.author?.handle, item.author?.uid]);
+      }, []);
 
       const href = handle ? `/u/${handle}` : undefined;
       const Inner = (
@@ -439,4 +439,5 @@ const AppCard = React.memo(
 AppCard.displayName = 'AppCard';
 
 export default AppCard;
+
 

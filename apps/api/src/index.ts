@@ -1,10 +1,9 @@
 import 'dotenv/config';
 import path from 'node:path';
 
-// IMPORTANT: Load environment variables before any other code.
-
 import fs from 'node:fs';
 import fsSync from 'node:fs';
+
 import fastify,
 {
   type FastifyRequest,
@@ -64,6 +63,7 @@ import swaggerPlugin from './plugins/swagger.js';
 import rateLimitPlugin from './plugins/rateLimit.js';
 import roomsSyncV1Routes from './routes/roomsV1/index.js';
 import { buildCsp } from './lib/cspBuilder.js';
+import { sseEmitter as sse } from './sse.js';
 
 type BuildSecurityMetadata = {
   networkPolicy: string;
@@ -188,9 +188,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     'http://[::1]:3000',
   ];
   const corsOrigins = Array.from(new Set([...ALLOWED_ORIGINS, ...defaultOrigins])).
-    filter(
-      Boolean,
-    );
+    filter(Boolean);
 
   const exactOrigins = new Set<string>();
   const wildcardOrigins: RegExp[] = [];
@@ -198,42 +196,43 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   const escapeRegExp = (value: string) =>
     value.replace(/[.*+?^${}()|[\]\/]/g, '\$&');
 
-  for (const origin of corsOrigins) {
+  for (const origin of corsOrigins.filter(Boolean)) {
     const lower = origin.toLowerCase();
     if (lower.includes('*')) {
       const pattern = `^${escapeRegExp(lower).replace(/\\\*/g, '.*')}$`;
       try {
         wildcardOrigins.push(new RegExp(pattern, 'i'));
-      } catch {
+      } catch (err) {
         // Ignore invalid patterns to avoid crashing CORS middleware
+        app.log.warn({ origin, err }, 'cors_invalid_wildcard_pattern');
       }
     } else {
       exactOrigins.add(lower);
     }
   }
 
-  const isOriginAllowed = (origin?: string | null) => {
-    if (!origin) return true;
+  const isOriginAllowed = (origin?: string | null): boolean => {
+    if (!origin) return true; // Allow requests with no origin (like mobile apps or curl)
     const lower = origin.toLowerCase();
     if (exactOrigins.has(lower)) return true;
     return wildcardOrigins.some((rx) => rx.test(origin));
   };
 
   await app.register(cors, {
-    origin: (origin, callback) => {
-      if (!origin) {
-        // Allow requests with no origin (like mobile apps or curl)
-        return callback(null, true);
-      }
+    origin: (origin, cb) => {
+      // Bez Origin headera (curl, Invoke-RestMethod, SSR, health) → dozvoli
+      if (!origin) return cb(null, true);
       if (isOriginAllowed(origin)) {
-        return callback(null, origin); // Pass the origin string back
+        // reflektiraj dopušten origin
+        return cb(null, origin);
       }
-      return callback(new Error('Not allowed by CORS'), false);
+      return cb(new Error('Not allowed by CORS'), false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
     exposedHeaders: ['ETag', 'X-Storage-Backend'],
     allowedHeaders: ['Authorization', 'If-Match', 'X-Thesara-App-Id', 'Content-Type'],
+    optionsSuccessStatus: 204,
   });
 
   await app.register(metricsPlugin);
@@ -249,7 +248,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       const qIndex = raw.indexOf('?');
       const rawPath = qIndex >= 0 ? raw.slice(0, qIndex) : raw;
       const rawQuery = qIndex >= 0 ? raw.slice(qIndex) : '';
- 
+
       // 1) Ako je točno /api ili /api/ → prebaci na '/'
       if (rawPath === '/api' || rawPath === '/api/') {
         const stripped = '/' + (rawQuery || '');
@@ -257,7 +256,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         if (req.raw) (req.raw as any).url = stripped;
         return done();
       }
- 
+
       // 2) Ako počinje s /api/ → skini prefiks i ostavi query
       if (rawPath.startsWith('/api/')) {
         const strippedPath = rawPath.slice(4) || '/';
@@ -265,26 +264,14 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         (req as any).url = stripped;
         if (req.raw) (req.raw as any).url = stripped;
       }
-      
-
-
     } catch {}
     done();
   });
 
   app.addHook('onSend', (req, reply, _payload, done) => {
-    const cfg = getConfig();
-    // NOVO: standardizirano mapiranje prema postojećem configu
-    const backendName = (
-      { local: 'local', firebase: 'gcs', r2: 'r2' } as const
-    )[cfg.STORAGE_DRIVER] ?? 'local';
-
-    reply.header('X-Storage-Backend', backendName);
-
     const origin = req.headers.origin as string | undefined;
     if (origin && isOriginAllowed(origin)) {
-      // The @fastify/cors plugin handles these headers automatically.
-      // We only need to ensure Vary is set.
+      // @fastify/cors handles Access-Control-Allow-Origin, we just ensure Vary is set.
       reply.header('Vary', 'Origin');
     }
 
@@ -298,6 +285,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       url.startsWith('/api/avatar') // Handle proxied avatar route
     ) {
       reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
+      reply.header('X-Storage-Backend', 'thesara-fs');
     }
 
     done();
@@ -367,13 +355,14 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     const csp = buildCsp({
       policy: networkPolicy,
       networkDomains,
-      frameAncestors: Array.from(frameAncestors),
+      frameAncestors: Array.from(frameAncestors), // CSP builder handles blob: for scripts
       allowCdn: Boolean(cfg.EXTERNAL_HTTP_ESM),
       legacyScript,
     });
 
     res.setHeader('Content-Security-Policy', csp);
     res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Storage-Backend', 'thesara-fs');
 
     const origin = res.req?.headers?.origin as string | undefined;
     if (origin && isOriginAllowed(origin)) {
@@ -409,6 +398,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     decorateReply: false,
     redirect: true,
     index: ['index.html'],
+    // Note: /builds uses the same CSP headers as /review/builds
     setHeaders: setStaticHeaders,
   });
   await app.register(fastifyStatic, {
@@ -433,13 +423,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   // Preview build artifacts
   const allowPreview =
     process.env.NODE_ENV !== 'production' || process.env.ALLOW_REVIEW_PREVIEW === 'true';
-
-  app.get('/_debug/preview-root', async (req: FastifyRequest) => {
-    const id = (req.query as any)?.id as string | undefined;
-    const sample = id ? path.join(PREVIEW_ROOT, id, 'index.html') : PREVIEW_ROOT;
-    const exists = fs.existsSync(sample);
-    return { PREVIEW_ROOT, sample, exists, NODE_ENV: process.env.NODE_ENV };
-  });
 
   // Authentication middleware
   await app.register(auth);
@@ -470,7 +453,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(oglasiRoutes);
   await app.register(buildRoutes);
   await app.register(avatarRoutes);
-  await app.register(reviewRoutes);
   await app.register(entitlementsRoutes);
   await app.register(meRoutes);
   await app.register(configRoutes);
@@ -481,15 +463,30 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(jwtRoutes);
   await app.register(buildEventsRoutes);
 
+  // Review routes (with internal aliasing for /api/review)
+  await app.register(reviewRoutes);
+
   if (allowPreview) {
+    // Serve bundled artifacts for review (bundle-first)
     await app.register(fastifyStatic, {
-      root: PREVIEW_ROOT,
+      root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
       prefix: '/review/builds/',
       decorateReply: false,
       redirect: true,
       index: ['index.html'],
+      setHeaders: setStaticHeaders,
+      // Spriječi da static "proguta" API podputeve
+      allowedPath: (pathname: string) =>
+        !/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname),
+    });
+    // Serve legacy preview artifacts under a separate, non-conflicting prefix
+    await app.register(fastifyStatic, {
+      root: PREVIEW_ROOT,
+      prefix: '/review/previews/',
+      decorateReply: false,
+      redirect: true,
+      index: ['index.html'],
       setHeaders: setPreviewHeaders,
-      allowedPath: (pathname) => !/\/llm(?:\/|$)/.test(pathname),
     });
   }
 
@@ -506,24 +503,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   });
 
   // Note: legacy /api/* handler removed; supported via onRequest prefix-strip
-
-  app.setNotFoundHandler((req: FastifyRequest, reply: FastifyReply) => {
-    const diagDir = path.join(process.cwd(), '.diag');
-    fs.mkdirSync(diagDir, { recursive: true });
-    fs.appendFileSync(
-      path.join(diagDir, 'notfound.log'),
-      `${new Date().toISOString()} ${req.method} ${req.url}\n`
-    );
-    reply.code(404).send({ error: 'Not found' });
-  });
-
-  void app.ready().then(() => {
-    const routes = app.printRoutes();
-    app.log.info(routes);
-    const diagDir = path.join(process.cwd(), '.diag');
-    fs.mkdirSync(diagDir, { recursive: true });
-    fs.writeFileSync(path.join(diagDir, 'fastify-routes.txt'), routes);
-  });
 
   return { app, config };
 }

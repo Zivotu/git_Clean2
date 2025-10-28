@@ -2,7 +2,7 @@
 
 import Head from 'next/head';
 import { useCallback, useEffect, useState } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 
 interface Recenzija {
@@ -28,7 +28,7 @@ export default function OglasClient({ id }: Props) {
     if (!id) return;
     try {
       const token = user ? await user.getIdToken() : undefined;
-      const res = await fetch(`${API_URL}/recenzije/${id}`, {
+      const res = await fetch(`${PUBLIC_API_URL}/recenzije/${id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) return;
@@ -50,7 +50,7 @@ export default function OglasClient({ id }: Props) {
     if (!id) return;
     try {
       const token = user ? await user.getIdToken() : undefined;
-      await fetch(`${API_URL}/recenzije`, {
+      await fetch(`${PUBLIC_API_URL}/recenzije`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,3 +115,4 @@ export default function OglasClient({ id }: Props) {
     </div>
   );
 }
+

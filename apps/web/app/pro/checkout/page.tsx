@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { apiAuthedPost } from '@/lib/api';
 import CheckoutReview, {
@@ -83,7 +83,7 @@ function ProCheckoutClient() {
     : false;
 
   useEffect(() => {
-    fetch(`${API_URL}/billing/packages`)
+    fetch(`${PUBLIC_API_URL}/billing/packages`)
       .then((r) => r.json())
       .then((data: BillingPackage[]) => {
         const found =
@@ -242,4 +242,5 @@ function ProCheckoutClient() {
     </main>
   );
 }
+
 

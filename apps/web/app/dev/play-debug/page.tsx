@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouteParam } from '@/hooks/useRouteParam';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 
 async function exists(url: string) {
   try {
@@ -58,7 +58,7 @@ function DebugClient() {
       setLoading(true);
       setError(null);
       try {
-        const statusRes = await fetch(`${API_URL}/build/${id}/status`, { cache: 'no-store', credentials: 'include' });
+        const statusRes = await fetch(`${PUBLIC_API_URL}/build/${id}/status`, { cache: 'no-store', credentials: 'include' });
         let status: Record<string, unknown> | null = null;
         if (statusRes.ok) {
           status = await statusRes.json();
@@ -68,10 +68,10 @@ function DebugClient() {
         }
 
         const urls = {
-          buildsIndex: `${API_URL}/builds/${id}/index.html`,
-          buildsDir: `${API_URL}/builds/${id}/`,
-          reviewIndex: `${API_URL}/review/builds/${id}/index.html`,
-          reviewDir: `${API_URL}/review/builds/${id}/`,
+          buildsIndex: `${PUBLIC_API_URL}/builds/${id}/index.html`,
+          buildsDir: `${PUBLIC_API_URL}/builds/${id}/`,
+          reviewIndex: `${PUBLIC_API_URL}/review/builds/${id}/index.html`,
+          reviewDir: `${PUBLIC_API_URL}/review/builds/${id}/`,
         } as const;
 
         const probes: Record<string, boolean> = {};
@@ -124,3 +124,4 @@ function DebugClient() {
     </div>
   );
 }
+

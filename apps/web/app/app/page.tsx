@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import Link from 'next/link';
 import Image from 'next/image';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -100,18 +100,18 @@ function BuildBadges({ playUrl }: { playUrl: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const ls = await fetch(`${API_URL}/listing/${safeAppId}`, { credentials: 'include', cache: 'no-store' });
+        const ls = await fetch(`${PUBLIC_API_URL}/listing/${safeAppId}`, { credentials: 'include', cache: 'no-store' });
         const lj = ls.ok ? await ls.json() : null;
         const buildId = lj?.item?.buildId;
         if (!buildId) return;
         const safeId = encodeURIComponent(buildId);
-        const st = await fetch(`${API_URL}/build/${safeId}/status`, { credentials: 'include', cache: 'no-store' });
+        const st = await fetch(`${PUBLIC_API_URL}/build/${safeId}/status`, { credentials: 'include', cache: 'no-store' });
         const js = st.ok ? await st.json() : null;
         if (cancelled) return;
         const pol = js?.artifacts?.networkPolicy || null;
         setPolicy(pol);
         try {
-          const man = await fetch(`${API_URL}/builds/${safeId}/build/manifest_v1.json`, { credentials: 'include', cache: 'no-store' });
+          const man = await fetch(`${PUBLIC_API_URL}/builds/${safeId}/build/manifest_v1.json`, { credentials: 'include', cache: 'no-store' });
           if (man.ok) {
             const mj = await man.json();
             if (Array.isArray(mj?.networkDomains)) setDomains(mj.networkDomains);
@@ -566,7 +566,7 @@ useEffect(() => {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const res = await fetch(`${API_URL}/config`, { credentials: 'include' });
+        const res = await fetch(`${PUBLIC_API_URL}/config`, { credentials: 'include' });
         if (res.ok) {
           const json = await res.json();
           if (typeof json.priceMin === 'number') setPriceMin(json.priceMin);
@@ -586,7 +586,7 @@ useEffect(() => {
       setLikeBusy(true);
       try {
         const newLike = !liked;
-        const res = await fetch(`${API_URL}/listing/${item.slug}/like`, {
+        const res = await fetch(`${PUBLIC_API_URL}/listing/${item.slug}/like`, {
           method: 'POST',
           credentials: 'include',
           headers: await buildHeaders(true),
@@ -742,7 +742,7 @@ useEffect(() => {
   const imgSrc = useMemo(() => {
     const shouldForcePlaceholder = Boolean(item?.status && !isPublished && !canViewUnpublished);
     if (shouldForcePlaceholder) {
-      return `${API_URL}/assets/preview-placeholder.svg`;
+      return `${PUBLIC_API_URL}/assets/preview-placeholder.svg`;
     }
     const resolved = resolvePreviewUrl(item?.previewUrl);
     if (resolved?.includes('/uploads/')) {
@@ -774,7 +774,7 @@ useEffect(() => {
     if (!normalizedSlug) return;
     setRefreshingSessions(true);
     try {
-      const res = await fetch(`${API_URL}/app/${normalizedSlug}/pin/sessions`, {
+      const res = await fetch(`${PUBLIC_API_URL}/app/${normalizedSlug}/pin/sessions`, {
         cache: 'no-store',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -798,7 +798,7 @@ useEffect(() => {
   async function revokeSession(sessionId: string) {
     if (!normalizedSlug) return;
     try {
-      const res = await fetch(`${API_URL}/app/${normalizedSlug}/pin/sessions/${sessionId}/revoke`, {
+      const res = await fetch(`${PUBLIC_API_URL}/app/${normalizedSlug}/pin/sessions/${sessionId}/revoke`, {
         method: 'POST',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -822,7 +822,7 @@ useEffect(() => {
     setRotatingPin(true);
     if (!normalizedSlug) return;
     try {
-      const res = await fetch(`${API_URL}/app/${normalizedSlug}/pin/rotate`, {
+      const res = await fetch(`${PUBLIC_API_URL}/app/${normalizedSlug}/pin/rotate`, {
         method: 'POST',
         credentials: 'include',
         headers: await buildHeaders(false),
@@ -914,7 +914,7 @@ useEffect(() => {
     if ('pin' in overrides) body.pin = overrides.pin;
 
     try {
-      const res = await fetch(`${API_URL}/listing/${item.slug}`, {
+      const res = await fetch(`${PUBLIC_API_URL}/listing/${item.slug}`, {
         method: 'PATCH',
         headers: await buildHeaders(true),
         credentials: 'include',
@@ -962,7 +962,7 @@ useEffect(() => {
     if (!item) return;
     const next = appState === 'active' ? 'inactive' : 'active';
     try {
-      const res = await fetch(`${API_URL}/app/${item.slug}/state`, {
+      const res = await fetch(`${PUBLIC_API_URL}/app/${item.slug}/state`, {
         method: 'PATCH',
         headers: await buildHeaders(true),
         credentials: 'include',
@@ -996,7 +996,7 @@ useEffect(() => {
 
     setDeleting(true);
     try {
-      const res = await fetch(`${API_URL}/listing/${item.slug}?hard=${hard ? 'true' : 'false'}`, {
+      const res = await fetch(`${PUBLIC_API_URL}/listing/${item.slug}?hard=${hard ? 'true' : 'false'}`, {
         method: 'DELETE',
         headers: await buildHeaders(false),
         credentials: 'include',
@@ -1046,7 +1046,7 @@ useEffect(() => {
     }
     setReportBusy(true);
     try {
-      const res = await fetch(`${API_URL}/listing/${encodeURIComponent(item.slug)}/report-issue`, {
+      const res = await fetch(`${PUBLIC_API_URL}/listing/${encodeURIComponent(item.slug)}/report-issue`, {
         method: 'POST',
         headers: await buildHeaders(true),
         credentials: 'include',
@@ -2248,3 +2248,4 @@ function ReportIssueModal({
     </div>
   );
 }
+

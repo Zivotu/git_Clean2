@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import type { FastifyInstance, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { Prisma } from '@prisma/client';
 import * as esbuild from 'esbuild';
 import { createJob, isJobActive } from '../buildQueue.js';
 import { notifyAdmins } from '../notifier.js';
 import { getBuildDir } from '../paths.js';
-import { readApps, writeApps, type AppRecord, listEntitlements, prisma } from '../db.js';
+import { readApps, writeApps, type AppRecord, listEntitlements } from '../db.js';
+import { prisma } from '../db.js';
 import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile } from '../lib/preview.js';
@@ -64,8 +66,47 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
   }
 }
 
+function extractDbErrorDetail(err: unknown): string {
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    return err.message.replace(/\s+/g, ' ').trim();
+  }
+  if (err instanceof Error) {
+    const sqliteMatch = /sqlite(?: error)?:\s*(.+)$/i.exec(err.message);
+    if (sqliteMatch?.[1]) {
+      return sqliteMatch[1].trim();
+    }
+    return err.message.replace(/\s+/g, ' ').trim();
+  }
+  return 'Unknown database error';
+}
+
+async function ensureListingRecord(opts: {
+  listingId: string | number;
+  title?: string | null;
+  uid?: string | null;
+  buildId: string;
+}) {
+  const { listingId, title, uid, buildId } = opts;
+  const id = String(listingId);
+  const safeTitle = (title?.trim() || 'Untitled').slice(0, 200);
+  await prisma.listing.upsert({
+    where: { id },
+    update: {
+      pendingBuildId: buildId,
+      updatedAt: new Date(),
+    },
+    create: {
+      id,
+      title: safeTitle,
+      status: 'pending_review',
+      authorUid: uid ?? null,
+      pendingBuildId: buildId,
+    },
+  });
+}
+
 export default async function publishRoutes(app: FastifyInstance) {
-  const handler = async (req: FastifyRequest, reply: any) => {
+  const handler = async (req: FastifyRequest, reply: FastifyReply) => {
     req.log.info('publish:received');
     const uid = req.authUser?.uid;
     if (!uid) {
@@ -132,12 +173,23 @@ export default async function publishRoutes(app: FastifyInstance) {
       : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
 
     try {
+      // 1) osiguraj da Listing zapis postoji prije Build.create (FK safety)
+      await ensureListingRecord({
+        listingId,
+        title: (body as any)?.title,
+        uid,
+        buildId,
+      });
+
+      // 2) sada smijemo kreirati Build red, FK postoji
       await prisma.build.create({
         data: {
           id: buildId,
           listingId: String(listingId),
+          appId: existing?.id ?? null,
           status: 'queued',
           mode: 'legacy',
+          progress: 0,
         },
       });
 
@@ -147,8 +199,9 @@ export default async function publishRoutes(app: FastifyInstance) {
         payload: { status: 'queued' },
       });
     } catch (err) {
-      req.log.error({ err }, 'publish:build_record_failed');
-      return reply.code(500).send({ ok: false, error: 'database_error' });
+      const detail = extractDbErrorDetail(err);
+      req.log.error({ err, detail }, 'publish:build_record_failed');
+      return reply.code(500).send({ ok: false, error: 'db_error', detail });
     }
 
     try {
@@ -198,6 +251,15 @@ export default async function publishRoutes(app: FastifyInstance) {
       }
     } catch (err) {
       req.log.error({ err }, 'publish:build_failed');
+      try {
+        const message = err instanceof Error ? err.message : 'build_failed';
+        await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'failed', error: message, reason: message },
+        });
+      } catch (dbErr) {
+        req.log.error({ err: dbErr, buildId }, 'publish:build_failed_status_update_error');
+      }
       return reply.code(400).send({ ok: false, error: 'build_failed' });
     }
 
@@ -375,15 +437,25 @@ export default async function publishRoutes(app: FastifyInstance) {
         req.log?.warn?.({ err }, 'publish:translations_enqueue_failed');
       }
 
-      return reply.code(202).send({ ok: true, buildId, listingId, slug });
+      const responsePayload = { ok: true as const, buildId, listingId, slug };
+      return reply.code(202).send(responsePayload);
     } catch (err) {
       req.log.error({ err }, 'publish:listing_write_failed');
       return reply.code(500).send({ ok: false, error: 'listing_write_failed' });
     }
   };
+  const apiRoutes = ['/api/publish', '/api/publish/', '/api/createx/publish', '/api/createx/publish/'];
+  for (const route of apiRoutes) {
+    app.post(route, handler);
+  }
 
-  app.post('/publish', handler);
-  app.post('/publish/', handler);
-  app.post('/createx/publish', handler);
-  app.post('/createx/publish/', handler);
+  const gone =
+    (target: '/api/publish' | '/api/createx/publish') =>
+    async (_req: FastifyRequest, reply: FastifyReply) =>
+      reply.code(410).send({ ok: false, error: 'gone', use: target });
+
+  app.post('/publish', gone('/api/publish'));
+  app.post('/publish/', gone('/api/publish'));
+  app.post('/createx/publish', gone('/api/createx/publish'));
+  app.post('/createx/publish/', gone('/api/createx/publish'));
 }

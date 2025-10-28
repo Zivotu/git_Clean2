@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { API_URL, SITE_NAME } from '@/lib/config';
+import { PUBLIC_API_URL, SITE_NAME } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -67,7 +67,7 @@ export default function ProAppsPage() {
       const map: Record<string, string> = { ...handles };
       for (const uid of missing as string[]) {
         try {
-          const res = await fetch(`${API_URL}/creators/id/${encodeURIComponent(uid)}`);
+          const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(uid)}`);
           if (!res.ok) continue;
           const js = await res.json();
           const h = js?.handle || js?.creator?.handle;
@@ -77,7 +77,7 @@ export default function ProAppsPage() {
       if (!cancelled) setHandles(map);
     })();
     return () => { cancelled = true };
-  }, [items]);
+  }, [items, handles]);
   return (
     <div className="min-h-screen text-gray-900 bg-white">
       <section className="max-w-7xl mx-auto px-4 pt-12 pb-6">
@@ -130,6 +130,7 @@ export default function ProAppsPage() {
     </div>
   );
 }
+
 
 
 

@@ -14,6 +14,6 @@ export default async function shims(app: FastifyInstance) {
 
   // Alias for legacy loader compatibility
   app.get('/shim.js', async (_req, reply) => {
-    return reply.redirect(301, '/shims/rooms.js');
+    return reply.code(307).header('Location', '/shims/rooms.js').send();
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useI18n } from '@/lib/i18n-provider';
 
 function BuildBadges({ playUrl }: { playUrl: string }) {
@@ -16,18 +16,18 @@ function BuildBadges({ playUrl }: { playUrl: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const ls = await fetch(`${API_URL}/listing/${safeAppId}`, { credentials: 'include', cache: 'no-store' });
+        const ls = await fetch(`${PUBLIC_API_URL}/listing/${safeAppId}`, { credentials: 'include', cache: 'no-store' });
         const lj = ls.ok ? await ls.json() : null;
         const buildId = lj?.item?.buildId;
         if (!buildId) return;
         const safeId = encodeURIComponent(buildId);
-        const st = await fetch(`${API_URL}/build/${safeId}/status`, { credentials: 'include', cache: 'no-store' });
+        const st = await fetch(`${PUBLIC_API_URL}/build/${safeId}/status`, { credentials: 'include', cache: 'no-store' });
         const js = st.ok ? await st.json() : null;
         if (cancelled) return;
         const pol = js?.artifacts?.networkPolicy || null;
         setPolicy(pol);
         try {
-          const man = await fetch(`${API_URL}/builds/${safeId}/build/manifest_v1.json`, { credentials: 'include', cache: 'no-store' });
+          const man = await fetch(`${PUBLIC_API_URL}/builds/${safeId}/build/manifest_v1.json`, { credentials: 'include', cache: 'no-store' });
           if (man.ok) {
             const mj = await man.json();
             if (Array.isArray(mj?.networkDomains)) setDomains(mj.networkDomains);
@@ -93,7 +93,7 @@ export default function AppsPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_URL}/listings?lang=${encodeURIComponent(locale)}`,
+        const res = await fetch(`${PUBLIC_API_URL}/listings?lang=${encodeURIComponent(locale)}`,
           { credentials: 'include' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as { items?: Listing[] };
@@ -162,3 +162,4 @@ export default function AppsPage() {
     </main>
   );
 }
+

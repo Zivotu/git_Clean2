@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@prisma/client':
+        specifier: ^6.18.0
+        version: 6.18.0(prisma@6.17.1(typescript@5.9.2))(typescript@5.9.2)
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
@@ -1485,6 +1488,18 @@ packages:
 
   '@prisma/client@6.17.1':
     resolution: {integrity: sha512-zL58jbLzYamjnNnmNA51IOZdbk5ci03KviXCuB0Tydc9btH2kDWsi1pQm2VecviRTM7jGia0OPPkgpGnT3nKvw==}
+    engines: {node: '>=18.18'}
+    peerDependencies:
+      prisma: '*'
+      typescript: '>=5.1.0'
+    peerDependenciesMeta:
+      prisma:
+        optional: true
+      typescript:
+        optional: true
+
+  '@prisma/client@6.18.0':
+    resolution: {integrity: sha512-jnL2I9gDnPnw4A+4h5SuNn8Gc+1mL1Z79U/3I9eE2gbxJG1oSA+62ByPW4xkeDgwE0fqMzzpAZ7IHxYnLZ4iQA==}
     engines: {node: '>=18.18'}
     peerDependencies:
       prisma: '*'
@@ -7298,6 +7313,11 @@ snapshots:
       playwright: 1.56.1
 
   '@prisma/client@6.17.1(prisma@6.17.1(typescript@5.9.2))(typescript@5.9.2)':
+    optionalDependencies:
+      prisma: 6.17.1(typescript@5.9.2)
+      typescript: 5.9.2
+
+  '@prisma/client@6.18.0(prisma@6.17.1(typescript@5.9.2))(typescript@5.9.2)':
     optionalDependencies:
       prisma: 6.17.1(typescript@5.9.2)
       typescript: 5.9.2

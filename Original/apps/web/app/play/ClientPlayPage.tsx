@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import { apiFetch, ApiError } from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { joinUrl } from '@/lib/url';
+import { Spinner } from '@/components/ui/Spinner';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 
 type BuildStatusResponse = {
@@ -12,11 +12,16 @@ type BuildStatusResponse = {
   artifacts?: { networkPolicy?: string };
 };
 
+type ArtifactsResponse = {
+  buildId: string;
+  previewIndex?: { exists: boolean; url: string };
+};
+
 type ListingResponse = {
   item?: { buildId?: string };
 };
 
-const IFRAME_SANDBOX = 'allow-scripts allow-same-origin allow-forms';
+const IFRAME_SANDBOX = 'allow-scripts allow-forms allow-downloads';
 
 export default function ClientPlayPage({ appId }: { appId: string }) {
   const searchParams = useSafeSearchParams();
@@ -29,11 +34,8 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
-  const [buildId, setBuildId] = useState<string | null>(null);
-  const [state, setState] = useState<string | null>(null);
-  const [networkPolicy, setNetworkPolicy] = useState<string | undefined>();
-  const [networkDomains, setNetworkDomains] = useState<string[]>([]);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [friendlyError, setFriendlyError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +43,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
     async function load() {
       if (!appId) {
         setError('Missing app id.');
-        setLoading(false);
+        if (!cancelled) setLoading(false);
         return;
       }
 
@@ -126,8 +128,8 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
 
   if (loading) {
     return (
-      <div style={{ padding: 24 }}>
-        <h1>Loading app...</h1>
+      <div className="w-full h-screen flex items-center justify-center">
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -146,52 +148,18 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
     );
   }
 
-  if (!iframeSrc) {
-    if (state && state !== 'published') {
-      return (
-        <div style={{ padding: 24 }}>
-          <h1>Build {buildId} in state {state}</h1>
-        </div>
-      );
-    }
+  if (friendlyError) {
     return (
       <div style={{ padding: 24 }}>
-        <h1>Build not found</h1>
+        <h1>Unable to load app</h1>
+        <p>{friendlyError}</p>
       </div>
     );
   }
 
-  const needsConsent =
-    typeof networkPolicy === 'string' && networkPolicy.toUpperCase() === 'OPEN_NET' && !run;
-
-  if (needsConsent) {
-    return (
-      <div style={{ padding: 24, maxWidth: 720 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 12 }}>Launch application</h1>
-        <p className="text-sm" style={{ marginBottom: 8 }}>
-          This app requests Open Net access.
-          {networkDomains.length > 0 && ' Reported domains:'}
-        </p>
-        {networkDomains.length > 0 && (
-          <ul style={{ marginBottom: 12, paddingLeft: 18, listStyle: 'disc' }}>
-            {networkDomains.map((d) => (
-              <li key={d}>{d}</li>
-            ))}
-          </ul>
-        )}
-        <div style={{ display: 'flex', gap: 12 }}>
-          <Link href={`?run=1${token ? `&token=${encodeURIComponent(token)}` : ''}`} className="px-3 py-2 bg-emerald-600 text-white rounded">
-            Launch app
-          </Link>
-          <Link href="/apps" className="px-3 py-2 border rounded">
-            Cancel
-          </Link>
-        </div>
-        <p className="text-xs" style={{ marginTop: 12, color: '#475569' }}>
-          Apps run inside a sandboxed iframe with a strict CSP.
-        </p>
-      </div>
-    );
+  if (!iframeSrc) {
+    // This case should be covered by friendlyError, but as a fallback:
+    return <div style={{ padding: 24 }}><h1>Application could not be loaded.</h1></div>;
   }
 
   return (
@@ -199,7 +167,7 @@ export default function ClientPlayPage({ appId }: { appId: string }) {
       src={iframeSrc}
       style={{ border: 'none', width: '100%', height: '100vh' }}
       sandbox={IFRAME_SANDBOX}
+      referrerPolicy="no-referrer"
     />
   );
 }
-

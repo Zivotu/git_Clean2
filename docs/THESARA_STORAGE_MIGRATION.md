@@ -173,25 +173,26 @@ Kako bi se poboljšalo korisničko iskustvo prilikom objave aplikacije, uvodi se
 -   **Ruta**: `GET /build/:buildId/events`
 -   **Headers**: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`. CORS mora biti ispravno konfiguriran.
 -   **Eventi**: Server šalje događaje u `event: <ime>\ndata: <json>\n\n` formatu.
-    -   `event: status_update`: Šalje se za svaku fazu build procesa.
-        -   `data: {"status":"queued"}`
-        -   `data: {"status":"analyze"}`
-        -   `data: {"status":"build"}`
-        -   `data: {"status":"bundle"}`
-        -   `data: {"status":"verify"}`
-        -   `data: {"status":"ai_scan"}`
-        -   `data: {"status":"llm_generating"}`
+    -   `event: status`: Šalje se za svaku promjenu stanja build procesa.
+        -   `data: {"buildId":"...", "status":"queued"}`
+        -   `data: {"buildId":"...", "status":"analyze", "reason":"..."}`
+        -   `data: {"buildId":"...", "status":"build"}`
+        -   `data: {"buildId":"...", "status":"bundle"}`
+        -   `data: {"buildId":"...", "status":"verify"}`
+        -   `data: {"buildId":"...", "status":"ai_scan"}`
+        -   `data: {"buildId":"...", "status":"llm_generating"}`
+    -   `event: ping`: Periodični heartbeat (svakih 15s) s `id` i `ts`.
     -   `event: llm_report`: Šalje kompletan AI izvještaj kada je gotov.
     -   `event: final`: Označava kraj procesa.
-        -   `data: {"status":"published", "buildId": "...", "listingId": "..."}`
-        -   `data: {"status":"failed", "reason": "...", "buildId": "..."}`
+        -   `data: {"status":"published", "reason":"approved", "buildId": "..."}`
+        -   `data: {"status":"rejected", "reason": "...", "buildId": "..."}`
 
 ### UI Integracija
 
 -   **Povezivanje**: Klijent koristi `EventSource` za spajanje na `/build/:buildId/events`.
 -   **UX**:
     -   Tijekom procesa prikazuje se poruka "Publishing..." s detaljem trenutne faze (npr., "Bundling...").
-    -   Na `final` event sa statusom `success`, prikazuje se CTA gumb "Open Play".
+    -   Na `final` event sa statusom `published`, prikazuje se CTA gumb "Open Play".
     -   Na `final` event sa statusom `failed`, prikazuje se poruka o grešci s `reason` i opcijama "Retry" ili "View Logs". Na `llm_report` se ažurira prikaz AI analize.
 -   **Robusnost**: U slučaju prekida SSE konekcije, klijent automatski pokušava ponovno spajanje (npr., uz exponential backoff).
 

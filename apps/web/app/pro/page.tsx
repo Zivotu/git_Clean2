@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense, useEffect, useState } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import PackageDetailView from './PackageDetailView';
@@ -69,7 +69,7 @@ function ProPageClient() {
     (async () => {
       try {
         const token = await user.getIdToken();
-        const res = await fetch(`${API_URL}/me/usage`, {
+        const res = await fetch(`${PUBLIC_API_URL}/me/usage`, {
           credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -92,7 +92,7 @@ function ProPageClient() {
     (async () => {
       try {
         const token = await user.getIdToken();
-        const res = await fetch(`${API_URL}/me/subscribed-apps`, {
+        const res = await fetch(`${PUBLIC_API_URL}/me/subscribed-apps`, {
           credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -122,7 +122,7 @@ function ProPageClient() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_URL}/billing/packages`);
+        const response = await fetch(`${PUBLIC_API_URL}/billing/packages`);
         if (!response.ok) {
           throw new Error('Failed to fetch packages');
         }
@@ -137,7 +137,7 @@ function ProPageClient() {
     };
 
     fetchPackages();
-  }, []);
+  }, [tPro]);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,7 +145,7 @@ function ProPageClient() {
       try {
         if (!user) return;
         const token = await user.getIdToken();
-        const res = await fetch(`${API_URL}/billing/transactions`, {
+        const res = await fetch(`${PUBLIC_API_URL}/billing/transactions`, {
           headers: { Authorization: `Bearer ${token}` },
           credentials: 'include',
         });
@@ -364,3 +364,4 @@ function ProPageClient() {
     </main>
   );
 }
+

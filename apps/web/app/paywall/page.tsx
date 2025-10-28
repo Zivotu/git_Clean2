@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import type { AccessMode } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
@@ -169,7 +169,7 @@ function PaywallClient() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/listing/${safeSlug}`);
+        const res = await fetch(`${PUBLIC_API_URL}/listing/${safeSlug}`);
         if (res.ok) {
           const json = await res.json();
           const f = json?.item?.pinActiveFrom;
@@ -191,14 +191,14 @@ function PaywallClient() {
               const handle = json?.item?.author?.handle;
               let h = handle as string | undefined;
               if (!h) {
-                const r = await fetch(`${API_URL}/creators/id/${encodeURIComponent(owner)}`);
+                const r = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(owner)}`);
                 if (r.ok) {
                   const j = await r.json();
                   h = j?.handle as string | undefined;
                 }
               }
               if (h) {
-                const r2 = await fetch(`${API_URL}/creators/${encodeURIComponent(h)}`);
+                const r2 = await fetch(`${PUBLIC_API_URL}/creators/${encodeURIComponent(h)}`);
                 if (r2.ok) {
                   const j2 = await r2.json();
                   const p = j2?.allAccessPrice;
@@ -213,12 +213,12 @@ function PaywallClient() {
         }
       } catch {}
     })();
-  }, [slug]);
+  }, [slug, safeSlug]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const res = await fetch(`${API_URL}/app/${safeSlug}/pin/verify`, {
+    const res = await fetch(`${PUBLIC_API_URL}/app/${safeSlug}/pin/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -243,7 +243,7 @@ function PaywallClient() {
       return;
     }
     // Open the public app endpoint which resolves slug -> buildId
-    const url = `${API_URL}/app/${safeSlug}/`;
+    const url = `${PUBLIC_API_URL}/app/${safeSlug}/`;
     window.open(url, '_blank', 'noopener,noreferrer');
     setShowModal(false);
     setToast('Aplikacija je otvorena u novom prozoru');
@@ -260,7 +260,7 @@ function PaywallClient() {
         const token = await (user as any)?.getIdToken?.();
         if (!token) return;
 
-        const u = new URL(`${API_URL}/trial/status`);
+        const u = new URL(`${PUBLIC_API_URL}/trial/status`);
         u.searchParams.set('appId', String(appNumericId));
         const res = await fetch(u.toString(), {
           headers: { Authorization: `Bearer ${token}` },
@@ -273,7 +273,7 @@ function PaywallClient() {
           if (data.verified) {
             setTrialStep('granted');
             // Now fetch entitlements to get expiry
-            const r = await fetch(`${API_URL}/me/entitlements`, {
+            const r = await fetch(`${PUBLIC_API_URL}/me/entitlements`, {
               headers: { Authorization: `Bearer ${token}` },
               cache: 'no-store',
             });
@@ -328,13 +328,13 @@ function PaywallClient() {
       }
       const idempotencyKey = idempotencyKeys.current[key];
       const requestedType = body?.type;
-      let endpoint = `${API_URL}/billing/checkout`;
+      let endpoint = `${PUBLIC_API_URL}/billing/checkout`;
       // Map convenience calls to proper subscription endpoints
       if (body?.type === 'app' && body?.appId) {
-        endpoint = `${API_URL}/billing/subscriptions/app`;
+        endpoint = `${PUBLIC_API_URL}/billing/subscriptions/app`;
         body = { appId: String(body.appId) };
       } else if (body?.type === 'creator' && body?.creatorUid) {
-        endpoint = `${API_URL}/billing/subscriptions/creator`;
+        endpoint = `${PUBLIC_API_URL}/billing/subscriptions/creator`;
         body = { creatorId: body.creatorUid };
       }
       const res = await fetch(endpoint, {
@@ -428,7 +428,7 @@ function PaywallClient() {
   async function manageBilling() {
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/billing/portal`, {
+      const res = await fetch(`${PUBLIC_API_URL}/billing/portal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -454,7 +454,7 @@ function PaywallClient() {
     try {
       const token = await (user as any)?.getIdToken?.();
       if (!token) { router.push('/login'); return; }
-      const res = await fetch(`${API_URL}/trial/request`, {
+      const res = await fetch(`${PUBLIC_API_URL}/trial/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ appId: appNumericId, email: (user as any)?.email || trialEmail || undefined }),
@@ -474,7 +474,7 @@ function PaywallClient() {
     try {
       const token = await (user as any)?.getIdToken?.();
       if (!token) { router.push('/login'); return; }
-      const res = await fetch(`${API_URL}/trial/verify`, {
+      const res = await fetch(`${PUBLIC_API_URL}/trial/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ appId: appNumericId, code: trialCode.trim() }),
@@ -627,3 +627,4 @@ function PaywallClient() {
     </div>
   );
 }
+

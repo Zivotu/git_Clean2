@@ -8,7 +8,7 @@ import { updateProfile } from 'firebase/auth';
 import { db, storage } from '@/lib/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 
 function Toast({
   message,
@@ -94,7 +94,7 @@ export default function SettingsPage() {
     if (!appId) return;
     setLoadingVersions(true);
     try {
-      const res = await fetch(`${API_URL}/app/${appId}/versions`, {
+      const res = await fetch(`${PUBLIC_API_URL}/app/${appId}/versions`, {
         credentials: 'include',
       });
       const data = await res.json();
@@ -105,7 +105,7 @@ export default function SettingsPage() {
   };
 
   const restoreVersion = async (buildId: string) => {
-    await fetch(`${API_URL}/app/${appId}/versions/${buildId}/promote`, {
+    await fetch(`${PUBLIC_API_URL}/app/${appId}/versions/${buildId}/promote`, {
       method: 'POST',
       credentials: 'include',
     });
@@ -202,3 +202,4 @@ export default function SettingsPage() {
     </main>
   );
 }
+

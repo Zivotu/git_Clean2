@@ -1,6 +1,6 @@
-'use client';
+"use client";
 import Image from 'next/image';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useState } from 'react';
 
 type Props = {
@@ -39,7 +39,7 @@ export default function Avatar({ uid, src, name = '', size = 32, className = '' 
     );
   }
 
-  const apiUrl = `${API_URL}/avatar/${uid ?? '0'}?url=${encodeURIComponent(finalSrc)}`;
+  const apiUrl = `${PUBLIC_API_URL}/avatar/${uid ?? '0'}?url=${encodeURIComponent(finalSrc)}`;
 
   return (
     <Image

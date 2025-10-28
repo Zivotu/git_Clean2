@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_URL } from "@/lib/config";
+import { PUBLIC_API_URL } from "@/lib/config";
 import { auth } from "@/lib/firebase";
 
 interface Invoice {
@@ -24,7 +24,7 @@ export default function BillingHistoryPage() {
         const user = auth?.currentUser;
         if (!user) return;
         const token = await user.getIdToken();
-        const res = await fetch(`${API_URL}/billing/transactions`, {
+        const res = await fetch(`${PUBLIC_API_URL}/billing/transactions`, {
           headers: { Authorization: `Bearer ${token}` },
           credentials: "include",
         });
@@ -93,4 +93,5 @@ export default function BillingHistoryPage() {
     </div>
   );
 }
+
 

@@ -7,11 +7,13 @@
     "dev:redis:down": "docker compose -f docker-compose.dev.yml down",
     "dev": "pnpm run dev:redis && node tools/dev.mjs",
     "dev:reset": "node -e \"require('fs').rmSync('.devdata',{recursive:true,force:true});console.log('✔ .devdata cleaned')\"",
-"build:api": "pnpm --filter @thesara/api build",
-"build:web": "pnpm --filter @thesara/web build",
-    "build": "pnpm run build:api && pnpm run build:web"
+    "build:api": "pnpm --filter @thesara/api build",
+    "build:web": "pnpm --filter @thesara/web build",
+    "build": "pnpm run build:api && pnpm run build:web",
+    "typecheck": "pnpm -r --filter @thesara/api run typecheck"
   },
   "dependencies": {
+    "@prisma/client": "^6.18.0",
     "cross-env": "^7.0.3"
   }
 }

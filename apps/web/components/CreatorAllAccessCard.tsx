@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 
 interface Props {
@@ -30,7 +30,7 @@ export default function CreatorAllAccessCard({ creatorUid, price }: Props) {
         router.push('/login');
         return;
       }
-      const res = await fetch(`${API_URL}/billing/subscriptions/creator`, {
+      const res = await fetch(`${PUBLIC_API_URL}/billing/subscriptions/creator`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,3 +80,4 @@ export default function CreatorAllAccessCard({ creatorUid, price }: Props) {
     </section>
   );
 }
+

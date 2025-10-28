@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouteParam } from '@/hooks/useRouteParam';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { apiGet } from '@/lib/api';
 import { startStripeOnboarding, openStripeDashboard } from '@/hooks/useConnectStatus';
@@ -67,7 +67,7 @@ function CreatorFinancesClient() {
       setError(null);
       try {
         const token = await (user as any)?.getIdToken?.();
-        const res = await fetch(`${API_URL}/creators/${encodeURIComponent(handle)}/metrics`, {
+        const res = await fetch(`${PUBLIC_API_URL}/creators/${encodeURIComponent(handle)}/metrics`, {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         });
         if (!res.ok) throw new Error('bad_response');
@@ -208,4 +208,5 @@ function CreatorFinancesClient() {
     </main>
   );
 }
+
 

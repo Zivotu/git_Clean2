@@ -8,6 +8,9 @@ import { getConfig } from '../config.js';
 import { createHmac } from 'node:crypto';
 import { getAuth } from 'firebase-admin/auth';
 
+const tempRedirect = (reply: FastifyReply, location: string) =>
+  reply.code(307).header('Location', location).send();
+
 export const __testing: Record<string, any> = {};
 
 export default async function publicRoutes(app: FastifyInstance) {
@@ -19,24 +22,26 @@ export default async function publicRoutes(app: FastifyInstance) {
       .map((x) => encodeURIComponent(x))
       .join('/');
   // Proxy public assets from the storage bucket under /public/builds/*
-  app.get('/public/builds/*', async (req, reply) => {
-    const rest = (req.params as any)['*'] as string;
-    // Normalize the captured path segment and ensure we address the intended
-    // GCS object key under builds/<rest>. Avoid removing the first separator
-    // inside "builds/…" which previously produced keys like "buildshhh/index.html".
-    const cleanRest = (rest || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
-    const key = `builds/${cleanRest}`;
-    const bucket = getBucket();
-    const file = bucket.file(key);
-    const [exists] = await file.exists();
-    if (!exists) return reply.code(404).send({ error: 'not_found' });
-    try {
-      const [meta] = await file.getMetadata();
-      if (meta.contentType) reply.type(meta.contentType);
-      if (meta.cacheControl) reply.header('Cache-Control', meta.cacheControl);
-    } catch {}
-    return reply.send(file.createReadStream());
-  });
+  if (getConfig().STORAGE_DRIVER !== 'local') {
+    app.get('/public/builds/*', async (req, reply) => {
+      const rest = (req.params as any)['*'] as string;
+      // Normalize the captured path segment and ensure we address the intended
+      // GCS object key under builds/<rest>. Avoid removing the first separator
+      // inside "builds/…" which previously produced keys like "buildshhh/index.html".
+      const cleanRest = (rest || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+      const key = `builds/${cleanRest}`;
+      const bucket = getBucket();
+      const file = bucket.file(key);
+      const [exists] = await file.exists();
+      if (!exists) return reply.code(404).send({ error: 'not_found' });
+      try {
+        const [meta] = await file.getMetadata();
+        if (meta.contentType) reply.type(meta.contentType);
+        if (meta.cacheControl) reply.header('Cache-Control', meta.cacheControl);
+      } catch {}
+      return reply.send(file.createReadStream());
+    });
+  }
 
   // Lightweight player routes -------------------------------------------------
   // Redirect /play/:appId[/...rest] to the built bundle for the latest build
@@ -54,22 +59,22 @@ export default async function publicRoutes(app: FastifyInstance) {
           const bucket = getBucket();
           const file = bucket.file(`builds/${mapped}/index.html`);
           const [exists] = await file.exists();
-          if (exists) return reply.redirect(`/public/builds/${encSeg(mapped)}/index.html`, 302);
+          if (exists) return tempRedirect(reply, `/public/builds/${encSeg(mapped)}/index.html`);
         } catch {}
         const dir = getBuildDir(mapped);
         // Prefer bundled output; fall back to root if missing
         try {
           await fs.access(path.join(dir, 'bundle', 'index.html'));
-          return reply.redirect(`/builds/${encSeg(mapped)}/bundle/`, 302);
+          return tempRedirect(reply, `/builds/${encSeg(mapped)}/bundle/`);
         } catch {}
         try {
           await fs.access(path.join(dir, 'index.html'));
-          return reply.redirect(`/builds/${encSeg(mapped)}/`, 302);
+          return tempRedirect(reply, `/builds/${encSeg(mapped)}/`);
         } catch {}
-        return reply.redirect(`/review/builds/${encSeg(mapped)}/`, 302);
+        return tempRedirect(reply, `/review/builds/${encSeg(mapped)}/`);
       }
       const byBuild = apps.find((a) => a.buildId === id);
-      if (byBuild) return reply.redirect(`/play/${encSeg(byBuild.id)}/`, 302);
+      if (byBuild) return tempRedirect(reply, `/play/${encSeg(byBuild.id)}/`);
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
   });
@@ -91,45 +96,45 @@ export default async function publicRoutes(app: FastifyInstance) {
           const bundleFile = bucket.file(`builds/${mapped}/bundle/${rest}`);
           const [bundleExists] = await bundleFile.exists();
           if (bundleExists) {
-            return reply.redirect(
+            return tempRedirect(
+              reply,
               `/public/builds/${encSeg(mapped)}/bundle/${encRestSafe}`,
-              302,
             );
           }
           const rootFile = bucket.file(`builds/${mapped}/${rest}`);
           const [rootExists] = await rootFile.exists();
           if (rootExists) {
-            return reply.redirect(
+            return tempRedirect(
+              reply,
               `/public/builds/${encSeg(mapped)}/${encRestSafe}`,
-              302,
             );
           }
         } catch {}
         const dir = getBuildDir(mapped);
         try {
           await fs.access(path.join(dir, 'bundle', rest));
-          return reply.redirect(
+          return tempRedirect(
+            reply,
             `/builds/${encSeg(mapped)}/bundle/${encRestSafe}`,
-            302,
           );
         } catch {}
         try {
           await fs.access(path.join(dir, rest));
-          return reply.redirect(
-            `/builds/${encSeg(mapped)}/${encRestSafe}`,
-            302,
-          );
-        } catch {}
-        return reply.redirect(
-          `/review/builds/${encSeg(mapped)}/${encRestSafe}`,
-          302,
+        return tempRedirect(
+          reply,
+          `/builds/${encSeg(mapped)}/${encRestSafe}`,
         );
+        } catch {}
+    return tempRedirect(
+      reply,
+      `/review/builds/${encSeg(mapped)}/${encRestSafe}`,
+    );
       }
       const byBuild = apps.find((a) => a.buildId === id);
       if (byBuild) {
         return reply.redirect(
+          307,
           `/play/${encSeg(byBuild.id)}/${encRestSafe}`,
-          302,
         );
       }
     } catch {}
@@ -325,18 +330,18 @@ export default async function publicRoutes(app: FastifyInstance) {
       const bucket = getBucket();
       const file = bucket.file(`builds/${buildId}/index.html`);
       const [exists] = await file.exists();
-      if (exists) return reply.redirect(`/public/builds/${encSeg(buildId)}/index.html`, 302);
+      if (exists) return tempRedirect(reply, `/public/builds/${encSeg(buildId)}/index.html`);
     } catch {}
     const dir = getBuildDir(buildId);
     try {
       await fs.access(path.join(dir, 'bundle', 'index.html'));
-      return reply.redirect(`/builds/${encSeg(buildId)}/bundle/`, 302);
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/bundle/`);
     } catch {}
     try {
       await fs.access(path.join(dir, 'index.html'));
-      return reply.redirect(`/builds/${encSeg(buildId)}/`, 302);
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/`);
     } catch {}
-    return reply.redirect(`/review/builds/${encSeg(buildId)}/`, 302);
+    return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/`);
   });
   app.get('/app/:slug/*', async (req: FastifyRequest, reply: FastifyReply) => {
     const { slug } = req.params as { slug: string };
@@ -409,17 +414,17 @@ export default async function publicRoutes(app: FastifyInstance) {
       const bucket = getBucket();
       const file = bucket.file(`builds/${buildId}/index.html`);
       const [exists] = await file.exists();
-      if (exists) return reply.redirect(`/public/builds/${encSeg(buildId)}/${encRest(rest)}`, 302);
+      if (exists) return tempRedirect(reply, `/public/builds/${encSeg(buildId)}/${encRest(rest)}`);
     } catch {}
     const dir = getBuildDir(buildId);
     try {
       await fs.access(path.join(dir, 'bundle', 'index.html'));
-      return reply.redirect(`/builds/${encSeg(buildId)}/bundle/${encRest(rest)}`, 302);
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/bundle/${encRest(rest)}`);
     } catch {}
     try {
       await fs.access(path.join(dir, 'index.html'));
-      return reply.redirect(`/builds/${encSeg(buildId)}/${encRest(rest)}`, 302);
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/${encRest(rest)}`);
     } catch {}
-    return reply.redirect(`/review/builds/${encSeg(buildId)}/${encRest(rest)}`, 302);
+    return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/${encRest(rest)}`);
   });
 }

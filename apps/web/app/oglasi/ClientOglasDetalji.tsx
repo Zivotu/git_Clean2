@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 
 interface Recenzija {
@@ -22,7 +22,7 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
 
   async function load() {
     const token = user ? await user.getIdToken() : undefined;
-    const res = await fetch(`${API_URL}/recenzije/${oglasId}`, {
+    const res = await fetch(`${PUBLIC_API_URL}/recenzije/${oglasId}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     if (res.ok) {
@@ -41,7 +41,7 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
   async function submitRecenzija(e: React.FormEvent) {
     e.preventDefault();
     const token = user ? await user.getIdToken() : undefined;
-    await fetch(`${API_URL}/recenzije`, {
+    await fetch(`${PUBLIC_API_URL}/recenzije`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -96,4 +96,5 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
     </div>
   );
 }
+
 

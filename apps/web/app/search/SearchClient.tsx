@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState, Suspense as _Suspense } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { handleFetchError } from '@/lib/handleFetchError';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 
@@ -31,7 +31,7 @@ export default function SearchClient() {
     if (cijenaMax) q.set('cijenaMax', cijenaMax);
     if (kategorija) q.set('kategorija', kategorija);
     q.set('page', String(page));
-    fetch(`${API_URL}/oglasi?${q.toString()}`)
+    fetch(`${PUBLIC_API_URL}/oglasi?${q.toString()}`)
       .then((r) => r.json())
       .then((d) => {
         setError(null);
@@ -110,4 +110,5 @@ export default function SearchClient() {
     </div>
   );
 }
+
 

@@ -1,6 +1,7 @@
 import EventEmitter from 'node:events';
 import fs from 'node:fs/promises';
 import fssync from 'node:fs';
+import { bundleMiniApp } from './build/bundle.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -19,6 +20,7 @@ import {
   type BuildState,
 } from './models/Build.js';
 import { SafePublishPipeline } from './safePublish.js';
+import { writeJson } from './fsx.js';
 import { saveBuildData } from './db/builds.js';
 
 
@@ -236,6 +238,32 @@ async function runJob(job: Job): Promise<void> {
           await fs.rm(dest, { recursive: true, force: true });
           await fs.mkdir(dest, { recursive: true });
           await fs.cp(src, dest, { recursive: true });
+        },
+      },
+      {
+        state: 'bundle',
+        progress: 80,
+        fn: async () => {
+          const srcDir = path.join(dir, 'build');
+          try {
+            await bundleMiniApp(id, srcDir);
+            const artifacts = {
+              previewIndex: {
+                exists: true,
+                url: `/review/builds/${id}/bundle/index.html`,
+              },
+              bundle: {
+                exists: true,
+                url: `/review/builds/${id}/bundle/app.bundle.js`,
+              },
+            };
+            await writeJson(path.join(dir, 'artifacts.json'), artifacts);
+            rec = await updateBuild(id, { state: 'bundle_done' });
+            logState(log, id, 'bundle_done');
+            await emitState(id, rec.state, rec.progress);
+          } catch (err: any) {
+            throw new Error(`bundle_failed: ${err.message}`);
+          }
         },
       },
     ];

@@ -95,13 +95,38 @@ model AppStorage {
 }
 
 model Build {
-  id          String   @id @default(cuid())
-  listingId   String
-  status      String   // "queued", "bundling", "verifying", "success", "failed"
-  mode        String   // "bundled", "legacy"
-  reason      String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  listingId       String
+  appId           String?
+  status          String   // "queued", "bundling", "verifying", "success", "failed"
+  mode            String   @default("legacy") // "bundled", "legacy"
+  progress        Int      @default(0)
+  reason          String?
+  error           String?
+  bundlePublicUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  listing Listing? @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
   @@index([listingId])
+}
+
+model Listing {
+  id              String   @id
+  title           String
+  slug            String?
+  status          String
+  playUrl         String?
+  bundlePublicUrl String?
+  buildId         String?
+  pendingBuildId  String?
+  authorUid       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  builds Build[]
+
+  @@index([buildId])
+  @@index([pendingBuildId])
 }

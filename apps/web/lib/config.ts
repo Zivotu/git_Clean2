@@ -28,14 +28,42 @@ function must(value: string | undefined, key: string): string {
   return value;
 }
 
-function resolveApiUrl(apiUrlStr: string): string {
-  if (apiUrlStr.startsWith('/') && typeof window !== 'undefined') {
-    return `${window.location.origin}${apiUrlStr}`;
+function resolveApiUrl(apiUrlStr?: string): string {
+  const s = (apiUrlStr ?? '').trim();
+  if (!s) return '';
+  if (typeof window !== 'undefined' && s.startsWith('/')) {
+    return `${window.location.origin}${s}`;
   }
-  return apiUrlStr;
+  return s;
 }
 
+function normalizePublicApiUrl(raw: string): string {
+  const resolved = resolveApiUrl(raw);
+  return resolved === '/' ? resolved : resolved.replace(/\/$/, '');
+}
 
+const PUBLIC_API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  '/api';
+
+const PUBLIC_API_URL = normalizePublicApiUrl(PUBLIC_API_BASE);
+
+function normalizeHost(value: string): string {
+  if (!value) return value;
+  return value === '/' ? '/' : value.replace(/\/+$/, '');
+}
+
+const rawAppsHost = normalizeHost(process.env.NEXT_PUBLIC_APPS_HOST ?? '');
+const fallbackApiBaseRaw =
+  (process.env.NEXT_PUBLIC_LOCAL_API_URL ?? PUBLIC_API_URL ?? '/api').trim() || '/api';
+const fallbackApiBase =
+  fallbackApiBaseRaw === '/' ? '/' : fallbackApiBaseRaw.replace(/\/+$/, '');
+const fallbackAppsHost =
+  rawAppsHost ||
+  (fallbackApiBase === '/' ? '/public/builds' : joinUrl(fallbackApiBase, 'public', 'builds'));
+
+const PUBLIC_APPS_HOST = normalizeHost(rawAppsHost || fallbackAppsHost);
 export async function isFirebaseConfiguredClient(): Promise<boolean> {
   if (typeof window === 'undefined') {
     return true;
@@ -131,6 +159,8 @@ export {
   GOLD_MAX_APPS_PER_USER,
   MAX_ROOMS_PER_APP,
   MAX_PLAYERS_PER_ROOM,
+  PUBLIC_API_URL,
+  PUBLIC_APPS_HOST,
 };
 
 export async function checkApiUrlReachability(baseUrl: string = API_URL): Promise<boolean> {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 
 interface Result {
   errors: string[];
@@ -17,7 +17,7 @@ export default function DoctorPage() {
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch(`${API_URL}/doctor`)
+    fetch(`${PUBLIC_API_URL}/doctor`)
       .then((r) => {
         if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
         return r.json();
@@ -35,7 +35,7 @@ export default function DoctorPage() {
   }, [load]);
 
   useEffect(() => {
-    fetch(`${API_URL}/health`, { method: 'HEAD', cache: 'no-store' })
+    fetch(`${PUBLIC_API_URL}/health`, { method: 'HEAD', cache: 'no-store' })
       .then((r) => setHealthOk(r.ok))
       .catch(() => setHealthOk(false));
   }, []);
@@ -102,4 +102,5 @@ export default function DoctorPage() {
     </div>
   );
 }
+
 

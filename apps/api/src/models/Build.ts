@@ -207,11 +207,24 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
   const localBundleDir = path.join(getBuildDir(id), 'bundle');
   const localBundleExists = await dirExists(localBundleDir);
 
-  const previewPath = path.join(PREVIEW_ROOT, id, 'index.html');
-  const previewExists = await fileExists(previewPath);
+  // Bundle-first: provjeri postoji li `bundle/index.html`
+  const bundleIndexPath = path.join(BUNDLE_STORAGE_PATH, 'builds', id, 'bundle', 'index.html');
+  const bundleIndexExists = await fileExists(bundleIndexPath);
+
+  // Fallback: provjeri postoji li legacy preview
+  const legacyPreviewPath = path.join(PREVIEW_ROOT, id, 'index.html');
+  const legacyPreviewExists = await fileExists(legacyPreviewPath);
+
+  let previewIndex: ArtifactInfo;
+  if (bundleIndexExists) {
+    previewIndex = { exists: true, url: `/review/builds/${id}/bundle/index.html` };
+  } else if (legacyPreviewExists) {
+    previewIndex = { exists: true, url: `/review/previews/${id}/index.html` };
+  } else {
+    previewIndex = { exists: false };
+  }
 
   return {
-    preview: { exists: false },
     ast: (await fileExists(astPath))
       ? { exists: true, url: `/builds/${id}/build/AST_SUMMARY.json` }
       : { exists: false },
@@ -233,17 +246,16 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
     transformReport: (await fileExists(reportPath))
       ? { exists: true, url: `/builds/${id}/build/transform_report_v1.json` }
       : { exists: false },
-    previewIndex: previewExists
-      ? { exists: true, url: `/review/builds/${id}/index.html` }
-      : { exists: false },
+    previewIndex,
     networkPolicy: rec?.networkPolicy,
     networkPolicyReason: rec?.networkPolicyReason,
   };
 }
 
-export async function publishBundle(id: string): Promise<void> {
+export async function publishBundle(id: string): Promise<string> {
   // Prefer 'bundle/' but fall back to 'build/' in local/dev pipeline
   const baseDir = path.join(BUILDS_ROOT, id);
+  await fs.mkdir(baseDir, { recursive: true });
   let src = path.join(baseDir, 'bundle');
   if (!(await dirExists(src))) {
     const alt = path.join(baseDir, 'build');
@@ -273,17 +285,99 @@ export async function publishBundle(id: string): Promise<void> {
     }
   }
 
-  // In local dev mode or non-firebase storage, skip cloud upload and keep local directory.
-  // Review download endpoint can stream a tar.gz from this local folder.
-  const cfg0 = getConfig();
-  const KEEP_LOCAL_BUNDLE = process.env.KEEP_LOCAL_BUNDLE === 'true';
-  if (cfg0.STORAGE_DRIVER !== 'firebase') {
-    console.log(`publishBundle: skip cloud upload (STORAGE_DRIVER=${cfg0.STORAGE_DRIVER})`);
-    // Keep local bundle for direct serving under /builds/:id/bundle/
-    return;
+  const cfg = getConfig();
+  const publicUrl = `/public/builds/${id}/index.html`;
+
+  const copyDir = async (from: string, to: string): Promise<void> => {
+    if (from === to) return;
+    await fs.mkdir(to, { recursive: true });
+    const entries = await fs.readdir(from, { withFileTypes: true });
+    for (const entry of entries) {
+      const fromPath = path.join(from, entry.name);
+      const toPath = path.join(to, entry.name);
+      if (entry.isDirectory()) {
+        await copyDir(fromPath, toPath);
+      } else {
+        await fs.copyFile(fromPath, toPath);
+      }
+    }
+  };
+
+  const firstExisting = async (paths: string[]): Promise<string | null> => {
+    for (const candidate of paths) {
+      if (await fileExists(candidate)) return candidate;
+    }
+    return null;
+  };
+
+  const canonicalBundleDir = path.join(baseDir, 'bundle');
+  if (!(await dirExists(canonicalBundleDir))) {
+    await copyDir(src, canonicalBundleDir);
+  }
+  src = canonicalBundleDir;
+
+  const canonicalBuildDir = path.join(baseDir, 'build');
+  if (!(await dirExists(canonicalBuildDir))) {
+    await copyDir(src, canonicalBuildDir);
   }
 
-  const cfg = getConfig();
+  const ensureRootFile = async (name: string) => {
+    const dest = path.join(baseDir, name);
+    const source =
+      (await firstExisting([path.join(src, name)])) ??
+      (await firstExisting([path.join(canonicalBuildDir, name)])) ??
+      (await firstExisting([dest]));
+    if (!source) {
+      throw new AppError(
+        'BUILD_REQUIRED_FILE_MISSING',
+        `Missing required file(s): ${name}`,
+      );
+    }
+    if (source !== dest) {
+      await fs.mkdir(path.dirname(dest), { recursive: true });
+      await fs.copyFile(source, dest);
+    }
+  };
+
+  await ensureRootFile('index.html');
+  await ensureRootFile('app.js');
+
+  const manifestCandidates = [
+    path.join(src, 'manifest_v1.json'),
+    path.join(canonicalBuildDir, 'manifest_v1.json'),
+    path.join(baseDir, 'manifest_v1.json'),
+    path.join(src, 'manifest.json'),
+    path.join(canonicalBuildDir, 'manifest.json'),
+  ];
+  const manifestSource = await firstExisting(manifestCandidates);
+  if (!manifestSource) {
+    throw new AppError(
+      'BUILD_REQUIRED_FILE_MISSING',
+      'Missing required file(s): manifest_v1.json',
+    );
+  }
+  const manifestDest = path.join(baseDir, 'manifest_v1.json');
+  if (manifestSource !== manifestDest) {
+    await fs.copyFile(manifestSource, manifestDest);
+  }
+  const manifestBundlePath = path.join(src, 'manifest_v1.json');
+  if (!(await fileExists(manifestBundlePath))) {
+    await fs.copyFile(manifestDest, manifestBundlePath);
+  }
+  const manifestBuildPath = path.join(canonicalBuildDir, 'manifest_v1.json');
+  if (!(await fileExists(manifestBuildPath))) {
+    await fs.copyFile(manifestDest, manifestBuildPath);
+  }
+
+  // In local dev mode or non-firebase storage, skip cloud upload and keep local directory.
+  // Review download endpoint can stream a tar.gz from this local folder.
+  const KEEP_LOCAL_BUNDLE = process.env.KEEP_LOCAL_BUNDLE === 'true';
+  if (cfg.STORAGE_DRIVER !== 'firebase') {
+    console.log(`publishBundle: skip cloud upload (STORAGE_DRIVER=${cfg.STORAGE_DRIVER})`);
+    // Keep local bundle for direct serving under /builds/:id/*
+    return publicUrl;
+  }
+
   const tmpTar = path.join(cfg.TMP_PATH, `${id}-bundle.tar.gz`);
   await fs.mkdir(path.dirname(tmpTar), { recursive: true });
   await tar.c({ gzip: true, cwd: src, file: tmpTar }, ['.']);
@@ -335,5 +429,6 @@ export async function publishBundle(id: string): Promise<void> {
   if (!KEEP_LOCAL_BUNDLE) {
     await fs.rm(src, { recursive: true, force: true });
   }
-}
 
+  return publicUrl;
+}

@@ -133,40 +133,42 @@ export function startCreatexBuildWorker(): BuildWorkerHandle {
     async (job) => {
       const { buildId } = job.data as { buildId: string };
       try {
-        await prisma.build.update({ where: { id: buildId }, data: { status: 'bundling' } });
-        sseEmitter.emit('build_event', { buildId, event: 'status', payload: { status: 'bundling' } });
+        await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'bundling', progress: 40, error: null, reason: null },
+        });
+        sseEmitter.emitBuild(buildId, 'status', { status: 'bundling' });
 
         await runBuildProcess(buildId);
 
-        await prisma.build.update({ where: { id: buildId }, data: { status: 'verifying' } });
-        sseEmitter.emit('build_event', { buildId, event: 'status', payload: { status: 'verifying' } });
+        await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'verifying', progress: 70 },
+        });
+        sseEmitter.emitBuild(buildId, 'status', { status: 'verifying' });
 
         await ensureStorageCapabilityFlag(buildId);
         
         const finalBuild = await prisma.build.update({
           where: { id: buildId },
-          data: { status: 'success', mode: 'bundled' },
+          data: { status: 'success', mode: 'bundled', progress: 100, error: null, reason: null },
         });
 
-        sseEmitter.emit('build_event', {
-          buildId,
-          event: 'final',
-          payload: { status: 'success', buildId, listingId: finalBuild.listingId },
-        });
+        sseEmitter.emitBuild(buildId, 'final', { status: 'success', buildId, listingId: finalBuild.listingId });
 
       } catch (err: any) {
         console.error({ buildId, err }, 'build:error');
         const reason = err?.message || 'Unknown error';
-        const finalBuild = await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'failed', reason },
-        });
-
-        sseEmitter.emit('build_event', {
-          buildId,
-          event: 'final',
-          payload: { status: 'failed', reason, buildId, listingId: finalBuild.listingId },
-        });
+        try {
+          const finalBuild = await prisma.build.update({
+            where: { id: buildId },
+            data: { status: 'failed', reason, error: reason, progress: 100 },
+          });
+          sseEmitter.emitBuild(buildId, 'final', { status: 'failed', reason, buildId, listingId: finalBuild.listingId });
+        } catch (dbErr) {
+          console.error({ buildId, dbErr }, 'build:error:db_update_failed');
+          sseEmitter.emitBuild(buildId, 'final', { status: 'failed', reason });
+        }
       }
     },
     { connection: queueConnection },

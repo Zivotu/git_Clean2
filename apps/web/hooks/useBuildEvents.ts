@@ -1,5 +1,6 @@
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { createSSE } from '@/lib/sse';
+import { buildEventsUrl } from '@/lib/build-events';
 
 export type BuildStatus = 'queued' | 'bundling' | 'verifying' | 'success' | 'failed';
 
@@ -7,57 +8,49 @@ export interface BuildState {
   status: BuildStatus | null;
   reason: string | null;
   listingId: string | null;
+  progress?: number;
 }
 
 export function useBuildEvents(buildId: string | null) {
-  const [buildState, setBuildState] = useState<BuildState>({ status: null, reason: null, listingId: null });
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectAttemptsRef = useRef(0);
+  const [buildState, setBuildState] = useState<BuildState>({ status: null, reason: null, listingId: null, progress: undefined });
 
   useEffect(() => {
     if (!buildId) {
+      setBuildState({ status: null, reason: null, listingId: null, progress: undefined });
       return;
     }
 
-    const connect = () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+    const sse = createSSE(buildEventsUrl(buildId), {
+      buildLastEventIdKey: `sse:lastId:build:${buildId}`,
+      eventNames: ['status', 'final'],
+      onMessage: (message) => {
+        const { data, event: eventType } = message;
 
-      const url = `/api/build/${buildId}/events`;
-      const es = new EventSource(url);
-      eventSourceRef.current = es;
-
-      es.onopen = () => {
-        reconnectAttemptsRef.current = 0; // Reset on successful connection
-      };
-
-      es.addEventListener('status', (event) => {
-        const data = JSON.parse(event.data);
-        setBuildState((prevState) => ({ ...prevState, status: data.status, reason: data.reason }));
-      });
-
-      es.addEventListener('final', (event) => {
-        const data = JSON.parse(event.data);
-        setBuildState({ status: data.status, reason: data.reason, listingId: data.listingId });
-        es.close();
-      });
-
-      es.onerror = () => {
-        es.close();
-        const attempts = reconnectAttemptsRef.current;
-        const delay = Math.min(1000 * 2 ** attempts, 30000); // Exponential backoff up to 30s
-        setTimeout(connect, delay);
-        reconnectAttemptsRef.current = attempts + 1;
-      };
-    };
-
-    connect();
+        if (eventType === 'status') {
+          setBuildState((prevState) => ({
+            ...prevState,
+            status: data.status,
+            reason: data.reason ?? null,
+            progress: data.progress,
+          }));
+        } else if (eventType === 'final') {
+          setBuildState({
+            status: data.status,
+            reason: data.reason ?? null,
+            listingId: data.listingId,
+            progress: data.progress ?? 100,
+          });
+          sse.close();
+        }
+      },
+      onError: (err) => {
+        console.error(`SSE connection error for build ${buildId}:`, err);
+        setBuildState((prevState) => ({ ...prevState, status: 'failed', reason: 'Connection lost' }));
+      },
+    });
 
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      sse.close();
     };
   }, [buildId]);
 

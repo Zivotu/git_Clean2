@@ -4,7 +4,7 @@ import { Suspense, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import { useRouter } from 'next/navigation';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 
 export default function CheckoutPage() {
@@ -52,7 +52,7 @@ function CheckoutClient() {
       setLoading(true);
       setLoadError(null);
       try {
-        const res = await fetch(`${API_URL}/listing/${appId}`);
+        const res = await fetch(`${PUBLIC_API_URL}/listing/${appId}`);
         if (!res.ok) throw new Error('bad_response');
         const json = await res.json();
         setTitle(json?.item?.title || appId);
@@ -88,10 +88,10 @@ function CheckoutClient() {
         router.push('/login');
         return;
       }
-      let url = `${API_URL}/billing/subscriptions/app`;
+      let url = `${PUBLIC_API_URL}/billing/subscriptions/app`;
       let body: any;
         if (appId === 'gold' || appId === 'no-ads') {
-          url = `${API_URL}/billing/subscriptions/${appId}`;
+          url = `${PUBLIC_API_URL}/billing/subscriptions/${appId}`;
           body = {
             customerEmail: customerEmail || undefined,
           };
@@ -182,6 +182,7 @@ function CheckoutClient() {
     </main>
   );
 }
+
 
 
 

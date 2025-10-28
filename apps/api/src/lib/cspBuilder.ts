@@ -79,20 +79,24 @@ export function buildCsp({
   const normalizedDomains = normalizeSources(networkDomains);
   const allowWildcardHttps = policy === 'OPEN_NET' && normalizedDomains.length === 0;
   const scriptSrc = new Set<string>(["'self'"]);
-  const styleSrc = new Set<string>(["'self'", "'unsafe-inline'"]);
-  const connectSrc = new Set<string>(["'self'"]);
+  const styleSrc = new Set<string>(["'self'", "'unsafe-inline'"]); // unsafe-inline is common for CSS-in-JS
+  const connectSrc = new Set<string>(["'self'", 'blob:']);
   const frameSrc = new Set<string>(["'self'"]);
 
   if (legacyScript) {
-    scriptSrc.add("'unsafe-inline'");
+    // Legacy app.js bundles often rely on eval-like constructs.
     scriptSrc.add("'unsafe-eval'");
-    scriptSrc.add('https:');
+  } else {
+    // Modern bundles may use inline workers via blob URLs.
+    // This is safer than 'unsafe-inline' for scripts.
+    scriptSrc.add('blob:');
   }
 
   if (allowCdn) {
     scriptSrc.add(CDN_ORIGIN);
     styleSrc.add(CDN_ORIGIN);
     connectSrc.add(CDN_ORIGIN);
+  } else {
   }
 
   normalizedDomains.forEach((domain) => {
@@ -102,8 +106,6 @@ export function buildCsp({
   });
 
   if (allowWildcardHttps) {
-    scriptSrc.add('https:');
-    styleSrc.add('https:');
     connectSrc.add('https:');
   }
 
@@ -112,12 +114,12 @@ export function buildCsp({
 
   const imgSrc =
     policy === 'MEDIA_ONLY' || policy === 'OPEN_NET'
-      ? ['*', 'data:', 'blob:']
+      ? ['*', 'data:', 'blob:'] // Allow all images for open policies
       : ["'self'", 'data:', 'blob:'];
 
   const mediaSrc =
     policy === 'MEDIA_ONLY' || policy === 'OPEN_NET'
-      ? ['*', 'blob:']
+      ? ['*', 'blob:'] // Allow all media for open policies
       : ["'self'", 'blob:'];
 
   const frameAncestorSources = normalizeSources(frameAncestors);

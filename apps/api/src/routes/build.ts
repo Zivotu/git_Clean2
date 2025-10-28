@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { readBuild, type BuildState } from '../models/Build.js';
+import { readBuild } from '../models/Build.js';
 import { getBuildArtifacts } from '../models/Build.js';
 import { enqueueCreatexBuild, QueueDisabledError } from '../workers/createxBuildWorker.js';
 import { getBuildData, logBuildStart } from '../db/builds.js';
@@ -115,80 +115,4 @@ export default async function buildRoutes(app: FastifyInstance) {
     reply.send(resp);
   });
 
-  app.get('/build/:id/events', async (req, reply) => {
-    const { id } = req.params as { id: string };
-    let job = await readBuild(id);
-    if (!job) return reply.code(404).send({ ok: false, error: 'not_found' });
-
-    const origin = req.headers.origin as string | undefined;
-    const cfg = getConfig();
-    const allowed =
-      typeof cfg.ALLOWED_ORIGINS === 'string' && cfg.ALLOWED_ORIGINS.trim()
-        ? cfg.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
-        : [];
-    if (origin && (!allowed.length || allowed.includes(origin))) {
-      reply.raw.setHeader('Access-Control-Allow-Origin', origin);
-      reply.raw.setHeader('Access-Control-Allow-Credentials', 'true');
-    }
-    reply.raw.setHeader('Vary', 'Origin');
-    reply.raw.setHeader('Content-Type', 'text/event-stream');
-    reply.raw.setHeader('Cache-Control', 'no-cache');
-    reply.raw.setHeader('Connection', 'keep-alive');
-    reply.raw.setHeader('X-Accel-Buffering', 'no');
-
-    reply.hijack();
-
-    const terminalStates = new Set([
-      'published',
-      'failed',
-      'rejected',
-      'pending_review',
-      'pending_review_llm',
-      'approved',
-    ]);
-
-    let lastState: BuildState | undefined = undefined;
-    let lastProgress = -1;
-
-    const send = async (rec: { state: BuildState; progress: number }) => {
-      const payload = JSON.stringify({ state: rec.state, progress: rec.progress });
-      reply.raw.write(`event: state\n`);
-      reply.raw.write(`data: ${payload}\n\n`);
-
-      if (terminalStates.has(rec.state)) {
-        const artifacts = await getBuildArtifacts(id);
-        const finalPayload = JSON.stringify({
-          state: rec.state,
-          artifacts,
-          error: (await readBuild(id))?.error,
-        });
-        reply.raw.write(`event: final\n`);
-        reply.raw.write(`data: ${finalPayload}\n\n`);
-        reply.raw.end();
-      }
-    };
-
-    await send(job);
-    lastState = job.state;
-    lastProgress = job.progress;
-
-    const interval = setInterval(async () => {
-      const current = await readBuild(id);
-      if (!current) return;
-      if (current.state !== lastState || current.progress !== lastProgress) {
-        lastState = current.state;
-        lastProgress = current.progress;
-        await send(current);
-      }
-    }, 1000);
-
-    const keepAlive = setInterval(() => {
-      reply.raw.write(':ka\n\n');
-    }, 20000);
-
-    req.raw.on('close', () => {
-      clearInterval(interval);
-      clearInterval(keepAlive);
-    });
-  });
 }

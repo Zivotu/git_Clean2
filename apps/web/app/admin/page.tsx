@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { apiGet, apiGetRaw, apiPost, ApiError } from '@/lib/api';
 import { joinUrl } from '@/lib/url';
 import { auth } from '@/lib/firebase';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import Logo from '@/components/Logo';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { useBuildSse } from '@/components/useBuildSse';
@@ -87,6 +87,7 @@ type BuildState =
   | 'published'
   | 'rejected'
   | 'failed';
+  | 'deleted';
 
 type TimelineEntry = { state: BuildState; at: number };
 
@@ -110,12 +111,16 @@ function BuildTimeline({ buildId }: { buildId: string }) {
       <div className="text-sm opacity-70">SSE: {status}{error ? ` — ${error}` : ''}</div>
       <ol className="mt-2 space-y-1 text-sm">
         {events.map(e => (
-          <li key={e.at}>
+          <li key={`${e.at}-${e.type}-${e.payload?.status || ''}`}>
             <span className="inline-block w-28 font-mono">{new Date(e.at).toLocaleTimeString()}</span>
-            <span className="inline-block w-24">{e.type}</span>
-            <span className="opacity-60">{e.payload?.reason || ''}</span>
+            <span className="inline-block w-24 font-semibold">{e.type}</span>
+            <span className="opacity-60">
+              {e.payload?.status || e.payload?.reason || e.payload?.message || ''}
+            </span>
           </li>
         ))}
+        {events.length === 0 && status === 'connected' && <li className="text-xs text-gray-500">Čekam na događaje...</li>}
+        {status === 'connecting' && <li className="text-xs text-gray-500">Povezujem se na SSE...</li>}
       </ol>
     </div>
   );
@@ -142,7 +147,7 @@ export default function AdminDashboard() {
   const [policySaving, setPolicySaving] = useState(false);
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
-    if (!item) return null;
+    if (!item) return null; // Prioritize pending build, then current build, then ID as fallback
     return item.buildId || item.pendingBuildId || (item as any).id || null;
   };
 
@@ -182,27 +187,27 @@ export default function AdminDashboard() {
   };
 
   const previewLink = currentBuildId
-    ? joinUrl(API_URL, `/review/builds/${currentBuildId}/index.html`)
+    ? joinUrl(PUBLIC_API_URL, `/review/builds/${currentBuildId}/index.html`)
     : null;
   const manifestLink =
     artifacts?.manifest?.exists && artifacts.manifest.url
-      ? joinUrl(API_URL, artifacts.manifest.url)
+      ? joinUrl(PUBLIC_API_URL, artifacts.manifest.url)
       : null;
   const astLink =
     artifacts?.ast?.exists && artifacts.ast.url
-      ? joinUrl(API_URL, artifacts.ast.url)
+      ? joinUrl(PUBLIC_API_URL, artifacts.ast.url)
       : null;
   const importsLink =
     artifacts?.imports?.exists && artifacts.imports.url
-      ? joinUrl(API_URL, artifacts.imports.url)
+      ? joinUrl(PUBLIC_API_URL, artifacts.imports.url)
       : null;
   const transformPlanLink =
     artifacts?.transformPlan?.exists && artifacts.transformPlan.url
-      ? joinUrl(API_URL, artifacts.transformPlan.url)
+      ? joinUrl(PUBLIC_API_URL, artifacts.transformPlan.url)
       : null;
   const transformReportLink =
     artifacts?.transformReport?.exists && artifacts.transformReport.url
-      ? joinUrl(API_URL, artifacts.transformReport.url)
+      ? joinUrl(PUBLIC_API_URL, artifacts.transformReport.url)
       : null;
 
   const viewReport = async (identifier: string) => {
@@ -234,14 +239,13 @@ export default function AdminDashboard() {
       const resolvedBuildId = idx.buildId || resolveItemTarget(match) || '';
       setCurrentBuildId(resolvedBuildId || null);
       setZipReady(Boolean(idx.bundle?.exists));
-      const preview =
-        resolvePreviewUrl(match?.previewUrl) ||
-        (idx.previewIndex?.exists
-          ? idx.previewIndex.url?.startsWith('http')
-            ? idx.previewIndex.url
-            : joinUrl(API_URL, idx.previewIndex.url)
-          : null) ||
-        joinUrl(API_URL, '/assets/preview-placeholder.svg');
+
+      // Use the direct bundle URL if available (bundle-first), otherwise fallback
+      const previewUrl = idx.previewIndex?.exists
+        ? joinUrl(PUBLIC_API_URL, idx.previewIndex.url)
+        : resolvePreviewUrl(match?.previewUrl);
+
+      const preview = previewUrl || joinUrl(PUBLIC_API_URL, '/assets/preview-placeholder.svg');
       setPreviewSrc(preview);
       if (resolvedBuildId) {
         try {
@@ -922,7 +926,7 @@ return (
                 ))}
               </div>
             )}
-            {currentItem?.buildId ? <BuildTimeline buildId={currentItem.buildId} /> : null}
+            {currentBuildId ? <BuildTimeline buildId={currentBuildId} /> : null}
             {currentItem?.networkPolicy && (
               <div className="text-sm mb-2">
                 <div>
@@ -984,7 +988,7 @@ return (
                       if (!currentBuildId || !policy) return;
                       setPolicySaving(true);
                       try {
-                        await fetch(`${API_URL}/review/builds/${currentBuildId}/policy`, {
+                        await fetch(`${PUBLIC_API_URL}/review/builds/${currentBuildId}/policy`, {
                           method: 'POST',
                           credentials: 'include',
                           headers: await buildHeaders(true),

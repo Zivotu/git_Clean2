@@ -6,7 +6,7 @@ import CreatorAllAccessCard from '@/components/CreatorAllAccessCard';
 import Avatar from '@/components/Avatar';
 import AppCard, { type Listing } from '@/components/AppCard';
 import FollowButton from '@/components/FollowButton';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { apiFetch, ApiError } from '@/lib/api';
 
 type AppInfo = Listing;
@@ -31,8 +31,8 @@ function normalizePhoto(raw: unknown): string | undefined {
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (trimmed.startsWith('/')) return `${API_URL}${trimmed}`;
-  return `${API_URL}/${trimmed}`;
+  if (trimmed.startsWith('/')) return `${PUBLIC_API_URL}${trimmed}`;
+  return `${PUBLIC_API_URL}/${trimmed}`;
 }
 
 export default function CreatorProfilePage() {
@@ -198,3 +198,4 @@ function CreatorProfileClient() {
     </main>
   );
 }
+

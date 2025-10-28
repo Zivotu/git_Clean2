@@ -1,6 +1,8 @@
-'use client';
+"use client";
+
 import { useState } from 'react';
-import { API_URL } from '@/lib/config';
+import Image from 'next/image';
+import { PUBLIC_API_URL } from '@/lib/config';
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = ['image/jpeg', 'image/png'];
@@ -34,11 +36,11 @@ export default function NoviOglas() {
     setStatus('');
     const fd = new FormData();
     slike.forEach((s) => fd.append('slike', s));
-    const uploadRes = await fetch(`${API_URL}/upload`, { method: 'POST', body: fd });
+    const uploadRes = await fetch(`${PUBLIC_API_URL}/upload`, { method: 'POST', body: fd });
     const { urls } = await uploadRes.json();
     const body = JSON.stringify({ opis, slike: urls });
     const res = await fetch(
-      oglasId ? `${API_URL}/oglasi/${oglasId}` : `${API_URL}/oglasi`,
+      oglasId ? `${PUBLIC_API_URL}/oglasi/${oglasId}` : `${PUBLIC_API_URL}/oglasi`,
       {
         method: oglasId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,7 +54,7 @@ export default function NoviOglas() {
 
   async function handlePublish() {
     if (!oglasId) return;
-    await fetch(`${API_URL}/oglasi/${oglasId}/publish`, { method: 'POST' });
+    await fetch(`${PUBLIC_API_URL}/oglasi/${oglasId}/publish`, { method: 'POST' });
     setStatus('Objavljeno.');
   }
 
@@ -76,7 +78,7 @@ export default function NoviOglas() {
         />
         <div className="flex gap-2 flex-wrap">
           {preview.map((src, i) => (
-            <img key={i} src={src} alt="preview" className="w-24 h-24 object-cover" />
+            <Image key={i} src={src} alt="preview" width={96} height={96} className="w-24 h-24 object-cover" />
           ))}
         </div>
         <div className="flex gap-2">
@@ -97,3 +99,4 @@ export default function NoviOglas() {
     </div>
   );
 }
+

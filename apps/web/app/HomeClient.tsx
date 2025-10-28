@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { API_URL, SITE_NAME } from '@/lib/config';
+import { PUBLIC_API_URL, SITE_NAME } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -112,7 +112,7 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
       } catch {}
     })();
     return () => { cancelled = true; };
-  }, [open, item?.slug, locale]);
+  }, [open, item?.slug, locale, item]);
   if (!open || !item) return null;
   const data = (full || item) as Listing;
   const imgSrc = resolvePreviewUrl(data.previewUrl);
@@ -246,7 +246,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, [ent.data?.purchases?.length, user?.uid]);
+  }, [ent.data?.purchases, user?.uid]);
 
   useEffect(() => {
     if (welcome) {
@@ -649,6 +649,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     </div>
   );
 }
+
 
 
 

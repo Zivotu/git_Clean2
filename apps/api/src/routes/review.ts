@@ -1,12 +1,15 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue } from 'firebase-admin/firestore';
+import { Prisma } from '@prisma/client';
 import { requireRole } from '../middleware/auth.js';
 import { getBucket } from '../storage.js';
 import * as tar from 'tar';
 import archiver from 'archiver';
+declare module 'archiver' { const x: any; export = x; } // eslint-disable-line @typescript-eslint/no-explicit-any
+
 import {
   listBuilds,
   readBuild,
@@ -15,16 +18,36 @@ import {
   publishBundle,
 } from '../models/Build.js';
 import { getConfig, LLM_REVIEW_ENABLED } from '../config.js';
-import { notifyAdmins } from '../notifier.js';
-import { BUNDLE_ROOT } from '../paths.js';
+import { BUNDLE_ROOT, PREVIEW_ROOT } from '../paths.js';
 import { readApps, writeApps, updateApp } from '../db.js';
+import { prisma } from '../db.js';
 import { runLlmReviewForBuild } from '../llmReview.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { createJob, isJobActive } from '../buildQueue.js';
 import { ensureListingPreview } from '../lib/preview.js';
+import { sse } from '../sse.js';
+
+// Note: This file is being refactored to remove array paths and use a helper.
+// The original file had duplicate route registrations which are being cleaned up.
+
+// Helper: registrira /review/* i automatski /api/review/* alias, bez array-paths
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+function route(method: Method, url: string, optsOrHandler: any, maybeHandler?: any) {
+  return (app: FastifyInstance) => {
+    const opts = typeof optsOrHandler === 'function' ? {} : (optsOrHandler || {});
+    const handler = typeof optsOrHandler === 'function' ? optsOrHandler : maybeHandler;
+    app.route({ method, url, ...opts, handler });
+    if (url.startsWith('/review/')) {
+      app.route({ method, url: `/api${url}`, ...opts, handler });
+    }
+  };
+}
 
 export default async function reviewRoutes(app: FastifyInstance) {
   const admin = { preHandler: requireRole('admin') };
+
+  // Napomena: custom parsere privremeno uklanjamo radi sintaksnog konflikta.
+  // Approve endpoint će se zvati s Content-Type: application/json i praznim tijelom "{}".
 
   const toIso = (value?: number) =>
     typeof value === 'number' && Number.isFinite(value) ? new Date(value).toISOString() : 'n/a';
@@ -37,6 +60,27 @@ export default async function reviewRoutes(app: FastifyInstance) {
       .replace(/^-|-$/g, '')
       .slice(0, 80);
   }
+
+  const extractDbErrorDetail = (err: unknown): string => {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      return err.message.replace(/\s+/g, ' ').trim();
+    }
+    if (err instanceof Error) {
+      const sqliteMatch = /sqlite(?: error)?:\s*(.+)$/i.exec(err.message);
+      if (sqliteMatch?.[1]) {
+        return sqliteMatch[1].trim();
+      }
+      return err.message.replace(/\s+/g, ' ').trim();
+    }
+    return 'Unknown database error';
+  };
+
+  const formatErrorDetail = (err: unknown): string => {
+    if (err instanceof Error) {
+      return err.message.replace(/\s+/g, ' ').trim() || 'Unknown error';
+    }
+    return 'Unknown error';
+  };
 
   type AppRecord = Record<string, any>;
   type BuildResolveContext = {
@@ -115,12 +159,17 @@ export default async function reviewRoutes(app: FastifyInstance) {
     return { buildId, build, apps, appIndex };
   }
 
-  app.get('/review/config', admin, async (req) => {
-    return { llmReviewEnabled: LLM_REVIEW_ENABLED, uid: req.authUser?.uid };
-  });
+  // --- ROUTES ---
 
-  app.get('/review/builds', admin, async (req, reply) => {
+  route('GET', '/review/config', admin, async (req: any) => {
+    return { llmReviewEnabled: LLM_REVIEW_ENABLED, uid: req.authUser?.uid };
+  })(app);
+
+  const getBuildsHandler = async (req: any, reply: FastifyReply) => {
     const { status, cursor } = req.query as { status?: string; cursor?: string };
+    // Note: The `listBuilds` function in the original code seems to have a logic issue where `cursor` is treated as a number.
+    // A proper implementation would use string cursors (e.g., the ID of the last item).
+    // For now, we'll adhere to the existing `Number(cursor)` logic.
     const { items, nextCursor } = await listBuilds(cursor ? Number(cursor) : undefined);
     const apps = await readApps();
     const allowed = [
@@ -140,6 +189,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
       builds = builds.filter((b) => ['approved', 'published'].includes(b.state));
     } else if (status === 'rejected') {
       builds = builds.filter((b) => b.state === 'rejected');
+    } else if (status === 'deleted') {
+      // This is a placeholder; actual filtering for deleted items needs a different logic
+      // as they are marked in the app listing, not in the build state.
+      // For now, we'll rely on the frontend to show the 'deleted' tab and the API to provide a way to list them.
     } else if (status === 'failed') {
       builds = builds.filter((b) => ['failed', 'publish_failed'].includes(b.state));
     }
@@ -214,9 +267,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
     );
 
     reply.send({ items: reviewItems, nextCursor });
-  });
+  };
+  route('GET', '/review/builds', admin, getBuildsHandler)(app);
 
-  app.get('/review/builds/:id', admin, async (req, reply) => {
+  const getBuildByIdHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
@@ -233,9 +287,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
     } catch {
       return rec;
     }
-  });
+  };
+  route('GET', '/review/builds/:id', admin, getBuildByIdHandler)(app);
 
-  app.get('/review/builds/:id/llm', admin, async (req, reply) => {
+  const getLlmReportHandler = async (req: any, reply: FastifyReply) => {
     if (!LLM_REVIEW_ENABLED) {
       return reply.code(503).send({ error: 'llm_disabled' });
     }
@@ -258,9 +313,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
     } catch {
       return reply.code(404).send({ error: 'report_not_found' });
     }
-  });
+  };
+  route('GET', '/review/builds/:id/llm', admin, getLlmReportHandler)(app);
 
-  app.post('/review/builds/:id/llm', admin, async (req, reply) => {
+  const postLlmReportHandler = async (req: any, reply: FastifyReply) => {
     if (!LLM_REVIEW_ENABLED) {
       return reply.code(503).send({ error: 'llm_disabled' });
     }
@@ -286,9 +342,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
       await updateBuild(buildId, { state: 'pending_review', error: String(code || err?.message || err) });
       return reply.code(500).send({ error: code || 'llm_failed' });
     }
-  });
+  };
+  route('POST', '/review/builds/:id/llm', admin, postLlmReportHandler)(app);
 
-  app.get('/review/report/:id', admin, async (req, reply) => {
+  const getReportHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
@@ -305,24 +362,56 @@ export default async function reviewRoutes(app: FastifyInstance) {
     } catch {
       return reply.code(404).send({ error: 'report_not_found' });
     }
-  });
+  };
+  route('GET', '/review/report/:id', admin, getReportHandler)(app);
 
-  app.get('/review/artifacts/:id', admin, async (req, reply) => {
+  const getArtifactsHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
     if (!buildId) return reply.code(404).send({ error: 'not_found' });
     const artifacts = await getBuildArtifacts(buildId);
-    return { ...artifacts, buildId };
-  });
+    const cfg = getConfig();
 
-  app.get('/review/code/:id', async (req, reply) => {
-    if (!req.headers.authorization) {
+    // 1. Bundle-first: provjeri postoji li `bundle/index.html`
+    const bundleIndexPath = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', buildId, 'bundle', 'index.html');
+    let previewIndex: { exists: boolean; url?: string };
+    try {
+      await fs.access(bundleIndexPath);
+      previewIndex = { exists: true, url: `/review/builds/${buildId}/bundle/index.html` };
+    } catch {
+      // 2. Fallback: provjeri postoji li legacy preview
+      const legacyPreviewPath = path.join(PREVIEW_ROOT, buildId, 'index.html');
+      try {
+        await fs.access(legacyPreviewPath);
+        previewIndex = { exists: true, url: `/review/previews/${buildId}/index.html` };
+      } catch {
+        // 3. Ako ništa ne postoji
+        previewIndex = { exists: false };
+      }
+    }
+
+    return { ...artifacts, buildId, previewIndex };
+  };
+  route('GET', '/review/artifacts/:id', admin, getArtifactsHandler)(app);
+
+  const getCodeHandler = async (req: any, reply: FastifyReply) => {
+    // Dozvola za preuzimanje koda putem tokena u query stringu (za admin UI)
+    // Ovo je iznimka od standardnog `Authorization: Bearer` toka
+    const hasAuthHeader = !!req.headers.authorization;
+
+    if (!hasAuthHeader) {
       const { token } = req.query as { token?: string };
       if (!token) {
         return reply.code(401).send({ error: 'unauthenticated' });
       }
       try {
+        // Ručna verifikacija tokena i postavljanje `authUser` ako nedostaje
+        // Ovo je potrebno jer se `requireRole` oslanja na `req.authUser`
+        // koji postavlja globalni `auth` middleware, a on ne gleda query string.
+        // TODO: Refaktorirati u dedicirani `auth` plugin/dekorator koji
+        // može baratati s više izvora tokena.
+
         const decoded = await getAuth().verifyIdToken(token);
         const claims: any = decoded;
         const role = claims.role || (claims.admin ? 'admin' : 'user');
@@ -333,8 +422,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
       }
     }
 
+    // `requireRole` provjerava `req.authUser` koji je postavljen ili
+    // od globalnog middleware-a (za `Authorization` header) ili od gornjeg bloka.
     await requireRole('admin')(req, reply);
-    if (reply.sent) return;
+    if (reply.sent) return; // Ako `requireRole` pošalje 401/403, prekini
 
     // Allow clients that request ":id.tar.gz" or ":id.tgz" by stripping the suffix
     let { id: identifier } = req.params as { id: string } as any;
@@ -360,6 +451,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const file = bucket.file(`builds/${buildId}/bundle.tar.gz`);
     const [exists] = await file.exists();
     const wantsZip =
+      String((req.query as any)?.format || '').toLowerCase() === 'zip' ||
       String((req.query as any)?.format || '').toLowerCase() === 'zip' ||
       /\.zip$/i.test(String((req.query as any)?.format || ''));
 
@@ -457,10 +549,13 @@ export default async function reviewRoutes(app: FastifyInstance) {
     } catch {
       return reply.code(404).send({ error: 'bundle_not_found' });
     }
-  });
+  };
+  route('GET', '/review/code/:id', {}, getCodeHandler)(app);
 
-  app.post('/review/approve/:id', admin, async (req, reply) => {
-    const { id } = req.params as { id: string };
+  // Stabilan approve handler (ne oslanja se na body)
+  const approveHandler = async (req: any, reply: FastifyReply) => {
+    const { id } = (req.params || {}) as { id?: string };
+    if (!id) return reply.code(400).send({ ok: false, error: 'missing_id' });
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
     if (!buildId) return reply.code(404).send({ error: 'not_found' });
@@ -470,10 +565,38 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
     await updateBuild(buildId, { state: 'publishing' });
 
+    let bundlePublicUrl: string;
     try {
-      await publishBundle(buildId);
-      await updateBuild(buildId, { state: 'published' });
+      bundlePublicUrl = await publishBundle(buildId);
+    } catch (err: unknown) {
+      const detail = formatErrorDetail(err);
+      req.log.error({ err, id, detail }, 'publish_failed');
+      await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
+      try {
+        await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'publish_failed', error: detail, reason: detail, progress: 100 },
+        });
+      } catch (dbErr) {
+        const dbDetail = extractDbErrorDetail(dbErr);
+        req.log.error({ err: dbErr, buildId, dbDetail }, 'publish_failed_prisma_update_error');
+      }
+      return reply.code(500).send({ ok: false, error: 'publish_failed', detail });
+    }
 
+    try {
+      await prisma.build.update({
+        where: { id: buildId },
+        data: { status: 'publishing', bundlePublicUrl, progress: 90, error: null, reason: null },
+      });
+    } catch (err: unknown) {
+      const detail = extractDbErrorDetail(err);
+      req.log.error({ err, detail, buildId }, 'publish_bundle_db_update_failed');
+      await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
+      return reply.code(500).send({ ok: false, error: 'db_error', detail });
+    }
+
+    try {
       const appIndex = resolved?.appIndex ?? -1;
       if (appIndex >= 0) {
         const app = resolved!.apps[appIndex];
@@ -497,6 +620,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
           payload.visibility = 'public';
         }
         payload.playUrl = `/play/${app.id}/`;
+        payload.bundlePublicUrl = bundlePublicUrl;
 
         const ensured = ensureListingPreview({ ...app, ...payload });
         if (ensured.changed) {
@@ -511,33 +635,47 @@ export default async function reviewRoutes(app: FastifyInstance) {
           by: req.authUser?.uid ?? null,
         };
 
-        await updateApp(app.id, payload);
-
+        await updateApp(app.id, payload as Partial<AppRecord>);
+        
         try {
           const { ensureListingTranslations } = await import('../lib/translate.js');
           await ensureListingTranslations({ ...app, ...payload }, ['en', 'hr', 'de']);
         } catch (err) {
-            req.log.warn({ err, appId: app.id }, 'translation_ensure_failed');
+          req.log.warn({ err, appId: app.id }, 'translation_ensure_failed');
         }
       }
+
+      await prisma.build.update({
+        where: { id: buildId },
+        data: { status: 'published', progress: 100 },
+      });
+      await updateBuild(buildId, { state: 'published' });
     } catch (err) {
-      req.log.error({ err, id }, 'publish_failed');
-      await updateBuild(buildId, { state: 'publish_failed', error: 'publish_failed' });
-      return reply.code(500).send({ error: 'publish_failed' });
+      const detail = formatErrorDetail(err);
+      req.log.error({ err, id, detail }, 'publish_finalize_failed'); // err is already unknown here
+      await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
+      try {
+        await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'publish_failed', error: detail, reason: detail, progress: 100 },
+        });
+      } catch (dbErr) {
+        const dbDetail = extractDbErrorDetail(dbErr);
+        req.log.error({ err: dbErr, buildId, dbDetail }, 'publish_finalize_prisma_update_error');
+      }
+      return reply.code(500).send({ ok: false, error: 'publish_failed', detail });
     }
 
     try {
-      await notifyAdmins(
-        'App published',
-        `Build ${buildId} has been approved and published by ${req.authUser?.uid || 'unknown admin'}.`,
-      );
+      sse.emit(buildId, 'final', { status: 'published', reason: 'approved', buildId });
     } catch {}
 
     req.log.info({ id: buildId, uid: req.authUser?.uid }, 'review_approved');
     return { ok: true };
-  });
+  };
+  route('POST', '/review/approve/:id', admin, approveHandler)(app);
 
-  app.post('/review/reject/:id', admin, async (req, reply) => {
+  const rejectHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
@@ -545,6 +683,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
     if (buildId) {
       await updateBuild(buildId, { state: 'rejected', ...(reason ? { error: reason } : {}) });
+      sse.emit(buildId, 'final', { status: 'rejected', reason, buildId });
     }
 
     try {
@@ -568,19 +707,20 @@ export default async function reviewRoutes(app: FastifyInstance) {
           at: now,
           by: req.authUser?.uid ?? null,
           reason: reason || null,
-        };
-        await updateApp(app.id, payload);
-      }
-    } catch (err) {
+          } as Partial<AppRecord>;
+          await updateApp(app.id, payload);
+      } 
+    } catch (err: unknown) {
       req.log.error({ err, id: buildId ?? id }, 'listing_reject_update_failed');
     }
 
     req.log.info({ id: buildId ?? id, uid: req.authUser?.uid, reason }, 'review_rejected');
     return { ok: true };
-  });
+  };
+  route('POST', '/review/reject/:id', admin, rejectHandler)(app);
 
   // Permissions policy (admin-only): persist simple allow flags per build
-  app.get('/review/builds/:id/policy', admin, async (req, reply) => {
+  const getPolicyHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
@@ -592,9 +732,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
     } catch {
       return { camera: false, microphone: false, geolocation: false, clipboardRead: false, clipboardWrite: false };
     }
-  });
+  };
+  route('GET', '/review/builds/:id/policy', admin, getPolicyHandler)(app);
 
-  app.post('/review/builds/:id/policy', admin, async (req, reply) => {
+  const postPolicyHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
@@ -611,33 +752,36 @@ export default async function reviewRoutes(app: FastifyInstance) {
     await fs.mkdir(path.dirname(p), { recursive: true });
     await fs.writeFile(p, JSON.stringify(allowed, null, 2));
     return { ok: true, policy: allowed };
-  });
+  };
+  route('POST', '/review/builds/:id/policy', admin, postPolicyHandler)(app);
 
-  app.post('/review/builds/:id/delete', admin, async (req, reply) => {
+  const deleteHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
       const resolved = await resolveBuildContext(id);
       const appIndex = resolved?.appIndex ?? -1;
       if (appIndex >= 0) {
-        const app = resolved!.apps[appIndex];
-        await updateApp(app.id, { deletedAt: Date.now() });
+        const app = resolved!.apps[appIndex]; // AppRecord
+        await updateApp(app.id, { deletedAt: Date.now(), state: 'deleted' } as Partial<AppRecord>);
       }
       return reply.send({ ok: true });
-    } catch (err) {
+    } catch (err: unknown) {
       req.log.error({ err, id }, 'soft_delete_failed');
       return reply.code(500).send({ ok: false, error: 'soft_delete_failed' });
     }
-  });
+  };
+  route('POST', '/review/builds/:id/delete', admin, deleteHandler)(app);
 
-  app.post('/review/builds/:id/force-delete', admin, async (req, reply) => {
+  const forceDeleteHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const cfg = getConfig();
 
-    // Remove listing by buildId/slug/id if present
     try {
       const apps = await readApps();
+      const resolved = await resolveBuildContext(id, { apps });
+      const buildId = resolved?.buildId;
       const idx = apps.findIndex(
-        (a: any) => a.buildId === id || a.slug === id || String(a.id) === id,
+        (a: any) => a.buildId === buildId || a.slug === id || String(a.id) === id || a.pendingBuildId === buildId,
       );
       const removed = idx >= 0 ? apps[idx] : undefined;
       if (idx >= 0) {
@@ -645,45 +789,47 @@ export default async function reviewRoutes(app: FastifyInstance) {
         await writeApps(apps);
       }
 
-      // Best-effort filesystem cleanup of build artifacts
-      try {
-        const dir = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', id);
-        await fs.rm(dir, { recursive: true, force: true });
-      } catch {}
+      if (buildId) {
+        // Best-effort filesystem cleanup of build artifacts
+        try {
+          const dir = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', buildId);
+          await fs.rm(dir, { recursive: true, force: true });
+        } catch {}
 
-      // Best-effort bucket cleanup
-      try {
-        const bucket = getBucket();
-        await bucket.deleteFiles({ prefix: `builds/${id}/` });
-      } catch {}
+        // Best-effort bucket cleanup
+        try {
+          const bucket = getBucket();
+          await bucket.deleteFiles({ prefix: `builds/${buildId}/` });
+        } catch {}
+      }
 
       return reply.send({ ok: true, removedListingId: removed?.id });
-    } catch (err) {
+    } catch (err: unknown) {
       req.log.error({ err, id }, 'hard_delete_failed');
       return reply.code(500).send({ ok: false, error: 'delete_failed' });
     }
-  });
+  };
+  route('POST', '/review/builds/:id/force-delete', admin, forceDeleteHandler)(app);
 
-  app.post('/review/builds/:id/restore', admin, async (req, reply) => {
+  const restoreHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
       const apps = await readApps();
-      const idx = apps.findIndex(
-        (a: any) => a.buildId === id || a.slug === id || String(a.id) === id,
-      );
+      const resolved = await resolveBuildContext(id, { apps });
+      const idx = resolved?.appIndex ?? -1;
       if (idx >= 0) {
-        delete apps[idx].deletedAt;
-        await writeApps(apps);
+        await updateApp(apps[idx].id, { deletedAt: FieldValue.delete(), state: 'active' } as Partial<AppRecord>);
       }
       return reply.send({ ok: true });
-    } catch (err) {
+    } catch (err: unknown) {
       req.log.error({ err, id }, 'restore_failed');
       return reply.code(500).send({ ok: false, error: 'restore_failed' });
     }
-  });
+  };
+  route('POST', '/review/builds/:id/restore', admin, restoreHandler)(app);
 
   // Manually (re)queue a build job for a given buildId or appId/slug
-  app.post('/review/builds/:id/rebuild', admin, async (req, reply) => {
+  const rebuildHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
       const resolved = await resolveBuildContext(id);
@@ -692,11 +838,12 @@ export default async function reviewRoutes(app: FastifyInstance) {
       const buildId = resolved?.buildId || (appIndex >= 0 ? String(apps[appIndex]?.pendingBuildId || apps[appIndex]?.buildId || '') : '');
       if (!buildId) return reply.code(404).send({ ok: false, error: 'missing_build_id' });
       if (isJobActive(buildId)) return reply.code(409).send({ ok: false, error: 'build_in_progress' });
-      await createJob(buildId, app.log);
+      await createJob(buildId, req.log);
       return reply.code(202).send({ ok: true, buildId, status: 'queued' });
-    } catch (err) {
+    } catch (err: unknown) {
       req.log.error({ err, id }, 'rebuild_failed');
       return reply.code(500).send({ ok: false, error: 'rebuild_failed' });
     }
-  });
+  };
+  route('POST', '/review/builds/:id/rebuild', admin, rebuildHandler)(app);
 }

@@ -1,4 +1,5 @@
 "use client";
+import Image from 'next/image';
 import { useEffect, useTransition, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useI18n } from '@/lib/i18n-provider';
@@ -52,7 +53,7 @@ export default function LocaleSwitcher() {
         aria-expanded={open}
         title={messages['Nav.language'] || 'Language'}
       >
-        <img src={current.icon} alt="" className="h-4 w-6 rounded-sm ring-1 ring-gray-300" aria-hidden />
+        <Image src={current.icon} alt="" width={24} height={16} className="h-4 w-6 rounded-sm ring-1 ring-gray-300" aria-hidden />
         <span className="hidden md:inline text-sm font-medium">{current.label}</span>
         <svg className="w-4 h-4 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 9l6 6 6-6" />
@@ -69,7 +70,14 @@ export default function LocaleSwitcher() {
                 aria-selected={l.code === locale}
               >
                 <span className="inline-flex items-center gap-2">
-                  <img src={l.icon} alt="" className="h-4 w-6 rounded-sm ring-1 ring-gray-200" aria-hidden />
+                  <Image
+                    src={l.icon}
+                    alt=""
+                    width={24}
+                    height={16}
+                    className="h-4 w-6 rounded-sm ring-1 ring-gray-200"
+                    aria-hidden
+                  />
                   <span>{l.label}</span>
                 </span>
               </button>

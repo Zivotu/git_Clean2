@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import styles from './SplashScreen.module.css';
 
 const SplashScreen = () => {
@@ -42,9 +43,11 @@ const SplashScreen = () => {
   return (
     <div className={styles.splashOverlay} onClick={handleClick}>
       {imageSrc && ( // Only render the image if the src is set
-        <img
+        <Image
           src={imageSrc}
           alt="Thesara Splash Screen"
+          layout="fill"
+          objectFit="cover"
           className={styles.splashImage}
         />
       )}

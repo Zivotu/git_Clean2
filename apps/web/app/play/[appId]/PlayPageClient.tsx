@@ -11,7 +11,6 @@ import {
   type BatchItem,
   applyBatchOperations,
 } from '@/lib/storage/snapshot-loader'
-
 const APPS_HOST =
   (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '')
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false'
@@ -28,182 +27,13 @@ type ShimBatchItem = {
   value?: string
 }
 
-type BuildAssetConfig = {
-  baseHref: string
-  entry: string
-  integrity?: string
-  relaxedCsp: boolean
-}
-
-function escapeAttribute(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith('/') ? value : `${value}/`
-}
-
-function normalizeEntry(entry: string): string {
-  const trimmed = entry.trim()
-  if (!trimmed) return 'app.bundle.js'
-  return trimmed.replace(/^\.\//, '')
-}
-
-async function assetExists(url: string): Promise<boolean> {
-  try {
-    const head = await fetch(url, { method: 'HEAD', cache: 'no-store', redirect: 'follow' })
-    if (head.ok) return true
-    if (head.status === 405 || head.status === 501) {
-      const probe = await fetch(url, { method: 'GET', cache: 'no-store', redirect: 'follow' })
-      return probe.ok
-    }
-  } catch {}
-  return false
-}
-
-async function resolveBuildAsset(appId: string): Promise<BuildAssetConfig> {
+function buildIframeSrc(appId: string): string {
+  const base = (APPS_HOST || '').replace(/\/$/, '')
   const encodedId = encodeURIComponent(appId)
-  const buildBase = ensureTrailingSlash(`${APPS_HOST}/${encodedId}/build`)
-
-  try {
-    const manifestRes = await fetch(`${buildBase}manifest_v1.json`, { cache: 'no-store', redirect: 'follow' })
-    if (manifestRes.ok) {
-      const manifest = await manifestRes.json()
-      const entryRaw = typeof manifest.entry === 'string' ? manifest.entry : ''
-      const normalized = normalizeEntry(entryRaw)
-      const entry = normalized || 'app.bundle.js'
-      const assetUrl = `${buildBase}${entry}`
-      const exists = await assetExists(assetUrl)
-      if (exists) {
-        const isLegacy = /app\.js$/i.test(entry)
-        return {
-          baseHref: buildBase,
-          entry,
-          integrity: !isLegacy && typeof manifest.integrity === 'string' ? manifest.integrity : undefined,
-          relaxedCsp: isLegacy,
-        }
-      }
-    }
-  } catch {}
-
-  const fallbacks = [
-    { baseHref: buildBase, entry: 'app.js' },
-    { baseHref: ensureTrailingSlash(`${APPS_HOST}/${encodedId}`), entry: 'app.js' },
-  ]
-
-  for (const candidate of fallbacks) {
-    try {
-      if (await assetExists(`${candidate.baseHref}${candidate.entry}`)) {
-        return {
-          baseHref: candidate.baseHref,
-          entry: candidate.entry,
-          relaxedCsp: true,
-        }
-      }
-    } catch {}
+  if (!base) {
+    return `/${encodedId}/build/`
   }
-
-  return {
-    baseHref: buildBase,
-    entry: 'app.js',
-    relaxedCsp: true,
-  }
-}
-
-function buildSrcDoc(asset: BuildAssetConfig): string {
-  const baseHref = ensureTrailingSlash(asset.baseHref)
-  const escapedBase = escapeAttribute(baseHref)
-  const entry = asset.entry.replace(/^\.\//, '')
-  const appScriptUrl = new URL(entry, baseHref)
-  const appOrigin = appScriptUrl.origin
-  const parentOrigin = (() => {
-    if (typeof window === 'undefined') return ''
-    try {
-      return new URL(window.location.href).origin
-    } catch {
-      return window.location.origin || ''
-    }
-  })()
-  const shimUrl = (() => {
-    if (typeof window === 'undefined') return '/shim.js'
-    try {
-      return new URL('/shim.js', window.location.href).toString()
-    } catch {
-      return '/shim.js'
-    }
-  })()
-  const scriptSrc = escapeAttribute(appScriptUrl.toString())
-  const escapedParentOrigin = escapeAttribute(parentOrigin || '')
-  const escapedAppOrigin = escapeAttribute(appOrigin || '')
-  const escapedShimSrc = escapeAttribute(shimUrl)
-
-  const styleNonce = Math.random().toString(36).slice(2)
-
-  const scriptSources: string[] = ["'self'"]
-  if (escapedAppOrigin) scriptSources.push(escapedAppOrigin)
-  if (escapedParentOrigin) scriptSources.push(escapedParentOrigin)
-
-  const styleSources: string[] = ["'self'", `'nonce-${styleNonce}'`]
-  if (escapedAppOrigin) styleSources.push(escapedAppOrigin)
-  if (escapedParentOrigin) styleSources.push(escapedParentOrigin)
-
-  const connectSources: string[] = ["'self'"]
-  if (escapedAppOrigin) connectSources.push(escapedAppOrigin)
-
-  const imgSources: string[] = ["'self'", 'data:', 'blob:', 'https:']
-  const fontSources: string[] = ["'self'", 'data:']
-  const mediaSources: string[] = ["'self'", 'blob:']
-
-  if (asset.relaxedCsp) {
-    if (!scriptSources.includes("'unsafe-inline'")) scriptSources.push("'unsafe-inline'")
-    if (!styleSources.includes("'unsafe-inline'")) styleSources.push("'unsafe-inline'")
-    if (!connectSources.includes('https:')) connectSources.push('https:')
-    if (!mediaSources.includes('https:')) mediaSources.push('https:')
-  }
-
-  const unique = (values: string[]) => Array.from(new Set(values));
-
-  const directives = [
-    "default-src 'none'",
-    `script-src ${unique(scriptSources).join(' ')}`,
-    `style-src ${unique(styleSources).join(' ')}`,
-    `img-src ${unique(imgSources).join(' ')}`,
-    `font-src ${unique(fontSources).join(' ')}`,
-    `media-src ${unique(mediaSources).join(' ')}`,
-    `connect-src ${unique(connectSources).join(' ')}`,
-    "frame-src 'none'",
-    "base-uri 'none'",
-    "object-src 'none'",
-    `frame-ancestors 'self'${escapedParentOrigin ? ` ${escapedParentOrigin}` : ''}`,
-  ]
-
-  const csp = directives.join('; ')
-
-  const scriptAttrs: string[] = [
-    `type="module"`,
-    `src="${scriptSrc}"`,
-  ]
-  if (!asset.relaxedCsp && asset.integrity) {
-    const integrity = escapeAttribute(asset.integrity)
-    scriptAttrs.push(`integrity="${integrity}"`, 'crossorigin="anonymous"')
-  }
-
-  return [
-    '<!DOCTYPE html>',
-    '<html lang="en">',
-    '<head>',
-    '<meta charset="utf-8" />',
-    `<meta http-equiv="Content-Security-Policy" content="${escapeAttribute(csp)}">`,
-    `<base href="${escapedBase}">`,
-    `<style nonce="${escapeAttribute(styleNonce)}">html,body{margin:0;padding:0;height:100%;background:#000;color:#fff;}#root{min-height:100%;}</style>`,
-    `<script defer src="${escapedShimSrc}"></scr` + 'ipt>',
-    '</head>',
-    '<body>',
-    '<div id="root"></div>',
-    `<script ${scriptAttrs.join(' ')}></scr` + 'ipt>',
-    '</body>',
-    '</html>',
-  ].join('')
+  return `${base}/${encodedId}/build/`
 }
 
 function createCapability(): string {
@@ -223,12 +53,12 @@ export default function PlayPageClient({ appId }: { appId: string }) {
   const namespaceRef = useRef<string>('')
   const jwtRef = useRef<string | null>(null)
 
-  const [srcDoc, setSrcDoc] = useState<string | null>(null)
   const [bootstrap, setBootstrap] = useState<SnapshotState | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const appNamespace = useMemo(() => makeNamespace(appId, undefined), [appId])
+  const iframeSrc = useMemo(() => buildIframeSrc(appId), [appId])
 
   const ensureJwt = useCallback(async () => {
     if (jwtRef.current) return jwtRef.current
@@ -260,21 +90,18 @@ export default function PlayPageClient({ appId }: { appId: string }) {
           await setInitialJwt(token)
         }
 
-        const assetPromise = resolveBuildAsset(appId)
         const jwt = token ?? (await getJwt())
         jwtRef.current = jwt
         await setInitialJwt(jwt)
         namespaceRef.current = appNamespace
 
         const { snapshot, version } = await fetchSnapshot(jwt, appNamespace)
-        const asset = await assetPromise
         if (cancelled) return
 
         storageVersionRef.current = version || '0'
         snapshotRef.current = snapshot || {}
 
         setBootstrap({ snapshot: snapshot || {}, version: version || '0' })
-        setSrcDoc(buildSrcDoc(asset))
       } catch (err: any) {
         if (cancelled) return
         console.error('[Play] bootstrap failed', err)
@@ -498,23 +325,25 @@ export default function PlayPageClient({ appId }: { appId: string }) {
   }
 
   if (loading) {
-    return <div className="p-6">Loading app…</div>
+    return <div className="p-6">Loading app...</div>
   }
 
   if (error) {
     return <div className="p-6">Error: {error}</div>
   }
 
-  if (!srcDoc) {
-    return <div className="p-6">Preparing app bootstrap…</div>
+  if (!bootstrap) {
+    return <div className="p-6">Preparing app bootstrap...</div>
   }
 
   return (
     <iframe
       ref={iframeRef}
-      srcDoc={srcDoc}
-      sandbox="allow-scripts allow-forms allow-popups allow-modals allow-popups-to-escape-sandbox"
-      style={{ width: '100%', height: '100%', border: 'none' }}
+      src={iframeSrc}
+      title="Thesara App"
+      referrerPolicy="no-referrer"
+      sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
+      className="w-full h-full border-0"
     />
   )
 }

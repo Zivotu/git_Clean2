@@ -74,28 +74,40 @@ const baseConfig = {
             key: 'Content-Security-Policy',
             value: (() => {
               const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.thesara.space/api';
-              const api = new URL(apiBase).origin;
-              const apps = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
-              // Dodani lokalni dev domeni za API
-              const devConnect = isDev ? ` ${process.env.NEXT_PUBLIC_API_BASE_URL} http://127.0.0.1:8788 http://localhost:8788` : '';
-              // Dodani Firebase domeni za dev okruženje
-              const devFirebase =
-                isDev && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1'
-                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com'
-                  : '';
-              // Dodani lokalni dev domeni za slike (ako su potrebni)
-              const devImg = isDev ? ` ${process.env.NEXT_PUBLIC_API_BASE_URL} http://127.0.0.1:8788 http://localhost:8788` : '';
-              
-              const scriptSrc = ["'self'", "'unsafe-inline'"]
-              if (isDev) scriptSrc.push("'unsafe-eval'")
+              let apiOrigin;
+              try {
+                apiOrigin = new URL(apiBase).origin;
+              } catch {
+                apiOrigin = apiBase;
+              }
+              const appsHost = (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '');
+              const devApiOrigins = isDev ? ['http://127.0.0.1:8788', 'http://localhost:8788'] : [];
+              const firebaseOrigins = [
+                'https://firestore.googleapis.com',
+                'https://identitytoolkit.googleapis.com',
+                'https://securetoken.googleapis.com',
+              ];
+              if (isDev && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1') {
+                firebaseOrigins.push('https://www.googleapis.com');
+              }
+
+              const scriptSrc = ["'self'", "'unsafe-inline'"];
+              if (isDev) {
+                // unsafe-eval is needed for dev mode's sourcemaps.
+                scriptSrc.push("'unsafe-eval'", ...devApiOrigins);
+              }
+
+              const connectSrc = new Set(["'self'", apiOrigin, ...devApiOrigins, ...firebaseOrigins]);
+              const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins]);
+              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com']);
 
               const policies = [
                 "default-src 'self'",
-                `script-src ${scriptSrc.join(' ')}`,
+                `script-src ${Array.from(new Set(scriptSrc)).join(' ')}`,
                 "style-src 'self' 'unsafe-inline'",
-                `connect-src 'self' ${api}${devConnect}${devFirebase}`,
-                `frame-src ${apps}`,
-                `img-src 'self' data: https:${devImg}`,
+                `connect-src ${Array.from(connectSrc).join(' ')}`,
+                `frame-src ${Array.from(frameSrc).join(' ')}`,
+                `img-src ${Array.from(imgSrc).join(' ')}`,
                 "frame-ancestors 'none'",
               ];
               return policies.join('; ');

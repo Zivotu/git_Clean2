@@ -5,7 +5,7 @@ import { useI18n } from '@/lib/i18n-provider';
 import Link from 'next/link';
 import Image from 'next/image';
 import Avatar from '@/components/Avatar';
-import { API_URL } from '@/lib/config';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 import { resolvePreviewUrl } from '@/lib/preview';
@@ -56,7 +56,7 @@ export default function MyCreatorsPage() {
         const list: FavoriteCreator[] = [];
         for (const id of ids) {
           try {
-            const res = await fetch(`${API_URL}/creators/id/${encodeURIComponent(id)}`);
+            const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(id)}`);
             if (!res.ok) {
               list.push({ id, handle: id });
               continue;
@@ -86,7 +86,7 @@ export default function MyCreatorsPage() {
       const map: Record<string, AppLite[]> = {};
       for (const c of creators) {
         try {
-          const r = await fetch(`${API_URL}/creators/${encodeURIComponent(c.handle)}/apps?lang=${encodeURIComponent(locale)}`, { credentials: 'include' });
+          const r = await fetch(`${PUBLIC_API_URL}/creators/${encodeURIComponent(c.handle)}/apps?lang=${encodeURIComponent(locale)}`, { credentials: 'include' });
           if (!r.ok) continue;
           const j = await r.json();
           const items: AppLite[] = (j.items || j.apps || []).map((a: any) => ({
@@ -102,7 +102,7 @@ export default function MyCreatorsPage() {
     }
     if (creators.length) loadApps();
     return () => { cancelled = true; };
-  }, [creators, API_URL, locale]);
+  }, [creators, locale]);
 
   const content = useMemo(() => {
     if (!user) {
@@ -172,7 +172,7 @@ export default function MyCreatorsPage() {
         })}
       </div>
     );
-  }, [user, loading, creators, appsByCreator, API_URL]);
+  }, [user, loading, creators, appsByCreator]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white">
@@ -183,3 +183,4 @@ export default function MyCreatorsPage() {
     </div>
   );
 }
+

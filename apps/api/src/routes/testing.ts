@@ -64,7 +64,7 @@ export default async function (fastify: FastifyInstance) {
         // 5. Mark build as successful
         await prisma.build.update({
             where: { id: buildId },
-            data: { status: 'success' }
+            data: { status: 'success', progress: 100, error: null, reason: null }
         });
 
         return reply.send({ listingId });

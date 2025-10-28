@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 import MarketplacePage from '../page';
 
 vi.mock('next/link', () => ({ default: ({ children, ...props }: any) => <a {...props}>{children}</a> }));
-vi.mock('next/image', () => ({ default: (props: any) => <img {...props} /> }));
+vi.mock('next/image', () => ({ default: (props: any) => <img {...props} alt="" /> }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),

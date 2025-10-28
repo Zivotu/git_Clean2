@@ -79,8 +79,8 @@ const baseConfig = {
               const devConnect = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
               const devImg = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
               const devFirebase =
-                isDev && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1'
-                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com'
+                isDev
+                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.gstatic.com'
                   : '';
               
               const policies = [
@@ -89,7 +89,7 @@ const baseConfig = {
                 "style-src 'self' 'unsafe-inline'",
                 `connect-src 'self' ${api}${devConnect}${devFirebase}`,
                 `frame-src ${apps}`,
-                `img-src 'self' data: https:${devImg}`,
+                `img-src 'self' data: https: https://lh3.googleusercontent.com${devImg}`,
                 "frame-ancestors 'none'",
               ];
               return policies.join('; ');

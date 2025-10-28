@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSafeSearchParams } from "@/hooks/useSafeSearchParams";
 import Link from "next/link";
 import { triggerConfetti } from "@/components/Confetti";
-import { API_URL } from "@/lib/config";
+import { PUBLIC_API_URL } from "@/lib/config";
 import { auth } from "@/lib/firebase";
 import type { User } from 'firebase/auth';
 import { Card } from "@/components/ui/Card";
@@ -63,7 +63,7 @@ export default function BillingSuccessClient() {
         const token = await user.getIdToken();
         const headers = { Authorization: `Bearer ${token}` };
         const res = await fetch(
-          `${API_URL}/billing/sync-checkout?session_id=${sessionId}`,
+          `${PUBLIC_API_URL}/billing/sync-checkout?session_id=${sessionId}`,
           { method: "POST", credentials: "include", headers },
         );
         if (res.status === 403) {
@@ -84,7 +84,7 @@ export default function BillingSuccessClient() {
         const poll = async (attempt = 0) => {
           if (cancelled) return;
           const r = await fetch(
-            `${API_URL}/billing/subscription-status?sub_id=${subId}`,
+            `${PUBLIC_API_URL}/billing/subscription-status?sub_id=${subId}`,
             { headers, credentials: "include" },
           );
           const j = await r.json();
@@ -126,13 +126,13 @@ export default function BillingSuccessClient() {
       cancelled = true;
       try { unsub?.(); } catch {}
     };
-  }, [sessionId, retryToken]);
+  }, [sessionId, retryToken, status]);
 
   useEffect(() => {
     if (status !== "success" || !order?.priceId) return;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/billing/packages`);
+        const res = await fetch(`${PUBLIC_API_URL}/billing/packages`);
         if (!res.ok) return;
         const data: BillingPackage[] = await res.json();
         const found = data.find((p) => p.priceId === order.priceId);
@@ -153,7 +153,7 @@ export default function BillingSuccessClient() {
         const headers = { Authorization: `Bearer ${token}` };
 
         // Refetch /me/entitlements
-        await fetch(`${API_URL}/me/entitlements`, { headers, cache: 'no-store' });
+        await fetch(`${PUBLIC_API_URL}/me/entitlements`, { headers, cache: 'no-store' });
         console.log('Refetched /me/entitlements after successful purchase.');
       } catch (err) {
         console.error("failed_to_refetch_entitlements", err);
@@ -245,4 +245,5 @@ export default function BillingSuccessClient() {
     </div>
   );
 }
+
 
