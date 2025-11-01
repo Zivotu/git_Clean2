@@ -161,7 +161,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   app = fastify({ 
     logger: true, 
     bodyLimit: 256 * 1024,
-    ignoreTrailingSlash: true
+    ignoreTrailingSlash: true,
+    ignoreDuplicateSlashes: true
   });
 
   // HOTFIX: globalni redirect sanitizer za FST_ERR_BAD_STATUS_CODE
@@ -459,12 +460,9 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   // Compatibility redirects: older web clients may use "/bundle" path
   // Redirect /builds/:buildId/bundle[/*] -> /builds/:buildId/build[/*]
+  // Note: ignoreTrailingSlash means /bundle and /bundle/ are treated as the same route
   app.get('/builds/:buildId/bundle', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
-    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
-  });
-  app.get('/builds/:buildId/bundle/', { preHandler: bypassCors }, async (_req, reply) => {
-    const { buildId } = _req.params as { buildId: string };
     return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
   });
   app.get('/builds/:buildId/bundle/*', { preHandler: bypassCors }, async (req, reply) => {
@@ -475,7 +473,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   });
 
   // 1) Serve index.html for the build root
-  app.get('/builds/:buildId/build/', {
+  // Note: ignoreTrailingSlash handles both /build and /build/
+  app.get('/builds/:buildId/build', {
     preHandler: bypassCors
   }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
