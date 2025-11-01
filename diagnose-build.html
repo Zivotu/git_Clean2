@@ -71,8 +71,24 @@
 
   <button onclick="runDiagnostics()">▶️ Run Full Diagnostics</button>
   <button onclick="location.reload()">🔄 Reset</button>
+  <button onclick="fixListing203()">🔧 Fix Listing 203 (BuildId Corruption)</button>
 
   <div id="results"></div>
+  
+  <div id="fixSection" style="display: none; margin-top: 30px;">
+    <div class="summary">
+      <h2>🔧 Fix Listing 203 BuildId Corruption</h2>
+      <div class="test warn">
+        <strong>Problem:</strong><br>
+        Browser requests: <code>2c6be31-d612-48f2-b056-aacf1faf21cd</code><br>
+        Correct buildId: <code>c2cb6e31-d612-48f2-b056-aac1f1af71cd</code><br>
+        <em>Hex digits are permuted in Firestore!</em>
+      </div>
+      <button onclick="runFix203()">▶️ Call Approve Endpoint</button>
+      <button onclick="verifyFix203()">✓ Verify Fix</button>
+      <div id="fixLog"></div>
+    </div>
+  </div>
 
   <script>
     const results = [];
@@ -393,6 +409,77 @@
       ).join('\n');
       navigator.clipboard.writeText(text);
       alert('Results copied to clipboard!');
+    }
+
+    // Fix Listing 203 functions
+    const CORRECT_BUILD_ID_203 = 'c2cb6e31-d612-48f2-b056-aac1f1af71cd';
+    
+    function fixListing203() {
+      document.getElementById('fixSection').style.display = 'block';
+      document.getElementById('fixSection').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function fixLog(msg, isError = false) {
+      const logDiv = document.getElementById('fixLog');
+      const line = document.createElement('div');
+      line.style.color = isError ? '#ff4444' : '#00ff88';
+      line.style.marginTop = '10px';
+      line.textContent = msg;
+      logDiv.appendChild(line);
+    }
+    
+    async function runFix203() {
+      document.getElementById('fixLog').innerHTML = '';
+      fixLog('🔧 Starting fix...');
+      fixLog(`Calling approve for buildId: ${CORRECT_BUILD_ID_203}`);
+      
+      try {
+        const response = await fetch(`http://localhost:8789/review/approve/${CORRECT_BUILD_ID_203}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        fixLog('✅ Approve successful!');
+        fixLog(`Response: ${JSON.stringify(result)}`);
+        fixLog('\n🎉 Firestore should now have correct buildId. Verify below.');
+      } catch (err) {
+        fixLog(`❌ Error: ${err.message}`, true);
+        fixLog('Make sure API is running: cd apps/api && pnpm run dev', true);
+      }
+    }
+    
+    async function verifyFix203() {
+      document.getElementById('fixLog').innerHTML = '';
+      fixLog('🔍 Verifying fix...');
+      
+      try {
+        const response = await fetch('http://localhost:8789/api/app-meta/203');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const app = await response.json();
+        fixLog(`App: ${app.title} (id: ${app.id})`);
+        fixLog(`buildId: ${app.buildId || 'NOT SET'}`);
+        fixLog(`pendingBuildId: ${app.pendingBuildId || 'NONE'}`);
+        
+        if (app.buildId === CORRECT_BUILD_ID_203) {
+          fixLog('\n✅ BuildId is CORRECT! Mini-app should now load.');
+        } else if (app.buildId === '2c6be31-d612-48f2-b056-aacf1faf21cd') {
+          fixLog('\n❌ BuildId is still CORRUPTED. Run fix again.', true);
+        } else {
+          fixLog(`\n⚠️ BuildId is different: ${app.buildId}`, true);
+        }
+      } catch (err) {
+        fixLog(`❌ Error: ${err.message}`, true);
+      }
     }
 
     // Auto-run on load
