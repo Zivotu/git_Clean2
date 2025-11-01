@@ -160,9 +160,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   app = fastify({ 
     logger: true, 
-    bodyLimit: 256 * 1024,
-    ignoreTrailingSlash: true,
-    ignoreDuplicateSlashes: true
+    bodyLimit: 256 * 1024
   });
 
   // HOTFIX: globalni redirect sanitizer za FST_ERR_BAD_STATUS_CODE
@@ -460,8 +458,11 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   // Compatibility redirects: older web clients may use "/bundle" path
   // Redirect /builds/:buildId/bundle[/*] -> /builds/:buildId/build[/*]
-  // Note: ignoreTrailingSlash means /bundle and /bundle/ are treated as the same route
   app.get('/builds/:buildId/bundle', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
+  });
+  app.get('/builds/:buildId/bundle/', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
     return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
   });
@@ -472,9 +473,25 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build${suffix}`, 307);
   });
 
-  // 1) Serve index.html for the build root
-  // Note: ignoreTrailingSlash handles both /build and /build/
+  // 1) Serve index.html for the build root — handle both /build and /build/
   app.get('/builds/:buildId/build', {
+    preHandler: bypassCors
+  }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const indexPath = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'build', 'index.html');
+    try {
+      const html = await readFile(indexPath, 'utf8');
+      reply
+        .header('Cross-Origin-Resource-Policy', 'cross-origin')
+        .header('Access-Control-Allow-Origin', '*')
+        .type('text/html; charset=utf-8');
+      return reply.send(html);
+    } catch (err) {
+      req.log?.warn?.({ err, buildId, indexPath }, 'build_index_not_found');
+      return reply.code(404).send({ error: 'not_found' });
+    }
+  });
+  app.get('/builds/:buildId/build/', {
     preHandler: bypassCors
   }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
