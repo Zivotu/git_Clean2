@@ -1,11 +1,13 @@
 const CDN_ORIGIN = 'https://esm.sh';
 const STRIPE_CONNECT_ORIGINS = ['https://api.stripe.com'];
 const STRIPE_FRAME_ORIGINS = ['https://js.stripe.com', 'https://m.stripe.network'];
+import { getConfig } from '../config.js';
+import type { AppSecurityPolicy } from '../types.js';
 
 export type NetworkPolicy = 'NO_NET' | 'MEDIA_ONLY' | 'OPEN_NET' | string;
 
 export type BuildCspOptions = {
-  policy?: NetworkPolicy;
+  policy?: NetworkPolicy | AppSecurityPolicy;
   networkDomains?: string[];
   frameAncestors?: string[];
   allowCdn?: boolean;
@@ -76,8 +78,14 @@ export function buildCsp({
   allowCdn = false,
   legacyScript = false,
 }: BuildCspOptions): string {
-  const normalizedDomains = normalizeSources(networkDomains);
-  const allowWildcardHttps = policy === 'OPEN_NET' && normalizedDomains.length === 0;
+  const isObjectPolicy = typeof policy === 'object' && policy !== null;
+  const netPolicy: NetworkPolicy = isObjectPolicy ? policy.network.mode : policy ?? 'NO_NET';
+  const allowlist: string[] = isObjectPolicy
+    ? policy.network.allowlist ?? []
+    : networkDomains ?? [];
+
+  const normalizedDomains = normalizeSources(allowlist);
+  const allowWildcardHttps = netPolicy === 'OPEN_NET' && normalizedDomains.length === 0;
   const scriptSrc = new Set<string>(["'self'"]);
   const styleSrc = new Set<string>(["'self'", "'unsafe-inline'"]); // unsafe-inline is common for CSS-in-JS
   const connectSrc = new Set<string>(["'self'", 'blob:']);
@@ -96,14 +104,19 @@ export function buildCsp({
     scriptSrc.add(CDN_ORIGIN);
     styleSrc.add(CDN_ORIGIN);
     connectSrc.add(CDN_ORIGIN);
-  } else {
   }
 
-  normalizedDomains.forEach((domain) => {
-    scriptSrc.add(domain);
-    styleSrc.add(domain);
-    connectSrc.add(domain);
-  });
+  if (netPolicy === 'proxy' || netPolicy === 'direct+proxy') {
+    connectSrc.add(new URL(getConfig().PUBLIC_BASE).origin);
+  }
+
+  if (netPolicy === 'direct+proxy' || netPolicy === 'OPEN_NET') {
+    normalizedDomains.forEach((domain) => {
+      scriptSrc.add(domain);
+      styleSrc.add(domain);
+      connectSrc.add(domain);
+    });
+  }
 
   if (allowWildcardHttps) {
     connectSrc.add('https:');
@@ -113,12 +126,12 @@ export function buildCsp({
   STRIPE_FRAME_ORIGINS.forEach((origin) => frameSrc.add(origin));
 
   const imgSrc =
-    policy === 'MEDIA_ONLY' || policy === 'OPEN_NET'
+    netPolicy === 'MEDIA_ONLY' || netPolicy === 'OPEN_NET'
       ? ['*', 'data:', 'blob:'] // Allow all images for open policies
       : ["'self'", 'data:', 'blob:'];
 
   const mediaSrc =
-    policy === 'MEDIA_ONLY' || policy === 'OPEN_NET'
+    netPolicy === 'MEDIA_ONLY' || netPolicy === 'OPEN_NET'
       ? ['*', 'blob:'] // Allow all media for open policies
       : ["'self'", 'blob:'];
 

@@ -399,6 +399,15 @@ export class SafePublishPipeline {
     if (risky.length) {
       throw new Error('pending-review: ' + [...new Set(risky)].join('; '));
     }
+
+    const roomsKeys = detectRoomsStorageKeys(dir);
+    if (roomsKeys.length > 0) {
+      if (getConfig().SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE) {
+        throw new Error('banned API: rooms_bridge_detected');
+      } else {
+        this.log.warn?.({ keys: roomsKeys }, 'rooms_bridge_detected');
+      }
+    }
   }
 
   private extractScriptsFromHtml(html: string): string {

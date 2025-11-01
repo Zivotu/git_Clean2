@@ -21,7 +21,6 @@ export async function ensureUserDoc(user: MinimalUser) {
         email: user.email ?? null,
         displayName: user.displayName ?? null,
         photoURL: user.photoURL ?? null,
-        role: 'user',
         createdAt: serverTimestamp(),
       },
       { merge: false }

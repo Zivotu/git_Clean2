@@ -100,7 +100,7 @@ function parseNumberEnv(name: string, defaultValue: number): number {
 
 export function getConfig() {
   const nodeEnv = process.env.NODE_ENV;
-  const PORT = parseNumberEnv('PORT', 8788);
+  const PORT = parseNumberEnv('PORT', 8789);
   const PUBLIC_BASE = process.env.PUBLIC_BASE || `http://127.0.0.1:${PORT}`;
   const WEB_BASE = process.env.WEB_BASE || 'http://localhost:3000';
   const STRIPE_SUCCESS_URL =

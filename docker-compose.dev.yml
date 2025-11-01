@@ -1,4 +1,3 @@
-version: '3.9'
 services:
   redis:
     image: redis:7-alpine
@@ -11,4 +10,3 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-

@@ -1,83 +1,136 @@
-import { apiFetch, ApiError } from '@/lib/api';
 
-export type Snapshot = {
-  version: string;
-  data: Record<string, any>;
-};
+import { ApiError } from '@/lib/api';
+import { auth } from '@/lib/firebase';
 
-export type PatchOperation =
+/**
+ * Defines the shape of a storage patch operation.
+ */
+export type BatchItem =
   | { op: 'set'; key: string; value: any }
   | { op: 'del'; key: string }
   | { op: 'clear' };
 
-export class ConcurrencyError extends Error {
-  public code = 412;
-  public snapshot: Snapshot;
-
-  constructor(message: string, snapshot: Snapshot) {
-    super(message);
-    this.name = 'ConcurrencyError';
-    this.snapshot = snapshot;
+/**
+ * Retrieves the current JWT. If not already available, it fetches a new one
+ * from the Firebase Auth SDK.
+ */
+export async function getJwt(): Promise<string> {
+  const user = auth.currentUser;
+  if (!user) {
+    // This will be caught by the client, which should handle auth flows.
+    throw new ApiError(401, 'User not authenticated');
   }
-}
-
-function stripQuotes(etag: string | null | undefined): string {
-  if (!etag) return '0';
-  return etag.replace(/^"|"$/g, '');
+  const token = await user.getIdToken();
+  return token;
 }
 
 /**
- * Loads the storage snapshot for a given namespace.
- * @param ns The storage namespace.
- * @returns A promise that resolves to the snapshot.
+ * Creates a unique namespace string for an app's storage.
  */
-export async function loadSnapshot(ns: string): Promise<Snapshot> {
-  try {
-    const response = await fetch(`/api/storage?ns=${encodeURIComponent(ns)}`, {
-      headers: {
-        'Authorization': `Bearer ${await (window as any).getAuthToken()}`,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return { version: '0', data: {} };
-      }
-      throw new ApiError(response.status, `Failed to load snapshot for ns=${ns}`);
-    }
-
-    const version = stripQuotes(response.headers.get('ETag'));
-    const data = await response.json();
-    return { version, data };
-  } catch (err) {
-    console.error('[storage] loadSnapshot failed', err);
-    throw err;
-  }
+export function makeNamespace(appId: string, userId?: string): string {
+  // The client currently calls this with userId as undefined.
+  // Format is simple but can be extended if per-user storage is needed.
+  return `app:${appId}`;
 }
 
 /**
- * Patches the storage for a given namespace with optimistic locking.
- * @param ns The storage namespace.
- * @param ops An array of patch operations.
- * @param ifMatch The ETag/version to match.
- * @returns A promise that resolves to the new snapshot.
- * @throws {ConcurrencyError} If a 412 Precondition Failed error occurs.
+ * Fetches the entire storage snapshot for a given namespace from the API.
+ * @param jwt The authentication token.
+ * @param ns The namespace to fetch.
+ * @returns The snapshot data and its current version (ETag).
  */
-export async function patchStorage(ns: string, ops: PatchOperation[], ifMatch: string): Promise<Snapshot> {
-  try {
-    const { version, snapshot } = await apiFetch<{ version: string; snapshot: any }>(`/storage?ns=${encodeURIComponent(ns)}`, {
-      method: 'PATCH',
-      body: ops,
-      headers: { 'If-Match': `"${ifMatch}"` },
-    });
-    return { version, data: snapshot };
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 412) {
-      const freshVersion = stripQuotes(err.response?.headers.get('ETag'));
-      const freshData = err.body || {};
-      throw new ConcurrencyError('Precondition Failed', { version: freshVersion, data: freshData });
+export async function fetchSnapshot(
+  jwt: string,
+  ns: string
+): Promise<{ snapshot: Record<string, unknown>; version: string }> {
+  const response = await fetch(`/api/storage?ns=${encodeURIComponent(ns)}`, {
+    headers: {
+      Authorization: `Bearer ${jwt}`,
+      'X-Thesara-Scope': 'shared',
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      // If the namespace doesn't exist yet, return an empty state.
+      return { snapshot: {}, version: '0' };
     }
-    console.error('[storage] patchStorage failed', err);
-    throw err;
+    throw new ApiError(response.status, `Failed to fetch snapshot for ns=${ns}`);
   }
+
+  const version = response.headers.get('ETag')?.replace(/^"|"$/g, '') || '0';
+  const snapshot = await response.json();
+  return { snapshot, version };
+}
+
+/**
+ * Applies a batch of operations to a local snapshot object for optimistic updates.
+ * @param snapshot The current snapshot.
+ * @param batch The operations to apply.
+ * @returns A new snapshot with the operations applied.
+ */
+export function applyBatchOperations(
+  snapshot: Record<string, unknown>,
+  batch: readonly BatchItem[]
+): Record<string, unknown> {
+  const newSnapshot = { ...snapshot };
+
+  for (const op of batch) {
+    if (op.op === 'clear') {
+      // If clear is present, it wipes everything.
+      return {};
+    }
+    if (op.op === 'set') {
+      newSnapshot[op.key] = op.value;
+    } else if (op.op === 'del') {
+      delete newSnapshot[op.key];
+    }
+  }
+  return newSnapshot;
+}
+
+/**
+ * Patches the remote storage with a batch of operations using optimistic locking.
+ * @param jwt The authentication token.
+ * @param ns The namespace to patch.
+ * @param version The current version (ETag) to ensure consistency.
+ * @param batch The operations to apply.
+ * @returns The new version and, if provided by the API, the new snapshot.
+ */
+export async function patchStorage(
+  jwt: string,
+  ns: string,
+  version: string,
+  batch: BatchItem[]
+): Promise<{ newVersion: string; newSnapshot?: Record<string, unknown> }> {
+  // Derive app id for audit/ratelimiting on the API side
+  // Expected namespace format: "app:<appId>"; fall back to the raw ns if not parseable
+  const appIdHeader = ns.startsWith('app:') ? ns.slice('app:'.length) : ns;
+  const response = await fetch(`/api/storage?ns=${encodeURIComponent(ns)}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'If-Match': `"${version}"`,
+      Authorization: `Bearer ${jwt}`,
+      'X-Thesara-App-Id': appIdHeader,
+      'X-Thesara-Scope': 'shared',
+    },
+    body: JSON.stringify(batch),
+  });
+
+  if (!response.ok) {
+    // Let the caller handle specific errors like 412 (Concurrency)
+    // Try to extract a machine-readable error code (string) if provided by the API
+    let code: string | undefined = undefined;
+    try {
+      const body = await response.json();
+      if (body && typeof body.code === 'string') code = body.code;
+    } catch {}
+    throw new ApiError(response.status, `Failed to patch storage for ns=${ns}`, code);
+  }
+
+  const newVersion = response.headers.get('ETag')?.replace(/^"|"$/g, '') || String(Date.now());
+  const body = await response.json();
+  
+  return { newVersion, newSnapshot: body.snapshot };
 }

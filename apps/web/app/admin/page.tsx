@@ -82,11 +82,12 @@ type BuildState =
   | 'llm_waiting'
   | 'llm_generating'
   | 'pending_review'
+  | 'llm_failed'
   | 'pending_review_llm'
   | 'approved'
   | 'published'
   | 'rejected'
-  | 'failed';
+  | 'failed'
   | 'deleted';
 
 type TimelineEntry = { state: BuildState; at: number };
@@ -119,7 +120,7 @@ function BuildTimeline({ buildId }: { buildId: string }) {
             </span>
           </li>
         ))}
-        {events.length === 0 && status === 'connected' && <li className="text-xs text-gray-500">Čekam na događaje...</li>}
+        {events.length === 0 && status === 'streaming' && <li className="text-xs text-gray-500">Čekam na događaje...</li>}
         {status === 'connecting' && <li className="text-xs text-gray-500">Povezujem se na SSE...</li>}
       </ol>
     </div>
@@ -640,6 +641,20 @@ return (
                           ))}
                         </div>
                       </>
+                    ) : it.state === 'llm_failed' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-red-600">
+                          LLM failed
+                        </span>
+                        {actionTarget && (
+                          <button
+                            onClick={() => triggerLlm(actionTarget)}
+                            className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                            disabled={isRegenerating}>
+                            {isRegenerating ? 'Running...' : 'Try again'}
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-600">

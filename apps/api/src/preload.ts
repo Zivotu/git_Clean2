@@ -22,5 +22,5 @@ for (const candidate of envCandidates) {
     continue;
   }
   seen.add(candidate);
-  dotenvConfig({ path: candidate, override: true });
+  dotenvConfig({ path: candidate, override: false });
 }

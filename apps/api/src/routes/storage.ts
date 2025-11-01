@@ -8,6 +8,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://thesara.space',
   'https://apps.thesara.space',
   'http://localhost:3000',
+  'http://127.0.0.1:3000',
 ]);
 
 export function setCors(reply: any, origin?: string) {
@@ -72,7 +73,8 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
 
       const userId = (request as any).authUser.uid;
       const { ns } = request.query;
-      const key = `${userId}/${ns}`;
+      const scope = (request.headers['x-thesara-scope'] as string | undefined)?.toLowerCase() === 'shared' ? 'shared' : 'user';
+      const key = scope === 'shared' ? ns : `${userId}/${ns}`;
       try {
         const { etag, json } = await backend.read(key);
         reply.header('ETag', `"${etag}"`);
@@ -122,13 +124,14 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
       const endTimer = server.metrics.storage_patch_duration_seconds.startTimer();
       server.metrics.storage_patch_total.inc();
 
-      const userId = (request as any).authUser.uid;
-      const { ns } = request.query;
+  const userId = (request as any).authUser.uid;
+  const { ns } = request.query;
       const appId = request.headers['x-thesara-app-id'] as string;
       const ifMatch = stripQuotes(request.headers['if-match']);
-      const key = `${userId}/${ns}`;
+  const scope = (request.headers['x-thesara-scope'] as string | undefined)?.toLowerCase() === 'shared' ? 'shared' : 'user';
+  const key = scope === 'shared' ? ns : `${userId}/${ns}`;
 
-      const logPayload = { userId, ns, ifMatch, appId, backend: backend.kind };
+  const logPayload = { userId, ns, ifMatch, appId, scope, backend: backend.kind };
 
       if (!appId) {
         request.log.warn(logPayload, 'Missing X-Thesara-App-Id header');

@@ -38,13 +38,14 @@ export function useBuildEvents(buildId: string | null) {
             status: data.status,
             reason: data.reason ?? null,
             listingId: data.listingId,
-            progress: data.progress ?? 100,
+            progress: 100,
           });
           sse.close();
         }
       },
-      onError: (err) => {
+      onError: (err, eventSource) => {
         console.error(`SSE connection error for build ${buildId}:`, err);
+        console.error(`SSE readyState: ${eventSource?.readyState}`);
         setBuildState((prevState) => ({ ...prevState, status: 'failed', reason: 'Connection lost' }));
       },
     });

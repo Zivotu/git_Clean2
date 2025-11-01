@@ -62,11 +62,11 @@ export default function CreatePage() {
 
   useEffect(() => {
     if (buildStatus) {
-        setShowProgress(true);
+      setShowProgress(true);
     }
     if (buildStatus === 'success' && listingId) {
-        // Redirect to the play page on successful build
-        setTimeout(() => router.push(`/play/${listingId}?published=true`), 1000);
+      // Redirect to My Projects with a congratulations/info toast
+      setTimeout(() => router.push(`/my?submitted=1`), 800);
     }
   }, [buildStatus, listingId, router]);
 

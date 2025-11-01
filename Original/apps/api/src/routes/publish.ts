@@ -124,7 +124,37 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
       await fs.mkdir(dir, { recursive: true });
 
       const isHtml = body.inlineCode.trim().toLowerCase().startsWith('<!doctype html>');
-      let indexHtml = '<!doctype html><html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><style>html,body{margin:0;padding:0} body{overflow-x:hidden} #root{min-height:100vh}</style></head><body><div id="root"></div><script type="module" src="./app.js"></script></body></html>';
+  let indexHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>html,body{margin:0;padding:0} body{overflow-x:hidden} #root{min-height:100vh}</style>
+  <script>
+    // crypto.randomUUID polyfill for non-secure contexts
+    (function(){try{if(!('crypto'in window)){Object.defineProperty(window,'crypto',{value:{},configurable:true});}
+    var c=window.crypto; if(!c.randomUUID){var rng=function(){return (Math.random()*16)|0};
+    var uuid=function(){return'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(ch){var r=rng();var v=ch==='x'?r:((r&0x3)|0x8);return v.toString(16)})};
+    Object.defineProperty(c,'randomUUID',{value:uuid,configurable:false});}}catch(e){}})();
+  </script>
+  <script>
+    // Minimal debug overlay + global submit prevention for sandboxed iframes
+    (function(){
+      function show(msg){try{if(!document.body){if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){show(msg)})}return;}var id='__mini_error_overlay__';var el=document.getElementById(id);if(!el){el=document.createElement('div');el.id=id;el.style.cssText='position:fixed;left:8px;bottom:8px;max-width:92vw;z-index:99999;background:rgba(220,38,38,.95);color:white;padding:10px 12px;border-radius:10px;font:12px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;white-space:pre-wrap;box-shadow:0 8px 24px rgba(0,0,0,.25)';document.body.appendChild(el);}el.textContent=String(msg);}catch(e){}}
+      window.__dbg=show;
+      function init(){
+        document.addEventListener('submit',function(e){try{e.preventDefault();e.stopPropagation();show('prevented form submit from '+(e.target&&(e.target.tagName||'form')));}catch{}},true);
+        try{var applyNoValidate=function(root){var forms=(root||document).getElementsByTagName('form');for(var i=0;i<forms.length;i++){forms[i].setAttribute('novalidate','');}}; if(document.readyState!=='loading') applyNoValidate(document); var mo=new MutationObserver(function(ms){for(var j=0;j<ms.length;j++){var m=ms[j];for(var k=0;k<m.addedNodes.length;k++){var n=m.addedNodes[k];if(n&&n.nodeType===1){applyNoValidate(n);}}}}); mo.observe(document.documentElement,{childList:true,subtree:true});}catch{}
+      }
+      if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);} else {init();}
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script defer type="module" src="./app.js"></script>
+</body>
+</html>`;
       let appJs = '';
 
       if (isHtml) {

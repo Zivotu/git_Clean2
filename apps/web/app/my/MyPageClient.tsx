@@ -347,7 +347,7 @@ export default function MyProjectsPage() {
 
   useEffect(() => {
     if (submitted) {
-      setToast({ message: 'Tvoja aplikacija čeka odobrenje.', type: 'info' });
+      setToast({ message: 'Čestitamo! Tvoja aplikacija je poslana i čeka odobrenje.', type: 'success' });
     }
   }, [submitted]);
 

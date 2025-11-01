@@ -1,16 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, appendFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { Queue, Worker } from 'bullmq';
+import type { ConnectionOptions } from 'bullmq';
+import * as esbuild from 'esbuild';
 import { getBuildDir } from '../paths.js';
 import { REDIS_URL } from '../config.js';
-import { readApps, writeApps } from '../db.js';
-import { bundlePlayBuild } from '../build/bundler.js';
-import { generateSri } from '../lib/fsx.js';
 import { prisma } from '../db.js';
-import { sseEmitter } from '../lib/sseEmitter.js';
+import { sseEmitter } from '../sse.js';
+import { DEPENDENCY_VERSIONS } from '../lib/dependencies.js';
+import { updateBuild } from '../models/Build.js';
 
 const QUEUE_NAME = 'createx-build';
 
@@ -24,34 +25,29 @@ export class QueueDisabledError extends Error {
   }
 }
 
-type RedisConnection =
-  | { connectionString: string }
-  | { host: string; port: number };
-
-let queueConnection: RedisConnection | null = null;
+let queueConnection: ConnectionOptions | null = null;
 let createxBuildQueue: Queue | null = null;
 
-function resolveRedisConnection(): RedisConnection | null {
+async function resolveRedisConnection(): Promise<ConnectionOptions | null> {
   if (REDIS_URL) {
-    return { connectionString: REDIS_URL };
+    const url = new URL(REDIS_URL);
+    return { host: url.hostname, port: Number(url.port) || 6379 };
   }
   const host = process.env.REDIS_HOST;
   if (host) {
-    return {
-      host,
-      port: Number(process.env.REDIS_PORT || 6379),
-    };
+    const port = Number(process.env.REDIS_PORT || 6379);
+    return { host, port };
   }
   return null;
 }
 
-function ensureQueue(): Queue | null {
+async function ensureQueue(): Promise<Queue | null> {
   if (!queueConnection) {
-    queueConnection = resolveRedisConnection();
+    queueConnection = await resolveRedisConnection();
   }
   if (!queueConnection) return null;
   if (!createxBuildQueue) {
-    createxBuildQueue = new Queue(QUEUE_NAME, { connection: queueConnection });
+    createxBuildQueue = new Queue(QUEUE_NAME, { connection: queueConnection as any });
   }
   return createxBuildQueue;
 }
@@ -64,211 +60,269 @@ function createNoopHandle(): BuildWorkerHandle {
   return { close: async () => {} };
 }
 
-async function ensureStorageCapabilityFlag(buildId: string): Promise<void> {
-  try {
-    const apps = await readApps();
-    const idx = apps.findIndex(
-      (app: any) => app?.pendingBuildId === buildId || app?.buildId === buildId,
-    );
-    if (idx < 0) return;
-    const current = apps[idx] as any;
-    const capabilities = { ...(current.capabilities || {}) };
-    const features = new Set<string>(
-      Array.isArray(capabilities.features) ? capabilities.features : [],
-    );
-    const hasStorageEnabled = capabilities.storage?.enabled === true;
-    if (!hasStorageEnabled && !features.has('storage')) {
-      return;
-    }
-    let changed = false;
-    if (!hasStorageEnabled) {
-      capabilities.storage = { ...(capabilities.storage || {}), enabled: true };
-      changed = true;
-    }
-    if (!features.has('storage')) {
-      features.add('storage');
-      changed = true;
-    }
-    if (!changed) return;
-    capabilities.features = Array.from(features);
-    apps[idx] = {
-      ...current,
-      capabilities,
-      updatedAt: Date.now(),
-    };
-    await writeApps(apps as any);
-  } catch (err) {
-    console.warn({ buildId, err }, 'storage_capability_update_failed');
-  }
-}
-
 export async function enqueueCreatexBuild(buildId: string = randomUUID()): Promise<string> {
   if (process.env.CREATEX_WORKER_ENABLED !== 'true') {
     throw queueDisabled();
   }
-  const queue = ensureQueue();
+  const queue = await ensureQueue();
   if (!queue) {
     throw queueDisabled();
   }
-  await queue.add('build', { buildId });
+  await queue.add('build', { buildId }, { removeOnComplete: true, removeOnFail: 1000 });
   return buildId;
+}
+
+async function runBuildProcess(buildId: string): Promise<void> {
+  const baseDir = getBuildDir(buildId);
+  const buildDir = path.join(baseDir, 'build');
+  const entryPoint = path.join(buildDir, '_app_entry.tsx');
+  const outFile = path.join(buildDir, 'app.js');
+
+  console.log(`[worker] Starting build for ${buildId}...`);
+  console.log(`[worker] Entry point: ${entryPoint}`);
+  console.log(`[worker] Output file: ${outFile}`);
+
+  // Check if entry file exists
+  try {
+    await fs.access(entryPoint);
+    console.log(`[worker] Entry file exists: ${entryPoint}`);
+  } catch {
+    console.error(`[worker] Entry file NOT found: ${entryPoint}`);
+    throw new Error(`Entry file not found: ${entryPoint}`);
+  }
+
+  // Ensure package.json exists. It should be created earlier by ensureDependencies().
+  // If missing, create a minimal one with React as a fallback.
+  const pkgPath = path.join(buildDir, 'package.json');
+  try {
+    await fs.access(pkgPath);
+    console.log(`[worker] Using existing package.json in ${buildDir}`);
+  } catch {
+    const minimalDeps: Record<string, string> = {
+      react: DEPENDENCY_VERSIONS['react'],
+      'react-dom': DEPENDENCY_VERSIONS['react-dom'],
+    } as any;
+    const packageJson = {
+      name: `build-${buildId}`,
+      private: true,
+      version: '1.0.0',
+      dependencies: minimalDeps,
+    };
+    await fs.writeFile(pkgPath, JSON.stringify(packageJson, null, 2), 'utf8');
+    console.log(`[worker] Created minimal package.json in ${buildDir}`);
+  }
+
+  // Install npm dependencies in buildDir
+  console.log(`[worker] Installing dependencies in ${buildDir}...`);
+  await new Promise<void>((resolve, reject) => {
+    let output = '';
+    let errorOutput = '';
+    
+    const npm = spawn('npm', ['install', '--production', '--no-audit', '--loglevel=error'], { 
+      cwd: buildDir, // Install in buildDir where package.json is
+      shell: true,
+      windowsHide: true,
+    });
+    
+    npm.stdout?.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    npm.stderr?.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+    
+    npm.on('close', (code) => {
+      if (code === 0) {
+        console.log(`[worker] npm install completed successfully`);
+        if (output) console.log(`[worker] npm output:`, output.trim());
+        resolve();
+      } else {
+        console.error(`[worker] npm install failed with code ${code}`);
+        if (output) console.error(`[worker] npm stdout:`, output.trim());
+        if (errorOutput) console.error(`[worker] npm stderr:`, errorOutput.trim());
+        reject(new Error(`npm install failed with code ${code}: ${errorOutput || output}`));
+      }
+    });
+    
+    npm.on('error', (err) => {
+      console.error(`[worker] npm process error:`, err);
+      reject(err);
+    });
+  });
+
+  // Helper to extract missing packages from esbuild error output
+  const resolveMissing = (err: any): string[] => {
+    const out = new Set<string>();
+    const addSpec = (s: string) => {
+      if (!s) return;
+      if (s.startsWith('.') || s.startsWith('/') || s.startsWith('data:')) return;
+      const base = s.split('/')[0];
+      out.add(base);
+    };
+    try {
+      const list = (err?.errors || []) as any[];
+      for (const e of list) {
+        const m = /Could not resolve\s+"([^"]+)"|Could not resolve\s+'([^']+)'/i.exec(e?.text || '');
+        if (m) addSpec((m[1] || m[2] || '').trim());
+      }
+      const text = String(err?.message || '');
+      const re = /Could not resolve\s+"([^"]+)"|Could not resolve\s+'([^']+)'/ig;
+      let mm: RegExpExecArray | null;
+      while ((mm = re.exec(text)) !== null) {
+        addSpec((mm[1] || mm[2] || '').trim());
+      }
+    } catch {}
+    return Array.from(out);
+  };
+
+  const buildOnce = async () => {
+    await esbuild.build({
+      entryPoints: [entryPoint],
+      bundle: true,
+      outfile: outFile,
+      format: 'iife',
+      globalName: 'AppComponent',
+      platform: 'browser',
+      external: [],
+      minify: true,
+      treeShaking: true,
+    });
+  };
+
+  try {
+    await buildOnce();
+    console.log(`[worker] esbuild completed successfully for ${buildId}`);
+  } catch (err: any) {
+    console.warn(`[worker] esbuild initial build failed, attempting dependency resolution...`);
+    const missing = resolveMissing(err);
+    const catalog = DEPENDENCY_VERSIONS as Record<string, string | null>;
+    const toInstall = missing.filter((m) => catalog[m]);
+
+    if (toInstall.length) {
+      console.log(`[worker] Detected missing packages: ${toInstall.join(', ')}`);
+      // Merge into package.json and install
+      const pkgPath = path.join(buildDir, 'package.json');
+      const pkgRaw = await fs.readFile(pkgPath, 'utf8');
+      const pkg = JSON.parse(pkgRaw);
+      pkg.dependencies = pkg.dependencies || {};
+      for (const name of toInstall) {
+        pkg.dependencies[name] = catalog[name];
+      }
+      await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
+
+      // Install only the newly added packages to be faster
+      await new Promise<void>((resolve, reject) => {
+        let output = '';
+        let errorOutput = '';
+        const args = ['install', '--no-audit', '--loglevel=error', ...toInstall.map((n) => `${n}@${catalog[n]}`)];
+        const npm = spawn('npm', args, { cwd: buildDir, shell: true, windowsHide: true });
+        npm.stdout?.on('data', (d) => (output += d.toString()));
+        npm.stderr?.on('data', (d) => (errorOutput += d.toString()));
+        npm.on('close', (code) => {
+          if (code === 0) return resolve();
+          reject(new Error(`npm install ${toInstall.join(' ')} failed: ${errorOutput || output}`));
+        });
+        npm.on('error', reject);
+      });
+
+      // Retry build once
+      await buildOnce();
+      console.log(`[worker] esbuild completed successfully on retry for ${buildId}`);
+    } else {
+      console.error(`[worker] Missing packages not in allowlist or none detected. Failing build.`);
+      throw err;
+    }
+  }
 }
 
 export function startCreatexBuildWorker(): BuildWorkerHandle {
   if (process.env.CREATEX_WORKER_ENABLED !== 'true') {
+    console.warn('[worker] CREATEX_WORKER_ENABLED is not "true" – build worker disabled');
     return createNoopHandle();
   }
-  queueConnection = resolveRedisConnection();
-  if (!queueConnection) {
-    console.warn('[worker] REDIS_URL missing – build worker disabled');
-    return createNoopHandle();
-  }
-  const queue = ensureQueue();
-  if (!queue) {
-    console.warn('[worker] Failed to initialise queue connection – build worker disabled');
-    return createNoopHandle();
-  }
-  const worker = new Worker(
-    QUEUE_NAME,
-    async (job) => {
-      const { buildId } = job.data as { buildId: string };
-      try {
-        await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'bundling', progress: 40, error: null, reason: null },
-        });
-        sseEmitter.emitBuild(buildId, 'status', { status: 'bundling' });
-
-        await runBuildProcess(buildId);
-
-        await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'verifying', progress: 70 },
-        });
-        sseEmitter.emitBuild(buildId, 'status', { status: 'verifying' });
-
-        await ensureStorageCapabilityFlag(buildId);
-        
-        const finalBuild = await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'success', mode: 'bundled', progress: 100, error: null, reason: null },
-        });
-
-        sseEmitter.emitBuild(buildId, 'final', { status: 'success', buildId, listingId: finalBuild.listingId });
-
-      } catch (err: any) {
-        console.error({ buildId, err }, 'build:error');
-        const reason = err?.message || 'Unknown error';
+  console.log('[worker] Starting createx build worker...');
+  const startWorker = async () => {
+    queueConnection = await resolveRedisConnection();
+    console.log('[worker] Redis connection resolved:', queueConnection);
+    if (!queueConnection) {
+      console.warn('[worker] REDIS_URL missing – build worker disabled');
+      return createNoopHandle();
+    }
+    const queue = await ensureQueue();
+    if (!queue) {
+      console.warn('[worker] Failed to initialise queue connection – build worker disabled');
+      return createNoopHandle();
+    }
+    console.log(`[worker] Queue initialized. Listening on queue: ${QUEUE_NAME}`);
+    const worker = new Worker(
+      QUEUE_NAME,
+      async (job) => {
+        const { buildId } = job.data as { buildId: string };
+        console.log(`[worker] Processing build job: ${buildId}`);
         try {
-          const finalBuild = await prisma.build.update({
+          await prisma.build.update({
             where: { id: buildId },
-            data: { status: 'failed', reason, error: reason, progress: 100 },
+            data: { status: 'preparing', progress: 20, error: null, reason: null },
           });
-          sseEmitter.emitBuild(buildId, 'final', { status: 'failed', reason, buildId, listingId: finalBuild.listingId });
-        } catch (dbErr) {
-          console.error({ buildId, dbErr }, 'build:error:db_update_failed');
-          sseEmitter.emitBuild(buildId, 'final', { status: 'failed', reason });
+          // keep frontend UX consistent: treat preparing as bundling
+          sseEmitter.emit(buildId, 'status', { status: 'bundling' });
+          // reflect state in filesystem model for admin
+          try { await updateBuild(buildId, { state: 'build', progress: 20 }); } catch {}
+
+          await runBuildProcess(buildId);
+
+          await prisma.build.update({
+            where: { id: buildId },
+            data: { status: 'success', mode: 'bundled', progress: 100, error: null, reason: null },
+          });
+          // update FS build state so it appears as pending review in admin
+          try { await updateBuild(buildId, { state: 'pending_review', progress: 100 }); } catch {}
+
+          // include listingId in final event for client redirect
+          let listingId: string | null = null;
+          try {
+            const rec = await prisma.build.findUnique({ where: { id: buildId }, select: { listingId: true } });
+            listingId = rec?.listingId ?? null;
+          } catch {}
+          sseEmitter.emit(buildId, 'final', { status: 'success', buildId, listingId });
+
+        } catch (err: any) {
+          console.error('[worker] Build job failed:', err);
+          console.error('[worker] Full error object:', JSON.stringify(err, null, 2));
+          const reason = err?.message || 'Unknown error';
+          try {
+            await prisma.build.update({
+              where: { id: buildId },
+              data: { status: 'failed', reason, error: reason, progress: 100 },
+            });
+            try { await updateBuild(buildId, { state: 'failed', progress: 100, error: reason }); } catch {}
+            sseEmitter.emit(buildId, 'final', { status: 'failed', reason, buildId });
+          } catch (dbErr) {
+            console.error({ buildId, dbErr }, 'build:error:db_update_failed');
+            sseEmitter.emit(buildId, 'final', { status: 'failed', reason });
+          }
         }
-      }
-    },
-    { connection: queueConnection },
-  );
-  return {
-    async close() {
-      await worker.close();
-      if (createxBuildQueue) {
-        await createxBuildQueue.close();
-        createxBuildQueue = null;
-      }
-      queueConnection = null;
-    },
+      },
+      { connection: queueConnection as any },
+    );
+    return {
+      async close() {
+        await worker.close();
+        if (createxBuildQueue) {
+          await createxBuildQueue.close();
+        }
+        if (queueConnection && (queueConnection as any).connection) {
+          await (queueConnection as any).connection.quit();
+          createxBuildQueue = null;
+        }
+        queueConnection = null;
+      },
+    };
   };
-}
 
-async function runBuildProcess(buildId: string): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    const pkgMgr = process.env.npm_execpath || 'npm';
-    const proc = spawn(pkgMgr, ['run', 'createx:build'], {
-      env: { ...process.env, BUILD_ID: buildId },
-      stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true,
-    });
-
-    let stdout = '';
-    let stderr = '';
-    proc.stdout?.on('data', (d) => {
-      stdout += d.toString();
-    });
-    proc.stderr?.on('data', (d) => {
-      stderr += d.toString();
-    });
-
-    proc.on('error', reject);
-    proc.on('close', (code) => {
-      try {
-        const dir = path.resolve('build', 'logs');
-        mkdirSync(dir, { recursive: true });
-        writeFileSync(path.join(dir, `${buildId}.log`), stdout + stderr);
-      } catch (err) {
-        console.error(err, 'build:log_error');
-      }
-      if (code === 0) resolve();
-      else {
-        if (stderr) console.error(stderr);
-        reject(new Error(`exit_code_${code}`));
-      }
-    });
-  });
-
-  // The createx:build script has finished and populated the 'build' directory.
-  const buildDir = path.resolve('build');
-
-  const { outFile } = await bundlePlayBuild(buildDir);
-  const bundleContent = await fs.readFile(outFile, 'utf-8');
-  const sri = generateSri(bundleContent);
-
-  await rewriteIndexHtml({ buildDir, sri });
-
-  const manifestPath = path.join(buildDir, 'manifest_v1.json');
-  const manifest = {
-    entry: './app.bundle.js',
-    integrity: sri,
-    createdAt: new Date().toISOString(),
-  };
-  await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}
-`, 'utf-8');
-
-
-  const src = path.resolve('build');
-  const dest = path.join(getBuildDir(buildId), 'build');
-  await fs.rm(dest, { recursive: true, force: true });
-  await fs.mkdir(dest, { recursive: true });
-  await fs.cp(src, dest, { recursive: true });
-  await fs.rm(src, { recursive: true, force: true });
-}
-
-async function rewriteIndexHtml({
-  buildDir,
-  sri,
-}: {
-  buildDir: string;
-  sri: string;
-}): Promise<void> {
-  const indexPath = path.join(buildDir, 'index.html');
-  let html = await fs.readFile(indexPath, 'utf-8');
-  const scriptTag = `<script type="module" src="./app.bundle.js" integrity="${sri}" crossorigin="anonymous"></script>`;
-  const scriptRegex = /<script[^>]+src=["'][^"']*app(?:\.bundle)?\.js["'][^>]*><\/script>/i;
-  const inlineModuleRegex = /<script\s+type=["']module["'][^>]*>[\s\S]*?<\/script>/i;
-
-  if (scriptRegex.test(html)) {
-    html = html.replace(scriptRegex, scriptTag);
-  } else if (inlineModuleRegex.test(html)) {
-    html = html.replace(inlineModuleRegex, scriptTag);
-  } else if (html.includes('</body>')) {
-    html = html.replace('</body>', `  ${scriptTag}\n</body>`);
-  } else {
-    html = `${html}\n${scriptTag}\n`;
-  }
-
-  await fs.writeFile(indexPath, html, 'utf-8');
+  let handle: BuildWorkerHandle = createNoopHandle();
+  startWorker().then(h => { handle = h; }).catch(err => console.error("Failed to start build worker", err));
+  
+  return { async close() { await handle.close(); } };
 }

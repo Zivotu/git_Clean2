@@ -8,7 +8,7 @@ export type SSEMessage = {
 export type SSEOptions = {
   onOpen?: () => void;
   onMessage?: (m: SSEMessage) => void;
-  onError?: (err: any) => void;
+  onError?: (err: any, eventSource?: EventSource | null) => void;
   buildLastEventIdKey?: string;
   maxDelayMs?: number;
   eventNames?: string[];
@@ -75,7 +75,7 @@ export function createSSE(url: string, opts: SSEOptions = {}) {
 
     eventSource.onerror = (err) => {
       eventSource?.close();
-      onError?.(err);
+      onError?.(err, eventSource);
       reconnect();
     };
   }

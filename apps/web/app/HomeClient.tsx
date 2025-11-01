@@ -641,7 +641,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t text-center">Â© {new Date().getFullYear()} {SITE_NAME}.</div>
+          <div className="mt-8 pt-8 border-t text-center">© 2025 {SITE_NAME}.</div>
         </div>
       </footer>
       {toast && (<Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />)}

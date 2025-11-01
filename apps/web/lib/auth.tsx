@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from './firebase';
-import { onAuthStateChanged, type User } from 'firebase/auth';
+import { onAuthStateChanged, type User, setPersistence, inMemoryPersistence } from 'firebase/auth';
 import { ensureUserDoc } from './ensureUserDoc';
 
 type AuthCtx = { user: User | null; loading: boolean };
@@ -17,12 +17,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
+    // In sandboxed iframes, prefer in-memory persistence to avoid storage restrictions
+    try {
+      const inIframe = typeof window !== 'undefined' && window.self !== window.top;
+      if (inIframe) {
+        // Fire-and-forget; if this fails we continue with default persistence
+        void setPersistence(auth, inMemoryPersistence).catch(() => {});
+      }
+    } catch {}
     const off = onAuthStateChanged(auth, async (u) => {
       setUser(u ?? null);
       setLoading(false);
 
       if (u) {
         try {
+          // Proactively refresh the ID token so Firestore has a valid auth context
+          try { await u.getIdToken(true); } catch {}
           await ensureUserDoc({
             uid: u.uid,
             email: u.email,
@@ -30,7 +40,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             photoURL: u.photoURL,
           });
         } catch (err) {
-          console.error('Error ensuring user document', err);
+          // Retry once after a brief tick in case token/persistence just initialized
+          try {
+            await new Promise((r) => setTimeout(r, 50));
+            try { await u.getIdToken(); } catch {}
+            await ensureUserDoc({
+              uid: u.uid,
+              email: u.email,
+              displayName: u.displayName,
+              photoURL: u.photoURL,
+            });
+          } catch (err2) {
+            console.error('Error ensuring user document', err2);
+          }
         }
       }
     });

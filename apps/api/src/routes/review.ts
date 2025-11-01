@@ -8,8 +8,7 @@ import { requireRole } from '../middleware/auth.js';
 import { getBucket } from '../storage.js';
 import * as tar from 'tar';
 import archiver from 'archiver';
-declare module 'archiver' { const x: any; export = x; } // eslint-disable-line @typescript-eslint/no-explicit-any
-
+// Uklonjena neispravna 'declare module' augmentacija za 'archiver'.
 import {
   listBuilds,
   readBuild,
@@ -19,7 +18,7 @@ import {
 } from '../models/Build.js';
 import { getConfig, LLM_REVIEW_ENABLED } from '../config.js';
 import { BUNDLE_ROOT, PREVIEW_ROOT } from '../paths.js';
-import { readApps, writeApps, updateApp } from '../db.js';
+import { readApps, writeApps, updateApp, type AppRecord } from '../db.js';
 import { prisma } from '../db.js';
 import { runLlmReviewForBuild } from '../llmReview.js';
 import { computeNextVersion } from '../lib/versioning.js';
@@ -82,14 +81,6 @@ export default async function reviewRoutes(app: FastifyInstance) {
     return 'Unknown error';
   };
 
-  type AppRecord = Record<string, any>;
-  type BuildResolveContext = {
-    buildId: string;
-    build?: Awaited<ReturnType<typeof readBuild>>;
-    apps: AppRecord[];
-    appIndex: number;
-  };
-
   function normaliseIdentifier(value: string | number | undefined | null): string | null {
     if (value === undefined || value === null) return null;
     const out = String(value).trim();
@@ -109,6 +100,13 @@ export default async function reviewRoutes(app: FastifyInstance) {
       return candidates.some((candidate) => normaliseIdentifier(candidate) === needle);
     });
   }
+
+  type BuildResolveContext = {
+    buildId: string;
+    build?: Awaited<ReturnType<typeof readBuild>>;
+    apps: AppRecord[];
+    appIndex: number;
+  };
 
   async function resolveBuildContext(
     identifier: string,
@@ -338,9 +336,15 @@ export default async function reviewRoutes(app: FastifyInstance) {
       return report;
     } catch (err: any) {
       req.log.error({ err, id: buildId, identifier: id }, 'llm_review_failed');
-      const code = err?.errorCode || err?.code;
-      await updateBuild(buildId, { state: 'pending_review', error: String(code || err?.message || err) });
-      return reply.code(500).send({ error: code || 'llm_failed' });
+      const code = err?.errorCode || err?.code || 'LLM_FAILED';
+      const message = String(err?.message || err || 'Unknown LLM error');
+      await updateBuild(buildId, { state: 'failed', error: message });
+      try {
+        await prisma.build.update({ where: { id: buildId }, data: { status: 'llm_failed', error: message, reason: code } });
+      } catch (dbErr) {
+        req.log.error({ err: dbErr, buildId }, 'llm_review_failed_prisma_update_error');
+      }
+      return reply.code(500).send({ error: code, message: message });
     }
   };
   route('POST', '/review/builds/:id/llm', admin, postLlmReportHandler)(app);
@@ -635,7 +639,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
           by: req.authUser?.uid ?? null,
         };
 
-        await updateApp(app.id, payload as Partial<AppRecord>);
+        await updateApp(app.id, payload);
         
         try {
           const { ensureListingTranslations } = await import('../lib/translate.js');
@@ -707,8 +711,8 @@ export default async function reviewRoutes(app: FastifyInstance) {
           at: now,
           by: req.authUser?.uid ?? null,
           reason: reason || null,
-          } as Partial<AppRecord>;
-          await updateApp(app.id, payload);
+        };
+        await updateApp(app.id, payload as Partial<AppRecord>);
       } 
     } catch (err: unknown) {
       req.log.error({ err, id: buildId ?? id }, 'listing_reject_update_failed');
@@ -762,7 +766,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
       const appIndex = resolved?.appIndex ?? -1;
       if (appIndex >= 0) {
         const app = resolved!.apps[appIndex]; // AppRecord
-        await updateApp(app.id, { deletedAt: Date.now(), state: 'deleted' } as Partial<AppRecord>);
+        await updateApp(app.id, { deletedAt: Date.now(), state: 'inactive' });
       }
       return reply.send({ ok: true });
     } catch (err: unknown) {
@@ -818,7 +822,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
       const resolved = await resolveBuildContext(id, { apps });
       const idx = resolved?.appIndex ?? -1;
       if (idx >= 0) {
-        await updateApp(apps[idx].id, { deletedAt: FieldValue.delete(), state: 'active' } as Partial<AppRecord>);
+        await updateApp(apps[idx].id, { deletedAt: undefined, state: 'active' });
       }
       return reply.send({ ok: true });
     } catch (err: unknown) {
@@ -837,6 +841,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
       const appIndex = resolved?.appIndex ?? (resolved?.buildId ? findAppIndexByIdentifier(apps, resolved.buildId) : -1);
       const buildId = resolved?.buildId || (appIndex >= 0 ? String(apps[appIndex]?.pendingBuildId || apps[appIndex]?.buildId || '') : '');
       if (!buildId) return reply.code(404).send({ ok: false, error: 'missing_build_id' });
+
       if (isJobActive(buildId)) return reply.code(409).send({ ok: false, error: 'build_in_progress' });
       await createJob(buildId, req.log);
       return reply.code(202).send({ ok: true, buildId, status: 'queued' });

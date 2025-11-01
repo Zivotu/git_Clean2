@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -8,6 +8,13 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+          proxy: {
+            // Proxy API calls to the Fastify server so fetch('/api/...') works in dev
+            '/api': {
+              target: 'http://localhost:8788',
+              changeOrigin: true,
+            },
+          },
       },
       plugins: [react()],
       define: {
@@ -16,7 +23,7 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          '@': path.resolve(process.cwd(), '.'),
         }
       }
     };

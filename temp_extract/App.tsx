@@ -1,6 +1,7 @@
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { initializeThesara, ThesaraStorage } from '@thesara/client';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { RoomsClient, RoomsAuth, RoomState } from './services/roomsClient';
+import { StorageClient } from './services/storageClient';
 import { Question, RoomStatus, User, QuizRoom, Player, QuestionType, Answer, Result } from './types';
 import { parseJsonQuestions, parseCsvQuestions, calculateResults, exportSummaryCSV, exportDetailedCSV } from './services/quizUtils';
 import Button from './components/Button';
@@ -20,20 +21,20 @@ const generatePin = () => Math.floor(100000 + Math.random() * 900000).toString()
 
 // Main App Component
 const App: React.FC = () => {
-    const [storage, setStorage] = useState<ThesaraStorage | null>(null);
-    const [storageError, setStorageError] = useState<string | null>(null);
+    // Rooms V1 session + client
+    const roomsClientRef = useRef<RoomsClient | null>(null);
+    const storageClientRef = useRef<StorageClient | null>(null);
+    const [session, setSession] = useState<null | { token: string; roomCode: string; version: number; pin: string }>(null);
+    const [roomsError, setRoomsError] = useState<string | null>(null);
     const [currentUser, setCurrentUser] = useState<User>(MOCK_USERS[0]);
     const [room, setRoom] = useState<QuizRoom | null>(null);
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
 
+    // Initialize RoomsClient once
     useEffect(() => {
-        initializeThesara()
-            .then(setStorage)
-            .catch(err => {
-                console.error(err);
-                setStorageError('Thesara storage nije dostupan. Ova aplikacija zahtijeva thesara.storage. Provjeri da je dostupan u globalnom objektu.');
-            });
+        roomsClientRef.current = new RoomsClient();
+        storageClientRef.current = new StorageClient({ appId: 'pub-quiz-app', scope: 'shared' });
     }, []);
 
     // --- MOCK BACKEND LOGIC ---
@@ -41,11 +42,15 @@ const App: React.FC = () => {
     // For this example, we manage state locally.
 
     const handleCreateRoom = useCallback(async (questions: Question[]) => {
-        if (!storage) return;
         setLoading(true);
         setError('');
+        setRoomsError(null);
         try {
             const pin = generatePin();
+            const client = roomsClientRef.current!;
+            const auth: RoomsAuth = await client.createRoom({ roomCode: 'pub-quiz', pin, name: currentUser.displayName });
+
+            // Initialize local quiz state; membership will be polled from server
             const newRoom: QuizRoom = {
                 pin,
                 adminUid: currentUser.uid,
@@ -53,79 +58,145 @@ const App: React.FC = () => {
                 createdAt: Date.now(),
                 currentIndex: -1,
                 questions,
-                players: {},
+                players: { [auth.member.id]: { uid: auth.member.id, displayName: auth.member.name, joinedAt: Date.now() } },
                 answers: [],
             };
-            await storage.setItem(pin, 'room', JSON.stringify(newRoom));
             setRoom(newRoom);
-        } catch (e) {
+            setSession({ token: auth.token, roomCode: auth.room.roomCode, version: auth.room.version, pin });
+
+            // Write initial shared snapshot to our backend storage
+            try {
+                const storage = storageClientRef.current!;
+                const ns = `quiz-state/${auth.room.roomCode}`;
+                const snapshot = {
+                    status: newRoom.status,
+                    currentIndex: newRoom.currentIndex,
+                    questions: newRoom.questions,
+                };
+                await storage.patch(ns, [ { op: 'clear' }, { op: 'set', key: 'quiz', value: snapshot } ], '0');
+            } catch (e) {
+                console.warn('Failed to write initial snapshot', e);
+            }
+        } catch (e: any) {
+            console.error(e);
             setError('Failed to create room.');
+            setRoomsError(e?.message || 'Rooms API error');
         } finally {
             setLoading(false);
         }
-    }, [currentUser, storage]);
+    }, [currentUser]);
 
     const handleJoinRoom = useCallback(async (pin: string) => {
-        if (!storage) return;
         setLoading(true);
         setError('');
+        setRoomsError(null);
         try {
-            const storedRoom = await storage.getItem(pin, 'room');
-            if (!storedRoom) {
-                setError('Room not found.');
-                return;
-            }
+            const client = roomsClientRef.current!;
+            const auth: RoomsAuth = await client.joinRoom({ roomCode: 'pub-quiz', pin, name: currentUser.displayName });
 
-            let parsedRoom: QuizRoom | null = null;
-            try {
-                parsedRoom = JSON.parse(storedRoom) as QuizRoom;
-            } catch (parseError) {
-                console.error('Failed to parse stored room.', parseError);
-                setError('Stored room data is invalid.');
-                return;
-            }
-
-            if (Object.keys(parsedRoom.players).length >= 100) {
-                setError('Room is full.');
-                return;
-            }
-
-            const newPlayer: Player = { uid: currentUser.uid, displayName: currentUser.displayName, joinedAt: Date.now() };
-            const updatedRoom: QuizRoom = {
-                ...parsedRoom,
-                players: { ...parsedRoom.players, [currentUser.uid]: newPlayer },
+            const initial: QuizRoom = {
+                pin,
+                adminUid: '', // unknown client-side; server knows OWNER in members list
+                status: RoomStatus.LOBBY,
+                createdAt: Date.now(),
+                currentIndex: -1,
+                questions: [],
+                players: { [auth.member.id]: { uid: auth.member.id, displayName: auth.member.name, joinedAt: Date.now() } },
+                answers: [],
             };
+            // Try to hydrate from shared snapshot
+            try {
+                const storage = storageClientRef.current!;
+                const ns = `quiz-state/${auth.room.roomCode}`;
+                const snap = await storage.get<{ quiz?: { status: RoomStatus; currentIndex: number; questions: Question[] } }>(ns);
+                const quiz = snap.data?.quiz;
+                if (quiz) {
+                    initial.status = quiz.status;
+                    initial.currentIndex = quiz.currentIndex;
+                    initial.questions = quiz.questions || [];
+                }
+            } catch (e) {
+                console.debug('No snapshot to hydrate or fetch failed');
+            }
 
-            await storage.setItem(pin, 'room', JSON.stringify(updatedRoom));
-            setRoom(updatedRoom);
-        } catch (e) {
+            setRoom(initial);
+            setSession({ token: auth.token, roomCode: auth.room.roomCode, version: auth.room.version, pin });
+        } catch (e: any) {
             console.error(e);
             setError('Failed to join room.');
+            setRoomsError(e?.message || 'Rooms API error');
         } finally {
             setLoading(false);
         }
-    }, [currentUser, storage]);
+    }, [currentUser]);
     
     const handleStartGame = useCallback(() => {
         setRoom(prev => prev ? { ...prev, status: RoomStatus.LIVE, currentIndex: 0 } : null);
-    }, []);
+        // Persist to shared snapshot (best effort)
+        setTimeout(async () => {
+            if (!session) return;
+            if (!room) return;
+            try {
+                const storage = storageClientRef.current!;
+                const ns = `quiz-state/${session.roomCode}`;
+                const snap = await storage.get<any>(ns).catch(()=>({ etag: '0', data: {} }));
+                const newQuiz = {
+                    status: RoomStatus.LIVE,
+                    currentIndex: 0,
+                    questions: room.questions,
+                };
+                await storage.setObject(ns, 'quiz', newQuiz, snap.etag);
+            } catch (e) { console.debug('start persist failed', e); }
+        }, 0);
+    }, [session, room]);
 
     const handleChangeQuestion = useCallback((direction: 'next' | 'back') => {
         setRoom(prev => {
             if (!prev) return null;
             const newIndex = direction === 'next' ? prev.currentIndex + 1 : prev.currentIndex - 1;
             if (newIndex >= 0 && newIndex < prev.questions.length) {
+                // Async persist, fire-and-forget
+                (async () => {
+                    if (!session) return;
+                    try {
+                        const storage = storageClientRef.current!;
+                        const ns = `quiz-state/${session.roomCode}`;
+                        const snap = await storage.get<any>(ns).catch(()=>({ etag: '0', data: {} }));
+                        const newQuiz = {
+                            status: prev.status,
+                            currentIndex: newIndex,
+                            questions: prev.questions,
+                        };
+                        await storage.setObject(ns, 'quiz', newQuiz, snap.etag);
+                    } catch (e) { console.debug('change persist failed', e); }
+                })();
                 return { ...prev, currentIndex: newIndex };
             }
             return prev;
         });
-    }, []);
+    }, [session]);
     
     const handleEndGame = useCallback(() => {
         if(window.confirm("Are you sure you want to end the game? This cannot be undone.")) {
             setRoom(prev => prev ? { ...prev, status: RoomStatus.ENDED } : null);
+            // Persist
+            setTimeout(async () => {
+                if (!session) return;
+                if (!room) return;
+                try {
+                    const storage = storageClientRef.current!;
+                    const ns = `quiz-state/${session.roomCode}`;
+                    const snap = await storage.get<any>(ns).catch(()=>({ etag: '0', data: {} }));
+                    const newQuiz = {
+                        status: RoomStatus.ENDED,
+                        currentIndex: room.currentIndex,
+                        questions: room.questions,
+                    };
+                    await storage.setObject(ns, 'quiz', newQuiz, snap.etag);
+                } catch (e) { console.debug('end persist failed', e); }
+            }, 0);
         }
-    }, []);
+    }, [session, room]);
 
     const handleSubmitAnswer = useCallback((value: string | number) => {
         setRoom(prev => {
@@ -153,7 +224,82 @@ const App: React.FC = () => {
     const handleLeaveRoom = () => {
         setRoom(null);
         setError('');
+        setSession(null);
     };
+
+    // Poll server members to reflect shared presence across devices
+    useEffect(() => {
+        if (!session) return;
+        let stopped = false;
+        const client = roomsClientRef.current!;
+        async function tick() {
+            try {
+                const state: RoomState = await client.getRoomState({ roomCode: session.roomCode, token: session.token });
+                if (stopped) return;
+                // Map server members to local players model
+                setRoom(prev => {
+                    const base: QuizRoom = prev ?? ({
+                        pin: session.pin,
+                        adminUid: '',
+                        status: RoomStatus.LOBBY,
+                        createdAt: Date.now(),
+                        currentIndex: -1,
+                        questions: prev?.questions ?? [],
+                        players: {},
+                        answers: prev?.answers ?? [],
+                    } as QuizRoom);
+                    const mapped: Record<string, Player> = {};
+                    for (const m of state.members) {
+                        mapped[m.id] = { uid: m.id, displayName: m.name, joinedAt: new Date(m.joinedAt).getTime() };
+                    }
+                    return { ...base, players: mapped };
+                });
+            } catch (e) {
+                console.debug('members poll failed', e);
+            }
+        }
+        const id = setInterval(tick, 2000);
+        tick();
+        return () => { stopped = true; clearInterval(id); };
+    }, [session]);
+
+    // Poll shared snapshot so all clients follow currentIndex/status/questions
+    useEffect(() => {
+        if (!session) return;
+        let stopped = false;
+        const storage = storageClientRef.current!;
+        const ns = `quiz-state/${session.roomCode}`;
+        let lastEtag: string | null = null;
+        async function tick() {
+            try {
+                const snap = await storage.get<{ quiz?: { status: RoomStatus; currentIndex: number; questions: Question[] } }>(ns);
+                if (stopped) return;
+                if (lastEtag && snap.etag === lastEtag) return; // no changes
+                lastEtag = snap.etag;
+                const quiz = snap.data?.quiz;
+                if (quiz) {
+                    setRoom(prev => {
+                        const base = prev ?? ({
+                            pin: session.pin,
+                            adminUid: '',
+                            status: RoomStatus.LOBBY,
+                            createdAt: Date.now(),
+                            currentIndex: -1,
+                            questions: [],
+                            players: {},
+                            answers: [],
+                        } as QuizRoom);
+                        return { ...base, status: quiz.status, currentIndex: quiz.currentIndex, questions: quiz.questions || base.questions };
+                    });
+                }
+            } catch (e) {
+                // ignore transient errors
+            }
+        }
+        const id = setInterval(tick, 2000);
+        tick();
+        return () => { stopped = true; clearInterval(id); };
+    }, [session]);
 
     // --- DERIVED STATE ---
     const isCurrentUserAdmin = room?.adminUid === currentUser.uid;
@@ -163,12 +309,8 @@ const App: React.FC = () => {
 
     // --- RENDER LOGIC ---
     const renderContent = () => {
-        if (storageError) {
-            return <div className="flex items-center justify-center h-screen text-red-400">{storageError}</div>;
-        }
-
-        if (!storage) {
-            return <div className="flex items-center justify-center h-screen"><Spinner /></div>;
+        if (roomsError) {
+            return <div className="flex items-center justify-center h-screen text-red-400">{roomsError}</div>;
         }
 
         if (loading) {
@@ -310,11 +452,14 @@ const LobbyScreen: React.FC<{room: QuizRoom; isAdmin: boolean; onStart: () => vo
                 <h3 className="text-xl font-semibold mb-4 flex items-center"><UsersIcon className="w-6 h-6 mr-2" /> Players ({Object.keys(room.players).length})</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-60 overflow-y-auto p-2 bg-gray-900 rounded-lg">
                     {/* FIX: Use Object.entries for robust type inference when iterating over players. */}
-                    {Object.entries(room.players).map(([uid, player]) => (
-                        <div key={uid} className="bg-gray-700 p-3 rounded-md text-center truncate">
-                            {player.displayName}
-                        </div>
-                    ))}
+                                        {Object.entries(room.players).map(([uid, player]) => {
+                                                const p = player as Player;
+                                                return (
+                                                    <div key={uid} className="bg-gray-700 p-3 rounded-md text-center truncate">
+                                                        {p.displayName}
+                                                    </div>
+                                                );
+                                        })}
                     {Object.keys(room.players).length === 0 && <p className="col-span-full text-center text-gray-500 py-4">No players have joined yet.</p>}
                 </div>
             </div>

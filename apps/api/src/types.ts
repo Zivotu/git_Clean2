@@ -47,6 +47,7 @@ export interface AppRecord {
   author?: Author;
   allowlist?: string[];
   capabilities?: AppCapabilities;
+  securityPolicy?: AppSecurityPolicy;
   createdAt: number;
   updatedAt?: number;
   publishedAt?: number;
@@ -66,6 +67,22 @@ export interface AppRecord {
   version?: number;
   archivedVersions?: ArchivedVersion[];
   [key: string]: any;
+}
+
+export interface AppSecurityPolicy {
+  network: {
+    mode: 'strict' | 'proxy' | 'direct+proxy';
+    allowlist?: string[];
+    rateLimit?: {
+      rps: number;
+      burst: number;
+      maxBodyMB: number;
+    };
+  };
+  sandbox: {
+    allowForms?: boolean;
+    allowModals?: boolean;
+  };
 }
 
 export interface ArchivedVersion {

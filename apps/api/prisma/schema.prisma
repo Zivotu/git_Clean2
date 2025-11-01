@@ -129,4 +129,6 @@ model Listing {
 
   @@index([buildId])
   @@index([pendingBuildId])
+
+  @@map("listings")
 }

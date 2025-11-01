@@ -142,8 +142,8 @@ module.exports = {
       script: 'bash',
       args: '-c "export GOOGLE_APPLICATION_CREDENTIALS=/etc/thesara/creds/firebase-sa.json && pnpm exec tsx apps/api/src/worker.ts"',
       env: {
-        NODE_ENV: 'production',
-        CREATEX_WORKER_ENABLED: 'true',
+        NODE_ENV: 'production', // 'development' za više logova
+        CREATEX_WORKER_ENABLED: 'false', // Postavi na 'false' da isključiš AI analizu i buildove
         DOTENV_CONFIG_PATH: '/srv/thesara/app/apps/api/.env.production'
       },
       max_memory_restart: '512M',

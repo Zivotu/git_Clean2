@@ -3,8 +3,6 @@ if (!process.env.NODE_ENV) process.env.NODE_ENV = 'production';
 
 const path = require('node:path');
 
-(async () => {
-  const entry = path.resolve(__dirname, './dist/server.mjs');
-  await import('file://' + entry);
-})();
+// Build script renames index.js → server.cjs, so we require it directly
+require('./dist/server.cjs');
 

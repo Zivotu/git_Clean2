@@ -2,30 +2,35 @@ import { EventEmitter } from 'node:events';
 
 export type BuildEventName =
   | 'status'
-  | 'ping'
-  | 'final'
-  | 'llm_report'
+  | 'progress'
   | 'log'
-  | 'progress';
+  | 'final'
+  | 'ping';
 
 export interface BuildSseEvent {
   buildId: string;
   event: BuildEventName | string; // dopuštamo custom stringove
   payload?: any;
-  id?: string | number | null;
+  id?: string | number;
 }
 
-class SseBus extends EventEmitter {
+class SseEmitter extends EventEmitter {
   emitBuild(buildId: string, event: BuildEventName | string, payload?: any, id?: string | number | null) {
     const evt: BuildSseEvent = { buildId, event, payload, id: id ?? undefined };
     this.emit('build_event', evt);
   }
 }
 
-export const sseBus = new SseBus();
+const sseBus = new SseEmitter();
 
-// Back-compat alias koji postojeći kod očekuje
-export const sseEmitter = sseBus;
+export const sseEmitter = {
+  on: (event: string, listener: (...args: any[]) => void) =>
+    sseBus.on(event, listener),
+  off: (event: string, listener: (...args: any[]) => void) =>
+    sseBus.off(event, listener),
+  emit: (buildId: string, event: BuildEventName | string, payload?: any, id?: string | number | null) =>
+    sseBus.emitBuild(buildId, event, payload, id),
+};
 
 // Jednostavan helper za noviji stil poziva u kodu (npr. review.ts)
 export const sse = {

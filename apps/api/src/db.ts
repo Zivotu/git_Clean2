@@ -1,16 +1,17 @@
 export { prisma } from './db/prisma.js';
-import * as admin from 'firebase-admin';
-import type { ServiceAccount } from 'firebase-admin';
+import path from 'node:path';
+import fs from 'node:fs';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
 import type { CollectionReference, DocumentReference } from 'firebase-admin/firestore';
-import fs from 'node:fs';
-import path from 'node:path';
 import { ARCHIVE_TTL_MS } from './lib/versioning.js';
-
+import admin from './firebase.js';
 import type { AppRecord } from './types.js';
 import type { Oglas } from './models/Oglas.js';
 import type { EntitlementType } from '@loopyway/entitlements';
+import type { ServiceAccount } from 'firebase-admin';
+
 export type { AppRecord } from './types.js';
+export { FieldValue, Timestamp };
 
 function getFirebaseInitOptions(): admin.AppOptions {
   const projectIdFromEnv =
@@ -141,12 +142,9 @@ function getFirebaseInitOptions(): admin.AppOptions {
   );
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp(getFirebaseInitOptions());
-}
-
-export const db = admin.firestore();
-db.settings({ ignoreUndefinedProperties: true });
+import { db as firestore } from './firebase.js';
+export { firestore as db };
+const db = firestore;
 
 export type Creator = {
   id: string;

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '@/lib/api'
 import {
   getJwt,
-  setInitialJwt,
   fetchSnapshot,
   patchStorage,
   makeNamespace,
@@ -44,7 +43,9 @@ function createCapability(): string {
     .join('')
 }
 
-export default function PlayPageClient({ appId }: { appId: string }) {
+import type { AppRecord } from '@/lib/types';
+
+export default function PlayPageClient({ app }: { app: AppRecord }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const capRef = useRef<string | null>(null)
   const bcRef = useRef<BroadcastChannel | null>(null)
@@ -57,8 +58,28 @@ export default function PlayPageClient({ appId }: { appId: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const { id: appId, buildId, securityPolicy } = app;
+
   const appNamespace = useMemo(() => makeNamespace(appId, undefined), [appId])
-  const iframeSrc = useMemo(() => buildIframeSrc(appId), [appId])
+  
+  // Use direct /builds/:buildId/build/ path instead of alias to get correct CSP headers
+  const iframeSrc = useMemo(() => {
+    if (!buildId) return buildIframeSrc(appId);
+    const base = (APPS_HOST || '').replace(/\/$/, '');
+    const encodedId = encodeURIComponent(buildId);
+    if (!base) {
+      return `/builds/${encodedId}/build/`;
+    }
+    return `${base}/builds/${encodedId}/build/`;
+  }, [appId, buildId])
+  
+  const sandboxFlags = useMemo(() => {
+    const flags = ['allow-scripts', 'allow-forms'];
+    if (securityPolicy?.sandbox?.allowModals) {
+      flags.push('allow-modals');
+    }
+    return flags.join(' ');
+  }, [securityPolicy]);
 
   const ensureJwt = useCallback(async () => {
     if (jwtRef.current) return jwtRef.current
@@ -87,12 +108,10 @@ export default function PlayPageClient({ appId }: { appId: string }) {
 
         if (token) {
           jwtRef.current = token
-          await setInitialJwt(token)
         }
 
         const jwt = token ?? (await getJwt())
         jwtRef.current = jwt
-        await setInitialJwt(jwt)
         namespaceRef.current = appNamespace
 
         const { snapshot, version } = await fetchSnapshot(jwt, appNamespace)
@@ -240,7 +259,8 @@ export default function PlayPageClient({ appId }: { appId: string }) {
               const jwt = await ensureJwt()
               const latest = await fetchSnapshot(jwt, ns)
               storageVersionRef.current = latest.version || '0'
-              snapshotRef.current = latest.snapshot || {}
+              // Re-project the pending changes onto the new snapshot
+              snapshotRef.current = applyBatchOperations(latest.snapshot, serverBatch)
               continue
             } catch (refreshErr) {
               lastError = refreshErr
@@ -342,8 +362,8 @@ export default function PlayPageClient({ appId }: { appId: string }) {
       src={iframeSrc}
       title="Thesara App"
       referrerPolicy="no-referrer"
-      sandbox="allow-scripts allow-forms allow-modals allow-same-origin"
-      className="w-full h-full border-0"
+      sandbox={sandboxFlags}
+  style={{ border: 'none', width: '100%', height: '100vh' }}
     />
   )
 }

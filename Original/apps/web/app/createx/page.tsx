@@ -212,7 +212,7 @@ export default function CreateXPage() {
               </a>
             </div>
           )}
-          <iframe src={previewUrl} className="w-full h-64 border rounded" />
+          <iframe src={previewUrl} className="w-full h-64 border rounded" sandbox="allow-scripts allow-forms" />
           <a
             href={previewUrl}
             target="_blank"

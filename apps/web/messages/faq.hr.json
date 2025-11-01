@@ -50,11 +50,6 @@
       {
         "q": "Mogu li naplatiti pristup aplikaciji?",
         "a": "Da. U detaljima aplikacije postavi cijenu. Korisnici s plaćenim pristupom ili PIN‑om moći će pokretati aplikaciju."
-      },
-      {
-        "q": "Kako napraviti aplikaciju za više korisnika (sobe, sesije)?",
-        "a": "Za dijeljenje podataka između korisnika, omogućite \"Thesara Storage\" pri objavi. U svom projektu koristite naš `@thesara/client` library i pozovite `initializeThesara()` na početku. Ta funkcija će vam vratiti `storage` objekt s asinkronim metodama `getItem`, `setItem` i `removeItem`. Ako host odmah injektira globalni `window.thesara.storage` s tim metodama, SDK ga automatski prepoznaje; inače se koristi postMessage handshake radi kompatibilnosti. U uputama za LLM navedite da koristi `await storage.getItem(...)` nakon inicijalizacije."
-        
       }
     ]
   },
@@ -73,32 +68,6 @@
       {
         "q": "Povrat novca?",
         "a": "Ako nešto ne radi kako treba, kontaktiraj podršku u roku 14 dana i pomoći ćemo – uključujući povrat u opravdanim slučajevima."
-      }
-    ]
-  },
-  {
-    "id": "ambasador-program",
-    "title": "Ambasador Program",
-    "items": [
-      {
-        "q": "Što je Thesara Ambasador program?",
-        "a": "To je naš partnerski program za kreatore sadržaja, influencere i sve entuzijaste koji žele promovirati {site}. Kao ambasador, dobivaš jedinstveni promotivni kod koji tvojim pratiteljima daje posebnu pogodnost, na primjer mjesec dana besplatnog Gold plana."
-      },
-      {
-        "q": "Kako mogu postati ambasador?",
-        "a": "U postavkama svog profila pronaći ćeš opciju za prijavu u Ambasador program. Potrebno je ispuniti kratku prijavnicu s linkovima na tvoje profile (npr. TikTok, YouTube). Nakon što pregledamo prijavu, dobit ćeš obavijest i svoj jedinstveni kod ako je prijava odobrena."
-      },
-      {
-        "q": "Kako i koliko mogu zaraditi?",
-        "a": "Za svakog korisnika koji iskoristi tvoj kod i nakon toga postane plaćeni pretplatnik na Gold plan, dobivaš proviziju. Iznos provizije je postotak od prve uplate tog korisnika. Svi detalji o iznosu provizije i uvjetima dostupni su na tvom Ambasador Dashboardu nakon odobrenja."
-      },
-      {
-        "q": "Kada i kako se vrše isplate?",
-        "a": "Isplate se obrađuju jednom mjesečno, nakon što tvoja zarađena provizija dosegne minimalni prag za isplatu (npr. 50 EUR). Trenutno podržavamo isplate putem PayPala. Sve svoje zarade i status isplata možeš pratiti na svom dashboardu."
-      },
-      {
-        "q": "Gdje mogu pratiti svoju uspješnost?",
-        "a": "Nakon što postaneš ambasador, u svom profilu ćeš dobiti pristup posebnom 'Ambasador Dashboardu'. Tamo možeš u stvarnom vremenu pratiti broj iskorištenja koda, broj konverzija u plaćene korisnike i svoju ukupnu zaradu."
       }
     ]
   },

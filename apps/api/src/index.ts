@@ -1,7 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ override: false });
+
 import path from 'node:path';
 
 import fs from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import fsSync from 'node:fs';
 
 import fastify,
@@ -49,6 +52,7 @@ import versionRoutes from './routes/version.js';
 import entitlementsRoutes from './routes/entitlements.js';
 import storageRoutes from './routes/storage.js';
 import roomsBridge from './routes/rooms-bridge.js';
+import proxyRoutes from './routes/proxy.js';
 import ambassadorRoutes from './routes/ambassador.js';
 import jwtRoutes from './routes/jwt.js';
 import buildEventsRoutes from './routes/buildEvents.js';
@@ -56,7 +60,8 @@ import testingRoutes from './routes/testing.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
 import localDevRoutes from './localdev/routes.js';
 import { startLocalDevWorker } from './localdev/worker.js';
-import { ensureDbInitialized } from './db.js';
+import { ensureDbInitialized, readAppKv, getAppByIdOrSlug } from './db.js';
+import type { AppSecurityPolicy } from './types.js';
 import jwtPlugin from './plugins/jwt.js';
 import metricsPlugin from './plugins/metrics.js';
 import swaggerPlugin from './plugins/swagger.js';
@@ -64,6 +69,7 @@ import rateLimitPlugin from './plugins/rateLimit.js';
 import roomsSyncV1Routes from './routes/roomsV1/index.js';
 import { buildCsp } from './lib/cspBuilder.js';
 import { sseEmitter as sse } from './sse.js';
+import testLinkRoutes from './routes/testLink.js';
 
 type BuildSecurityMetadata = {
   networkPolicy: string;
@@ -180,12 +186,25 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     'env'
   );
 
+  const selfOrigins: string[] = (() => {
+    const self: string[] = [];
+    try {
+      const pub = new URL(config.PUBLIC_BASE);
+      self.push(pub.origin);
+    } catch {}
+    // Add explicit localhost/127.0.0.1 with current API port to allow same-origin module requests from iframes
+    self.push(`http://127.0.0.1:${config.PORT}`);
+    self.push(`http://localhost:${config.PORT}`);
+    return self;
+  })();
+
   const defaultOrigins = [
     'https://thesara.space',
     'https://www.thesara.space',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://[::1]:3000',
+    ...selfOrigins,
   ];
   const corsOrigins = Array.from(new Set([...ALLOWED_ORIGINS, ...defaultOrigins])).
     filter(Boolean);
@@ -222,10 +241,15 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     origin: (origin, cb) => {
       // Bez Origin headera (curl, Invoke-RestMethod, SSR, health) → dozvoli
       if (!origin) return cb(null, true);
+      
+      // Allow literal "null" origin from sandboxed iframes
+      if (origin === 'null') return cb(null, '*');
+      
       if (isOriginAllowed(origin)) {
         // reflektiraj dopušten origin
         return cb(null, origin);
       }
+      app.log?.warn?.({ origin }, 'cors_rejected_origin');
       return cb(new Error('Not allowed by CORS'), false);
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -233,6 +257,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     exposedHeaders: ['ETag', 'X-Storage-Backend'],
     allowedHeaders: ['Authorization', 'If-Match', 'X-Thesara-App-Id', 'Content-Type'],
     optionsSuccessStatus: 204,
+    // Hide CORS errors from iframe requests - they set their own headers
+    hideOptionsRoute: false,
   });
 
   await app.register(metricsPlugin);
@@ -317,7 +343,10 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(localDevRoutes);
 
   // Build artifacts
-  const setStaticHeaders = (res: any, pathName?: string) => {
+  const setStaticHeaders = async (res: any, pathName?: string) => {
+    // Sprječava ERR_HTTP_HEADERS_SENT ako je response već poslan (npr. 404)
+    if (res.headersSent) return;
+    
     const cfg = getConfig();
     const frameAncestors = new Set(["'self'"]);
     try {
@@ -335,7 +364,17 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     let networkPolicy = 'NO_NET';
     let networkDomains: string[] = [];
     let legacyScript = false;
+    let securityPolicy: AppSecurityPolicy | undefined;
+
     if (pathName) {
+      const buildId = path.basename(path.dirname(pathName));
+      const app = await getAppByIdOrSlug(buildId);
+
+      if (app?.id) {
+        const kv = await readAppKv(app.id);
+        securityPolicy = kv['security-policy-v1'];
+      }
+
       const buildDir = path.dirname(pathName);
       const manifestPath = path.join(buildDir, 'manifest_v1.json');
       const manifestMeta = tryReadManifest(manifestPath);
@@ -353,21 +392,34 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     }
 
     const csp = buildCsp({
-      policy: networkPolicy,
-      networkDomains,
+      policy: securityPolicy ?? networkPolicy,
+      networkDomains: networkDomains,
       frameAncestors: Array.from(frameAncestors), // CSP builder handles blob: for scripts
       allowCdn: Boolean(cfg.EXTERNAL_HTTP_ESM),
       legacyScript,
     });
 
+    // Provjeri opet nakon async operacija (response možda već poslan)
+    if (res.headersSent) return;
+
+    // Eksplicitno postavi Content-Type za JS fileove (fastify-static ponekad ne detektira pravilno)
+    if (pathName && /\.m?js$/i.test(pathName)) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+
     res.setHeader('Content-Security-Policy', csp);
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-Storage-Backend', 'thesara-fs');
+    // Omogući učitavanje u iframeu i cross-origin
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
 
     const origin = res.req?.headers?.origin as string | undefined;
     if (origin && isOriginAllowed(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
+    } else {
+      // Fallback za same-origin zahtjeve bez Origin headera
+      res.setHeader('Access-Control-Allow-Origin', '*');
     }
     res.setHeader('Vary', 'Origin');
   };
@@ -383,32 +435,89 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     if (process.env.NODE_ENV !== 'production') {
       fa.push('http://localhost:3000', 'http://127.0.0.1:3000');
     }
+    // Omogući učitavanje u iframeu i cross-origin
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader(
       'Content-Security-Policy',
       `default-src 'self'; frame-ancestors ${fa.join(' ')}`,
     );
   };
 
-  // Alias for Play assets must execute before the static /builds handler so redirects win over 404s.
-  await app.register(buildAlias);
+  // Explicit, more-specific routes for build assets to ensure correct headers
+  // MUST be registered BEFORE buildAlias to prevent wildcard /:listingId/build/* from matching /builds/...
+  
+  // Helper to bypass CORS plugin for /builds/ routes (iframe lacks Origin header)
+  const bypassCors = async (req: FastifyRequest, reply: FastifyReply) => {
+    reply.header('Access-Control-Allow-Origin', '*');
+    reply.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  };
 
-  await app.register(fastifyStatic, {
-    root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
-    prefix: '/builds/',
-    decorateReply: false,
-    redirect: true,
-    index: ['index.html'],
-    // Note: /builds uses the same CSP headers as /review/builds
-    setHeaders: setStaticHeaders,
+  // 1) Serve index.html for the build root
+  app.get('/builds/:buildId/build/', {
+    preHandler: bypassCors
+  }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const indexPath = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'build', 'index.html');
+    try {
+      const html = await readFile(indexPath, 'utf8');
+      reply
+        .header('Cross-Origin-Resource-Policy', 'cross-origin')
+        .header('Access-Control-Allow-Origin', '*')
+        .type('text/html; charset=utf-8');
+      return reply.send(html);
+    } catch (err) {
+      req.log?.warn?.({ err, buildId, indexPath }, 'build_index_not_found');
+      return reply.code(404).send({ error: 'not_found' });
+    }
   });
-  await app.register(fastifyStatic, {
-    root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
-    prefix: '/public/builds/',
-    decorateReply: false,
-    redirect: true,
-    index: ['index.html'],
-    setHeaders: setStaticHeaders,
+
+  // 2) Serve any file under the build folder with proper MIME for JS/MJS
+  app.get('/builds/:buildId/build/*', {
+    preHandler: bypassCors
+  }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const wildcard = (req.params as any)['*'] as string;
+    if (!wildcard) return reply.callNotFound();
+
+    const rootDir = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'build');
+    const ext = path.extname(wildcard).toLowerCase();
+
+    if (ext === '.js' || ext === '.mjs') {
+      reply.type('application/javascript; charset=utf-8');
+    } else if (ext === '.css') {
+      reply.type('text/css; charset=utf-8');
+    } else if (ext === '.html' || ext === '.htm') {
+      reply.type('text/html; charset=utf-8');
+    }
+
+    reply
+      .header('Cross-Origin-Resource-Policy', 'cross-origin')
+      .header('Access-Control-Allow-Origin', '*')
+      .header('Cache-Control', 'public, max-age=31536000, immutable');
+
+    try {
+      // Text assets
+      if (ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.html' || ext === '.htm') {
+        const content = await readFile(path.join(rootDir, wildcard), 'utf8');
+        return reply.send(content);
+      }
+      // Binary and other assets
+      const buf = await readFile(path.join(rootDir, wildcard));
+      return reply.send(buf);
+    } catch (err) {
+      req.log?.warn?.({ err, buildId, file: wildcard }, 'build_asset_not_found');
+      return reply.code(404).send({ error: 'not_found' });
+    }
   });
+
+  // Note: We intentionally do NOT mount fastify-static on '/builds/'.
+  // Our explicit routes above fully handle serving build assets with precise headers
+  // to avoid Windows MIME mis-detection and plugin precedence issues.
+
+  // Alias for Play assets (/:listingId/build/*) must be registered AFTER explicit /builds/ routes
+  // so it doesn't intercept them. buildAlias handles listing-slug-based aliases only.
+  await app.register(buildAlias);
 
   await app.register(fastifyStatic, {
     root: config.LOCAL_STORAGE_DIR,
@@ -435,8 +544,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   });
 
   // Routes
+  await app.register(proxyRoutes);
   await app.register(authDebug);
-  await app.register(billingRoutes);
   await app.register(createxProxy);
   await app.register(recenzijeRoutes);
   await app.register(roomsRoutes);
@@ -456,12 +565,15 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(entitlementsRoutes);
   await app.register(meRoutes);
   await app.register(configRoutes);
+  // Mount publicRoutes at root. We already strip '/api' in onRequest so
+  // requests to '/api/play/*' will match these root-level routes.
   await app.register(publicRoutes);
   await app.register(creatorsRoutes);
   await app.register(trialRoutes);
   await app.register(ownerRoutes);
   await app.register(jwtRoutes);
   await app.register(buildEventsRoutes);
+  await app.register(testLinkRoutes);
 
   // Review routes (with internal aliasing for /api/review)
   await app.register(reviewRoutes);
@@ -474,7 +586,9 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       decorateReply: false,
       redirect: true,
       index: ['index.html'],
-      setHeaders: setStaticHeaders,
+      setHeaders: (res, pathName) => {
+        void setStaticHeaders(res, pathName);
+      },
       // Spriječi da static "proguta" API podputeve
       allowedPath: (pathname: string) =>
         !/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname),

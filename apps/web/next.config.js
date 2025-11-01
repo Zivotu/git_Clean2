@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 const API_URL =
   process.env.INTERNAL_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://127.0.0.1:8788';
+  'http://127.0.0.1:8789/api';
 
 /** @type {import('next').NextConfig} */
 const baseConfig = {
@@ -76,8 +76,8 @@ const baseConfig = {
               const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.thesara.space/api';
               const api = new URL(apiBase).origin;
               const apps = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
-              const devConnect = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
-              const devImg = isDev ? ' http://127.0.0.1:8788 http://localhost:8788' : '';
+              const devConnect = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
+              const devImg = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
               const devFirebase =
                 isDev
                   ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.gstatic.com'

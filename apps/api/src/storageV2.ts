@@ -144,30 +144,49 @@ class LocalBackend implements IStorageBackend {
   async patch(ns: string, ops: any[], ifMatch: string | '0'): Promise<{ etag: string; json: any }> {
     const filePath = this.getFilePath(ns);
     const metaPath = filePath + '.meta';
+    const lockPath = filePath + '.lock';
 
-    let currentEtag = '0';
-    let currentJson = {};
+    // Acquire lock
+    let attempts = 0;
+    while (fs.existsSync(lockPath)) {
+      attempts++;
+      if (attempts > 10) {
+        throw new StorageError('Failed to acquire lock', 500);
+      }
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    fs.writeFileSync(lockPath, '');
 
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
-      currentJson = JSON.parse(content);
-      const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-      currentEtag = String(meta.generation);
-    } catch (e: any) {
-      if (e.code !== 'ENOENT') throw e;
+      let currentEtag = '0';
+      let currentJson = {};
+
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        currentJson = JSON.parse(content);
+        const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+        currentEtag = String(meta.generation);
+      } catch (e: any) {
+        if (e.code !== 'ENOENT') throw e;
+      }
+
+      if (ifMatch !== currentEtag) {
+        throw new StorageError('Precondition Failed', 412, currentEtag);
+      }
+
+      const newJson = applyPatch(currentJson, ops);
+      const newEtag = String(Number(currentEtag) + 1);
+
+      fs.writeFileSync(filePath, JSON.stringify(newJson, null, 2), 'utf-8');
+      fs.writeFileSync(metaPath, JSON.stringify({ generation: newEtag }), 'utf-8');
+
+      return { etag: newEtag, json: newJson };
+    } finally {
+      // Release lock
+      if (fs.existsSync(lockPath)) {
+        fs.unlinkSync(lockPath);
+      }
     }
-
-    if (ifMatch !== currentEtag) {
-      throw new StorageError('Precondition Failed', 412, currentEtag);
-    }
-
-    const newJson = applyPatch(currentJson, ops);
-    const newEtag = String(Number(currentEtag) + 1);
-
-    fs.writeFileSync(filePath, JSON.stringify(newJson, null, 2), 'utf-8');
-    fs.writeFileSync(metaPath, JSON.stringify({ generation: newEtag }), 'utf-8');
-
-    return { etag: newEtag, json: newJson };
   }
 }
 

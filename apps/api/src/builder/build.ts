@@ -1,5 +1,5 @@
 import path from "node:path";
-import { promises as fs } from "node:fs";
+import { promises as fsp } from "node:fs";
 import crypto from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
@@ -8,7 +8,13 @@ import { playHtmlTemplate } from "../play/template.js";
 import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
-import { cdnImportPlugin, type Opts as CdnOpts } from "./cdnPlugin.js";
+import { cdnPlugin } from "../cdn-plugin.js";
+import { dependencies } from "./dependencies.js";
+export interface Opts {
+  cacheDir: string;
+  rootDir?: string;
+  allowAny?: boolean;
+}
 import fs from "node:fs";
 import { buildTailwindCSS } from "./tailwind.js";
 
@@ -16,10 +22,10 @@ const NAME_SHIM = 'var __name = globalThis.__name || (globalThis.__name = (fn,na
 const NAME_SHIM_FILE = "__name-shim.js";
 
 // === Types ===
-export type Opts = CdnOpts;
+// Removed duplicate type definition
 
 const sha1 = (s: string) => crypto.createHash("sha1").update(s).digest("hex");
-const ensureDir = async (dir: string) => fs.mkdir(dir, { recursive: true });
+const ensureDir = async (dir: string) => fsp.mkdir(dir, { recursive: true });
 const DIRNAME = __dirname;
 
 function makeVirtualEntry(userEntryUrl: string): string {
@@ -92,7 +98,7 @@ function injectNameShim(html: string) {
 }
 
 async function writeNameShim(outDir: string) {
-  await fs.writeFile(path.join(outDir, NAME_SHIM_FILE), NAME_SHIM, "utf8");
+  await fsp.writeFile(path.join(outDir, NAME_SHIM_FILE), NAME_SHIM, "utf8");
 }
 
 export async function analyzeExports(code: string) {
@@ -162,13 +168,13 @@ function findSingleComponent(code: string): string | null {
       return false;
     };
     traverse(ast, {
-      FunctionDeclaration(path) {
+      FunctionDeclaration(path: any) {
         const id = path.node.id;
         if (id && /^[A-Z]/.test(id.name) && returnsJSX(path.node.body)) {
           names.push(id.name);
         }
       },
-      VariableDeclarator(path) {
+      VariableDeclarator(path: any) {
         if (t.isIdentifier(path.node.id) && /^[A-Z]/.test(path.node.id.name)) {
           const init = path.node.init;
           if (
@@ -195,7 +201,7 @@ export async function buildFromHtml(html: string, opts: Opts & { id?: string; ti
     const outDir = path.join(outRoot, id);
     await ensureDir(outDir);
     const indexPath = path.join(outDir, "index.html");
-    await fs.writeFile(indexPath, injectNameShim(html), "utf8");
+  await fsp.writeFile(indexPath, injectNameShim(html), "utf8");
     await writeNameShim(outDir);
 
     return { ok: true, id, dir: outDir, indexPath };
@@ -214,7 +220,7 @@ export async function buildFromReact(
     const id = (opts.id && opts.id.trim()) || sha1(code + Date.now().toString());
     const outRoot = buildsDir(opts.cacheDir);
     const outDir = path.join(outRoot, id);
-    await ensureDir(outDir);
+  await ensureDir(outDir);
 
     let userCode = code;
     let userExports = await analyzeExports(userCode);
@@ -239,13 +245,31 @@ export async function buildFromReact(
       }
     } catch {}
 
+    // Using CDN plugin to handle externals now
+
     const result = await esbuild.build({
       bundle: true,
       format: "esm",
       write: false,
       stdin: { contents: virtualEntry, loader: "ts" },
+      // Using CDN plugin to handle externals
       plugins: [
-        cdnImportPlugin({ ...opts, rootDir: pluginRoot, allowAny: true }),
+        {
+          name: 'externalize-bare-and-alias',
+          setup(build: any) {
+            // Externalize aliased paths like @/...
+            build.onResolve({ filter: /^@\// }, (args: esbuild.OnResolveArgs) => ({
+              path: args.path,
+              external: true,
+            }));
+            // Externalize bare specifiers that might not be in the list
+            build.onResolve({ filter: /^[^./]|^\.[^/]|^\.\.[^/]/ }, (args: esbuild.OnResolveArgs) => {
+              if (args.kind === 'entry-point' || args.path.startsWith('virtual:')) return null;
+              return { path: args.path, external: true };
+            });
+          }
+        },
+        cdnPlugin({ dependencies, cachePath: path.join(opts.cacheDir, '.cdn-cache') }),
         userAppPlugin(),
       ],
       define: { __USER_CODE__: JSON.stringify(userCode) },
@@ -264,24 +288,6 @@ export async function buildFromReact(
     });
 
     const outJs = result.outputFiles?.[0]?.text ?? "";
-    const unresolved: string[] = [];
-    const importStmtRe = /(?:^|\n)\s*import(?:[^'"`]*?from\s*)?["'`](.*?)["'`]/g;
-    const importCallRe = /import\((?:'|")(.*?)(?:'|")\)/g;
-    for (const m of outJs.matchAll(importStmtRe)) {
-      const spec = m[1];
-      if (!spec.startsWith(".") && !spec.startsWith("/") && !spec.startsWith("http://") && !spec.startsWith("https://")) {
-        unresolved.push(spec);
-      }
-    }
-    for (const m of outJs.matchAll(importCallRe)) {
-      const spec = m[1];
-      if (!spec.startsWith(".") && !spec.startsWith("/") && !spec.startsWith("http://") && !spec.startsWith("https://")) {
-        unresolved.push(spec);
-      }
-    }
-    if (unresolved.length) {
-      throw new Error(`Unresolved imports: ${unresolved.join(", ")}`);
-    }
     const { hasDefault, hasMount } = exportsFromMetafile(result.metafile!);
     console.log(`build:verify export=${hasDefault ? "default" : hasMount ? "mount" : "missing"}`);
     if (!hasDefault && !hasMount) {
@@ -295,7 +301,7 @@ export async function buildFromReact(
     }
 
     const appJsPath = path.join(outDir, "app.js");
-    await fs.writeFile(appJsPath, outJs, "utf8");
+  await fsp.writeFile(appJsPath, outJs, "utf8");
 
     const bootstrapEntry = `
       // ESM bootstrap, bez inline koda u HTML-u
@@ -430,7 +436,7 @@ export async function buildFromReact(
         throw e;
       }
     `;
-    const bootstrapOut = path.join(outDir, 'bootstrap.js');
+  const bootstrapOut = path.join(outDir, 'bootstrap.js');
     const bootstrapRes = await esbuild.build({
       stdin: {
         contents: bootstrapEntry,
@@ -443,7 +449,7 @@ export async function buildFromReact(
       platform: 'browser',
       write: false,
       plugins: [
-        cdnImportPlugin({ ...opts, rootDir: path.join(DIRNAME, ".."), allowAny: true }),
+        cdnPlugin({ dependencies, cachePath: path.join(opts.cacheDir, '.cdn-cache') }),
       ],
       sourcemap: true,
       target: 'es2022',
@@ -451,7 +457,7 @@ export async function buildFromReact(
         'equals-new-object': 'silent',
       },
     });
-    await fs.writeFile(bootstrapOut, bootstrapRes.outputFiles[0].text, 'utf8');
+  await fsp.writeFile(bootstrapOut, bootstrapRes.outputFiles[0].text, 'utf8');
 
     await buildTailwindCSS({
       bundleJsPath: path.join(outDir, 'app.js'),
@@ -465,7 +471,7 @@ export async function buildFromReact(
 
     const indexPath = path.join(outDir, "index.html");
     const html = playHtmlTemplate(title, id);
-    await fs.writeFile(indexPath, injectNameShim(html), "utf8");
+  await fsp.writeFile(indexPath, injectNameShim(html), "utf8");
     await writeNameShim(outDir);
 
     console.log("build:done");

@@ -54,6 +54,7 @@ export let app: FastifyInstance;
 export async function createServer() {
   // Ensure UI stub exists for builder in both dev and dist deployments
   try {
+    // @ts-ignore  // import.meta.url is safe under tsup Node20 build
     const runtimeDir = path.dirname(fileURLToPath(import.meta.url));
     const builderDir = path.join(runtimeDir, 'builder');
     const dest = path.join(builderDir, 'virtual-ui.tsx');
@@ -224,7 +225,8 @@ export async function createServer() {
   await app.register(localDevRoutes);
 
   // Build artifacts
-  const setStaticHeaders = (res: any, pathName?: string) => {
+    const setStaticHeaders = async (res: any, pathName?: string) => {
+
     const cfg = getConfig();
     const frameAncestors = ["'self'"];
     try {

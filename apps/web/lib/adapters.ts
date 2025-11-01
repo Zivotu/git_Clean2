@@ -1,4 +1,4 @@
-﻿import type { Listing } from './types';
+﻿﻿import type { Listing } from './types';
 
 // Normalize list responses coming from BE (can be items, listings, apps, results, data, data_v2.items)
 export function normalizeList(res: any): {
@@ -52,26 +52,11 @@ export function toListing(x: any): Listing {
     id: String(x.id ?? ''),
     slug: String(x.slug ?? '').toLowerCase(),
     title: String(x.title ?? x.name ?? 'Untitled'),
-    name: x.name ?? x.title ?? 'Untitled',
     description: x.description ?? undefined,
-    shortDescription: x.shortDescription ?? x.description ?? undefined,
     previewUrl: x.previewUrl ?? x.image ?? x.logo ?? x.thumbnail ?? undefined,
-    image: x.image ?? undefined,
-    logo: x.logo ?? undefined,
-    thumbnail: x.thumbnail ?? undefined,
-    icon: x.icon ?? undefined,
-    href: x.href ?? null,
-    link: x.link ?? null,
-    url: x.url ?? null,
-    homepage: x.homepage ?? null,
-    category: x.category ?? null,
     tags: Array.isArray(x.tags) ? x.tags : (x.tags ? [String(x.tags)] : []),
-    version: x.version ?? null,
-    ownerUid: x.ownerUid ?? x.owner ?? null,
-    published: x.published ?? true,
+    playUrl: x.playUrl ?? `/play/${x.id}/`, // Ensure playUrl is present
     visibility: x.visibility ?? 'public',
-    state: x.state ?? 'ACTIVE',
-    approved: x.approved ?? true,
     createdAt: x.createdAt ?? undefined,
     updatedAt: x.updatedAt ?? undefined,
     author,

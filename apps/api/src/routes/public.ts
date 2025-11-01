@@ -73,8 +73,8 @@ export default async function publicRoutes(app: FastifyInstance) {
         } catch {}
         return tempRedirect(reply, `/review/builds/${encSeg(mapped)}/`);
       }
-      const byBuild = apps.find((a) => a.buildId === id);
-      if (byBuild) return tempRedirect(reply, `/play/${encSeg(byBuild.id)}/`);
+  const byBuild = apps.find((a) => a.buildId === id);
+  if (byBuild) return tempRedirect(reply, `/play/${encSeg(byBuild.id)}/`);
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
   });
@@ -132,10 +132,7 @@ export default async function publicRoutes(app: FastifyInstance) {
       }
       const byBuild = apps.find((a) => a.buildId === id);
       if (byBuild) {
-        return reply.redirect(
-          307,
-          `/play/${encSeg(byBuild.id)}/${encRestSafe}`,
-        );
+        return tempRedirect(reply, `/play/${encSeg(byBuild.id)}/${encRestSafe}`);
       }
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
@@ -258,6 +255,31 @@ export default async function publicRoutes(app: FastifyInstance) {
   }
 
   __testing.isAllowedToPlay = isAllowedToPlay;
+
+  const appMetaHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    try {
+      const apps = await readApps();
+      // Debug: log all app ids and slugs
+      const allIds = apps.map(a => a.id);
+      const allSlugs = apps.map(a => a.slug);
+      req.log.info({ requested: id, allIds, allSlugs }, 'app-meta-debug');
+      const item = apps.find((a) => a.slug === id || String(a.id) === id);
+      if (item) {
+        req.log.info({ found: item.id, slug: item.slug }, 'app-meta-found');
+        return reply.send(item);
+      }
+      req.log.warn({ requested: id }, 'app-meta-not-found');
+    } catch (err) {
+      req.log.error({ err }, 'app-meta-error');
+    }
+    return reply.code(404).send({ error: 'not_found' });
+  };
+
+  // Primary route
+  app.route({ method: ['GET', 'HEAD'], url: '/app-meta/:id', handler: appMetaHandler });
+  // Defensive alias when '/api' prefix stripping isn't applied by upstream proxy
+  app.route({ method: ['GET', 'HEAD'], url: '/api/app-meta/:id', handler: appMetaHandler });
 
   // Public app route by slug for published listings
   app.get('/app/:slug', async (req: FastifyRequest, reply: FastifyReply) => {

@@ -9,11 +9,16 @@
     "dev:reset": "node -e \"require('fs').rmSync('.devdata',{recursive:true,force:true});console.log('✔ .devdata cleaned')\"",
     "build:api": "pnpm --filter @thesara/api build",
     "build:web": "pnpm --filter @thesara/web build",
-    "build": "pnpm run build:api && pnpm run build:web",
-    "typecheck": "pnpm -r --filter @thesara/api run typecheck"
+    "build": "pnpm build:api && pnpm build:web",
+    "typecheck": "pnpm -r --filter @thesara/api run typecheck",
+    "db:push": "pnpm --filter @thesara/api exec cross-env DATABASE_URL=\"file:../../.devdata/sqlite.db\" prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
+    "@radix-ui/react-slider": "^1.1.2",
     "cross-env": "^7.0.3"
+  },
+  "devDependencies": {
+    "cpx": "^1.5.0"
   }
 }
