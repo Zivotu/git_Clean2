@@ -453,6 +453,23 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
   };
 
+  // Compatibility redirects: older web clients may use "/bundle" path
+  // Redirect /builds/:buildId/bundle[/*] -> /builds/:buildId/build[/*]
+  app.get('/builds/:buildId/bundle', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
+  });
+  app.get('/builds/:buildId/bundle/', { preHandler: bypassCors }, async (_req, reply) => {
+    const { buildId } = _req.params as { buildId: string };
+    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
+  });
+  app.get('/builds/:buildId/bundle/*', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const wildcard = (req.params as any)['*'] as string | undefined;
+    const suffix = wildcard ? `/${wildcard}` : '/';
+    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build${suffix}`, 307);
+  });
+
   // 1) Serve index.html for the build root
   app.get('/builds/:buildId/build/', {
     preHandler: bypassCors
