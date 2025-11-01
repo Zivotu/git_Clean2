@@ -44,6 +44,9 @@ const baseConfig = {
       // Proxy app routes to the API server for same-origin iframe loading
       { source: '/app/:path*', destination: `${API_URL}/app/:path*` },
 
+      // Legacy shim path used by existing builds (proxy to API to avoid HTML MIME mismatch)
+      { source: '/shims/:path*', destination: `${API_URL}/shims/:path*` },
+
       // Static player assets served by API (ensures frontend 3000 can open /builds/* URLs)
       { source: '/builds/:path*', destination: `${API_URL}/builds/:path*` },
       { source: '/review/builds/:path*', destination: `${API_URL}/review/builds/:path*` },
