@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { prisma } from '../db.js';
 import { sseEmitter } from '../sse.js';
+import { readBuild, getBuildData } from '../models/Build.js';
 
 type Params = { buildId: string };
 
@@ -90,20 +90,26 @@ async function handler(
   }
 
   try {
-    const build = await prisma.build.findUnique({ where: { id: buildId } });
-    if (build) {
-      const normalizedStatus = build.status === 'preparing' ? 'bundling' : build.status;
-      // Always send current status first
-      send('status', { buildId, status: normalizedStatus, reason: build.reason ?? null });
+    const rec = await readBuild(buildId);
+    if (rec) {
+      const normalizedStatus = rec.state === 'init' ? 'bundling' : rec.state;
+      send('status', { buildId, status: normalizedStatus, reason: rec.error ?? null });
 
-      // If the build already reached a terminal state before the client connected,
-      // immediately emit a matching 'final' event so late subscribers don't get stuck.
-      const terminal = new Set(['success', 'failed', 'publish_failed', 'rejected', 'published']);
-      if (terminal.has(String(build.status))) {
-        send('final', { buildId, status: build.status, reason: build.reason ?? null, listingId: build.listingId });
+      // If build finished previously, emit a synthetic 'final' compatible with web client expectations
+      const successStates = new Set(['pending_review', 'approved', 'published']);
+      const failStates = new Set(['failed', 'publish_failed', 'rejected']);
+      if (successStates.has(String(rec.state)) || failStates.has(String(rec.state))) {
+        let listingId: string | null = null;
+        try {
+          const info = await getBuildData(buildId);
+          listingId = (info?.listingId ? String(info.listingId) : null);
+        } catch {}
+        const finalStatus = successStates.has(String(rec.state)) ? 'success' : 'failed';
+        send('final', { buildId, status: finalStatus, reason: rec.error ?? null, listingId });
       }
+    } else {
+      send('status', { buildId, status: 'unknown', reason: 'build_not_found' });
     }
-    else send('status', { buildId, status: 'unknown', reason: 'build_not_found' });
   } catch (error) {
     request.log.error({ err: error, buildId }, 'sse_build_lookup_failed');
     send('status', { status: 'unknown', reason: 'lookup_failed' });
@@ -145,6 +151,5 @@ async function handler(
 }
 
 export default async function registerBuildEvents(fastify: FastifyInstance) {
-  fastify.get('/build/:buildId/events', ROUTE_SCHEMA, handler);
-
+  fastify.get('/api/build/:buildId/events', ROUTE_SCHEMA, handler);
 }

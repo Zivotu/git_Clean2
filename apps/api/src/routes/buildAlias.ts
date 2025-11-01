@@ -214,6 +214,13 @@ export default async function buildAlias(app: FastifyInstance): Promise<void> {
     method: ['GET', 'HEAD', 'OPTIONS'],
     url: '/:listingId/build/*',
     handler: async (req, reply) => {
+      // Guard: If the tail ends with /events, this is an SSE endpoint, not a build asset
+      // Let it 404 here so it doesn't interfere with the dedicated /build/:buildId/events route
+      const tail = (req.params as BuildAliasParams)['*'];
+      if (tail && tail.endsWith('/events')) {
+        return reply.callNotFound();
+      }
+
       if (req.method === 'OPTIONS') {
         setCors(reply, req.headers.origin);
         return reply.code(204).send();

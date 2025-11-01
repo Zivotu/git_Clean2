@@ -45,6 +45,8 @@ const baseConfig = {
       { source: '/app/:path*', destination: `${API_URL}/app/:path*` },
 
       // Static player assets served by API (ensures frontend 3000 can open /builds/* URLs)
+      // Note: include both singular "/build" (for SSE and status endpoints) and plural "/builds" (for static assets)
+      { source: '/build/:path*', destination: `${API_URL}/build/:path*` },
       { source: '/builds/:path*', destination: `${API_URL}/builds/:path*` },
       { source: '/review/builds/:path*', destination: `${API_URL}/review/builds/:path*` },
       { source: '/public/builds/:path*', destination: `${API_URL}/public/builds/:path*` },

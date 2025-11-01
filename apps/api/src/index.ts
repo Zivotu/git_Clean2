@@ -241,10 +241,10 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     origin: (origin, cb) => {
       // Bez Origin headera (curl, Invoke-RestMethod, SSR, health) → dozvoli
       if (!origin) return cb(null, true);
-      
+
       // Allow literal "null" origin from sandboxed iframes
       if (origin === 'null') return cb(null, '*');
-      
+
       if (isOriginAllowed(origin)) {
         // reflektiraj dopušten origin
         return cb(null, origin);
@@ -346,7 +346,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   const setStaticHeaders = async (res: any, pathName?: string) => {
     // Sprječava ERR_HTTP_HEADERS_SENT ako je response već poslan (npr. 404)
     if (res.headersSent) return;
-    
+
     const cfg = getConfig();
     const frameAncestors = new Set(["'self'"]);
     try {
@@ -445,7 +445,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   // Explicit, more-specific routes for build assets to ensure correct headers
   // MUST be registered BEFORE buildAlias to prevent wildcard /:listingId/build/* from matching /builds/...
-  
+
   // Helper to bypass CORS plugin for /builds/ routes (iframe lacks Origin header)
   const bypassCors = async (req: FastifyRequest, reply: FastifyReply) => {
     reply.header('Access-Control-Allow-Origin', '*');
@@ -515,10 +515,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   // Our explicit routes above fully handle serving build assets with precise headers
   // to avoid Windows MIME mis-detection and plugin precedence issues.
 
-  // Alias for Play assets (/:listingId/build/*) must be registered AFTER explicit /builds/ routes
-  // so it doesn't intercept them. buildAlias handles listing-slug-based aliases only.
-  await app.register(buildAlias);
-
   await app.register(fastifyStatic, {
     root: config.LOCAL_STORAGE_DIR,
     prefix: '/uploads/',
@@ -572,8 +568,15 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(trialRoutes);
   await app.register(ownerRoutes);
   await app.register(jwtRoutes);
+
+  // CRITICAL: Register buildEventsRoutes BEFORE buildAlias to ensure /build/:buildId/events
+  // is matched before the wildcard /:listingId/build/* route intercepts it
   await app.register(buildEventsRoutes);
   await app.register(testLinkRoutes);
+
+  // Alias for Play assets (/:listingId/build/*) must be registered AFTER explicit /builds/ routes
+  // AND after buildEventsRoutes so it doesn't intercept SSE endpoint
+  await app.register(buildAlias);
 
   // Review routes (with internal aliasing for /api/review)
   await app.register(reviewRoutes);
@@ -705,3 +708,4 @@ void (async () => {
     }
   }
 })();
+
