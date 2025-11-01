@@ -158,7 +158,11 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   const config = getConfig();
   await ensureDbInitialized();
 
-  app = fastify({ logger: true, bodyLimit: 256 * 1024 });
+  app = fastify({ 
+    logger: true, 
+    bodyLimit: 256 * 1024,
+    ignoreTrailingSlash: true
+  });
 
   // HOTFIX: globalni redirect sanitizer za FST_ERR_BAD_STATUS_CODE
   app.setErrorHandler((err, req, reply) => {
