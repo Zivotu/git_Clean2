@@ -254,7 +254,7 @@ export default async function publishRoutes(app: FastifyInstance) {
 </head>
 <body>
   <div id="root"></div>
-  <script src="./app.js"></script>
+  <script src="./build/app.js"></script>
 </body>
 </html>`;
       let appJs = '';

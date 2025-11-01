@@ -465,6 +465,18 @@ export async function updateApp(appId: string, payload: Partial<App>): Promise<v
   const appsCol = await getExistingCollection('apps');
   const { likesCount, playsCount, ...rest } = payload as any;
 
+  // DEBUG: Log buildId before Firestore write
+  if (rest.buildId) {
+    console.log('[updateApp] Writing buildId to Firestore:', {
+      appId,
+      buildId: rest.buildId,
+      buildIdType: typeof rest.buildId,
+      buildIdLength: rest.buildId.length,
+      buildIdChars: rest.buildId.split(''),
+      fullPayload: rest
+    });
+  }
+
   const batch = db.batch();
   batch.update(appsCol.doc(appId), rest);
 

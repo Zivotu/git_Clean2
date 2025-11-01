@@ -6,7 +6,7 @@ import * as esbuild from 'esbuild';
 import { enqueueCreatexBuild } from '../workers/createxBuildWorker.js';
 import { notifyAdmins } from '../notifier.js';
 import { getBuildDir } from '../paths.js';
-import { readApps, writeApps, type AppRecord, listEntitlements } from '../db.js';
+import { readApps, writeApps, updateApp, type AppRecord, listEntitlements } from '../db.js';
 import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile } from '../lib/preview.js';
@@ -103,6 +103,28 @@ async function ensureListingRecord(opts: {
     } else {
       throw e;
     }
+  }
+
+  // AUTO-SYNC: Write to Firestore to prevent split-brain architecture issues
+  // This ensures that KV storage and Firestore stay synchronized
+  try {
+    const firestorePayload: any = {
+      id,
+      title: safeTitle,
+      pendingBuildId: buildId,
+    };
+    if (isNew) {
+      firestorePayload.status = 'pending_review';
+      if (uid) firestorePayload.authorUid = uid;
+      firestorePayload.createdAt = ops.find((op: any) => op.key === 'createdAt')?.value;
+    } else {
+      firestorePayload.updatedAt = ops.find((op: any) => op.key === 'updatedAt')?.value;
+    }
+    await updateApp(id, firestorePayload);
+    console.log('[ensureListingRecord] ✅ Auto-synced to Firestore:', { listingId: id, pendingBuildId: buildId });
+  } catch (syncError) {
+    console.error('[ensureListingRecord] ⚠️ Failed to sync to Firestore (KV write succeeded):', syncError);
+    // Don't throw - KV write succeeded, Firestore sync is best-effort
   }
 }
 
@@ -318,7 +340,7 @@ export default async function publishRoutes(app: FastifyInstance) {
 </head>
 <body>
   <div id="root"></div>
-  <script defer src="./app.js"></script>
+  <script defer src="./build/app.js"></script>
   <!-- app.js is IIFE bundle with ALL dependencies (React, ReactDOM, Recharts, etc.) -->
   <!-- Mount code is embedded in the bundle itself, no manual initialization needed -->
 </body>

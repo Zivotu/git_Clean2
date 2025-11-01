@@ -41,6 +41,25 @@ export default async function publicRoutes(app: FastifyInstance) {
       } catch {}
       return reply.send(file.createReadStream());
     });
+  } else {
+    // LOCAL STORAGE: Redirect /public/builds/:buildId/* to /builds/:buildId/build/*
+    // This fixes relative asset paths in index.html (e.g., ./app.js -> /public/builds/.../build/app.js)
+    app.get('/public/builds/*', async (req, reply) => {
+      const rest = (req.params as any)['*'] as string;
+      const cleanRest = (rest || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+      
+      // Parse buildId and file path: :buildId/file.ext or :buildId/build/file.ext
+      const parts = cleanRest.split('/');
+      if (parts.length < 1) return reply.code(404).send({ error: 'invalid_path' });
+      
+      const buildId = parts[0];
+      const filePath = parts.slice(1).join('/') || 'index.html';
+      
+      // If filePath already starts with 'build/', don't add it again
+      const targetPath = filePath.startsWith('build/') ? filePath : `build/${filePath}`;
+      const targetUrl = `/builds/${encodeURIComponent(buildId)}/${targetPath}`;
+      return reply.redirect(targetUrl, 307);
+    });
   }
 
   // Lightweight player routes -------------------------------------------------

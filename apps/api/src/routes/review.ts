@@ -631,6 +631,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
         const payload: Record<string, any> = {};
 
         if (app.pendingBuildId === buildId) {
+          req.log.info({ 
+            buildId, 
+            appId: app.id, 
+            pendingBuildId: app.pendingBuildId,
+            buildIdType: typeof buildId,
+            buildIdLength: buildId.length,
+            buildIdChars: buildId.split('')
+          }, 'approve_setting_buildId_from_pending');
           const { version, archivedVersions } = computeNextVersion(app, now);
           payload.archivedVersions = archivedVersions;
           payload.version = version;
@@ -638,6 +646,13 @@ export default async function reviewRoutes(app: FastifyInstance) {
           payload.pendingBuildId = FieldValue.delete();
           payload.pendingVersion = FieldValue.delete();
         } else if (!app.buildId) {
+          req.log.info({ 
+            buildId, 
+            appId: app.id,
+            buildIdType: typeof buildId,
+            buildIdLength: buildId.length,
+            buildIdChars: buildId.split('')
+          }, 'approve_setting_buildId_new');
           payload.buildId = buildId;
         }
 
@@ -662,7 +677,18 @@ export default async function reviewRoutes(app: FastifyInstance) {
           by: req.authUser?.uid ?? null,
         };
 
+        req.log.info({ 
+          appId: app.id,
+          payloadBuildId: payload.buildId,
+          payloadKeys: Object.keys(payload)
+        }, 'approve_before_updateApp');
+        
         await updateApp(app.id, payload);
+        
+        req.log.info({ 
+          appId: app.id,
+          buildIdWritten: payload.buildId 
+        }, 'approve_after_updateApp');
         
         try {
           const { ensureListingTranslations } = await import('../lib/translate.js');

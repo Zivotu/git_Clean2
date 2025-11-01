@@ -145,7 +145,7 @@ export class EnhancedPublishPipeline {
         </head>
         <body>
           <div id="root"></div>
-          <script type="module" src="./app.js"></script>
+          <script type="module" src="./build/app.js"></script>
         </body>
         </html>
       `;
