@@ -246,10 +246,23 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
     transformReport: (await fileExists(reportPath))
       ? { exists: true, url: `/builds/${id}/build/transform_report_v1.json` }
       : { exists: false },
+    preview: previewIndex,
     previewIndex,
     networkPolicy: rec?.networkPolicy,
     networkPolicyReason: rec?.networkPolicyReason,
   };
+}
+
+// Lightweight metadata persisted by publish route for worker to read
+export async function getBuildData(id: string): Promise<{ listingId?: string } | undefined> {
+  try {
+    const dir = getBuildDir(id);
+    const raw = await fs.readFile(path.join(dir, 'build-info.json'), 'utf8');
+    const data = JSON.parse(raw);
+    return data as { listingId?: string };
+  } catch {
+    return undefined;
+  }
 }
 
 export async function publishBundle(id: string): Promise<string> {

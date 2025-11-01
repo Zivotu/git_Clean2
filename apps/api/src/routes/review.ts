@@ -339,11 +339,6 @@ export default async function reviewRoutes(app: FastifyInstance) {
       const code = err?.errorCode || err?.code || 'LLM_FAILED';
       const message = String(err?.message || err || 'Unknown LLM error');
       await updateBuild(buildId, { state: 'failed', error: message });
-      try {
-        await prisma.build.update({ where: { id: buildId }, data: { status: 'llm_failed', error: message, reason: code } });
-      } catch (dbErr) {
-        req.log.error({ err: dbErr, buildId }, 'llm_review_failed_prisma_update_error');
-      }
       return reply.code(500).send({ error: code, message: message });
     }
   };
@@ -576,28 +571,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
       const detail = formatErrorDetail(err);
       req.log.error({ err, id, detail }, 'publish_failed');
       await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
-      try {
-        await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'publish_failed', error: detail, reason: detail, progress: 100 },
-        });
-      } catch (dbErr) {
-        const dbDetail = extractDbErrorDetail(dbErr);
-        req.log.error({ err: dbErr, buildId, dbDetail }, 'publish_failed_prisma_update_error');
-      }
       return reply.code(500).send({ ok: false, error: 'publish_failed', detail });
-    }
-
-    try {
-      await prisma.build.update({
-        where: { id: buildId },
-        data: { status: 'publishing', bundlePublicUrl, progress: 90, error: null, reason: null },
-      });
-    } catch (err: unknown) {
-      const detail = extractDbErrorDetail(err);
-      req.log.error({ err, detail, buildId }, 'publish_bundle_db_update_failed');
-      await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
-      return reply.code(500).send({ ok: false, error: 'db_error', detail });
     }
 
     try {
@@ -649,24 +623,11 @@ export default async function reviewRoutes(app: FastifyInstance) {
         }
       }
 
-      await prisma.build.update({
-        where: { id: buildId },
-        data: { status: 'published', progress: 100 },
-      });
-      await updateBuild(buildId, { state: 'published' });
+      await updateBuild(buildId, { state: 'published', progress: 100 });
     } catch (err) {
       const detail = formatErrorDetail(err);
-      req.log.error({ err, id, detail }, 'publish_finalize_failed'); // err is already unknown here
+      req.log.error({ err, id, detail }, 'publish_finalize_failed');
       await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
-      try {
-        await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'publish_failed', error: detail, reason: detail, progress: 100 },
-        });
-      } catch (dbErr) {
-        const dbDetail = extractDbErrorDetail(dbErr);
-        req.log.error({ err: dbErr, buildId, dbDetail }, 'publish_finalize_prisma_update_error');
-      }
       return reply.code(500).send({ ok: false, error: 'publish_failed', detail });
     }
 

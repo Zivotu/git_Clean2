@@ -7,16 +7,15 @@ import { enqueueCreatexBuild } from '../workers/createxBuildWorker.js';
 import { notifyAdmins } from '../notifier.js';
 import { getBuildDir } from '../paths.js';
 import { readApps, writeApps, type AppRecord, listEntitlements } from '../db.js';
-import { prisma } from '../db.js';
 import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile } from '../lib/preview.js';
 import { writeArtifact } from '../utils/artifacts.js';
-import { Prisma } from '@prisma/client';
 import { sseEmitter } from '../sse.js';
 import { ensureDependencies } from '../lib/dependencies.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { initBuild } from '../models/Build.js';
+import { getStorageBackend, StorageError } from '../storageV2.js';
 
 function slugify(input: string): string {
   return input
@@ -69,20 +68,6 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
   }
 }
 
-function extractDbErrorDetail(err: unknown): string {
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    return err.message.replace(/\s+/g, ' ').trim();
-  }
-  if (err instanceof Error) {
-    const sqliteMatch = /sqlite(?: error)?:\s*(.+)$/i.exec(err.message);
-    if (sqliteMatch?.[1]) {
-      return sqliteMatch[1].trim();
-    }
-    return err.message.replace(/\s+/g, ' ').trim();
-  }
-  return 'Unknown database error';
-}
-
 async function ensureListingRecord(opts: {
   listingId: string | number;
   title?: string | null;
@@ -91,21 +76,34 @@ async function ensureListingRecord(opts: {
 }) {
   const { listingId, title, uid, buildId } = opts;
   const id = String(listingId);
+  const ns = `listing:${id}`;
+  const backend = await getStorageBackend();
+  const { etag, json } = await backend.read(ns);
   const safeTitle = (title?.trim() || 'Untitled').slice(0, 200);
-  await prisma.listing.upsert({
-    where: { id },
-    update: {
-      pendingBuildId: buildId,
-      updatedAt: new Date(),
-    },
-    create: {
-      id,
-      title: safeTitle,
-      status: 'pending_review',
-      authorUid: uid ?? null,
-      pendingBuildId: buildId,
-    },
-  });
+  const isNew = etag === '0' || !json || Object.keys(json).length === 0;
+  const ops: any[] = [];
+  if (isNew) {
+    ops.push({ op: 'set', key: 'id', value: id });
+    ops.push({ op: 'set', key: 'title', value: safeTitle });
+    ops.push({ op: 'set', key: 'status', value: 'pending_review' });
+    if (uid) ops.push({ op: 'set', key: 'authorUid', value: uid });
+    ops.push({ op: 'set', key: 'createdAt', value: Date.now() });
+  } else {
+    if (title) ops.push({ op: 'set', key: 'title', value: safeTitle });
+    ops.push({ op: 'set', key: 'updatedAt', value: Date.now() });
+  }
+  ops.push({ op: 'set', key: 'pendingBuildId', value: buildId });
+  try {
+    await backend.patch(ns, ops, etag as any);
+  } catch (e) {
+    if (e instanceof StorageError && e.statusCode === 412) {
+      // Retry once on precondition failed
+      const fresh = await backend.read(ns);
+      await backend.patch(ns, ops, fresh.etag as any);
+    } else {
+      throw e;
+    }
+  }
 }
 
 export default async function publishRoutes(app: FastifyInstance) {
@@ -173,40 +171,22 @@ export default async function publishRoutes(app: FastifyInstance) {
       ? Number(existing.id)
       : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
 
+    // 1) ensure listing metadata in KV
+    await ensureListingRecord({
+      listingId,
+      title: (body as any)?.title,
+      uid,
+      buildId,
+    });
+
+    // 2) Initialize filesystem build record so Admin panel can list it
     try {
-      // 1) osiguraj da Listing zapis postoji prije Build.create (FK safety)
-      await ensureListingRecord({
-        listingId,
-        title: (body as any)?.title,
-        uid,
-        buildId,
-      });
-
-      // 2) sada smijemo kreirati Build red, FK postoji
-      await prisma.build.create({
-        data: {
-          id: buildId,
-          listingId: String(listingId),
-          appId: existing?.id ?? null,
-          status: 'queued',
-          mode: 'legacy',
-          progress: 0,
-        },
-      });
-
-      // Initialize filesystem build record so Admin panel can list it
-      try {
-        await initBuild(buildId);
-      } catch (e) {
-        req.log?.warn?.({ e, buildId }, 'publish:init_fs_build_failed');
-      }
-
-      sseEmitter.emit(buildId, 'status', { status: 'queued' });
-    } catch (err) {
-      const detail = extractDbErrorDetail(err);
-      req.log.error({ err, detail }, 'publish:build_record_failed');
-      return reply.code(500).send({ ok: false, error: 'db_error', detail });
+      await initBuild(buildId);
+    } catch (e) {
+      req.log?.warn?.({ e, buildId }, 'publish:init_fs_build_failed');
     }
+
+    sseEmitter.emit(buildId, 'status', { status: 'queued' });
 
     try {
       const dir = getBuildDir(buildId);
@@ -497,15 +477,6 @@ if (typeof window !== 'undefined') {
       }
     } catch (err) {
       req.log.error({ err }, 'publish:build_failed');
-      try {
-        const message = err instanceof Error ? err.message : 'build_failed';
-        await prisma.build.update({
-          where: { id: buildId },
-          data: { status: 'failed', error: message, reason: message },
-        });
-      } catch (dbErr) {
-        req.log.error({ err: dbErr, buildId }, 'publish:build_failed_status_update_error');
-      }
       return reply.code(400).send({ ok: false, error: 'build_failed' });
     }
 
@@ -639,7 +610,7 @@ if (typeof window !== 'undefined') {
         apps.push(next);
       }
 
-      await writeApps(apps);
+  await writeApps(apps);
       req.log.info({ buildId, listingId, slug }, 'publish:created');
 
       try {
@@ -690,6 +661,12 @@ if (typeof window !== 'undefined') {
       } catch (err) {
         req.log?.warn?.({ err }, 'publish:translations_enqueue_failed');
       }
+
+      // Persist basic build info for the worker (e.g., for final SSE redirect)
+      try {
+        const dir = getBuildDir(buildId);
+        await fs.writeFile(path.join(dir, 'build-info.json'), JSON.stringify({ listingId: String(listingId) }, null, 2), 'utf8');
+      } catch {}
 
       const responsePayload = { ok: true as const, buildId, listingId, slug };
       return reply.code(202).send(responsePayload);

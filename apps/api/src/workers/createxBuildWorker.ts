@@ -8,10 +8,9 @@ import type { ConnectionOptions } from 'bullmq';
 import * as esbuild from 'esbuild';
 import { getBuildDir } from '../paths.js';
 import { REDIS_URL } from '../config.js';
-import { prisma } from '../db.js';
 import { sseEmitter } from '../sse.js';
 import { DEPENDENCY_VERSIONS } from '../lib/dependencies.js';
-import { updateBuild } from '../models/Build.js';
+import { updateBuild, getBuildData } from '../models/Build.js';
 
 const QUEUE_NAME = 'createx-build';
 
@@ -261,29 +260,21 @@ export function startCreatexBuildWorker(): BuildWorkerHandle {
         const { buildId } = job.data as { buildId: string };
         console.log(`[worker] Processing build job: ${buildId}`);
         try {
-          await prisma.build.update({
-            where: { id: buildId },
-            data: { status: 'preparing', progress: 20, error: null, reason: null },
-          });
           // keep frontend UX consistent: treat preparing as bundling
           sseEmitter.emit(buildId, 'status', { status: 'bundling' });
           // reflect state in filesystem model for admin
-          try { await updateBuild(buildId, { state: 'build', progress: 20 }); } catch {}
+          try { await updateBuild(buildId, { state: 'build', progress: 20, error: undefined }); } catch {}
 
           await runBuildProcess(buildId);
 
-          await prisma.build.update({
-            where: { id: buildId },
-            data: { status: 'success', mode: 'bundled', progress: 100, error: null, reason: null },
-          });
           // update FS build state so it appears as pending review in admin
           try { await updateBuild(buildId, { state: 'pending_review', progress: 100 }); } catch {}
 
-          // include listingId in final event for client redirect
+          // include listingId in final event for client redirect (from build-info.json)
           let listingId: string | null = null;
           try {
-            const rec = await prisma.build.findUnique({ where: { id: buildId }, select: { listingId: true } });
-            listingId = rec?.listingId ?? null;
+            const info = await getBuildData(buildId);
+            listingId = (info?.listingId ? String(info.listingId) : null);
           } catch {}
           sseEmitter.emit(buildId, 'final', { status: 'success', buildId, listingId });
 
@@ -291,17 +282,8 @@ export function startCreatexBuildWorker(): BuildWorkerHandle {
           console.error('[worker] Build job failed:', err);
           console.error('[worker] Full error object:', JSON.stringify(err, null, 2));
           const reason = err?.message || 'Unknown error';
-          try {
-            await prisma.build.update({
-              where: { id: buildId },
-              data: { status: 'failed', reason, error: reason, progress: 100 },
-            });
-            try { await updateBuild(buildId, { state: 'failed', progress: 100, error: reason }); } catch {}
-            sseEmitter.emit(buildId, 'final', { status: 'failed', reason, buildId });
-          } catch (dbErr) {
-            console.error({ buildId, dbErr }, 'build:error:db_update_failed');
-            sseEmitter.emit(buildId, 'final', { status: 'failed', reason });
-          }
+          try { await updateBuild(buildId, { state: 'failed', progress: 100, error: reason }); } catch {}
+          sseEmitter.emit(buildId, 'final', { status: 'failed', reason, buildId });
         }
       },
       { connection: queueConnection as any },
