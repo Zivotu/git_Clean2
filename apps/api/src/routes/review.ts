@@ -82,6 +82,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
     return /table\s+.*\s+does\s+not\s+exist/.test(msg);
   };
 
+  // Detect Prisma record-not-found (P2025) and similar messages
+  const isRecordNotFoundError = (err: unknown): boolean => {
+    const code = (err as any)?.code;
+    if (code === 'P2025') return true;
+    const msg = String((err as any)?.message || err || '').toLowerCase();
+    return /no record was found for an update|record.*not found/.test(msg);
+  };
+
   const formatErrorDetail = (err: unknown): string => {
     if (err instanceof Error) {
       return err.message.replace(/\s+/g, ' ').trim() || 'Unknown error';
@@ -602,9 +610,11 @@ export default async function reviewRoutes(app: FastifyInstance) {
         data: { status: 'publishing', bundlePublicUrl, progress: 90, error: null, reason: null },
       });
     } catch (err: unknown) {
-      // Soft-skip if Prisma tables aren't present in production DB
+      // Soft-skip if Prisma tables aren't present OR record doesn't exist in DB
       if (isMissingTableError(err)) {
         req.log.warn({ err, buildId }, 'publish_bundle_db_update_skipped_missing_tables');
+      } else if (isRecordNotFoundError(err)) {
+        req.log.warn({ err, buildId }, 'publish_bundle_db_update_skipped_missing_record');
       } else {
         const detail = extractDbErrorDetail(err);
         req.log.error({ err, detail, buildId }, 'publish_bundle_db_update_failed');
@@ -671,6 +681,8 @@ export default async function reviewRoutes(app: FastifyInstance) {
       } catch (dbErr) {
         if (isMissingTableError(dbErr)) {
           req.log.warn({ err: dbErr, buildId }, 'publish_finalize_prisma_skipped_missing_tables');
+        } else if (isRecordNotFoundError(dbErr)) {
+          req.log.warn({ err: dbErr, buildId }, 'publish_finalize_prisma_skipped_missing_record');
         } else {
           throw dbErr;
         }
