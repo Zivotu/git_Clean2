@@ -474,24 +474,15 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   });
 
   // 1) Serve index.html for the build root — handle both /build and /build/
-  app.get('/builds/:buildId/build', {
+  // Redirect /build/ → /build (trailing slash normalization for Next.js trailingSlash:false)
+  app.get('/builds/:buildId/build/', {
     preHandler: bypassCors
   }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
-    const indexPath = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'build', 'index.html');
-    try {
-      const html = await readFile(indexPath, 'utf8');
-      reply
-        .header('Cross-Origin-Resource-Policy', 'cross-origin')
-        .header('Access-Control-Allow-Origin', '*')
-        .type('text/html; charset=utf-8');
-      return reply.send(html);
-    } catch (err) {
-      req.log?.warn?.({ err, buildId, indexPath }, 'build_index_not_found');
-      return reply.code(404).send({ error: 'not_found' });
-    }
+    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build`, 307);
   });
-  app.get('/builds/:buildId/build/', {
+  
+  app.get('/builds/:buildId/build', {
     preHandler: bypassCors
   }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };

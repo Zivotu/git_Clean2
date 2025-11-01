@@ -12,7 +12,7 @@ const API_URL =
 const baseConfig = {
   ...(isStaticExport ? { output: 'export' } : {}),
   reactStrictMode: true,
-  trailingSlash: true,
+  trailingSlash: false,
   webpack: (config, { dev }) => {
     if (dev) {
       // Izbjegni eval u DEV → kompatibilno s CSP bez 'unsafe-eval'
