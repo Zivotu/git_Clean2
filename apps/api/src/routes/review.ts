@@ -74,6 +74,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
     return 'Unknown database error';
   };
 
+  // Detects a Prisma/SQLite "missing table" scenario so we can soft-skip DB persistence in production
+  const isMissingTableError = (err: unknown): boolean => {
+    const msg = String((err as any)?.message || err || '').toLowerCase();
+    const code = (err as any)?.code;
+    if (code === 'P2021') return true; // Prisma: table does not exist
+    return /table\s+.*\s+does\s+not\s+exist/.test(msg);
+  };
+
   const formatErrorDetail = (err: unknown): string => {
     if (err instanceof Error) {
       return err.message.replace(/\s+/g, ' ').trim() || 'Unknown error';
@@ -594,10 +602,15 @@ export default async function reviewRoutes(app: FastifyInstance) {
         data: { status: 'publishing', bundlePublicUrl, progress: 90, error: null, reason: null },
       });
     } catch (err: unknown) {
-      const detail = extractDbErrorDetail(err);
-      req.log.error({ err, detail, buildId }, 'publish_bundle_db_update_failed');
-      await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
-      return reply.code(500).send({ ok: false, error: 'db_error', detail });
+      // Soft-skip if Prisma tables aren't present in production DB
+      if (isMissingTableError(err)) {
+        req.log.warn({ err, buildId }, 'publish_bundle_db_update_skipped_missing_tables');
+      } else {
+        const detail = extractDbErrorDetail(err);
+        req.log.error({ err, detail, buildId }, 'publish_bundle_db_update_failed');
+        await updateBuild(buildId, { state: 'publish_failed', error: detail, reasons: [detail] });
+        return reply.code(500).send({ ok: false, error: 'db_error', detail });
+      }
     }
 
     try {
@@ -649,10 +662,19 @@ export default async function reviewRoutes(app: FastifyInstance) {
         }
       }
 
-      await prisma.build.update({
-        where: { id: buildId },
-        data: { status: 'published', progress: 100 },
-      });
+      // Persist final status if DB is available; otherwise continue without failing
+      try {
+        await prisma.build.update({
+          where: { id: buildId },
+          data: { status: 'published', progress: 100 },
+        });
+      } catch (dbErr) {
+        if (isMissingTableError(dbErr)) {
+          req.log.warn({ err: dbErr, buildId }, 'publish_finalize_prisma_skipped_missing_tables');
+        } else {
+          throw dbErr;
+        }
+      }
       await updateBuild(buildId, { state: 'published' });
     } catch (err) {
       const detail = formatErrorDetail(err);
