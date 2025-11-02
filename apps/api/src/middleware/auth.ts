@@ -44,7 +44,14 @@ const plugin: FastifyPluginAsync = async (app) => {
       req.authUser = { uid: decoded.uid, role, claims: decoded };
       return;
     } catch (firebaseError) {
+      // Trace-level log kept for details; also emit an explicit error-level hint
+      // so administrators inspecting server logs can quickly see if Firebase
+      // token verification is failing due to missing or invalid credentials.
       req.log.trace({ err: firebaseError }, 'auth: firebase token verification failed, trying fallback');
+      req.log.error(
+        { err: firebaseError },
+        'Firebase token verification failed. Ensure Firebase Admin SDK is initialized and service account credentials are available (GOOGLE_APPLICATION_CREDENTIALS, FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_BASE64).'
+      );
     }
 
     const fallbackSecret = process.env.JWT_SECRET;
