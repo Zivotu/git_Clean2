@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import jwt from 'jsonwebtoken';
-import { setCors } from '../routes/storage.js';
+import { setCors } from '../utils/cors.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -17,6 +17,12 @@ declare module 'fastify' {
 const plugin: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', async (req: FastifyRequest, reply: FastifyReply) => {
     const origin = req.headers.origin as string | undefined;
+    // Allow the debug endpoints to run without authentication so we can inspect
+    // incoming headers from clients and proxies. These endpoints are safe and
+    // intentionally do not expose raw Authorization tokens.
+    if (req.url && req.url.includes('__debug_auth')) {
+      return;
+    }
     const auth = req.headers.authorization;
 
     // Dev mock user

@@ -2,26 +2,11 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { writeFile } from 'fs/promises';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
+import { setCors } from '../utils/cors.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import { getConfig } from '../config.js';
 
-const ALLOWED_ORIGINS = new Set([
-  'https://thesara.space',
-  'https://apps.thesara.space',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-]);
-
-export function setCors(reply: any, origin?: string) {
-  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://thesara.space';
-  reply.header('Access-Control-Allow-Origin', allow);
-  reply.header('Vary', 'Origin');
-  reply.header('Access-Control-Allow-Headers', 'Authorization, If-Match, Content-Type, X-Thesara-App-Id');
-  reply.header('Access-Control-Expose-Headers', 'ETag, X-Storage-Backend');
-  reply.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
-  reply.header('Access-Control-Allow-Credentials', 'true');
-  reply.header('Access-Control-Max-Age', '600');
-}
+// CORS helper moved to ../utils/cors.js to avoid circular import with auth plugin
 
 function stripQuotes(etag: string | string[] | undefined): string | undefined {
   if (!etag) return undefined;
@@ -253,39 +238,49 @@ export default async function routes(server: FastifyInstance) {
   // authUser claims (if present). This intentionally does NOT echo the raw
   // Authorization header value.
   server.get('/__debug_auth', async (request, reply) => {
-    const origin = request.headers.origin as string | undefined;
-    setCors(reply, origin);
-    const hasAuthorization = !!request.headers.authorization;
-    const xThesaraScope = request.headers['x-thesara-scope'] || null;
-    const authUser = (request as any).authUser || null;
-    return {
-      ts: new Date().toISOString(),
-      reqId: (request as any).id || null,
-      method: request.method,
-      url: request.url,
-      hasAuthorization,
-      xThesaraScope,
-      authUser,
-      note: 'This endpoint is for debugging only and does not return raw Authorization token.'
-    };
+    try {
+      const origin = request.headers.origin as string | undefined;
+      setCors(reply, origin);
+      const hasAuthorization = !!request.headers.authorization;
+      const xThesaraScope = request.headers['x-thesara-scope'] || null;
+      const authUser = (request as any).authUser || null;
+      return {
+        ts: new Date().toISOString(),
+        reqId: (request as any).id || null,
+        method: request.method,
+        url: request.url,
+        hasAuthorization,
+        xThesaraScope,
+        authUser,
+        note: 'This endpoint is for debugging only and does not return raw Authorization token.'
+      };
+    } catch (err: any) {
+      request.log.error({ err }, 'debug endpoint failed');
+      return reply.status(500).send({ error: 'debug_handler_error', message: err?.message || String(err), stack: (err?.stack || '').split('\n').slice(0,10) });
+    }
   });
   // Also expose under /api prefix to ensure the API proxy path can reach it
   server.get('/api/__debug_auth', async (request, reply) => {
-    const origin = request.headers.origin as string | undefined;
-    setCors(reply, origin);
-    const hasAuthorization = !!request.headers.authorization;
-    const xThesaraScope = request.headers['x-thesara-scope'] || null;
-    const authUser = (request as any).authUser || null;
-    return {
-      ts: new Date().toISOString(),
-      reqId: (request as any).id || null,
-      method: request.method,
-      url: request.url,
-      hasAuthorization,
-      xThesaraScope,
-      authUser,
-      note: 'This endpoint is for debugging only and does not return raw Authorization token.'
-    };
+    try {
+      const origin = request.headers.origin as string | undefined;
+      setCors(reply, origin);
+      const hasAuthorization = !!request.headers.authorization;
+      const xThesaraScope = request.headers['x-thesara-scope'] || null;
+      const authUser = (request as any).authUser || null;
+      return {
+        ts: new Date().toISOString(),
+        reqId: (request as any).id || null,
+        method: request.method,
+        url: request.url,
+        hasAuthorization,
+        xThesaraScope,
+        authUser,
+        note: 'This endpoint is for debugging only and does not return raw Authorization token.'
+      };
+    } catch (err: any) {
+      request.log.error({ err }, 'debug endpoint failed');
+      return reply.status(500).send({ error: 'debug_handler_error', message: err?.message || String(err), stack: (err?.stack || '').split('\n').slice(0,10) });
+    }
   });
 
   registerStorage(server, '', backend);     // alias for backward compatibility
