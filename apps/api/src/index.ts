@@ -704,10 +704,16 @@ export async function start(): Promise<void> {
       lastError = err;
       if (err && err.code === 'EADDRINUSE') {
         app.log.warn({ port }, 'port in use, trying next');
+        continue;
+      }
+      app.log.error({ err, port }, 'failed to listen');
+      break;
+    }
+  }
 
   if (!listened) {
     const error = lastError ?? new Error('failed to bind any port');
-    app.log.error({ basePort, attempts: maxAttempts, error });
+    app.log.error({ basePort, attempts: maxAttempts, error }, 'listen_failed');
     await buildWorker.close();
     if (localDevWorker) {
       await localDevWorker.close();
@@ -717,30 +723,14 @@ export async function start(): Promise<void> {
     } catch {}
     throw error;
   }
-      setHeaders: (res, pathName) => {
 
-export { start as bootstrap };
 
-void (async () => {
-  if (process.env.NODE_ENV !== 'test') {
-    try {
-      await start();
-    } catch (err) {
-      console.error(err);
-      process.exit(1);
-    }
-  }
-})();
-        void setStaticHeaders(res, pathName);
-      },
+// Auto-start unless running under tests
+if (process.env.NODE_ENV !== 'test') {
+  void start().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
       // Prevent static from swallowing API subpaths AND the bare "/review/builds/:id" (no slash)
-      // so JSON route `/review/builds/:id` can still work for admin.
-      allowedPath: (pathname: string) => {
-        // Block API subpaths like llm/policy/... from static handling
-        if (/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname)) return false;
-        // Block exact base path without trailing slash so route handler can match
-        if (/^\/review\/builds\/[^/]+$/i.test(pathname)) return false;
-        return true;
-      },
-    });
 
