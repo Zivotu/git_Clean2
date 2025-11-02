@@ -153,6 +153,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         fsSync.writeFileSync(dest, stub, 'utf8');
       }
     }
+
   } catch {}
   validateEnv();
   const config = getConfig();
