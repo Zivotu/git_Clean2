@@ -8,9 +8,11 @@ module.exports = {
   apps: [
     {
       name: 'thesara-api',
-      cwd: path.join(rootDir, 'apps/api'),
-      script: 'node',
-      args: '--openssl-legacy-provider -r dotenv/config dist/server.cjs',
+      // Use absolute script path to avoid any CWD/relative path issues
+      script: path.join(rootDir, 'apps/api/dist/server.cjs'),
+      // Explicitly set the node interpreter and args
+      interpreter: 'node',
+      interpreter_args: '--openssl-legacy-provider -r dotenv/config',
       instances: 1,
       exec_mode: 'fork',
       env: {
