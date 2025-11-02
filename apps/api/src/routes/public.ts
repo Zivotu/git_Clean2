@@ -21,6 +21,94 @@ export default async function publicRoutes(app: FastifyInstance) {
       .filter(Boolean)
       .map((x) => encodeURIComponent(x))
       .join('/');
+  
+  // Diagnostics: Verify build availability across storage backends
+  // Requires admin privileges (ID token with admin=true or role=admin)
+  app.get('/diag/build/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const cfg = getConfig();
+    // Lightweight auth: allow only admins
+    try {
+      await ensureAuthUid(req as any);
+    } catch {}
+    const isAdmin = (req as any)?.authUser?.role === 'admin' || ((req as any)?.authUser as any)?.claims?.admin === true;
+    if (!isAdmin) return reply.code(403).send({ error: 'forbidden' });
+
+    const dir = getBuildDir(id);
+    const res: any = {
+      id,
+      STORAGE_DRIVER: cfg.STORAGE_DRIVER,
+      BUNDLE_STORAGE_PATH: cfg.BUNDLE_STORAGE_PATH,
+      PREVIEW_STORAGE_PATH: cfg.PREVIEW_STORAGE_PATH,
+      buildDir: dir,
+      files: {
+        indexHtml: path.join(dir, 'index.html'),
+        bundleIndexHtml: path.join(dir, 'bundle', 'index.html'),
+        appJs: path.join(dir, 'build', 'app.js'),
+        manifestJson: path.join(dir, 'build', 'manifest.json'),
+      },
+      exists: {} as Record<string, boolean>,
+      sizes: {} as Record<string, number>,
+      bucket: { configured: cfg.STORAGE_DRIVER !== 'local', exists: {} as Record<string, boolean> },
+      suggested: {} as Record<string, string>,
+    };
+
+    async function statIf(p: string, key: string) {
+      try {
+        const st = await fs.stat(p);
+        res.exists[key] = st.isFile();
+        res.sizes[key] = st.size;
+      } catch {
+        res.exists[key] = false;
+      }
+    }
+
+    await statIf(res.files.indexHtml, 'indexHtml');
+    await statIf(res.files.bundleIndexHtml, 'bundleIndexHtml');
+    await statIf(res.files.appJs, 'appJs');
+    await statIf(res.files.manifestJson, 'manifestJson');
+
+    // Bucket checks
+    if (res.bucket.configured) {
+      try {
+        const bucket = getBucket();
+        const keys = {
+          indexHtml: `builds/${id}/index.html`,
+          bundleIndexHtml: `builds/${id}/bundle/index.html`,
+          appJs: `builds/${id}/build/app.js`,
+          manifestJson: `builds/${id}/build/manifest.json`,
+        } as const;
+        for (const [k, key] of Object.entries(keys)) {
+          try {
+            const [exists] = await bucket.file(key).exists();
+            (res.bucket.exists as any)[k] = Boolean(exists);
+          } catch {
+            (res.bucket.exists as any)[k] = false;
+          }
+        }
+      } catch {
+        res.bucket.error = 'bucket_unavailable';
+      }
+    }
+
+    // Suggest best public URL based on availability order: bucket -> bundle -> root -> review
+    const encId = encSeg(id);
+    if (res.bucket.configured && (res.bucket.exists.indexHtml || res.bucket.exists.bundleIndexHtml)) {
+      res.suggested.index = `/public/builds/${encId}/index.html`;
+      res.suggested.base = `/public/builds/${encId}/`;
+    } else if (res.exists.bundleIndexHtml) {
+      res.suggested.index = `/builds/${encId}/bundle/`;
+      res.suggested.base = `/builds/${encId}/bundle/`;
+    } else if (res.exists.indexHtml) {
+      res.suggested.index = `/builds/${encId}/`;
+      res.suggested.base = `/builds/${encId}/`;
+    } else {
+      res.suggested.index = `/review/builds/${encId}/`;
+      res.suggested.base = `/review/builds/${encId}/`;
+    }
+
+    return reply.send(res);
+  });
   // Proxy public assets from the storage bucket under /public/builds/*
   if (getConfig().STORAGE_DRIVER !== 'local') {
     app.get('/public/builds/*', async (req, reply) => {
