@@ -617,25 +617,20 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
       prefix: '/review/builds/',
       decorateReply: false,
-      redirect: false, // Disable automatic trailing slash redirect
-      wildcard: false, // Disable wildcard handler to allow manual route definitions
+      // Use default redirect:true so "/review/builds/:id" → "/review/builds/:id/"
       index: ['index.html'],
       setHeaders: (res, pathName) => {
         void setStaticHeaders(res, pathName);
       },
-      // Spriječi da static "proguta" API podputeve
-      allowedPath: (pathname: string) =>
-        !/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname),
-    });
-    
-    // Manual trailing slash normalization (must be AFTER fastify-static)
-    app.get('/review/builds/:buildId/', async (req, reply) => {
-      const { buildId } = req.params as { buildId: string };
-      // Skip API endpoints
-      if (/\/(llm|policy|delete|force-delete|restore|rebuild)$/i.test(buildId)) {
-        return reply.callNotFound();
-      }
-      return reply.redirect(`/review/builds/${encodeURIComponent(buildId)}`, 307);
+      // Prevent static from swallowing API subpaths AND the bare "/review/builds/:id" (no slash)
+      // so JSON route `/review/builds/:id` can still work for admin.
+      allowedPath: (pathname: string) => {
+        // Block API subpaths like llm/policy/... from static handling
+        if (/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname)) return false;
+        // Block exact base path without trailing slash so route handler can match
+        if (/^\/review\/builds\/[^/]+$/i.test(pathname)) return false;
+        return true;
+      },
     });
     // Serve legacy preview artifacts under a separate, non-conflicting prefix
     await app.register(fastifyStatic, {
@@ -709,29 +704,33 @@ export async function start(): Promise<void> {
       lastError = err;
       if (err && err.code === 'EADDRINUSE') {
         app.log.warn({ port }, 'port in use, trying next');
-        continue;
-      }
-      app.log.error(err);
-      await buildWorker.close();
-      if (localDevWorker) {
-        await localDevWorker.close();
-      }
-      try {
-        await app.close();
-      } catch {}
-      throw err;
+
+  if (!listened) {
+    const error = lastError ?? new Error('failed to bind any port');
+    app.log.error({ basePort, attempts: maxAttempts, error });
+    await buildWorker.close();
+    if (localDevWorker) {
+      await localDevWorker.close();
+    }
+    try {
+      await app.close();
+    } catch {}
+    throw error;
+  }
+      setHeaders: (res, pathName) => {
+
+export { start as bootstrap };
+
+void (async () => {
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      await start();
+    } catch (err) {
+      console.error(err);
+      process.exit(1);
     }
   }
-
-  if (allowPreview) {
-    // Serve bundled artifacts for review (bundle-first)
-    await app.register(fastifyStatic, {
-      root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
-      prefix: '/review/builds/',
-      decorateReply: false,
-      // Use default redirect:true so "/review/builds/:id" → "/review/builds/:id/"
-      index: ['index.html'],
-      setHeaders: (res, pathName) => {
+})();
         void setStaticHeaders(res, pathName);
       },
       // Prevent static from swallowing API subpaths AND the bare "/review/builds/:id" (no slash)
