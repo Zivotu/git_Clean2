@@ -269,6 +269,24 @@ export default async function routes(server: FastifyInstance) {
       note: 'This endpoint is for debugging only and does not return raw Authorization token.'
     };
   });
+  // Also expose under /api prefix to ensure the API proxy path can reach it
+  server.get('/api/__debug_auth', async (request, reply) => {
+    const origin = request.headers.origin as string | undefined;
+    setCors(reply, origin);
+    const hasAuthorization = !!request.headers.authorization;
+    const xThesaraScope = request.headers['x-thesara-scope'] || null;
+    const authUser = (request as any).authUser || null;
+    return {
+      ts: new Date().toISOString(),
+      reqId: (request as any).id || null,
+      method: request.method,
+      url: request.url,
+      hasAuthorization,
+      xThesaraScope,
+      authUser,
+      note: 'This endpoint is for debugging only and does not return raw Authorization token.'
+    };
+  });
 
   registerStorage(server, '', backend);     // alias for backward compatibility
   registerStorage(server, '/api', backend); // primary API prefix
