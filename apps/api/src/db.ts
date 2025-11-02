@@ -383,7 +383,9 @@ export async function readApps(fields?: string[]): Promise<App[]> {
       (v: any) => v.archivedAt >= expiry,
     );
     if (origLen !== data.archivedVersions.length) {
-      updates.push(appsCol.doc(d.id).update({ archivedVersions: data.archivedVersions }));
+      // Use set(..., { merge: true }) instead of update() so this is safe
+      // if the document doesn't exist yet (avoids NOT_FOUND errors).
+      updates.push(appsCol.doc(d.id).set({ archivedVersions: data.archivedVersions }, { merge: true }));
     }
     return attachMetrics(data, metrics.get(d.id));
   });
@@ -429,7 +431,8 @@ export async function getAppByIdOrSlug(
     (v: any) => v.archivedAt >= expiry,
   );
   if (origLen !== data.archivedVersions.length) {
-    await ref.update({ archivedVersions: data.archivedVersions });
+    // Use set with merge to tolerate missing docs.
+    await ref.set({ archivedVersions: data.archivedVersions }, { merge: true });
   }
 
   const metricDoc = await metricsCol.doc(doc.id).get();
