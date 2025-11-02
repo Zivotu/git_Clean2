@@ -18,6 +18,8 @@ module.exports = {
         PORT: 8788,
         DOTENV_CONFIG_PATH: path.join(rootDir, 'apps/api/.env'),
         CREATEX_WORKER_ENABLED: 'true',
+        // Allow static preview of review builds (serve /review/builds/:id/)
+        ALLOW_REVIEW_PREVIEW: 'true',
       },
       max_memory_restart: '512M',
       restart_delay: 5000,
