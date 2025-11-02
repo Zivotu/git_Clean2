@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 const API_URL =
   process.env.INTERNAL_API_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://127.0.0.1:8789/api';
+  'http://127.0.0.1:8788/api';
 
 /** @type {import('next').NextConfig} */
 const baseConfig = {
@@ -43,6 +43,8 @@ const baseConfig = {
     return [
       // Proxy app routes to the API server for same-origin iframe loading
       { source: '/app/:path*', destination: `${API_URL}/app/:path*` },
+      // Legacy shim path used by existing builds (proxy to API to avoid HTML MIME mismatch)
+      { source: '/shims/:path*', destination: `${API_URL}/shims/:path*` },
 
       // Static player assets served by API (ensures frontend 3000 can open /builds/* URLs)
       // Note: include both singular "/build" (for SSE and status endpoints) and plural "/builds" (for static assets)
