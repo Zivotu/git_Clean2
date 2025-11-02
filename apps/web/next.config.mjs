@@ -3,10 +3,10 @@ import process from 'node:process';
 const isStaticExport = process.env.NEXT_OUTPUT === 'export';
 const SAFE_PUBLISH_ENABLED = process.env.SAFE_PUBLISH_ENABLED === 'true';
 const isDev = process.env.NODE_ENV !== 'production';
-const API_URL =
-  process.env.INTERNAL_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'http://127.0.0.1:8789/api';
+// API_BASE without /api suffix for routes served directly (shims, builds, etc.)
+const API_BASE = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8788/api').replace(/\/api$/, '');
+// API_URL with /api suffix for standard API routes
+const API_URL = API_BASE + '/api';
 
 /** @type {import('next').NextConfig} */
 const baseConfig = {
@@ -42,17 +42,17 @@ const baseConfig = {
     }
     return [
       // Proxy app routes to the API server for same-origin iframe loading
-      { source: '/app/:path*', destination: `${API_URL}/app/:path*` },
+      { source: '/app/:path*', destination: `${API_BASE}/app/:path*` },
 
-      // Legacy shim path used by existing builds (proxy to API to avoid HTML MIME mismatch)
-      { source: '/shims/:path*', destination: `${API_URL}/shims/:path*` },
+      // Legacy shim path: proxy directly without /api prefix (API serves at /shims/*)
+      { source: '/shims/:path*', destination: `${API_BASE}/shims/:path*` },
 
       // Static player assets served by API (ensures frontend 3000 can open /builds/* URLs)
-      { source: '/builds/:path*', destination: `${API_URL}/builds/:path*` },
-      { source: '/review/builds/:path*', destination: `${API_URL}/review/builds/:path*` },
-      { source: '/public/builds/:path*', destination: `${API_URL}/public/builds/:path*` },
-      { source: '/play-wrapper.js', destination: `${API_URL}/play-wrapper.js` },
-      { source: '/play.css', destination: `${API_URL}/play.css` },
+      { source: '/builds/:path*', destination: `${API_BASE}/builds/:path*` },
+      { source: '/review/builds/:path*', destination: `${API_BASE}/review/builds/:path*` },
+      { source: '/public/builds/:path*', destination: `${API_BASE}/public/builds/:path*` },
+      { source: '/play-wrapper.js', destination: `${API_BASE}/play-wrapper.js` },
+      { source: '/play.css', destination: `${API_BASE}/play.css` },
       { source: '/api/health', destination: `${API_URL}/health` },
       { source: '/api/listings', destination: `${API_URL}/listings` },
       { source: '/api/listing/:path*', destination: `${API_URL}/listing/:path*` },
