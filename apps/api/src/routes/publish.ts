@@ -243,7 +243,7 @@ export default async function publishRoutes(app: FastifyInstance) {
   <!-- Thesara Storage bridge: replaces localStorage in iframe and batches changes to parent;
     in standalone mode it syncs directly to server using __THESARA_APP_NS and optional ?token=
     NOTE: use /api/ prefix so that frontend proxy (Next.js) forwards to API in production. -->
-  <script src="/api/shims/localstorage.js"></script>
+  <script src="/shims/localstorage.js"></script>
   <script>
     // crypto.randomUUID polyfill for non-secure contexts (plain JS, no TS syntax)
     (function() {
@@ -351,7 +351,7 @@ export default async function publishRoutes(app: FastifyInstance) {
       if (isHtml) {
         // Inject storage shim and namespace even when full HTML is provided
         const ns = `app:${listingId}`;
-  const inject = `\n  <!-- Thesara Storage namespace for standalone mode -->\n  <script>window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};<\/script>\n  <!-- Thesara Storage bridge: replaces localStorage in iframe and batches changes to parent; in standalone mode it syncs directly to server using __THESARA_APP_NS and optional ?token= -->\n  <script src=\"/api/shims/localstorage.js\"><\/script>\n`;
+  const inject = `\n  <!-- Thesara Storage namespace for standalone mode -->\n  <script>window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};<\/script>\n  <!-- Thesara Storage bridge: replaces localStorage in iframe and batches changes to parent; in standalone mode it syncs directly to server using __THESARA_APP_NS and optional ?token= -->\n  <script src=\"/shims/localstorage.js\"><\/script>\n`;
         let html = String(body.inlineCode || '');
         if (/<\/head>/i.test(html)) {
           html = html.replace(/<\/head>/i, inject + "\n</head>");
