@@ -725,6 +725,8 @@ export async function start(): Promise<void> {
     throw error;
   }
 
+}
+
 
 // Auto-start unless running under tests
 if (process.env.NODE_ENV !== 'test') {
