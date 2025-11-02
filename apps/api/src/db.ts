@@ -478,14 +478,20 @@ export async function updateApp(appId: string, payload: Partial<App>): Promise<v
   }
 
   const batch = db.batch();
-  batch.update(appsCol.doc(appId), rest);
+
+  // Use set(..., { merge: true }) instead of update() so that writes are
+  // idempotent and won't fail with NOT_FOUND if the document doesn't exist.
+  // This matches the semantics used elsewhere in the codebase where we
+  // tolerate creating missing documents on first write.
+  batch.set(appsCol.doc(appId), rest, { merge: true });
 
   if (likesCount !== undefined || playsCount !== undefined) {
     const metricsCol = await getExistingCollection('metrics');
     const metricsPayload: Partial<Metric> = {};
     if (likesCount !== undefined) metricsPayload.likes = likesCount;
     if (playsCount !== undefined) metricsPayload.plays = playsCount;
-    batch.update(metricsCol.doc(appId), metricsPayload);
+    // Metrics should also be merged to avoid NOT_FOUND for new apps
+    batch.set(metricsCol.doc(appId), metricsPayload, { merge: true });
   }
 
   await batch.commit();
