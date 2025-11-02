@@ -610,6 +610,16 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(reviewRoutes);
 
   if (allowPreview) {
+    // Normalizacija trailing slash za /review/builds/:buildId/ → /:buildId
+    app.get('/review/builds/:buildId/', async (req, reply) => {
+      const { buildId } = req.params as { buildId: string };
+      // Provjeri je li ovo API endpoint (llm, policy, itd.) - ako jest, prosljeđi dalje
+      if (/\/(llm|policy|delete|force-delete|restore|rebuild)$/i.test(buildId)) {
+        return reply.callNotFound();
+      }
+      return reply.redirect(`/review/builds/${encodeURIComponent(buildId)}`, 307);
+    });
+    
     // Serve bundled artifacts for review (bundle-first)
     await app.register(fastifyStatic, {
       root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
