@@ -35,6 +35,30 @@ const STATIC_API_PATHS = ['/uploads/', '/builds/', '/public/builds/', '/review/b
 
 function buildApiAssetUrl(resourcePath: string): string {
   const normalizedPath = normalizePath(resourcePath);
+  
+  // For static assets in SSR, use PUBLIC_SITE_URL instead of INTERNAL_API_URL
+  // to avoid generating 127.0.0.1 URLs that browsers can't access
+  const isStaticPath = STATIC_API_PATHS.some((prefix) =>
+    normalizedPath.startsWith(prefix),
+  );
+  
+  if (typeof window === 'undefined' && isStaticPath) {
+    // SSR: Use public site URL for static assets
+    const publicUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                      process.env.SITE_URL || 
+                      process.env.NEXT_PUBLIC_WEB_URL || 
+                      '';
+    if (publicUrl && /^https?:\/\//i.test(publicUrl)) {
+      try {
+        const url = new URL(publicUrl);
+        return `${url.origin}${normalizedPath}`;
+      } catch {
+        // Fall through to relative base
+      }
+    }
+    return resolveRelativeBase(normalizedPath);
+  }
+  
   const base = (API_URL || '').trim();
   if (!base) {
     return resolveRelativeBase(normalizedPath);
@@ -47,9 +71,6 @@ function buildApiAssetUrl(resourcePath: string): string {
   if (/^https?:\/\//i.test(protocolRelativeMatch)) {
     try {
       const api = new URL(protocolRelativeMatch);
-      const isStaticPath = STATIC_API_PATHS.some((prefix) =>
-        normalizedPath.startsWith(prefix),
-      );
       if (isStaticPath) {
         return `${api.origin}${normalizedPath}`;
       }
@@ -61,9 +82,6 @@ function buildApiAssetUrl(resourcePath: string): string {
   }
 
   if (base.startsWith('/')) {
-    const isStaticPath = STATIC_API_PATHS.some((prefix) =>
-      normalizedPath.startsWith(prefix),
-    );
     if (isStaticPath) {
       return resolveRelativeBase(normalizedPath);
     }
