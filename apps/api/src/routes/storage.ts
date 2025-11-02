@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest } from 'fastify';
+import { writeFile } from 'fs/promises';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
@@ -86,6 +87,25 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
           return reply.status(error.statusCode).send({ error: error.message });
         }
         request.log.error({ err: error, userId, ns }, 'Storage GET failed');
+        // Safe dump for debugging: write minimal request metadata (no tokens) to /tmp
+        try {
+          const dump = {
+            ts: new Date().toISOString(),
+            reqId: (request as any).id || null,
+            method: request.method,
+            url: request.url,
+            userId: userId || null,
+            ns,
+            headers: {
+              hasAuthorization: !!request.headers.authorization,
+              xThesaraScope: request.headers['x-thesara-scope'] || null,
+            },
+            note: 'This file intentionally omits Authorization header contents for security.'
+          };
+          await writeFile('/tmp/thesara-last-request.json', JSON.stringify(dump, null, 2), { mode: 0o600 });
+        } catch (wfErr) {
+          request.log.debug({ err: wfErr }, 'Failed to write /tmp/thesara-last-request.json');
+        }
         return reply.status(500).send({ error: 'internal_error' });
       }
     },
@@ -188,6 +208,28 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
           { ...logPayload, err: error, stack: error.stack, code: 500 },
           'Storage PATCH failed unexpectedly',
         );
+        // Safe dump for debugging: write minimal request metadata (no tokens) to /tmp
+        try {
+          const dump = {
+            ts: new Date().toISOString(),
+            reqId: (request as any).id || null,
+            method: request.method,
+            url: request.url,
+            userId: (request as any).authUser?.uid || null,
+            ns,
+            ifMatch,
+            appId: appId || null,
+            scope,
+            headers: {
+              hasAuthorization: !!request.headers.authorization,
+              xThesaraScope: request.headers['x-thesara-scope'] || null,
+            },
+            note: 'This file intentionally omits Authorization header contents for security.'
+          };
+          await writeFile('/tmp/thesara-last-request.json', JSON.stringify(dump, null, 2), { mode: 0o600 });
+        } catch (wfErr) {
+          request.log.debug({ err: wfErr }, 'Failed to write /tmp/thesara-last-request.json');
+        }
         return reply.status(500).send({ error: 'storage_write_failed' });
       }
     },
