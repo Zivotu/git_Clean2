@@ -74,7 +74,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }, [appId, buildId])
   
   const sandboxFlags = useMemo(() => {
-    const flags = ['allow-scripts', 'allow-forms'];
+    const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin'];
     if (securityPolicy?.sandbox?.allowModals) {
       flags.push('allow-modals');
     }
