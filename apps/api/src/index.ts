@@ -613,12 +613,31 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(reviewRoutes);
 
   if (allowPreview) {
-    // Serve bundled artifacts for review (bundle-first)
+    // Explicit redirector: "/review/builds/:id/" → prefer bundle/, then build/, then legacy preview
+    app.get('/review/builds/:id/', async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const baseDir = path.join(config.BUNDLE_STORAGE_PATH, 'builds', id);
+      try {
+        await fs.promises.access(path.join(baseDir, 'bundle', 'index.html'));
+        return reply.redirect(`/review/builds/${encodeURIComponent(id)}/bundle/`, 307);
+      } catch {}
+      try {
+        await fs.promises.access(path.join(baseDir, 'build', 'index.html'));
+        return reply.redirect(`/review/builds/${encodeURIComponent(id)}/build/`, 307);
+      } catch {}
+      try {
+        await fs.promises.access(path.join(PREVIEW_ROOT, id, 'index.html'));
+        return reply.redirect(`/review/previews/${encodeURIComponent(id)}/`, 307);
+      } catch {}
+      return reply.code(404).send({ error: 'not_found' });
+    });
+
+    // Serve bundled artifacts for review (bundle and build directories under each build)
     await app.register(fastifyStatic, {
       root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
       prefix: '/review/builds/',
       decorateReply: false,
-      // Use default redirect:true so "/review/builds/:id" → "/review/builds/:id/"
+      // Leave index to default behavior; explicit redirect above decides which index to use
       index: ['index.html'],
       setHeaders: (res, pathName) => {
         void setStaticHeaders(res, pathName);
@@ -628,11 +647,12 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       allowedPath: (pathname: string) => {
         // Block API subpaths like llm/policy/... from static handling
         if (/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname)) return false;
-        // Block exact base path without trailing slash so route handler can match
+        // Block exact base path without trailing slash so route handler can match JSON
         if (/^\/review\/builds\/[^/]+$/i.test(pathname)) return false;
         return true;
       },
     });
+
     // Serve legacy preview artifacts under a separate, non-conflicting prefix
     await app.register(fastifyStatic, {
       root: PREVIEW_ROOT,

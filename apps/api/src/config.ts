@@ -193,8 +193,15 @@ export function getConfig() {
   if (!STORAGE_DRIVER) STORAGE_DRIVER = hasR2Creds ? 'r2' : 'local';
   if (STORAGE_DRIVER === 'r2' && !hasR2Creds) STORAGE_DRIVER = 'local';
   if (STORAGE_DRIVER === 'firebase' && !hasFirebaseCreds) STORAGE_DRIVER = 'local';
-  const LOCAL_STORAGE_DIR =
-    process.env.LOCAL_STORAGE_DIR || path.resolve(REPO_ROOT, 'storage/uploads');
+  const LOCAL_STORAGE_DIR = (() => {
+    if (process.env.LOCAL_STORAGE_DIR && process.env.LOCAL_STORAGE_DIR.trim()) {
+      return process.env.LOCAL_STORAGE_DIR;
+    }
+    // Default uploads path: use /srv/thesara/storage/uploads in production,
+    // fall back to repo-relative storage/uploads in development.
+    const isProd = (process.env.NODE_ENV || '').toLowerCase() === 'production';
+    return isProd ? '/srv/thesara/storage/uploads' : path.resolve(REPO_ROOT, 'storage/uploads');
+  })();
   return {
     PORT,
     BUNDLE_STORAGE_PATH: bundleStoragePath,
