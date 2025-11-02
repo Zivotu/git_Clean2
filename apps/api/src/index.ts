@@ -732,5 +732,4 @@ if (process.env.NODE_ENV !== 'test') {
     process.exit(1);
   });
 }
-      // Prevent static from swallowing API subpaths AND the bare "/review/builds/:id" (no slash)
 
