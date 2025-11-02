@@ -8,6 +8,8 @@
     "dev": "cross-env CREATEX_WORKER_ENABLED=true NODE_OPTIONS=\"--openssl-legacy-provider --require ts-node/register/transpile-only --require ./src/preload.ts\" tsx watch src/index.ts",
     "dev:worker": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ts-node/register/transpile-only --require ./src/preload.ts\" tsx watch src/localdev/worker.run.ts",
   "build": "tsup && cpx \"src/**/!(*.ts)\" dist && node -e \"const fs=require('fs'); fs.copyFileSync('dist/index.js','dist/server.cjs')\"",
+  "verify:dist": "node ./scripts/verify-dist-no-update.js",
+  "postbuild": "pnpm run verify:dist",
     "build:tsc": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.f2.json",
     "start": "node --openssl-legacy-provider dist/index.js",
