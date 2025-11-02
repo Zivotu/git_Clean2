@@ -3,6 +3,9 @@ import { writeFile } from 'fs/promises';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
 import { setCors } from '../utils/cors.js';
+// Re-export setCors for backward compatibility so other modules can import
+// it from './storage' (some files expect it to be exported from this module).
+export { setCors };
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import { getConfig } from '../config.js';
 
