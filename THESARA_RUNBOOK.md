@@ -1,4 +1,7 @@
-# Thesara — Platform Runbook (2025-10-31)
+
+# Thesara — Platform Runbook (2025-11-02)
+
+**Status update:** Objavljivanje, odobravanje i Play sada rade u produkciji (thesara.space). Nginx i API su usklađeni s dokumentacijom. Sobe (rooms) još nisu vidljive – to je jedini preostali problem. Sljedeći korak: provjeriti storage shim i PlayPageClient.tsx, osigurati da svi pozivi idu na /api/storage, a ne na window.localStorage.
 
 Ovaj dokument je referentna točka za trenutnu konfiguraciju sustava, tokove objave i reprodukcije mini‑aplikacija, storage arhitekturu te rješenja koja smo implementirali tijekom stabilizacije. Zamjenjuje stariji izvještaj `Izvjestaj_Analiza_Problema.md`.
 

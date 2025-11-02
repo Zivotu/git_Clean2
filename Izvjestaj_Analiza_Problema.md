@@ -1,9 +1,40 @@
-# Izvještaj: Analiza problema s playback-om mini aplikacija u Thesara platformi
 
-**Datum**: 30. listopada 2025  
-**Problem**: Objavljene mini aplikacije ne pokreću se u Play modu - NS_ERROR_CORRUPTED_CONTENT, CORS i MIME type errors
+
+
+# Izvještaj: Analiza problema i rješenja za Thesara platformu
+
+**Datum**: 2. studenog 2025.
+**Status**: Objavljivanje, odobravanje i pokretanje aplikacija sada radi ispravno u produkciji (thesara.space). Sobe još nisu vidljive – to je jedini preostali problem.
 
 ---
+
+## 1. TRENUTNO STANJE (PRODUKCIJA)
+
+- **Objava, odobravanje i Play**: Cijeli flow radi – aplikacije se mogu objaviti, odobriti i pokrenuti (Play) kroz web sučelje i API.
+- **Nginx**: Ispravno prosljeđuje /api, /play, /review/builds, /builds, /public/builds na API (port 8788); /uploads koristi alias na /srv/thesara/storage/uploads.
+- **API**: Fastify 5, port 8788, eksplicitne rute za /builds/:id/build/* s ispravnim MIME/CORS/CORP headerima; review preview radi s trailing slash redirectom.
+- **Storage**: STORAGE_DRIVER=local, svi buildovi i uploadi idu na disk pod /srv/thesara/storage.
+- **SSR i sandbox**: Next.js koristi ispravan public origin za assete; iframe sandbox ima allow-same-origin.
+- **Testirano**: curl i browser testovi na /builds, /public/builds, /review/builds, /uploads – svi vraćaju 200/307/redirect kako treba.
+
+## 2. RAZRIJEŠENI PROBLEMI
+
+- **MIME/CORS/NS_ERROR_CORRUPTED_CONTENT**: Svi problemi s pogrešnim Content-Type, CORS i CORP headerima su riješeni eksplicitnim rutama i Nginx proxyjem.
+- **Review preview 404/401**: Trailing slash redirector i allowedPath logika sada ispravno razlikuju JSON admin i HTML preview.
+- **Uploads 404**: Nginx sada koristi alias na /srv/thesara/storage/uploads.
+- **SSR asset origin**: SSR više ne koristi 127.0.0.1, već javni origin.
+- **PM2 build/start**: dist/server.cjs se uvijek generira, PM2 koristi ispravan cwd i env.
+
+## 3. OTVORENO: SOBE NISU VIDLJIVE
+
+- **Problem**: Objavljena aplikacija ne vidi sobe (rooms) – pretpostavka je da se i dalje koristi localStorage umjesto server-backed storage.
+- **Sljedeći korak**: Provjeriti storage shim i PlayPageClient.tsx – osigurati da svi pozivi idu na /api/storage, a ne na window.localStorage.
+
+---
+
+## 4. ARHIVA: STARI PROBLEMI I DIJAGNOZA
+
+_Sljedeći dio ostaje kao arhiva za referencu – svi problemi iz ove sekcije su sada riješeni._
 
 ## 1. ARHITEKTURA STAROG PROJEKTA (StariProjekt - FUNKCIONIRA)
 

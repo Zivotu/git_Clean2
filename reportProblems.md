@@ -3,7 +3,28 @@
 Date: 2025-11-02
 Repository: Thesara_Rollback
 
-This document captures our current production and local setup, architecture, configs, routes, goals (rooms + server-backed storage), the issues encountered, fixes applied, and a checklist to reproduce and debug from scratch. Use this as the single source of truth for tomorrow’s investigation.
+## [2025-11-02] Status update
+
+**Objava, odobravanje i Play**: Sve radi u produkciji (thesara.space) – aplikacije se mogu objaviti, odobriti i pokrenuti. Nginx i API su usklađeni s dokumentacijom. Sobe (rooms) još nisu vidljive – to je jedini preostali problem.
+
+**Nginx**: /api, /play, /review/builds, /builds, /public/builds proxy na API (8788); /uploads alias na /srv/thesara/storage/uploads.
+**API**: Fastify 5, port 8788, eksplicitne rute za /builds/:id/build/* s ispravnim MIME/CORS/CORP headerima; review preview radi s trailing slash redirectom.
+**Storage**: STORAGE_DRIVER=local, svi buildovi i uploadi idu na disk pod /srv/thesara/storage.
+**SSR i sandbox**: Next.js koristi ispravan public origin za assete; iframe sandbox ima allow-same-origin.
+
+**Riješeni problemi**:
+- MIME/CORS/NS_ERROR_CORRUPTED_CONTENT: Svi problemi s Content-Type, CORS i CORP headerima su riješeni.
+- Review preview 404/401: Trailing slash redirector i allowedPath logika sada ispravno razlikuju JSON admin i HTML preview.
+- Uploads 404: Nginx sada koristi alias na /srv/thesara/storage/uploads.
+- SSR asset origin: SSR više ne koristi 127.0.0.1, već javni origin.
+- PM2 build/start: dist/server.cjs se uvijek generira, PM2 koristi ispravan cwd i env.
+
+**Otvoreno**:
+- Sobe nisu vidljive u Play modu – provjeriti storage shim i PlayPageClient.tsx, osigurati da svi pozivi idu na /api/storage, a ne na window.localStorage.
+
+---
+
+_Ostatak dokumenta ostaje kao referenca za arhitekturu, troubleshooting i povijest problema._
 
 ## Project goals
 
@@ -294,3 +315,139 @@ pnpm -F @thesara/web build
 
 ---
 If anything in this report diverges from what you see on the VPS, annotate and adjust here so we keep this as the authoritative operational notebook.
+
+---
+
+## Nginx konfiguracija koja je omogućila rad produkcije (2025-11-02)
+
+Ova konfiguracija je ključna za ispravno prosljeđivanje svih API, build i upload ruta prema Fastify API-ju i statičkom storageu. Kopirati u `/etc/nginx/sites-available/thesara` i reloadati Nginx nakon svake promjene.
+
+```nginx
+# /etc/nginx/sites-available/thesara
+
+# HTTP → HTTPS redirect
+server {
+    listen 80;
+    server_name thesara.space www.thesara.space;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    server_name thesara.space www.thesara.space;
+
+    # SSL (Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/thesara.space/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/thesara.space/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # Deprecated publish endpoint → novi endpoint
+    location = /api/publish {
+        proxy_pass http://localhost:8788/api/createx/publish;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    location = /api/publish/ {
+        proxy_pass http://localhost:8788/api/createx/publish/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Public play → API
+    location ^~ /play/ {
+        proxy_pass http://localhost:8788/play/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Review/preview builds → API (za prijavljene)
+    location ^~ /review/builds/ {
+        proxy_pass http://localhost:8788/review/builds/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # NOVO: Public bundles (objavljeni buildovi) → API
+    location ^~ /builds/ {
+        # zadržavamo cijeli path (/builds/...) i šaljemo API-ju
+        proxy_pass http://localhost:8788;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # NOVO: Legacy/public delegacija → API
+    location ^~ /public/builds/ {
+        proxy_pass http://localhost:8788;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # ISPRAVAK: UPLOADS: statički s diska (točna staza)
+    # /uploads/... -> /srv/thesara/storage/uploads/...
+    location ^~ /uploads/ {
+        alias /srv/thesara/storage/uploads/;
+        autoindex off;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    # API (8788) pod /api
+    location /api/ {
+        proxy_pass http://localhost:8788/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Next.js (frontend na 3000) – sve ostalo
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    client_max_body_size 100M;
+
+    # Sigurnost: sakrij skrivena imena (opcionalno)
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
+```
