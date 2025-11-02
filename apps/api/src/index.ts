@@ -294,19 +294,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         if (req.raw) (req.raw as any).url = stripped;
       }
 
-      // 3) Normaliziraj trailing slash za /review/builds/:buildId/
-      //    Ovu normalizaciju radimo ovdje da bi djelovala prije registriranih ruta i pluginova
-      const currentRaw = ((req as any).url as string) || raw;
-      const qIndex2 = currentRaw.indexOf('?');
-      const path2 = qIndex2 >= 0 ? currentRaw.slice(0, qIndex2) : currentRaw;
-      const query2 = qIndex2 >= 0 ? currentRaw.slice(qIndex2) : '';
-      const m = path2.match(/^\/review\/builds\/([A-Za-z0-9_-]+)\/?$/);
-      // Ako path završava sa "/" i izgleda kao id (UUID/slg), ukloni trailing slash
-      if (m && path2.endsWith('/')) {
-        const normalized = `/review/builds/${encodeURIComponent(m[1])}${query2}`;
-        (req as any).url = normalized;
-        if (req.raw) (req.raw as any).url = normalized;
-      }
+      // Trailing-slash normalizacija uklonjena ovdje; rješava se kroz fastify-static + allowedPath niže
     } catch {}
     done();
   });
@@ -735,30 +723,25 @@ export async function start(): Promise<void> {
     }
   }
 
-  if (!listened) {
-    const error = lastError ?? new Error('failed to bind any port');
-    app.log.error({ basePort, attempts: maxAttempts, error });
-    await buildWorker.close();
-    if (localDevWorker) {
-      await localDevWorker.close();
-    }
-    try {
-      await app.close();
-    } catch {}
-    throw error;
-  }
-}
-
-export { start as bootstrap };
-
-void (async () => {
-  if (process.env.NODE_ENV !== 'test') {
-    try {
-      await start();
-    } catch (err) {
-      console.error(err);
-      process.exit(1);
-    }
-  }
-})();
+  if (allowPreview) {
+    // Serve bundled artifacts for review (bundle-first)
+    await app.register(fastifyStatic, {
+      root: path.join(config.BUNDLE_STORAGE_PATH, 'builds'),
+      prefix: '/review/builds/',
+      decorateReply: false,
+      // Use default redirect:true so "/review/builds/:id" → "/review/builds/:id/"
+      index: ['index.html'],
+      setHeaders: (res, pathName) => {
+        void setStaticHeaders(res, pathName);
+      },
+      // Prevent static from swallowing API subpaths AND the bare "/review/builds/:id" (no slash)
+      // so JSON route `/review/builds/:id` can still work for admin.
+      allowedPath: (pathname: string) => {
+        // Block API subpaths like llm/policy/... from static handling
+        if (/\/(llm|policy|delete|force-delete|restore|rebuild)(?:\/|$)/i.test(pathname)) return false;
+        // Block exact base path without trailing slash so route handler can match
+        if (/^\/review\/builds\/[^/]+$/i.test(pathname)) return false;
+        return true;
+      },
+    });
 
