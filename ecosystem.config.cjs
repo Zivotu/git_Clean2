@@ -8,8 +8,8 @@ module.exports = {
   apps: [
     {
       name: 'thesara-api',
-      // Ensure Node resolves modules like 'dotenv/config' from the workspace root
-      cwd: rootDir,
+      // Ensure Node resolves modules like 'dotenv/config' from the API package's node_modules
+      cwd: path.join(rootDir, 'apps/api'),
       // Use absolute script path to avoid any CWD/relative path issues
       script: path.join(rootDir, 'apps/api/dist/server.cjs'),
       // Explicitly set the node interpreter and args
