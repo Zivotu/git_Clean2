@@ -39,6 +39,9 @@ const plugin: FastifyPluginAsync = async (app) => {
 
     try {
       const decoded = await getAuth().verifyIdToken(token);
+      // Log a concise success marker so ops can see accepted tokens in PM2 logs.
+      // We intentionally avoid logging the raw token contents.
+      req.log.info({ uid: decoded.uid }, 'auth: firebase token verified');
       const claims: any = decoded;
       const role = claims.role || (claims.admin ? 'admin' : 'user');
       req.authUser = { uid: decoded.uid, role, claims: decoded };
