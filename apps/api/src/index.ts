@@ -293,6 +293,20 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         (req as any).url = stripped;
         if (req.raw) (req.raw as any).url = stripped;
       }
+
+      // 3) Normaliziraj trailing slash za /review/builds/:buildId/
+      //    Ovu normalizaciju radimo ovdje da bi djelovala prije registriranih ruta i pluginova
+      const currentRaw = ((req as any).url as string) || raw;
+      const qIndex2 = currentRaw.indexOf('?');
+      const path2 = qIndex2 >= 0 ? currentRaw.slice(0, qIndex2) : currentRaw;
+      const query2 = qIndex2 >= 0 ? currentRaw.slice(qIndex2) : '';
+      const m = path2.match(/^\/review\/builds\/([A-Za-z0-9_-]+)\/?$/);
+      // Ako path završava sa "/" i izgleda kao id (UUID/slg), ukloni trailing slash
+      if (m && path2.endsWith('/')) {
+        const normalized = `/review/builds/${encodeURIComponent(m[1])}${query2}`;
+        (req as any).url = normalized;
+        if (req.raw) (req.raw as any).url = normalized;
+      }
     } catch {}
     done();
   });
