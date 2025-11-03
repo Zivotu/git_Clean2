@@ -11,6 +11,19 @@ import { getAuth } from 'firebase-admin/auth';
 const tempRedirect = (reply: FastifyReply, location: string) =>
   reply.code(307).header('Location', location).send();
 
+function appendQuery(location: string, request: FastifyRequest): string {
+  try {
+    const rawUrl = request.raw.url;
+    if (!rawUrl || rawUrl.indexOf('?') === -1) return location;
+    const query = rawUrl.slice(rawUrl.indexOf('?') + 1);
+    if (!query) return location;
+    const separator = location.includes('?') ? '&' : '?';
+    return `${location}${separator}${query}`;
+  } catch {
+    return location;
+  }
+}
+
 export const __testing: Record<string, any> = {};
 
 export default async function publicRoutes(app: FastifyInstance) {
@@ -145,7 +158,10 @@ export default async function publicRoutes(app: FastifyInstance) {
       
       // If filePath already starts with 'build/', don't add it again
       const targetPath = filePath.startsWith('build/') ? filePath : `build/${filePath}`;
-      const targetUrl = `/builds/${encodeURIComponent(buildId)}/${targetPath}`;
+      const targetUrl = appendQuery(
+        `/builds/${encodeURIComponent(buildId)}/${targetPath}`,
+        req,
+      );
       return reply.redirect(targetUrl, 307);
     });
   }
@@ -166,22 +182,27 @@ export default async function publicRoutes(app: FastifyInstance) {
           const bucket = getBucket();
           const file = bucket.file(`builds/${mapped}/index.html`);
           const [exists] = await file.exists();
-          if (exists) return tempRedirect(reply, `/public/builds/${encSeg(mapped)}/index.html`);
+          if (exists) {
+            return tempRedirect(
+              reply,
+              appendQuery(`/public/builds/${encSeg(mapped)}/index.html`, req),
+            );
+          }
         } catch {}
         const dir = getBuildDir(mapped);
         // Prefer bundled output; fall back to root if missing
         try {
           await fs.access(path.join(dir, 'bundle', 'index.html'));
-          return tempRedirect(reply, `/builds/${encSeg(mapped)}/bundle/`);
+          return tempRedirect(reply, appendQuery(`/builds/${encSeg(mapped)}/bundle/`, req));
         } catch {}
         try {
           await fs.access(path.join(dir, 'index.html'));
-          return tempRedirect(reply, `/builds/${encSeg(mapped)}/`);
+          return tempRedirect(reply, appendQuery(`/builds/${encSeg(mapped)}/`, req));
         } catch {}
-        return tempRedirect(reply, `/review/builds/${encSeg(mapped)}/`);
+        return tempRedirect(reply, appendQuery(`/review/builds/${encSeg(mapped)}/`, req));
       }
   const byBuild = apps.find((a) => a.buildId === id);
-  if (byBuild) return tempRedirect(reply, `/play/${encSeg(byBuild.id)}/`);
+  if (byBuild) return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
   });
@@ -205,7 +226,7 @@ export default async function publicRoutes(app: FastifyInstance) {
           if (bundleExists) {
             return tempRedirect(
               reply,
-              `/public/builds/${encSeg(mapped)}/bundle/${encRestSafe}`,
+              appendQuery(`/public/builds/${encSeg(mapped)}/bundle/${encRestSafe}`, req),
             );
           }
           const rootFile = bucket.file(`builds/${mapped}/${rest}`);
@@ -213,7 +234,7 @@ export default async function publicRoutes(app: FastifyInstance) {
           if (rootExists) {
             return tempRedirect(
               reply,
-              `/public/builds/${encSeg(mapped)}/${encRestSafe}`,
+              appendQuery(`/public/builds/${encSeg(mapped)}/${encRestSafe}`, req),
             );
           }
         } catch {}
@@ -222,24 +243,27 @@ export default async function publicRoutes(app: FastifyInstance) {
           await fs.access(path.join(dir, 'bundle', rest));
           return tempRedirect(
             reply,
-            `/builds/${encSeg(mapped)}/bundle/${encRestSafe}`,
+            appendQuery(`/builds/${encSeg(mapped)}/bundle/${encRestSafe}`, req),
           );
         } catch {}
         try {
           await fs.access(path.join(dir, rest));
         return tempRedirect(
           reply,
-          `/builds/${encSeg(mapped)}/${encRestSafe}`,
+          appendQuery(`/builds/${encSeg(mapped)}/${encRestSafe}`, req),
         );
         } catch {}
     return tempRedirect(
       reply,
-      `/review/builds/${encSeg(mapped)}/${encRestSafe}`,
+      appendQuery(`/review/builds/${encSeg(mapped)}/${encRestSafe}`, req),
     );
       }
       const byBuild = apps.find((a) => a.buildId === id);
       if (byBuild) {
-        return tempRedirect(reply, `/play/${encSeg(byBuild.id)}/${encRestSafe}`);
+        return tempRedirect(
+          reply,
+          appendQuery(`/play/${encSeg(byBuild.id)}/${encRestSafe}`, req),
+        );
       }
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
