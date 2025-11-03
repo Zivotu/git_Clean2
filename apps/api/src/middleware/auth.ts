@@ -6,6 +6,27 @@ import fs from 'fs';
 import path from 'path';
 import { setCors } from '../utils/cors.js';
 
+function maskAuthorizationHeader(header: string | undefined | null) {
+  try {
+    if (!header || typeof header !== 'string') return null;
+    const parts = header.split(' ');
+    if (parts.length >= 2) {
+      const scheme = parts[0];
+      const token = parts.slice(1).join(' ');
+      if (!token) return scheme;
+      const head = token.slice(0, 8);
+      const tail = token.length > 8 ? token.slice(-8) : '';
+      return `${scheme} ${head}...${tail}`;
+    }
+    const h = header;
+    const head = h.slice(0, 8);
+    const tail = h.length > 8 ? h.slice(-8) : '';
+    return `${head}...${tail}`;
+  } catch (e) {
+    return null;
+  }
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
     authUser?: {
@@ -81,6 +102,10 @@ const plugin: FastifyPluginAsync = async (app) => {
             method: (req as any).method,
             url: (req as any).url,
             summary: short,
+            // Include a safe masked preview of the Authorization header so
+            // operators can see whether a malformed/partial/expired token was
+            // presented without ever writing the raw token to disk.
+            maskedAuthorization: maskAuthorizationHeader(auth as any),
           };
           fs.mkdirSync(path.dirname(p), { recursive: true });
           fs.appendFileSync(p, JSON.stringify(entry) + '\n', { encoding: 'utf8' });
