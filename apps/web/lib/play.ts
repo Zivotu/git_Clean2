@@ -23,7 +23,20 @@ async function resolveCurrentUser(): Promise<User | null> {
 
 export async function getPlayUrl(id: string): Promise<string> {
   const user = await resolveCurrentUser();
-  const token = user ? await user.getIdToken() : undefined;
+  let token: string | undefined;
+  if (user) {
+    // Force a fresh ID token to avoid using an expired cached token.
+    // Fall back to a non-forced token if force-refresh fails for any reason.
+    try {
+      token = await user.getIdToken(true);
+    } catch (err) {
+      try {
+        token = await user.getIdToken();
+      } catch (err2) {
+        token = undefined;
+      }
+    }
+  }
   return playHref(id, { run: 1, token });
 }
 
