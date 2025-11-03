@@ -212,13 +212,13 @@ sudo systemctl reload nginx
    pnpm install
    ```
 
-2. **Build artifacts**
+2. **Build API + Web artifacts**
    ```bash
    pnpm -F @thesara/api build   # produces dist/server.cjs
-   pnpm -F @thesara/web build
+   pnpm -F @thesara/web build   # regenerates .next
    ```
 
-3. **Restart services**
+3. **Restart services (pick up new env + builds)**
    ```bash
    pm2 restart thesara-api --update-env
    pm2 restart thesara-web
@@ -245,8 +245,9 @@ sudo systemctl reload nginx
    - Publish a sample mini app via the web UI.
    - Observe SSE at `https://thesara.space/api/build/<buildId>/events` – should emit
      `queued → bundling → success` with `final` payload.
-   - Confirm Play loads the new build (`/play/<listingId>?run=1`) and the iframe source
-     points to `/builds/<buildId>/build/index.html`.
+  - Confirm Play loads the new build (`/play/<listingId>?run=1`) and the iframe source
+    points to `/builds/<buildId>/build/index.html`.
+  - U DevTools → Network provjeri da završni `/builds/.../build` zahtjev i dalje sadrži `?token=` parametar.
 
 3. **Rooms & storage smoke test**
    - Create a room via UI; join from another browser window.
@@ -266,6 +267,7 @@ sudo systemctl reload nginx
   - PM2 environment exposes `CREATEX_WORKER_ENABLED=true`.
   - `apps/api/src/routes/buildEvents.ts` and `/publish.ts` updates are deployed (SSE fix).
   - File permissions on `/srv/thesara/storage/bundles` allow the API user to write.
+- Ako storage pozivi i dalje vraćaju 401 nakon deploya, provjeri da svi redirecti (`/play/:id`, `/builds/:id/bundle/*`, `/builds/:id/build/`) zadržavaju `?token=` u odredišnom URL-u.
 
 - For 404s on `/builds/:id/build/*`:
   - Check nginx proxy paths – they must forward to the API, not serve static files.
@@ -274,6 +276,7 @@ sudo systemctl reload nginx
 - For storage/rooms failures:
   - Verify JWT secrets and env flags in `.env`.
   - Confirm Next.js env exposes `NEXT_PUBLIC_APPS_HOST` pointing to the public origin.
+  - Podrazumijevano su submitovi dopušteni; dodaj `data-thesara-prevent-submit="true"` na `<form>` ako želiš da ih shim blokira.
 
 ---
 

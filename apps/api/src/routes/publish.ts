@@ -301,9 +301,13 @@ export default async function publishRoutes(app: FastifyInstance) {
         // This keeps UX working (React handlers still run) without requiring allow-forms
         document.addEventListener('submit', function(e){
           try{
-            e.preventDefault();
-            e.stopPropagation();
-            show('prevented form submit from '+(e.target && (e.target.tagName||'form')));
+            var target = e.target;
+            var shouldBlock = !!(target && typeof target.getAttribute === 'function' && target.getAttribute('data-thesara-prevent-submit') === 'true');
+            if (shouldBlock) {
+              e.preventDefault();
+              e.stopPropagation();
+              show('prevented form submit from '+(target && (target.tagName||'form')));
+            }
           }catch{}
         }, true);
         // Best-effort: mark existing forms as novalidate to avoid native navigation/validation UI
