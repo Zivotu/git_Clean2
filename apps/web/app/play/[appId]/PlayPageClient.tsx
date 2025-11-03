@@ -35,6 +35,20 @@ function buildIframeSrc(appId: string): string {
   return `${base}/${encodedId}/build/`
 }
 
+function withToken(url: string, token: string | null): string {
+  if (!token) return url
+  try {
+    const [base, rawQuery = ''] = url.split('?')
+    const params = new URLSearchParams(rawQuery)
+    params.set('token', token)
+    const query = params.toString()
+    return query ? `${base}?${query}` : base
+  } catch {
+    const separator = url.includes('?') ? '&' : '?'
+    return `${url}${separator}token=${encodeURIComponent(token)}`
+  }
+}
+
 function createCapability(): string {
   const bytes = new Uint8Array(16)
   crypto.getRandomValues(bytes)
@@ -63,7 +77,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const appNamespace = useMemo(() => makeNamespace(appId, undefined), [appId])
   
   // Use direct /builds/:buildId/build/ path instead of alias to get correct CSP headers
-  const iframeSrc = useMemo(() => {
+  const baseIframeSrc = useMemo(() => {
     if (!buildId) return buildIframeSrc(appId);
     const base = (APPS_HOST || '').replace(/\/$/, '');
     const encodedId = encodeURIComponent(buildId);
@@ -72,6 +86,10 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     }
     return `${base}/builds/${encodedId}/build/`;
   }, [appId, buildId])
+  const [iframeUrl, setIframeUrl] = useState<string>(() => baseIframeSrc)
+  useEffect(() => {
+    setIframeUrl(baseIframeSrc)
+  }, [baseIframeSrc])
   
   const sandboxFlags = useMemo(() => {
     const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin'];
@@ -85,8 +103,9 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     if (jwtRef.current) return jwtRef.current
     const jwt = await getJwt()
     jwtRef.current = jwt
+    setIframeUrl((current) => withToken(baseIframeSrc, jwt))
     return jwt
-  }, [])
+  }, [baseIframeSrc])
 
   useEffect(() => {
     if (!SHIM_ENABLED) {
@@ -108,10 +127,12 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
         if (token) {
           jwtRef.current = token
+          setIframeUrl(withToken(baseIframeSrc, token))
         }
 
         const jwt = token ?? (await getJwt())
         jwtRef.current = jwt
+        setIframeUrl(withToken(baseIframeSrc, jwt))
         namespaceRef.current = appNamespace
 
         const { snapshot, version } = await fetchSnapshot(jwt, appNamespace)
@@ -136,7 +157,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return () => {
       cancelled = true
     }
-  }, [appId, appNamespace])
+  }, [appId, appNamespace, baseIframeSrc])
 
   useEffect(() => {
     if (!bootstrap) return
@@ -364,11 +385,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   return (
     <iframe
       ref={iframeRef}
-      src={iframeSrc}
+      src={iframeUrl}
       title="Thesara App"
       referrerPolicy="no-referrer"
       sandbox={sandboxFlags}
-  style={{ border: 'none', width: '100%', height: '100vh' }}
+      style={{ border: 'none', width: '100%', height: '100vh' }}
     />
   )
 }
