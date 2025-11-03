@@ -10,6 +10,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Avatar from '@/components/Avatar';
 import { useI18n } from '@/lib/i18n-provider';
+import { getPlayUrl } from '@/lib/play';
 import AdSlot from '@/components/AdSlot';
 import { checkAccess } from '@/lib/access';
 import type { AccessMode } from '@/lib/types';
@@ -1200,18 +1201,25 @@ useEffect(() => {
                 </button>
               ) : (
                 <a
-                  href={`/play?appId=${encodeURIComponent(item.id)}&run=1`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
-                >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    {tApp('playNow')}
-                  </span>
-                </a>
+                      href={`/play?appId=${encodeURIComponent(item.id)}&run=1`}
+                      onClick={async (e) => {
+                        try {
+                          e.preventDefault();
+                          const dest = await getPlayUrl(String(item.id));
+                          window.open(dest, '_blank', 'noopener,noreferrer');
+                        } catch (err) {
+                          // fallback to default navigation
+                        }
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+                    >
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        {tApp('playNow')}
+                      </span>
+                    </a>
               )}
 
               <button

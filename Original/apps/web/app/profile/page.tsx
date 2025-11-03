@@ -3,6 +3,7 @@
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { API_URL } from '@/lib/config';
 import Link from 'next/link';
+import { getPlayUrl } from '@/lib/play';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Avatar from '@/components/Avatar';
 // Using global header from layout; no local header
@@ -933,8 +934,15 @@ export default function ProfilePage() {
                     <div className="flex gap-2">
                       <a
                         href={`/play?appId=${encodeURIComponent(app.id)}&run=1`}
-                        target="_blank"
-                        rel="noreferrer"
+                        onClick={async (e) => {
+                          try {
+                            e.preventDefault();
+                            const dest = await getPlayUrl(String(app.id));
+                            window.open(dest, '_blank', 'noopener,noreferrer');
+                          } catch (err) {
+                            // fallback: allow normal navigation
+                          }
+                        }}
                         className={buttonVariants({ className: 'text-sm' })}
                       >
                         Open
