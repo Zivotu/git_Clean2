@@ -5,6 +5,8 @@ import { getApp } from 'firebase-admin/app';
 import { requireRole } from '../middleware/auth.js';
 import { createOrReuseAccount } from '../billing/service.js';
 import { getConfig } from '../config.js';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export default async function authDebug(app: FastifyInstance) {
   app.get('/__auth_debug', async (req, reply) => {
@@ -37,6 +39,20 @@ export default async function authDebug(app: FastifyInstance) {
     } catch (err: any) {
       req.log.error(err, 'fix-onboarding_failed');
       return reply.code(500).send({ error: 'onboarding_failed', message: err.message });
+    }
+  });
+
+  // Admin-only endpoint: return last N lines of auth verification errors log
+  app.get('/api/debug/auth-verify-log', { preHandler: requireRole('admin') }, async (req, reply) => {
+    try {
+      const p = path.join(process.cwd(), 'tmp', 'auth-verify-errors.log');
+      const txt = await fs.readFile(p, 'utf8');
+      const all = txt.split('\n').filter(Boolean);
+      const last = all.slice(-200); // return up to last 200 entries
+      return reply.send({ ok: true, lines: last });
+    } catch (err: any) {
+      req.log.debug({ err }, 'read_auth_verify_log_failed');
+      return reply.code(404).send({ ok: false, error: 'log_not_found', lines: [] });
     }
   });
 }
