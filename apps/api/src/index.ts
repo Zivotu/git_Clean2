@@ -461,19 +461,32 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   // Compatibility redirects: older web clients may use "/bundle" path
   // Redirect /builds/:buildId/bundle[/*] -> /builds/:buildId/build[/*]
+  const appendQuery = (location: string, request: FastifyRequest): string => {
+    try {
+      const rawUrl = request.raw.url;
+      if (!rawUrl || rawUrl.indexOf('?') === -1) return location;
+      const query = rawUrl.slice(rawUrl.indexOf('?') + 1);
+      if (!query) return location;
+      const separator = location.includes('?') ? '&' : '?';
+      return `${location}${separator}${query}`;
+    } catch {
+      return location;
+    }
+  };
+
   app.get('/builds/:buildId/bundle', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
-    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
+    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build/`, req), 307);
   });
   app.get('/builds/:buildId/bundle/', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
-    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build/`, 307);
+    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build/`, req), 307);
   });
   app.get('/builds/:buildId/bundle/*', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
     const wildcard = (req.params as any)['*'] as string | undefined;
     const suffix = wildcard ? `/${wildcard}` : '/';
-    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build${suffix}`, 307);
+    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build${suffix}`, req), 307);
   });
 
   // 1) Serve index.html for the build root — handle both /build and /build/
@@ -482,7 +495,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     preHandler: bypassCors
   }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
-    return reply.redirect(`/builds/${encodeURIComponent(buildId)}/build`, 307);
+    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build`, req), 307);
   });
   
   app.get('/builds/:buildId/build', {
