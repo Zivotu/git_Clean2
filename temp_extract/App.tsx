@@ -37,6 +37,16 @@ const App: React.FC = () => {
         storageClientRef.current = new StorageClient({ appId: 'pub-quiz-app', scope: 'shared' });
     }, []);
 
+    useEffect(() => {
+        if (storageClientRef.current) {
+            storageClientRef.current.setAuth({
+                token: session?.token ?? null,
+                appId: 'pub-quiz-app',
+                scope: 'shared',
+            });
+        }
+    }, [session?.token]);
+
     // --- MOCK BACKEND LOGIC ---
     // In a real app, this would be handled by Firestore listeners and functions.
     // For this example, we manage state locally.
@@ -67,6 +77,7 @@ const App: React.FC = () => {
             // Write initial shared snapshot to our backend storage
             try {
                 const storage = storageClientRef.current!;
+                storage.setAuth({ token: auth.token, appId: 'pub-quiz-app', scope: 'shared' });
                 const ns = `quiz-state/${auth.room.roomCode}`;
                 const snapshot = {
                     status: newRoom.status,
@@ -107,6 +118,7 @@ const App: React.FC = () => {
             // Try to hydrate from shared snapshot
             try {
                 const storage = storageClientRef.current!;
+                storage.setAuth({ token: auth.token, appId: 'pub-quiz-app', scope: 'shared' });
                 const ns = `quiz-state/${auth.room.roomCode}`;
                 const snap = await storage.get<{ quiz?: { status: RoomStatus; currentIndex: number; questions: Question[] } }>(ns);
                 const quiz = snap.data?.quiz;

@@ -4,6 +4,7 @@ export interface StorageClientOptions {
   baseUrl?: string;
   appId?: string;
   scope?: StorageScope;
+  token?: string | null;
   fetchImpl?: typeof fetch;
 }
 
@@ -47,12 +48,14 @@ export class StorageClient {
   private f: typeof fetch;
   private appId: string;
   private scope: StorageScope;
+  private token: string | null;
 
   constructor(options?: StorageClientOptions) {
     this.base = resolveBaseUrl(options);
     this.f = options?.fetchImpl ?? fetch;
     this.appId = options?.appId ?? 'pub-quiz-app';
     this.scope = options?.scope ?? 'shared';
+    this.token = options?.token ?? null;
   }
 
   private url(ns: string) {
@@ -60,12 +63,27 @@ export class StorageClient {
     return `${this.base}/storage?${search}`;
   }
 
+  setAuth(options: { token?: string | null; appId?: string; scope?: StorageScope } = {}) {
+    if (options.token !== undefined) this.token = options.token;
+    if (options.appId) this.appId = options.appId;
+    if (options.scope) this.scope = options.scope;
+  }
+
+  private buildHeaders(extra?: Record<string, string>) {
+    const headers: Record<string, string> = {
+      'X-Thesara-Scope': this.scope,
+      ...(extra || {}),
+    };
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    return headers;
+  }
+
   async get<T = any>(ns: string): Promise<Snapshot<T>> {
     const res = await this.f(this.url(ns), {
       method: 'GET',
-      headers: {
-        'X-Thesara-Scope': this.scope,
-      },
+      headers: this.buildHeaders(),
       credentials: 'include',
     });
     const data = await parseJson<any>(res).catch((e)=>{ if(!res.ok) throw toError(res,{message:e?.message}); throw e; });
@@ -77,12 +95,11 @@ export class StorageClient {
   async patch<T = any>(ns: string, ops: PatchOp[], ifMatch: string): Promise<Snapshot<T>> {
     const res = await this.f(this.url(ns), {
       method: 'PATCH',
-      headers: {
+      headers: this.buildHeaders({
         'Content-Type': 'application/json',
         'If-Match': ifMatch,
         'X-Thesara-App-Id': this.appId,
-        'X-Thesara-Scope': this.scope,
-      },
+      }),
       body: JSON.stringify(ops),
       credentials: 'include',
     });

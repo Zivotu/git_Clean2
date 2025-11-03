@@ -61,7 +61,8 @@ const baseConfig = {
       { source: '/api/review/:path*', destination: `${API_URL}/review/:path*` },
       { source: '/billing/:path*', destination: `${API_URL}/billing/:path*` },
       { source: '/api/:path*', destination: `${API_URL}/:path*` },
-      // Rooms legacy API proxy
+      // Rooms API proxies
+      { source: '/rooms/v1/:path*', destination: `${API_BASE}/rooms/v1/:path*` },
       { source: '/rooms/:path*', destination: `${API_BASE}/rooms/:path*` },
       // Fix browsers requesting relative favicon on nested routes (/u/favicon.ico, /creators/favicon.ico)
       { source: '/:segment/favicon.ico', destination: '/favicon.ico' },

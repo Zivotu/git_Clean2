@@ -238,6 +238,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             type: 'thesara:storage:sync',
             snapshot: finalSnapshot,
             version: storageVersionRef.current,
+            namespace: namespaceRef.current,
             cap,
           })
 
@@ -247,6 +248,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
               type: 'thesara:storage:sync',
               snapshot: finalSnapshot,
               version: storageVersionRef.current,
+              namespace: namespaceRef.current,
+              token: jwtRef.current,
               cap,
             },
             '*',
@@ -291,6 +294,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             type: 'thesara:storage:init',
             snapshot: snapshotRef.current,
             version: storageVersionRef.current,
+            namespace: namespaceRef.current,
+            token: jwtRef.current,
             cap,
           },
           '*',

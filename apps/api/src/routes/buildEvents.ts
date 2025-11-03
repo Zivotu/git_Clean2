@@ -2,6 +2,41 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { sseEmitter } from '../sse.js';
 import { readBuild, getBuildData } from '../models/Build.js';
 
+type UiBuildStatus = 'queued' | 'bundling' | 'verifying' | 'success' | 'failed';
+
+function normalizeStatus(input: string | null | undefined): UiBuildStatus {
+  switch (input) {
+    case 'queued':
+    case 'init':
+      return 'queued';
+    case 'bundling':
+    case 'analyze':
+    case 'build':
+    case 'bundle':
+    case 'bundle_done':
+      return 'bundling';
+    case 'verifying':
+    case 'verify':
+    case 'ai_scan':
+    case 'llm_waiting':
+    case 'llm_generating':
+    case 'publishing':
+      return 'verifying';
+    case 'pending_review':
+    case 'pending_review_llm':
+    case 'approved':
+    case 'published':
+    case 'success':
+      return 'success';
+    case 'failed':
+    case 'publish_failed':
+    case 'rejected':
+      return 'failed';
+    default:
+      return 'bundling';
+  }
+}
+
 type Params = { buildId: string };
 
 const ROUTE_SCHEMA = {
@@ -92,20 +127,27 @@ async function handler(
   try {
     const rec = await readBuild(buildId);
     if (rec) {
-      const normalizedStatus = rec.state === 'init' ? 'bundling' : rec.state;
-      send('status', { buildId, status: normalizedStatus, reason: rec.error ?? null });
+      const status = normalizeStatus(rec.state);
+      send('status', {
+        buildId,
+        status,
+        reason: rec.error ?? null,
+        progress: rec.progress ?? 0,
+      });
 
-      // If build finished previously, emit a synthetic 'final' compatible with web client expectations
-      const successStates = new Set(['pending_review', 'approved', 'published']);
-      const failStates = new Set(['failed', 'publish_failed', 'rejected']);
-      if (successStates.has(String(rec.state)) || failStates.has(String(rec.state))) {
+      if (status === 'success' || status === 'failed') {
         let listingId: string | null = null;
         try {
           const info = await getBuildData(buildId);
-          listingId = (info?.listingId ? String(info.listingId) : null);
+          listingId = info?.listingId ? String(info.listingId) : null;
         } catch {}
-        const finalStatus = successStates.has(String(rec.state)) ? 'success' : 'failed';
-        send('final', { buildId, status: finalStatus, reason: rec.error ?? null, listingId });
+        send('final', {
+          buildId,
+          status,
+          reason: rec.error ?? null,
+          listingId,
+          progress: rec.progress ?? (status === 'success' ? 100 : undefined),
+        });
       }
     } else {
       send('status', { buildId, status: 'unknown', reason: 'build_not_found' });
@@ -116,15 +158,45 @@ async function handler(
   }
 
   const listener = (evt: any) => {
-    if (!evt || evt.buildId !== buildId) {
+    if (!evt) return;
+
+    let targetBuildId: string | undefined = evt.buildId;
+    if ((!targetBuildId || targetBuildId === 'build_event') && evt.payload?.buildId) {
+      targetBuildId = String(evt.payload.buildId);
+    }
+    if (!targetBuildId || targetBuildId !== buildId) {
       return;
     }
 
     const eventName = evt.event ?? 'status';
-    const payload = evt.payload ?? { status: evt.status, reason: evt.reason ?? null };
+    const payload =
+      evt && typeof evt.payload === 'object' && evt.payload !== null
+        ? { ...evt.payload }
+        : {};
+
+    const candidateState =
+      (typeof payload.state === 'string' && payload.state) ||
+      (typeof payload.status === 'string' && payload.status) ||
+      (typeof evt.state === 'string' && evt.state) ||
+      (typeof evt.status === 'string' && evt.status);
+
+    if (candidateState) {
+      payload.status = normalizeStatus(candidateState);
+    }
+
+    if (payload.reason == null) {
+      payload.reason = evt.reason ?? null;
+    }
+
+    if (payload.progress == null && typeof evt.progress === 'number') {
+      payload.progress = evt.progress;
+    }
 
     const finalPayload = { buildId, ...payload };
 
+    if (eventName === 'final') {
+      send('status', finalPayload);
+    }
     send(eventName, finalPayload);
   };
 

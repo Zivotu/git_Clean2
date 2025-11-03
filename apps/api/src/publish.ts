@@ -195,11 +195,7 @@ export default async function publishRoutes(app: FastifyInstance) {
         },
       });
 
-      sseEmitter.emit('build_event', {
-        buildId,
-        event: 'status',
-        payload: { status: 'queued' },
-      });
+      sseEmitter.emit(buildId, 'status', { status: 'queued' });
     } catch (err) {
       const detail = extractDbErrorDetail(err);
       req.log.error({ err, detail }, 'publish:build_record_failed');

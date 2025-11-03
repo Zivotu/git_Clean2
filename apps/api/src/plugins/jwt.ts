@@ -42,7 +42,11 @@ const plugin: FastifyPluginAsync = fp(async (app) => {
     'signRoomToken',
     (payload: RoomSessionToken, expiresIn?: string | number) => {
       const ttl = expiresIn ?? `${roomsConfig.tokenTtlSeconds}s`;
-      return app.jwt.sign(payload, { expiresIn: ttl });
+      return app.jwt.sign(payload, {
+        expiresIn: ttl,
+        issuer: roomsConfig.jwtIssuer,
+        audience: roomsConfig.jwtAudience,
+      });
     },
   );
 

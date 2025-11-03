@@ -2,6 +2,8 @@ import fp from 'fastify-plugin';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { getAuth, DecodedIdToken } from 'firebase-admin/auth';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 import { setCors } from '../utils/cors.js';
 
 declare module 'fastify' {
@@ -52,7 +54,7 @@ const plugin: FastifyPluginAsync = async (app) => {
       const role = claims.role || (claims.admin ? 'admin' : 'user');
       req.authUser = { uid: decoded.uid, role, claims: decoded };
       return;
-    } catch (firebaseError) {
+    } catch (firebaseError: any) {
       // Trace-level log kept for details; also emit an explicit error-level hint
       // so administrators inspecting server logs can quickly see if Firebase
       // token verification is failing due to missing or invalid credentials.
@@ -61,6 +63,44 @@ const plugin: FastifyPluginAsync = async (app) => {
         { err: firebaseError },
         'Firebase token verification failed. Ensure Firebase Admin SDK is initialized and service account credentials are available (GOOGLE_APPLICATION_CREDENTIALS, FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_BASE64).'
       );
+      // Also emit a concise warning with only the error message/code so it is
+      // visible in higher log levels without exposing token or PII.
+      try {
+        const short = { message: firebaseError?.message, code: firebaseError?.code, name: firebaseError?.name };
+        req.log.warn(short, 'auth: firebase verify error summary');
+        // Also persist a single-line, non-PII JSON record to tmp so the
+        // developer running the server locally can easily paste the exact
+        // concise error object for diagnosis. This file is intentionally
+        // minimal and contains only timestamp, request id, method/url and
+        // the short error summary (no tokens or user identifiers).
+        try {
+          const p = path.join(process.cwd(), 'tmp', 'auth-verify-errors.log');
+          const entry = {
+            ts: new Date().toISOString(),
+            reqId: (req as any).id || req.headers['x-request-id'] || null,
+            method: (req as any).method,
+            url: (req as any).url,
+            summary: short,
+          };
+          fs.mkdirSync(path.dirname(p), { recursive: true });
+          fs.appendFileSync(p, JSON.stringify(entry) + '\n', { encoding: 'utf8' });
+        } catch (fsErr) {
+          // swallow file system errors to avoid breaking request handling
+        }
+      } catch (logErr) {
+        // swallow logging errors to avoid breaking request handling
+      }
+      // If the ID token is expired, respond with a specific 401 body so
+      // clients can detect and refresh the token automatically instead of
+      // guessing on a generic unauthorized response.
+      try {
+        if (firebaseError?.code === 'auth/id-token-expired') {
+          setCors(reply, origin);
+          return reply.code(401).send({ error: 'Unauthorized', reason: 'token_expired' });
+        }
+      } catch (sendErr) {
+        // ignore send errors and continue to fallback
+      }
     }
 
     const fallbackSecret = process.env.JWT_SECRET;
