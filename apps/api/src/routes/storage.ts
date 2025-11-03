@@ -35,6 +35,29 @@ type StoragePatchRoute = StorageRouteQuery & { Body: unknown };
 
 const ensureUser = requireRole('user');
 
+function maskAuthorizationHeader(header: string | undefined | null) {
+  try {
+    if (!header || typeof header !== 'string') return null;
+    // Common form is "Bearer <token>" - mask the token but leave prefix
+    const parts = header.split(' ');
+    if (parts.length >= 2) {
+      const scheme = parts[0];
+      const token = parts.slice(1).join(' ');
+      if (!token) return scheme;
+      const head = token.slice(0, 8);
+      const tail = token.length > 8 ? token.slice(-8) : '';
+      return `${scheme} ${head}...${tail}`;
+    }
+    // Fallback: mask middle of header
+    const h = header;
+    const head = h.slice(0, 8);
+    const tail = h.length > 8 ? h.slice(-8) : '';
+    return `${head}...${tail}`;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Helper function to register storage routes under a given prefix
 function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
   const base = `${prefix}/storage`;
@@ -86,9 +109,10 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
             ns,
             headers: {
               hasAuthorization: !!request.headers.authorization,
+              maskedAuthorization: maskAuthorizationHeader(request.headers.authorization as any),
               xThesaraScope: request.headers['x-thesara-scope'] || null,
             },
-            note: 'This file intentionally omits Authorization header contents for security.'
+            note: 'This file includes a masked preview of the Authorization header for debugging (non-reversible).'
           };
           await writeFile('/tmp/thesara-last-request.json', JSON.stringify(dump, null, 2), { mode: 0o600 });
         } catch (wfErr) {
@@ -210,9 +234,10 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
             scope,
             headers: {
               hasAuthorization: !!request.headers.authorization,
+              maskedAuthorization: maskAuthorizationHeader(request.headers.authorization as any),
               xThesaraScope: request.headers['x-thesara-scope'] || null,
             },
-            note: 'This file intentionally omits Authorization header contents for security.'
+            note: 'This file includes a masked preview of the Authorization header for debugging (non-reversible).'
           };
           await writeFile('/tmp/thesara-last-request.json', JSON.stringify(dump, null, 2), { mode: 0o600 });
         } catch (wfErr) {
