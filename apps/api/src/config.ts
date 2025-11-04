@@ -261,7 +261,7 @@ export function getConfig() {
       'PROXY_FETCH_MAX_BYTES',
       5 * 1024 * 1024
     ),
-    MAX_APPS_PER_USER: parseNumberEnv('MAX_APPS_PER_USER', 2),
+    MAX_APPS_PER_USER: parseNumberEnv('MAX_APPS_PER_USER', 1),
     GOLD_MAX_APPS_PER_USER: parseNumberEnv('GOLD_MAX_APPS_PER_USER', 10),
     MAX_STORAGE_MB_PER_USER: parseNumberEnv('MAX_STORAGE_MB_PER_USER', 100),
     GOLD_MAX_STORAGE_MB_PER_USER: parseNumberEnv(

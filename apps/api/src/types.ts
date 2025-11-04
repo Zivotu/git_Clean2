@@ -174,3 +174,21 @@ export interface Payout {
   rejectedAt?: number;
   paypalEmail?: string;
 }
+
+/**
+ * Represents a social proof submission by an ambassador.
+ */
+export interface AmbassadorPost {
+  id: string;
+  ambassadorUid: string;
+  url: string;
+  platform?: string;
+  caption?: string;
+  postedAt?: number; // optional if ambassador can't provide exact time
+  submittedAt: number;
+  monthKey: string; // e.g. '2025-11'
+  status: 'pending' | 'verified' | 'rejected';
+  verifiedAt?: number;
+  rejectedAt?: number;
+  adminNote?: string;
+}

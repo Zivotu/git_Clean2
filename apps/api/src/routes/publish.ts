@@ -158,14 +158,16 @@ export default async function publishRoutes(app: FastifyInstance) {
       const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
       const cfg = getConfig();
       const limit = gold ? cfg.GOLD_MAX_APPS_PER_USER : cfg.MAX_APPS_PER_USER;
-      const activeOwned = owned.filter((a) => a.state !== 'inactive');
-      if (activeOwned.length >= limit) {
+      // For free users we enforce total owned apps (including drafts/inactive),
+      // to prevent storage usage from accumulating.
+      if (owned.length >= limit) {
         return reply
           .code(403)
           .send({
             ok: false,
             error: 'max_apps',
-            message: `Dosegli ste maksimalan broj aplikacija (${limit})`,
+            code: 'max_apps',
+            message: `Dosegli ste maksimalan broj aplikacija (${limit}). Obrišite postojeću ili nadogradite na Gold.`,
           });
       }
     }

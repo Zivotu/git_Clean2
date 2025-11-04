@@ -181,14 +181,32 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
 
   return (
     <>
-      <Card className="rounded-3xl p-6 space-y-3">
-        <h2 className="text-xl font-semibold mb-2">Thesara Ambassador Program</h2>
+      <Card className="rounded-3xl p-6 space-y-4">
+        <h2 className="text-xl font-semibold">Thesara Ambassador Program</h2>
+        <div className="text-sm text-gray-700 space-y-2">
+          <p>
+            Zaradi kao partner: <span className="font-semibold">80% provizije od prve uplate</span>
+            {' '}korisnika koji iskoristi tvoj kod.
+          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Prednost za tvoju publiku: <span className="font-medium">30 dana besplatnog Gold plana</span>.</li>
+            <li>Isplata: prag <span className="font-medium">50 €</span>, isplata <span className="font-medium">mjesečno (net 30)</span> preko PayPala.</li>
+            <li>Jednostavno dijeljenje: jedinstveni promo kod i link.</li>
+            <li>Transparentnost: dashboard s uvidom u iskorištenja, konverzije i zaradu.</li>
+          </ul>
+          <p className="text-xs text-gray-500">
+            Napomena: provizija se obračunava na <span className="font-medium">prvu uplatu</span> korisnika unutar 60 dana od aktivacije koda.
+          </p>
+        </div>
         {success ? <p className="text-sm text-green-600">{success}</p> : null}
         {renderContent()}
       </Card>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Apply to be an Ambassador">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Prijava za Ambassador program">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            Prije slanja, potvrdi da razumiješ uvjete: 80% provizije na prvu uplatu, 30 dana Gold trial tvojoj publici, prag isplate 50 €, isplata mjesečno (net 30).
+          </div>
           <div>
             <label htmlFor="tiktok" className="block text-sm font-medium text-gray-700">TikTok profil</label>
             <Input

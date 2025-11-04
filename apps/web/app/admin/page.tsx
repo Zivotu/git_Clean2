@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { apiGet, apiGetRaw, apiPost, ApiError } from '@/lib/api';
 import { joinUrl } from '@/lib/url';
 import { auth } from '@/lib/firebase';
@@ -698,10 +699,26 @@ if (error)
     </div>
   );
 
-return (
-  <>
+  return (
+    <>
       <div className="p-4 space-y-4">
         <h1 className="text-xl font-bold">Admin Review</h1>
+
+        {/* Ambassador admin quick access */}
+        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Ambassador program</h2>
+              <p className="text-sm text-gray-500">Upravljaj prijavama, promo kodovima i isplatama ambasadora.</p>
+            </div>
+            <Link
+              href="/admin/ambassador"
+              className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+            >
+              Otvori Ambassador admin
+            </Link>
+          </div>
+        </section>
         <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>

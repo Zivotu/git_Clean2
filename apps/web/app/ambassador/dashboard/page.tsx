@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import {
   fetchAmbassadorDashboard,
   requestAmbassadorPayout,
+  submitAmbassadorPost,
   type AmbassadorDashboardResponse,
 } from '@/lib/ambassador';
 
@@ -20,6 +21,10 @@ export default function AmbassadorDashboardPage() {
   const [paypalEmail, setPaypalEmail] = useState('');
   const [payoutMessage, setPayoutMessage] = useState('');
   const [refreshToken, setRefreshToken] = useState(0);
+  const [postUrl, setPostUrl] = useState('');
+  const [postPlatform, setPostPlatform] = useState('');
+  const [postBusy, setPostBusy] = useState(false);
+  const [postMsg, setPostMsg] = useState('');
 
   useEffect(() => {
     if (!loading && user) {
@@ -52,7 +57,10 @@ export default function AmbassadorDashboardPage() {
   const currentBalance = data?.ambassador.earnings.currentBalance ?? 0;
   const payoutThreshold = data?.payoutThreshold ?? 50;
   const canRequestPayout =
-    currentBalance >= payoutThreshold && !busy && (data?.ambassador.status === 'approved');
+    currentBalance >= payoutThreshold &&
+    !busy &&
+    data?.ambassador.status === 'approved' &&
+    ((data?.activity?.minPostsPerMonth || 0) === 0 || (data?.activity?.verified || 0) >= (data?.activity?.minPostsPerMonth || 0));
 
   async function handlePayoutRequest(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +99,24 @@ export default function AmbassadorDashboardPage() {
       setError(msg);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleSubmitPost(e: React.FormEvent) {
+    e.preventDefault();
+    if (!postUrl) return;
+    setPostBusy(true);
+    setPostMsg('');
+    try {
+      await submitAmbassadorPost({ url: postUrl.trim(), platform: postPlatform || undefined });
+      setPostMsg('Objava je poslana na provjeru.');
+      setPostUrl('');
+      setPostPlatform('');
+      setRefreshToken((t) => t + 1);
+    } catch (err: any) {
+      setPostMsg(err?.message || 'Slanje objave nije uspjelo.');
+    } finally {
+      setPostBusy(false);
     }
   }
 
@@ -155,6 +181,20 @@ export default function AmbassadorDashboardPage() {
         </Card>
 
         <Card className="p-4 space-y-2">
+          <p className="text-sm text-gray-500">Stopa konverzije</p>
+          <p className="text-2xl font-semibold">
+            {(() => {
+              const used = promoStats?.usageCount ?? 0;
+              const paid = promoStats?.paidConversionsCount ?? 0;
+              if (!used) return '0%';
+              const pct = Math.round((paid / used) * 1000) / 10; // 1 decimal
+              return `${pct}%`;
+            })()}
+          </p>
+          <p className="text-xs text-gray-500">Plaćene / iskorištenja</p>
+        </Card>
+
+        <Card className="p-4 space-y-2">
           <p className="text-sm text-gray-500">Ukupno generirani prihod</p>
           <p className="text-2xl font-semibold">
             ${promoStats?.totalRevenueGenerated?.toFixed?.(2) ?? '0.00'}
@@ -163,6 +203,11 @@ export default function AmbassadorDashboardPage() {
       </div>
 
       <Card className="p-6 space-y-4">
+        {data?.activity ? (
+          <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+            Mjesečni uvjet: najmanje {data.activity.minPostsPerMonth} objave. Trenutno verificirano: {data.activity.verified}.
+          </div>
+        ) : null}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
             <p className="text-lg font-semibold">Trenutni balans</p>
@@ -226,6 +271,38 @@ export default function AmbassadorDashboardPage() {
           <p className="text-xs text-gray-500">
             Balans mora biti barem €{payoutThreshold.toFixed(2)} da bi se omogućila isplata.
           </p>
+        ) : null}
+      </Card>
+
+      <Card className="p-6 space-y-3">
+        <h2 className="text-lg font-semibold">Dostavi dokaz objave</h2>
+        <form onSubmit={handleSubmitPost} className="grid gap-3 md:grid-cols-3">
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Link na objavu</label>
+            <Input value={postUrl} onChange={(e) => setPostUrl(e.target.value)} placeholder="https://www.tiktok.com/@.../video/..." />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Platforma (opcionalno)</label>
+            <Input value={postPlatform} onChange={(e) => setPostPlatform(e.target.value)} placeholder="TikTok / Instagram / YouTube" />
+          </div>
+          <div className="md:col-span-3">
+            <Button type="submit" disabled={!postUrl || postBusy}>{postBusy ? 'Slanje…' : 'Pošalji na provjeru'}</Button>
+            {postMsg ? <span className="ml-3 text-sm text-gray-600">{postMsg}</span> : null}
+          </div>
+        </form>
+
+        {data?.activity?.recentPosts?.length ? (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600 mb-1">Nedavne objave:</p>
+            <ul className="space-y-1 text-sm">
+              {data.activity.recentPosts.map((p) => (
+                <li key={p.id} className="flex items-center gap-2">
+                  <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline truncate max-w-[60ch]">{p.url}</a>
+                  <span className="text-xs text-gray-500">({p.status})</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </Card>
 

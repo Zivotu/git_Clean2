@@ -46,6 +46,15 @@ service cloud.firestore {
       allow write: if isAdmin(); // Backend functions operate with admin-like privileges
     }
 
+    // --- Ambassador Content Posts ---
+    match /ambassadorPosts/{postId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.ambassadorUid);
+      allow create: if isSignedIn() && request.resource.data.ambassadorUid == request.auth.uid;
+      // Only admins can verify or reject posts
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     // --- Ambassador Payouts ---
     // Users can read their own payout documents.
     // Users can create a new payout request for themselves.

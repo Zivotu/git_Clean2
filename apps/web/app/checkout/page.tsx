@@ -162,6 +162,16 @@ function CheckoutClient() {
               />
             </section>
 
+            <section className="bg-white rounded-lg shadow p-4 space-y-2">
+              <p className="text-sm text-gray-700">
+                Imate promo kod od ambasadora?{' '}
+                <Link href="/redeem" className="text-emerald-700 underline">
+                  Iskoristite ga ovdje
+                </Link>{' '}
+                prije nastavka.
+              </p>
+            </section>
+
             <button
               onClick={startCheckout}
               disabled={busy}

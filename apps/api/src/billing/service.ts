@@ -36,6 +36,8 @@ import {
   logBillingEvent,
   logUnmappedBillingEvent,
   getAppByIdOrSlug,
+  db,
+  FieldValue,
 } from '../db.js';
 import { enforceAppLimit } from '../lib/appLimit.js';
 import { ForbiddenError } from '../lib/errors.js';
@@ -100,6 +102,28 @@ export function cleanUndefined<T>(obj: T): T {
     return out;
   }
   return obj;
+}
+
+// --- Ambassador program configuration ---
+const DEFAULT_ATTRIBUTION_WINDOW_DAYS = 60;
+const AMBASSADOR_ATTRIBUTION_WINDOW_DAYS = (() => {
+  const raw = Number(process.env.AMBASSADOR_ATTRIBUTION_WINDOW_DAYS);
+  if (Number.isFinite(raw) && raw > 0) return Math.min(raw, 365);
+  return DEFAULT_ATTRIBUTION_WINDOW_DAYS;
+})();
+const AMBASSADOR_ATTRIBUTION_WINDOW_MS =
+  AMBASSADOR_ATTRIBUTION_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+const DEFAULT_COMMISSION_RATE_PERCENT = 80;
+const AMBASSADOR_COMMISSION_RATE_PERCENT = (() => {
+  const raw = Number(process.env.AMBASSADOR_COMMISSION_RATE_PERCENT);
+  if (Number.isFinite(raw) && raw >= 0) return Math.min(raw, 100);
+  return DEFAULT_COMMISSION_RATE_PERCENT;
+})();
+const AMBASSADOR_COMMISSION_RATE = AMBASSADOR_COMMISSION_RATE_PERCENT / 100;
+
+function roundCurrency(amount: number): number {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
 export function buildCheckoutPayload(
@@ -940,6 +964,56 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
           }
         }
       }
+      // Ambassador commission awarding (first payment within attribution window)
+      try {
+        if (userId && amountTotal && AMBASSADOR_COMMISSION_RATE > 0) {
+          const userRef = db.collection('users').doc(userId);
+          await db.runTransaction(async (t) => {
+            const userDoc = await t.get(userRef);
+            if (!userDoc.exists) return;
+            const userData = userDoc.data() as any;
+            const referredBy = userData?.referredBy as
+              | { ambassadorUid: string; promoCode: string; redeemedAt: number; commissionAwarded?: boolean }
+              | undefined;
+            if (!referredBy || !referredBy.redeemedAt || referredBy.commissionAwarded === true) {
+              return;
+            }
+            const withinAttribution = Date.now() - referredBy.redeemedAt < AMBASSADOR_ATTRIBUTION_WINDOW_MS;
+            if (!withinAttribution) return;
+
+            const amountEur = (amountTotal || 0) / 100;
+            if (amountEur <= 0) return;
+            const commissionEur = roundCurrency(amountEur * AMBASSADOR_COMMISSION_RATE);
+            if (commissionEur <= 0) return;
+
+            const ambassadorRef = db.collection('users').doc(referredBy.ambassadorUid);
+            const promoRef = db.collection('promoCodes').doc(referredBy.promoCode);
+
+            t.update(ambassadorRef, {
+              'ambassador.earnings.currentBalance': FieldValue.increment(commissionEur),
+              'ambassador.earnings.totalEarned': FieldValue.increment(commissionEur),
+            });
+            t.update(promoRef, {
+              paidConversionsCount: FieldValue.increment(1),
+              totalRevenueGenerated: FieldValue.increment(amountEur),
+            });
+            t.update(userRef, {
+              'referredBy.commissionAwarded': true,
+              'referredBy.commissionAwardedAt': Date.now(),
+            });
+          });
+          await dbAccess.logBillingEvent({
+            userId,
+            eventType: 'ambassador.commission_awarded',
+            amount: Math.round(((amountTotal || 0) / 100) * AMBASSADOR_COMMISSION_RATE * 100) / 100,
+            ts: Date.now(),
+            details: cleanUndefined({ promoCode: undefined }),
+          });
+        }
+      } catch (err) {
+        console.error('[Ambassador] commission awarding failed', err);
+      }
+
       if (stripeCustomerId && userId) {
         await dbAccess.setStripeCustomerIdForUser(userId, stripeCustomerId);
       }

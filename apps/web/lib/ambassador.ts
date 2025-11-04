@@ -55,6 +55,28 @@ export type AmbassadorDashboardResponse = {
   promoCode: PromoCodeStats | null;
   payouts: PayoutRecord[];
   payoutThreshold: number;
+  activity?: {
+    minPostsPerMonth: number;
+    monthKey: string;
+    submitted: number;
+    verified: number;
+    recentPosts: Array<AmbassadorPost>;
+  };
+};
+
+export type AmbassadorPost = {
+  id: string;
+  ambassadorUid: string;
+  url: string;
+  platform?: string;
+  caption?: string;
+  postedAt?: number;
+  submittedAt: number;
+  monthKey: string;
+  status: 'pending' | 'verified' | 'rejected';
+  verifiedAt?: number;
+  rejectedAt?: number;
+  adminNote?: string;
 };
 
 export type AmbassadorApplicationPayload = {
@@ -117,4 +139,24 @@ export function processPayout(payload: { payoutId: string; status: 'processing' 
     `/admin/payouts/process`,
     payload
   );
+}
+
+export function redeemPromoCode(code: string) {
+  return apiPost<{ status: string; message?: string; error?: string }>(`/promo-codes/redeem`, { code });
+}
+
+export function submitAmbassadorPost(input: { url: string; platform?: string; caption?: string; postedAt?: number }) {
+  return apiPost<{ status: string; id: string }>(`/ambassador/content-submit`, input);
+}
+
+export function fetchAmbassadorPosts(params: { status?: 'pending' | 'verified' | 'rejected' | 'all'; month?: string; limit?: number } = {}) {
+  const query = new URLSearchParams();
+  if (params.status) query.set('status', params.status);
+  if (params.month) query.set('month', params.month);
+  if (typeof params.limit === 'number') query.set('limit', String(params.limit));
+  return apiGet<{ items: AmbassadorPost[] }>(`/admin/ambassador/posts?${query.toString()}`);
+}
+
+export function verifyAmbassadorPost(payload: { id: string; status: 'verified' | 'rejected'; adminNote?: string }) {
+  return apiPost<{ status: string; id: string }>(`/admin/ambassador/posts/verify`, payload);
 }

@@ -10,8 +10,11 @@ import {
   fetchPayouts,
   processPayout,
   rejectAmbassador,
+  fetchAmbassadorPosts,
+  verifyAmbassadorPost,
   type AmbassadorApplicationItem,
   type PayoutRecord,
+  type AmbassadorPost,
 } from '@/lib/ambassador';
 
 type ApplicationStatus = 'pending' | 'approved' | 'rejected';
@@ -59,10 +62,22 @@ export default function AmbassadorAdminPage() {
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [payoutLoading, setPayoutLoading] = useState(false);
   const [payoutError, setPayoutError] = useState('');
+  // Posts review
+  const [posts, setPosts] = useState<AmbassadorPost[]>([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState('');
+
+  // Simple KPIs
+  const [kpiApproved, setKpiApproved] = useState(0);
+  const [kpiPendingApps, setKpiPendingApps] = useState(0);
+  const [kpiPendingPayouts, setKpiPendingPayouts] = useState(0);
+  const [kpiOutstandingBalance, setKpiOutstandingBalance] = useState(0);
 
   useEffect(() => {
     if (!loading && user) {
       void loadApplications(selectedStatus);
+      void refreshKpis();
+      void loadPosts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, selectedStatus]);
@@ -108,6 +123,35 @@ export default function AmbassadorAdminPage() {
       }
     } finally {
       setPayoutLoading(false);
+    }
+  }
+
+  async function refreshKpis() {
+    if (!user) return;
+    try {
+      const [pendingRes, approvedRes, payoutsRes] = await Promise.all([
+        fetchAmbassadorApplications('pending' as any),
+        fetchAmbassadorApplications('approved' as any),
+        fetchPayouts('pending'),
+      ]);
+      setKpiPendingApps(pendingRes.items.length);
+      setKpiApproved(approvedRes.items.length);
+      setKpiPendingPayouts(payoutsRes.items.length);
+      const outstanding = approvedRes.items.reduce((sum, it) => sum + (it.ambassador.earnings?.currentBalance || 0), 0);
+      setKpiOutstandingBalance(outstanding);
+    } catch {}
+  }
+
+  async function loadPosts() {
+    setPostsLoading(true);
+    setPostsError('');
+    try {
+      const res = await fetchAmbassadorPosts({ status: 'pending', limit: 50 });
+      setPosts(res.items);
+    } catch (err: any) {
+      setPostsError(err?.message || 'Neuspješno učitavanje objava.');
+    } finally {
+      setPostsLoading(false);
     }
   }
 
@@ -180,6 +224,67 @@ export default function AmbassadorAdminPage() {
         </p>
         {actionMessage ? <p className="text-sm text-emerald-600">{actionMessage}</p> : null}
       </header>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card className="p-4">
+          <div className="text-sm text-gray-500">Aktivni ambasadori</div>
+          <div className="text-2xl font-semibold">{kpiApproved}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-sm text-gray-500">Prijave na čekanju</div>
+          <div className="text-2xl font-semibold">{kpiPendingApps}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-sm text-gray-500">Isplate na čekanju</div>
+          <div className="text-2xl font-semibold">{kpiPendingPayouts}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-sm text-gray-500">Neisplaćeni balans (€)</div>
+          <div className="text-2xl font-semibold">{kpiOutstandingBalance.toFixed(2)}</div>
+        </Card>
+      </div>
+
+      <Card className="p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Objave ambasadora (na čekanju)</h2>
+          <Button variant="secondary" onClick={loadPosts}>Osvježi</Button>
+        </div>
+        {postsLoading ? <p className="text-sm text-gray-500">Učitavanje…</p> : null}
+        {postsError ? <p className="text-sm text-red-600">{postsError}</p> : null}
+        {posts.length === 0 && !postsLoading ? (
+          <p className="text-sm text-gray-500">Nema objava na čekanju.</p>
+        ) : null}
+        {posts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="text-left text-gray-500">
+                  <th className="py-2 pr-4">Link</th>
+                  <th className="py-2 pr-4">Ambasador</th>
+                  <th className="py-2 pr-4">Mjesec</th>
+                  <th className="py-2 pr-4">Akcije</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posts.map((p) => (
+                  <tr key={p.id} className="border-t border-gray-100">
+                    <td className="py-3 pr-4">
+                      <a href={p.url} target="_blank" className="text-emerald-700 underline truncate inline-block max-w-[40ch]" rel="noopener noreferrer">{p.url}</a>
+                      <div className="text-xs text-gray-500">{p.platform || '—'}</div>
+                    </td>
+                    <td className="py-3 pr-4">{p.ambassadorUid}</td>
+                    <td className="py-3 pr-4">{p.monthKey}</td>
+                    <td className="py-3 pr-4 space-x-2">
+                      <Button size="sm" onClick={async () => { await verifyAmbassadorPost({ id: p.id, status: 'verified' }); await loadPosts(); }}>Verificiraj</Button>
+                      <Button size="sm" variant="secondary" onClick={async () => { const note = window.prompt('Razlog odbijanja (opcionalno):') || undefined; await verifyAmbassadorPost({ id: p.id, status: 'rejected', adminNote: note }); await loadPosts(); }}>Odbij</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </Card>
 
       <Card className="p-6 space-y-4">
         <div className="flex flex-wrap gap-2">

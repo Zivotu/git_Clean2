@@ -3,10 +3,10 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { Query, DocumentData } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { db, upsertEntitlement } from '../db.js';
+import { db, upsertEntitlement, logBillingEvent } from '../db.js';
 import { requireRole, requireAmbassador } from '../middleware/auth.js';
 import { notifyUser, notifyAdmins } from '../notifier.js';
-import type { User, AmbassadorInfo, PromoCode, ReferredByInfo, Payout } from '../types.js';
+import type { User, AmbassadorInfo, PromoCode, ReferredByInfo, Payout, AmbassadorPost } from '../types.js';
 
 /**
  * Generates a unique promo code for an ambassador.
@@ -46,12 +46,24 @@ const AMBASSADOR_MARKETING_KIT_URL =
   process.env.AMBASSADOR_MARKETING_KIT_URL ||
   `${process.env.WEB_BASE || 'https://thesara.space'}/ambassador-kit`;
 
+const MIN_POSTS_PER_MONTH = (() => {
+  const raw = Number(process.env.AMBASSADOR_MIN_POSTS_PER_MONTH);
+  return Number.isFinite(raw) && raw >= 0 ? Math.min(raw, 20) : 2;
+})();
+
+function monthKeyFrom(ts: number): string {
+  const d = new Date(ts);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
 
 export default async function ambassadorRoutes(app: FastifyInstance) {
   // Apply for the Ambassador Program
   app.post(
     '/ambassador/apply',
-    { preHandler: [requireRole(['user'])] },
+    { preHandler: [requireRole(['user'])], config: { rateLimit: { max: 3, timeWindow: '1 day' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { uid } = req.authUser!;
       const schema = z.object({
@@ -164,6 +176,20 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           .get();
         const payouts = payoutQuery.docs.map((doc) => doc.data() as Payout);
 
+        // Load recent content submissions for current month
+        const now = Date.now();
+        const currentMonth = monthKeyFrom(now);
+        const postsSnap = await db
+          .collection('ambassadorPosts')
+          .where('ambassadorUid', '==', uid)
+          .where('monthKey', '==', currentMonth)
+          .orderBy('submittedAt', 'desc')
+          .limit(25)
+          .get();
+        const posts = postsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as AmbassadorPost[];
+        const monthlySubmitted = posts.length;
+        const monthlyVerified = posts.filter((p) => p.status === 'verified').length;
+
         return reply.send({
           ambassador: {
             status: ambassador.status,
@@ -178,6 +204,13 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           promoCode: promoCodeDoc,
           payouts,
           payoutThreshold: PAYOUT_THRESHOLD_EUR,
+          activity: {
+            minPostsPerMonth: MIN_POSTS_PER_MONTH,
+            monthKey: currentMonth,
+            submitted: monthlySubmitted,
+            verified: monthlyVerified,
+            recentPosts: posts,
+          },
         });
       } catch (error) {
         req.log.error(error, 'Failed to load ambassador dashboard');
@@ -189,7 +222,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
   // Ambassador payout request
   app.post(
     '/ambassador/payout-request',
-    { preHandler: [requireAmbassador()] },
+    { preHandler: [requireAmbassador()], config: { rateLimit: { max: 3, timeWindow: '1 hour' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const uid = req.authUser!.uid;
       const schema = z.object({
@@ -210,6 +243,19 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           const userData = userDoc.data() as User;
           const ambassador = userData.ambassador;
           if (!ambassador || ambassador.status !== 'approved') throw new Error('not_an_ambassador');
+
+          // Enforce monthly content requirement before payout
+          if (MIN_POSTS_PER_MONTH > 0) {
+            const now = Date.now();
+            const currentMonth = monthKeyFrom(now);
+            const postsQuery = await db
+              .collection('ambassadorPosts')
+              .where('ambassadorUid', '==', uid)
+              .where('monthKey', '==', currentMonth)
+              .where('status', '==', 'verified')
+              .get();
+            if (postsQuery.size < MIN_POSTS_PER_MONTH) throw new Error('insufficient_activity');
+          }
 
           const currentBalance = ambassador.earnings?.currentBalance ?? 0;
           const amount = requestedAmount ?? currentBalance;
@@ -248,6 +294,17 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           return payoutRef.id;
         });
 
+        // Audit log: payout requested
+        try {
+          await logBillingEvent({
+            userId: uid,
+            eventType: 'ambassador.payout.requested',
+            amount: requestedAmount || undefined,
+            ts: Date.now(),
+            details: { payoutId },
+          });
+        } catch {}
+
         try {
           await Promise.all([
             notifyUser(
@@ -282,6 +339,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           'insufficient_balance',
           'below_threshold',
           'payout_in_progress',
+          'insufficient_activity',
         ];
         if (clientErrors.includes(error.message)) {
           return reply.code(400).send({ error: error.message });
@@ -289,6 +347,105 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
         return reply.code(500).send({ error: 'internal_server_error' });
       }
     }
+  );
+
+  // Ambassador submits social proof (content link)
+  app.post(
+    '/ambassador/content-submit',
+    { preHandler: [requireAmbassador()], config: { rateLimit: { max: 10, timeWindow: '1 day' } } },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const uid = req.authUser!.uid;
+      const schema = z.object({
+        url: z.string().url(),
+        platform: z.string().max(40).optional(),
+        caption: z.string().max(300).optional(),
+        postedAt: z.number().int().optional(),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: 'invalid_input', details: parsed.error.issues });
+
+      const { url, platform, caption, postedAt } = parsed.data;
+      try {
+        const now = Date.now();
+        const ref = db.collection('ambassadorPosts').doc();
+        const post: AmbassadorPost = {
+          id: ref.id,
+          ambassadorUid: uid,
+          url,
+          platform,
+          caption,
+          postedAt,
+          submittedAt: now,
+          monthKey: monthKeyFrom(now),
+          status: 'pending',
+        };
+        await ref.set(post);
+        return reply.code(201).send({ status: 'submitted', id: ref.id });
+      } catch (error) {
+        req.log.error(error, 'content_submit_failed');
+        return reply.code(500).send({ error: 'internal_server_error' });
+      }
+    },
+  );
+
+  // Admin: list submitted posts
+  app.get(
+    '/admin/ambassador/posts',
+    { preHandler: [requireRole(['admin'])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const schema = z.object({
+        status: z.enum(['pending', 'verified', 'rejected', 'all']).optional().default('pending'),
+        month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
+        limit: z
+          .preprocess((v) => (v == null || v === '' ? undefined : Number(v)), z.number().int().min(1).max(200))
+          .optional(),
+      });
+      const parsed = schema.safeParse(req.query);
+      if (!parsed.success) return reply.code(400).send({ error: 'invalid_query', details: parsed.error.issues });
+      const { status, month, limit } = parsed.data;
+
+      try {
+        let q: Query<DocumentData> = db.collection('ambassadorPosts');
+        if (status !== 'all') q = (q as any).where('status', '==', status);
+        if (month) q = (q as any).where('monthKey', '==', month);
+        q = q.orderBy('submittedAt', 'desc');
+        if (limit) q = q.limit(limit);
+        const snap = await q.get();
+        const items = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+        return reply.send({ items });
+      } catch (error) {
+        req.log.error(error, 'list_posts_failed');
+        return reply.code(500).send({ error: 'internal_server_error' });
+      }
+    },
+  );
+
+  // Admin: verify/reject a post
+  app.post(
+    '/admin/ambassador/posts/verify',
+    { preHandler: [requireRole(['admin'])] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const schema = z.object({
+        id: z.string(),
+        status: z.enum(['verified', 'rejected']),
+        adminNote: z.string().max(300).optional(),
+      });
+      const parsed = schema.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: 'invalid_input', details: parsed.error.issues });
+      const { id, status, adminNote } = parsed.data;
+      try {
+        const ref = db.collection('ambassadorPosts').doc(id);
+        const updates: any = { status };
+        if (status === 'verified') updates.verifiedAt = Date.now();
+        if (status === 'rejected') updates.rejectedAt = Date.now();
+        if (adminNote) updates.adminNote = adminNote;
+        await ref.set(updates, { merge: true });
+        return reply.send({ status: 'updated', id });
+      } catch (error) {
+        req.log.error(error, 'verify_post_failed');
+        return reply.code(500).send({ error: 'internal_server_error' });
+      }
+    },
   );
 
   // (Admin) Approve an ambassador application
@@ -405,6 +562,8 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
       let displayName: string | undefined;
 
       try {
+        let expiresAtOut: number | undefined;
+        let trialDaysOut: number | undefined;
         await db.runTransaction(async (t) => {
           const userDoc = await t.get(userRef);
           if (!userDoc.exists) throw new Error('user_not_found');
@@ -667,7 +826,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
   // Redeem a promotional code
   app.post(
     '/promo-codes/redeem',
-    { preHandler: [requireRole(['user'])] },
+    { preHandler: [requireRole(['user'])], config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { uid } = req.authUser!;
       const schema = z.object({ code: z.string().min(3) });
@@ -709,6 +868,8 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           // 3. Grant 'isGold' entitlement for 30 days
           const trialDays = promoCodeData.benefit.durationDays || 30;
           const expiresAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
+          trialDaysOut = trialDays;
+          expiresAtOut = expiresAt;
           await upsertEntitlement({
             id: `ambassador-trial-${uid}`,
             userId: uid,
@@ -718,7 +879,17 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           });
         });
 
-        return reply.send({ status: 'redeemed', message: 'Gold trial activated!' });
+        // Audit log for promo redeem
+        try {
+          await logBillingEvent({
+            userId: uid,
+            eventType: 'promo.redeem',
+            ts: Date.now(),
+            details: { code, expiresAt: expiresAtOut, trialDays: trialDaysOut },
+          });
+        } catch {}
+
+        return reply.send({ status: 'redeemed', message: 'Gold trial activated!', expiresAt: expiresAtOut, trialDays: trialDaysOut });
 
       } catch (error: any) {
         req.log.error(error, `Failed to redeem code ${code} for user ${uid}`);

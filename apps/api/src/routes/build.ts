@@ -36,6 +36,7 @@ export default async function buildRoutes(app: FastifyInstance) {
           .send({
             ok: false,
             error: 'max_apps',
+            code: 'max_apps',
             message: `Dosegli ste maksimalan broj aplikacija (${limit})`,
           });
       }

@@ -46,7 +46,7 @@ const friendlyByCode: Record<string, string> = {
   BUILD_PUBLISH_RENAME_FAILED: 'Objavljivanje nije uspjelo. Pokušaj ponovno.',
   ses_lockdown: 'SES/lockdown nije podržan u browseru. Ukloni ga ili pokreni samo na serveru.',
   ses_compartment: 'Kod koristi SES Compartment – potrebno je ručno odobrenje.',
-  max_apps: 'Dosegnut je maksimalan broj aplikacija za tvoj plan.',
+  max_apps: 'Dosegnut je maksimalan broj aplikacija za tvoj plan. Obriši postojeću ili aktiviraj Gold.',
 };
 
 const detectMode = (value: string): Mode =>
@@ -119,6 +119,8 @@ export default function CreatePage() {
   const [previewUploading, setPreviewUploading] = useState(false);
 
   const [publishError, setPublishError] = useState('');
+  const [publishErrorCode, setPublishErrorCode] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [authError, setAuthError] = useState('');
   const [publishing, setPublishing] = useState(false);
 
@@ -496,9 +498,14 @@ export default function CreatePage() {
           const code = err.code as string | undefined;
           const friendly = (code && friendlyByCode[code]) || err.message || code || 'Greška pri objavi.';
           setPublishError(friendly);
+          setPublishErrorCode(code || null);
+          if (code === 'max_apps') {
+            setShowUpgradeModal(true);
+          }
         }
       } else {
         setPublishError(String(err));
+        setPublishErrorCode(null);
       }
       setShowProgress(false);
       setManualBuildState(null);
@@ -518,6 +525,38 @@ export default function CreatePage() {
     previewChoice === 'custom' && customPreview?.dataUrl
       ? customPreview.dataUrl
       : selectedPreset;
+
+  const UpgradeModal = () => {
+    if (!showUpgradeModal) return null;
+    return (
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/50" onClick={() => setShowUpgradeModal(false)} />
+        <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
+          <h3 className="text-xl font-semibold mb-2">Trebaš Gold za više aplikacija</h3>
+          <p className="text-sm text-gray-700 mb-4">
+            U besplatnom paketu možeš imati 1 aplikaciju ukupno. Obriši postojeću u <a href="/my" className="underline text-emerald-700">Mojim aplikacijama</a> ili nadogradi na Gold paket.
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="rounded-lg border px-4 py-2 text-gray-700"
+            >
+              Zatvori
+            </button>
+            <a
+              href="/checkout/gold"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-white shadow-sm hover:bg-emerald-700"
+            >
+              Aktiviraj Gold
+            </a>
+          </div>
+          <div className="mt-3 text-xs text-gray-600">
+            Imate promo kod? <a href="/redeem" className="text-emerald-700 underline">Unesite ovdje</a>.
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const progressPct = useMemo(
     () => ((step + 1) / stepsList.length) * 100,
@@ -1057,6 +1096,7 @@ export default function CreatePage() {
           </aside>
         </div>
       </div>
+      <UpgradeModal />
     </main>
   );
 }

@@ -161,7 +161,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   app = fastify({ 
     logger: true, 
-    bodyLimit: 256 * 1024
+    bodyLimit: 5 * 1024 * 1024
   });
 
   // HOTFIX: globalni redirect sanitizer za FST_ERR_BAD_STATUS_CODE
@@ -330,7 +330,12 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   if (process.env.CSRF_ENABLED === 'true') {
     await app.register(csrf);
   }
-  await app.register(multipart);
+  // Increase multipart limits to match bodyLimit (5 MB)
+  await app.register(multipart, {
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+    },
+  });
   await app.register(rawBody, { field: 'rawBody', global: false, encoding: 'utf8' });
 
   // Static assets from the project public directory
