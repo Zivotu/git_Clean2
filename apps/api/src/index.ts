@@ -597,13 +597,15 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(roomsBridge);
   await app.register(listingsRoutes);
   await app.register(accessRoutes);
+  await app.register(billingRoutes);
+  await app.register(billingRoutes, { prefix: '/api' });
+  await app.register(meRoutes);
   await app.register(ambassadorRoutes);
   await app.register(versionRoutes);
   await app.register(oglasiRoutes);
   await app.register(buildRoutes);
   await app.register(avatarRoutes);
   await app.register(entitlementsRoutes);
-  await app.register(meRoutes);
   await app.register(configRoutes);
   // Mount publicRoutes at root. We already strip '/api' in onRequest so
   // requests to '/api/play/*' will match these root-level routes.

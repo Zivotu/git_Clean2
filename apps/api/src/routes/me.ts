@@ -4,6 +4,7 @@ import { db, listEntitlements, readApps } from '../db.js'
 import type { Entitlement } from '../entitlements/service.js'
 import type { AppRecord } from '../types.js'
 import { sendWelcomeEmail } from '../notifier.js'
+import { getConfig } from '../config.js'
 
 type EntitlementSummary = {
   entitlements: Entitlement[]
@@ -13,6 +14,8 @@ type EntitlementSummary = {
   appIds: Set<string>
   creatorIds: Set<string>
 }
+
+const config = getConfig()
 
 function toStringId(value: unknown): string | undefined {
   if (value == null) return undefined
@@ -161,12 +164,104 @@ function matchesCreator(app: AppRecord, creatorTargets: Set<string>): boolean {
   return authorUid ? creatorTargets.has(authorUid) : false
 }
 
+function countUserApps(apps: AppRecord[], uid: string): number {
+  return apps.filter((app) => {
+    const owner =
+      toStringId(app.author?.uid) ??
+      toStringId((app as any).ownerUid) ??
+      toStringId((app as any).authorUid)
+    if (!owner || owner !== uid) return false
+    if ((app as any).deletedAt) return false
+    const state = (app as any).state
+    if (state === 'inactive' || state === 'quarantined') return false
+    return true
+  }).length
+}
+
+function sumStorageUsageMb(apps: AppRecord[], uid: string): number {
+  let total = 0
+  for (const app of apps) {
+    const owner =
+      toStringId(app.author?.uid) ??
+      toStringId((app as any).ownerUid) ??
+      toStringId((app as any).authorUid)
+    if (!owner || owner !== uid) continue
+
+    const candidates = [
+      (app as any)?.storageUsageMb,
+      (app as any)?.storageUsage,
+      (app as any)?.metrics?.storageUsageMb,
+      (app as any)?.metrics?.storageUsage,
+      (app as any)?.usage?.storageMb,
+    ]
+    for (const raw of candidates) {
+      const value = Number(raw)
+      if (Number.isFinite(value) && value > 0) {
+        total += value
+        break
+      }
+    }
+  }
+  return Math.max(0, Math.round(total * 100) / 100)
+}
+
 export default async function meRoutes(app: FastifyInstance) {
   const secureGet = (
     url: string,
     handler: (req: FastifyRequest, reply: FastifyReply) => Promise<unknown>,
   ) => {
     app.get(url, { preHandler: requireRole(['user', 'admin']) }, handler)
+  }
+
+  const usageHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' })
+    }
+    try {
+      const summary = await buildEntitlementSummary(uid)
+      const apps = await readApps()
+      const plan = summary.gold ? 'Gold' : 'Free'
+      const appsUsed = countUserApps(apps as AppRecord[], uid)
+      const appLimit = summary.gold
+        ? config.GOLD_MAX_APPS_PER_USER
+        : config.MAX_APPS_PER_USER
+      const storageLimit = summary.gold
+        ? config.GOLD_MAX_STORAGE_MB_PER_USER
+        : config.MAX_STORAGE_MB_PER_USER
+      const storageUsed = sumStorageUsageMb(apps as AppRecord[], uid)
+
+      return reply.send({
+        plan,
+        apps: { used: appsUsed, limit: appLimit },
+        storage: { used: storageUsed, limit: storageLimit },
+      })
+    } catch (err) {
+      req.log.error({ err, uid }, 'me_usage_failed')
+      return reply.code(500).send({ error: 'failed_to_load_usage' })
+    }
+  }
+
+  for (const prefix of ['', '/api']) {
+    secureGet(`${prefix}/me/usage`, usageHandler)
+  }
+
+  const entitlementsFullHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' })
+    }
+    try {
+      const raw = await listEntitlements(uid)
+      return reply.send({ items: raw })
+    } catch (err) {
+      req.log.error({ err, uid }, 'me_entitlements_full_failed')
+      return reply.code(500).send({ error: 'failed_to_load_entitlements' })
+    }
+  }
+
+  for (const prefix of ['', '/api']) {
+    secureGet(`${prefix}/me/entitlements-full`, entitlementsFullHandler)
   }
 
   const entitlementsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
