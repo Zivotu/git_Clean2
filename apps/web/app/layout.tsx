@@ -6,7 +6,6 @@ import Header from '@/components/Header';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/auth';
 import I18nRootProvider from '@/components/I18nRootProvider';
-import DebugAuthLoader from '@/components/DebugAuthLoader';
 import { messages as ALL_MESSAGES, type Locale, defaultLocale } from '@/i18n/config';
 import { getServerLocale } from '@/lib/locale';
 
@@ -41,8 +40,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <I18nRootProvider locale={locale} messages={messages}>
               <Header />
               {children}
-              {/* Debug UI je uvijek vidljiv dok traje dijagnostika */}
-              <DebugAuthLoader />
             </I18nRootProvider>
           </AuthProvider>
         </ChunkErrorBoundary>

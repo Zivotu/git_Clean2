@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { apiAuthedPost } from './api';
 
 export type MinimalUser = {
   uid: string;
@@ -26,6 +27,14 @@ export async function ensureUserDoc(user: MinimalUser) {
       },
       { merge: false }
     );
+    try {
+      await apiAuthedPost('me/welcome-email', {
+        email: user.email,
+        displayName: user.displayName ?? undefined,
+      });
+    } catch (err) {
+      console.warn('Failed to trigger welcome email', err);
+    }
   } else {
     await setDoc(
       ref,

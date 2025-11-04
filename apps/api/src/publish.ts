@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import * as esbuild from 'esbuild';
 import { createJob, isJobActive } from '../buildQueue.js';
-import { notifyAdmins } from '../notifier.js';
+import { notifyAdmins, notifyUserModeration } from '../notifier.js';
 import { getBuildDir } from '../paths.js';
 import { readApps, writeApps, type AppRecord, listEntitlements } from '../db.js';
 import { prisma } from '../db.js';
@@ -554,6 +554,27 @@ ${finalCode}`;
         await notifyAdmins(subject, lines.join('\n'));
       } catch (err) {
         req.log?.warn?.({ err }, 'publish:notify_admins_failed');
+      }
+
+      try {
+        const greetingName = displayName || authorHandle || undefined;
+        const pendingSubject = `Vaša aplikacija "${title}" čeka odobrenje`;
+        const messageLines = [
+          greetingName ? `Bok ${greetingName},` : 'Bok,',
+          '',
+          `zaprimili smo vaš zahtjev za objavu aplikacije "${title}".`,
+          'Naš tim će pregledati sadržaj u najkraćem mogućem roku.',
+          'Obavijestit ćemo vas čim donesemo odluku o objavi.',
+          '',
+          'Hvala na strpljenju,',
+          'THESARA tim',
+        ];
+        await notifyUserModeration(authorUid, pendingSubject, messageLines.join('\n'), {
+          email,
+          context: 'publish:pending_notification',
+        });
+      } catch (err) {
+        req.log?.warn?.({ err, listingId, buildId }, 'publish:notify_user_pending_failed');
       }
 
       try {        

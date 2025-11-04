@@ -10,6 +10,7 @@ import { auth } from "@/lib/firebase";
 import type { User } from 'firebase/auth';
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { appDetailsHref } from "@/lib/urls";
 
 type BillingPackage = {
   id: string;
@@ -208,7 +209,7 @@ export default function BillingSuccessClient() {
           <div className="flex gap-2">
             {appSlug && (
               <Link
-                href={{ pathname: '/app', query: { slug: appSlug } }}
+                href={appSlug ? appDetailsHref(appSlug) : '/apps'}
                 className="inline-block"
               >
                 <Button>Open app</Button>

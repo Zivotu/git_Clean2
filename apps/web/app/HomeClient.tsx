@@ -17,9 +17,10 @@ import { useEntitlements } from '@/hooks/useEntitlements';
 import { useI18n } from '@/lib/i18n-provider';
 import type { Listing as ApiListing } from '@/lib/types';
 import { resolvePreviewUrl } from '@/lib/preview';
-import { playHref } from '@/lib/urls';
+import { playHref, appDetailsHref } from '@/lib/urls';
 import SplashScreen from '@/components/layout/SplashScreen';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
+import AdminAccessTrigger from '@/components/AdminAccessTrigger';
 export {};
 type HomeClientProps = {
   initialItems?: ApiListing[];
@@ -165,7 +166,7 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
             >
               Play
             </Link>
-            <Link href={{ pathname: '/app', query: { slug: data.slug } }} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={onClose}>Full Details</Link>
+            <Link href={appDetailsHref(data.slug)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={onClose}>Full Details</Link>
           </div>
         </div>
       </div>
@@ -240,9 +241,20 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
         const ids = new Set(subscribedItems.map((it) => it.id));
         setSubscribed(ids);
       } catch {
-        // fallback: try to interpret entitlements purchases as ids if they look like uuids
-        const maybeIds = (ent.data?.purchases || []).filter((p) => typeof p === 'string' && p.length > 10) as string[];
-        setSubscribed(new Set(maybeIds));
+        const purchases = ent.data?.purchases || [];
+        const ids = new Set<string>();
+        for (const token of purchases) {
+          if (typeof token !== 'string') continue;
+          if (token.includes(':')) {
+            const [, value] = token.split(':', 2);
+            if (value && value.length > 0) ids.add(value);
+            continue;
+          }
+          if (token.length > 8) {
+            ids.add(token);
+          }
+        }
+        setSubscribed(ids);
       }
     })();
     return () => { cancelled = true; };
@@ -484,7 +496,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
                   const imgProps = idx === 0 ? { priority: true, loading: 'eager' as const } : {};
                   return (
                     <div key={`${it.id}-${idx}`} data-carousel-item ref={idx === 0 ? firstSlideRef : undefined} className="w-[280px] flex-none">
-                      <div onClick={() => router.push(`/app?slug=${encodeURIComponent(it.slug)}`)} className="group cursor-pointer rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
+                      <div onClick={() => router.push(appDetailsHref(it.slug))} className="group cursor-pointer rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
                         <div className="relative h-40">
                           {hasPreview ? (
                             <Image src={img} alt={it.title} fill style={{ color: 'transparent' }} className="object-cover transition-transform duration-300 group-hover:scale-105" {...imgProps} />
@@ -605,7 +617,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
         )}
       </main>
       <footer className="border-t bg-white">
-        <div className="max-w-7xl mx-auto px-4 py-12 text-sm text-gray-500">
+        <div className="relative max-w-7xl mx-auto px-4 py-12 text-sm text-gray-500">
           <div className="flex flex-col md:flex-row justify-between gap-8">
             <div>
               <Logo className="mb-4" />
@@ -642,6 +654,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t text-center">© 2025 {SITE_NAME}.</div>
+          <AdminAccessTrigger className="absolute bottom-6 right-4 md:right-0" />
         </div>
       </footer>
       {toast && (<Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />)}

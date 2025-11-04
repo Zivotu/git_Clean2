@@ -31,6 +31,15 @@ export default function ProgressModal({
       setProgress(0);
       return;
     }
+    setProgress((current) => {
+      if (state === 'queued') {
+        return current < 8 ? 8 : current;
+      }
+      if (state === 'running') {
+        return current < 35 ? 35 : current;
+      }
+      return current;
+    });
     const id = setInterval(() => {
       setProgress((current) => {
         const target = targets[state];

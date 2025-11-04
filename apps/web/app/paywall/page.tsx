@@ -8,6 +8,7 @@ import type { AccessMode } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 import { playHref } from '@/lib/urls';
+import { summarizeEntitlementResponse } from '@/lib/entitlementSummary';
 
 function Toast({
   message,
@@ -278,9 +279,11 @@ function PaywallClient() {
               cache: 'no-store',
             });
             if (r.ok) {
-              const ents = await r.json();
-              if (Array.isArray(ents)) {
-                const e = ents.find(
+              const json = await r.json().catch(() => null);
+              const summary = summarizeEntitlementResponse(json);
+              const entitlements = summary?.entitlements ?? (Array.isArray(json) ? json : []);
+              if (Array.isArray(entitlements)) {
+                const e = entitlements.find(
                   (x: any) =>
                     x.feature === 'app-trial' &&
                     x.active !== false &&

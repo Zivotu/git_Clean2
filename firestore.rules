@@ -33,6 +33,11 @@ service cloud.firestore {
       }
     }
 
+    match /adminSettings/accessControl {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // --- Ambassador Promo Codes ---
     // Promo codes are public readable so clients can check for existence.
     // Only the backend (or an admin) can create or modify promo codes.

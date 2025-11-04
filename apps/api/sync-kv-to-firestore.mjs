@@ -15,7 +15,7 @@ dotenv.config({ path: join(__dirname, '.env.local'), override: true });
 // Direct Firebase Admin setup
 import admin from 'firebase-admin';
 
-const serviceAccountPath = join(__dirname, 'keys/createx-e0ccc-702119a41ed8.json');
+const serviceAccountPath = join(__dirname, '../../keys/createx-e0ccc-3510ddb20df0.json');
 const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf8'));
 
 if (!admin.apps.length) {

@@ -2,7 +2,7 @@ import admin from 'firebase-admin/lib/index.js';
 import { readFileSync } from 'fs';
 
 const serviceAccount = JSON.parse(
-  readFileSync('./apps/api/keys/createx-e0ccc-702119a41ed8.json', 'utf8')
+  readFileSync('./keys/createx-e0ccc-3510ddb20df0.json', 'utf8')
 );
 
 admin.initializeApp({

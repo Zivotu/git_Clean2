@@ -31,7 +31,7 @@ import {
   uploadPresetPreview,
 } from '@/lib/previewClient';
 import { resolvePreviewUrl } from '@/lib/preview';
-import { playHref } from '@/lib/urls';
+import { playHref, appDetailsHref } from '@/lib/urls';
 
 // ------------------------------------------------------------------
 // Types
@@ -294,8 +294,15 @@ export default function AppDetailPage() {
 
 function AppDetailClient() {
   const slug = useRouteParam('slug', (segments) => {
-    if (segments.length > 1 && segments[0] === 'app') {
-      return segments[1] ?? '';
+    if (segments.length > 1) {
+      const [root, raw] = segments;
+      if (root === 'app' || root === 'apps') {
+        try {
+          return decodeURIComponent(raw ?? '');
+        } catch {
+          return raw ?? '';
+        }
+      }
     }
     return undefined;
   });
@@ -2072,7 +2079,10 @@ useEffect(() => {
         message="To play this app, please sign in or create an account."
         confirmLabel="Go to Login"
         confirmTone="default"
-        onConfirm={() => router.push(`/login?next=${encodeURIComponent(slug ? `/app?slug=${encodeURIComponent(slug)}` : '/app')}`)}
+        onConfirm={() => {
+          const nextPath = slug ? appDetailsHref(slug) : '/apps';
+          router.push(`/login?next=${encodeURIComponent(nextPath)}`);
+        }}
         onClose={() => setShowLoginPrompt(false)}
       />
       <ConfirmDialog

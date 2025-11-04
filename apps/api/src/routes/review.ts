@@ -25,6 +25,7 @@ import { computeNextVersion } from '../lib/versioning.js';
 import { createJob, isJobActive } from '../buildQueue.js';
 import { ensureListingPreview } from '../lib/preview.js';
 import { sse } from '../sse.js';
+import { notifyUserModeration } from '../notifier.js';
 
 // Note: This file is being refactored to remove array paths and use a helper.
 // The original file had duplicate route registrations which are being cleaned up.
@@ -194,19 +195,23 @@ export default async function reviewRoutes(app: FastifyInstance) {
       'publishing',
       'publish_failed',
       'published',
+      'deleted',
     ];
 
     let builds = items.filter((b) => allowed.includes(b.state));
+
+    if (status === 'deleted') {
+      builds = builds.filter((b) => b.state === 'deleted');
+    } else {
+      builds = builds.filter((b) => b.state !== 'deleted');
+    }
+
     if (status === 'pending') {
       builds = builds.filter((b) => ['pending_review', 'pending_review_llm'].includes(b.state));
     } else if (status === 'approved') {
       builds = builds.filter((b) => ['approved', 'published'].includes(b.state));
     } else if (status === 'rejected') {
       builds = builds.filter((b) => b.state === 'rejected');
-    } else if (status === 'deleted') {
-      // This is a placeholder; actual filtering for deleted items needs a different logic
-      // as they are marked in the app listing, not in the build state.
-      // For now, we'll rely on the frontend to show the 'deleted' tab and the API to provide a way to list them.
     } else if (status === 'failed') {
       builds = builds.filter((b) => ['failed', 'publish_failed'].includes(b.state));
     }
@@ -583,6 +588,16 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const rec = resolved?.build ?? (await readBuild(buildId));
     if (!rec) return reply.code(404).send({ error: 'not_found' });
 
+    let approvalRecipient:
+      | {
+          uid?: string;
+          email?: string;
+          title?: string;
+          appId?: string;
+          slug?: string;
+        }
+      | undefined;
+
     await updateBuild(buildId, { state: 'publishing' });
 
     let bundlePublicUrl: string;
@@ -629,6 +644,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
         const app = resolved!.apps[appIndex];
         const now = Date.now();
         const payload: Record<string, any> = {};
+
+        approvalRecipient = {
+          uid: app?.author?.uid || (app as any)?.ownerUid,
+          email: (app as any)?.author?.email || (app as any)?.contactEmail,
+          title: app?.title,
+          appId: String(app?.id ?? ''),
+          slug: app?.slug,
+        };
 
         if (app.pendingBuildId === buildId) {
           req.log.info({ 
@@ -730,6 +753,49 @@ export default async function reviewRoutes(app: FastifyInstance) {
       return reply.code(500).send({ ok: false, error: 'publish_failed', detail });
     }
 
+    if (approvalRecipient?.uid) {
+      try {
+        const cfgLinks = getConfig();
+        const titleForMail =
+          (approvalRecipient.title && approvalRecipient.title.trim()) ||
+          approvalRecipient.slug ||
+          approvalRecipient.appId ||
+          buildId;
+        const webBaseRaw = cfgLinks.WEB_BASE || cfgLinks.PUBLIC_BASE || '';
+        const webBase =
+          typeof webBaseRaw === 'string' && webBaseRaw
+            ? webBaseRaw.replace(/\/$/, '')
+            : '';
+        const manageUrl = webBase ? `${webBase}/my` : undefined;
+        const subject = `Aplikacija "${titleForMail}" je odobrena`;
+        const lines = [
+          'Bok,',
+          '',
+          `vaša aplikacija "${titleForMail}" upravo je odobrena i objavljena na Thesari.`,
+        ];
+        if (manageUrl) {
+          lines.push(`Možete je pratiti i uređivati ovdje: ${manageUrl}`);
+        }
+        lines.push('');
+        lines.push('Hvala što gradite uz nas!');
+        lines.push('THESARA tim');
+        await notifyUserModeration(
+          approvalRecipient.uid,
+          subject,
+          lines.join('\n'),
+          {
+            email: approvalRecipient.email,
+            context: 'review:approval_notification',
+          },
+        );
+      } catch (err) {
+        req.log.warn(
+          { err, buildId, uid: approvalRecipient.uid },
+          'review_approve_notify_user_failed',
+        );
+      }
+    }
+
     try {
       sse.emit(buildId, 'final', { status: 'published', reason: 'approved', buildId });
     } catch {}
@@ -744,6 +810,15 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const resolved = await resolveBuildContext(id);
     const buildId = resolved?.build?.id || resolved?.buildId;
     const reason = (req.body as any)?.reason;
+    let rejectionRecipient:
+      | {
+          uid?: string;
+          email?: string;
+          title?: string;
+          appId?: string;
+          slug?: string;
+        }
+      | undefined;
 
     if (buildId) {
       await updateBuild(buildId, { state: 'rejected', ...(reason ? { error: reason } : {}) });
@@ -756,6 +831,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
         const app = resolved!.apps[appIndex];
         const now = Date.now();
         const payload: Record<string, any> = {};
+
+        rejectionRecipient = {
+          uid: app?.author?.uid || (app as any)?.ownerUid,
+          email: (app as any)?.author?.email || (app as any)?.contactEmail,
+          title: app?.title,
+          appId: String(app?.id ?? ''),
+          slug: app?.slug,
+        };
 
         if (buildId && app.pendingBuildId === buildId) {
           payload.pendingBuildId = FieldValue.delete();
@@ -776,6 +859,56 @@ export default async function reviewRoutes(app: FastifyInstance) {
       } 
     } catch (err: unknown) {
       req.log.error({ err, id: buildId ?? id }, 'listing_reject_update_failed');
+    }
+
+    if (rejectionRecipient?.uid) {
+      try {
+        const cfgLinks = getConfig();
+        const titleForMail =
+          (rejectionRecipient.title && rejectionRecipient.title.trim()) ||
+          rejectionRecipient.slug ||
+          rejectionRecipient.appId ||
+          buildId ||
+          id;
+        const webBaseRaw = cfgLinks.WEB_BASE || cfgLinks.PUBLIC_BASE || '';
+        const webBase =
+          typeof webBaseRaw === 'string' && webBaseRaw
+            ? webBaseRaw.replace(/\/$/, '')
+            : '';
+        const manageUrl = webBase ? `${webBase}/my` : undefined;
+        const subject = `Aplikacija "${titleForMail}" nije odobrena`;
+        const lines = [
+          'Bok,',
+          '',
+          `trenutačno nismo odobrili aplikaciju "${titleForMail}".`,
+        ];
+        if (reason) {
+          lines.push(`Razlog: ${reason}`);
+          lines.push('');
+        }
+        lines.push('Možete urediti aplikaciju i ponovno je poslati iz Thesara Studija.');
+        if (manageUrl) {
+          lines.push(`Otvorite studio: ${manageUrl}`);
+        }
+        lines.push('');
+        lines.push('Ako trebate dodatnu pomoć, pišite nam na reports@thesara.space.');
+        lines.push('');
+        lines.push('THESARA tim');
+        await notifyUserModeration(
+          rejectionRecipient.uid,
+          subject,
+          lines.join('\n'),
+          {
+            email: rejectionRecipient.email,
+            context: 'review:reject_notification',
+          },
+        );
+      } catch (err) {
+        req.log.warn(
+          { err, id: buildId ?? id, uid: rejectionRecipient.uid },
+          'review_reject_notify_user_failed',
+        );
+      }
     }
 
     req.log.info({ id: buildId ?? id, uid: req.authUser?.uid, reason }, 'review_rejected');
@@ -821,13 +954,56 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
   const deleteHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
+    const now = Date.now();
+
     try {
       const resolved = await resolveBuildContext(id);
       const appIndex = resolved?.appIndex ?? -1;
+      const buildId = resolved?.buildId;
+      const build = resolved?.build ?? (buildId ? await readBuild(buildId) : undefined);
+
       if (appIndex >= 0) {
-        const app = resolved!.apps[appIndex]; // AppRecord
-        await updateApp(app.id, { deletedAt: Date.now(), state: 'inactive' });
+        const app = resolved!.apps[appIndex];
+        const snapshot = {
+          state: app.state,
+          status: app.status,
+          publishedAt: app.publishedAt,
+        };
+
+        const payload: Partial<AppRecord> = {
+          deletedAt: now,
+          state: 'inactive',
+          updatedAt: now,
+          adminDeleteSnapshot: snapshot,
+        };
+
+        if (app.status === 'published') {
+          payload.status = 'draft';
+        } else if (app.status) {
+          payload.status = app.status;
+        }
+
+        await updateApp(app.id, payload);
       }
+
+      if (buildId) {
+        const previousState =
+          build?.state && build.state !== 'deleted'
+            ? build.state
+            : build?.previousState && build.previousState !== 'deleted'
+            ? build.previousState
+            : undefined;
+
+        const patch: Parameters<typeof updateBuild>[1] = {
+          state: 'deleted',
+          deletedAt: now,
+        };
+        if (previousState) {
+          patch.previousState = previousState;
+        }
+        await updateBuild(buildId, patch);
+      }
+
       return reply.send({ ok: true });
     } catch (err: unknown) {
       req.log.error({ err, id }, 'soft_delete_failed');
@@ -877,13 +1053,53 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
   const restoreHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
+    const now = Date.now();
     try {
       const apps = await readApps();
       const resolved = await resolveBuildContext(id, { apps });
       const idx = resolved?.appIndex ?? -1;
+
       if (idx >= 0) {
-        await updateApp(apps[idx].id, { deletedAt: undefined, state: 'active' });
+        const app = apps[idx];
+        const snapshot = (app as any)?.adminDeleteSnapshot || {};
+        const restoredState =
+          typeof snapshot.state === 'string' && snapshot.state.length ? snapshot.state : 'active';
+        const restoredStatus =
+          typeof snapshot.status === 'string' && snapshot.status.length
+            ? snapshot.status
+            : 'pending-review';
+
+        const payload: Partial<AppRecord> = {
+          deletedAt: FieldValue.delete(),
+          state: restoredState,
+          status: restoredStatus,
+          updatedAt: now,
+          adminDeleteSnapshot: FieldValue.delete(),
+        };
+
+        if (typeof snapshot.publishedAt === 'number') {
+          payload.publishedAt = snapshot.publishedAt;
+        }
+
+        await updateApp(app.id, payload);
       }
+
+      const buildId = resolved?.buildId;
+      if (buildId) {
+        const build = resolved?.build ?? (await readBuild(buildId));
+        if (build) {
+          const fallbackState =
+            build.previousState && build.previousState !== 'deleted'
+              ? build.previousState
+              : 'pending_review';
+          await updateBuild(buildId, {
+            state: fallbackState,
+            previousState: undefined,
+            deletedAt: undefined,
+          });
+        }
+      }
+
       return reply.send({ ok: true });
     } catch (err: unknown) {
       req.log.error({ err, id }, 'restore_failed');

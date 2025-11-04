@@ -1,14 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import Image from 'next/image';
 import { apiGet, apiGetRaw, apiPost, ApiError } from '@/lib/api';
 import { joinUrl } from '@/lib/url';
 import { auth } from '@/lib/firebase';
 import { PUBLIC_API_URL } from '@/lib/config';
-import Logo from '@/components/Logo';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { useBuildSse } from '@/components/useBuildSse';
+import { fetchAllowedAdminEmails, saveAllowedAdminEmails } from '@/lib/adminAccess';
 
 async function buildHeaders(withJson: boolean): Promise<Record<string, string>> {
   const headers: Record<string, string> = withJson
@@ -92,6 +94,9 @@ type BuildState =
 
 type TimelineEntry = { state: BuildState; at: number };
 
+type ConfirmActionType = 'approve' | 'delete' | 'force-delete' | 'restore';
+type PendingConfirmAction = { type: ConfirmActionType; item: ReviewItem };
+
 const friendlyErrorByCode: Record<string, string> = {
   LLM_MISSING_API_KEY: 'Nedostaje LLM API ključ.',
   LLM_INVALID_JSON: 'LLM je vratio neispravan JSON.',
@@ -138,6 +143,8 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'deleted'>('all');
   const [search, setSearch] = useState('');
   const [showRaw, setShowRaw] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<PendingConfirmAction | null>(null);
+  const [rejectState, setRejectState] = useState<{ item: ReviewItem; reason: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [llmEnabled, setLlmEnabled] = useState<boolean | null>(null);
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
@@ -146,6 +153,11 @@ export default function AdminDashboard() {
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [policy, setPolicy] = useState<{ camera?: boolean; microphone?: boolean; geolocation?: boolean; clipboardRead?: boolean; clipboardWrite?: boolean; } | null>(null);
   const [policySaving, setPolicySaving] = useState(false);
+  const [allowedEmails, setAllowedEmails] = useState<string[]>([]);
+  const [adminSettingsLoading, setAdminSettingsLoading] = useState(false);
+  const [adminSettingsSaving, setAdminSettingsSaving] = useState(false);
+  const [adminSettingsError, setAdminSettingsError] = useState<string | null>(null);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
     if (!item) return null; // Prioritize pending build, then current build, then ID as fallback
@@ -404,6 +416,101 @@ export default function AdminDashboard() {
     return () => clearInterval(t);
   }, [isAdmin, load]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setAllowedEmails([]);
+      return;
+    }
+    let cancelled = false;
+    const loadAllowed = async () => {
+      setAdminSettingsLoading(true);
+      setAdminSettingsError(null);
+      try {
+        const emails = await fetchAllowedAdminEmails();
+        if (!cancelled) setAllowedEmails(emails);
+      } catch (err) {
+        console.error('Failed to load allowed admin emails', err);
+        if (!cancelled) setAdminSettingsError('Ne mogu učitati popis dopuštenih admin korisnika.');
+      } finally {
+        if (!cancelled) setAdminSettingsLoading(false);
+      }
+    };
+    void loadAllowed();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
+
+  const handleRefreshAllowed = useCallback(async () => {
+    if (!isAdmin) return;
+    setAdminSettingsLoading(true);
+    setAdminSettingsError(null);
+    try {
+      const emails = await fetchAllowedAdminEmails(true);
+      setAllowedEmails(emails);
+    } catch (err) {
+      console.error('Failed to refresh allowed admin emails', err);
+      setAdminSettingsError('Osvježavanje popisa nije uspjelo.');
+    } finally {
+      setAdminSettingsLoading(false);
+    }
+  }, [isAdmin]);
+
+  const handleAddAdminEmail = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!isAdmin) return;
+      const email = newAdminEmail.trim().toLowerCase();
+      if (!email) {
+        setAdminSettingsError('Unesite e-mail adresu.');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setAdminSettingsError('E-mail adresa nije valjana.');
+        return;
+      }
+      if (allowedEmails.includes(email)) {
+        setAdminSettingsError('E-mail je već na popisu.');
+        return;
+      }
+      setAdminSettingsSaving(true);
+      setAdminSettingsError(null);
+      try {
+        const updated = [...allowedEmails, email].sort();
+        await saveAllowedAdminEmails(updated);
+        setAllowedEmails(updated);
+        setNewAdminEmail('');
+      } catch (err) {
+        console.error('Failed to add admin email', err);
+        setAdminSettingsError('Dodavanje nije uspjelo.');
+      } finally {
+        setAdminSettingsSaving(false);
+      }
+    },
+    [allowedEmails, isAdmin, newAdminEmail],
+  );
+
+  const handleRemoveAdminEmail = useCallback(
+    async (email: string) => {
+      if (!isAdmin) return;
+      const confirmed = window.confirm(`Ukloniti ${email} iz popisa?`);
+      if (!confirmed) return;
+      setAdminSettingsSaving(true);
+      setAdminSettingsError(null);
+      try {
+        const updated = allowedEmails.filter((entry) => entry !== email);
+        await saveAllowedAdminEmails(updated);
+        setAllowedEmails(updated);
+      } catch (err) {
+        console.error('Failed to remove admin email', err);
+        setAdminSettingsError('Uklanjanje nije uspjelo.');
+      } finally {
+        setAdminSettingsSaving(false);
+      }
+    },
+    [allowedEmails, isAdmin],
+  );
+
   const approve = async (item: ReviewItem) => {
     const target = resolveItemTarget(item);
     if (!target) {
@@ -419,21 +526,18 @@ export default function AdminDashboard() {
     }
   };
 
-  const reject = async (item: ReviewItem) => {
+  const reject = async (item: ReviewItem, reason: string) => {
     const target = resolveItemTarget(item);
     if (!target) {
       alert('Nema aktivnog builda za odbijanje.');
       return;
     }
-    const reason = prompt('Reason for rejection?') || 'No reason provided';
     await apiPost(`/review/reject/${target}`, { reason }, { auth: true });
     alert('Rejected');
     await load();
   };
 
   const deleteApp = async (item: ReviewItem) => {
-    const sure = window.confirm('Are you sure you want to delete this app?');
-    if (!sure) return;
     const target = item.id || item.slug || resolveItemTarget(item);
     if (!target) return;
     try {
@@ -446,8 +550,6 @@ export default function AdminDashboard() {
   };
 
   const forceDeleteApp = async (item: ReviewItem) => {
-    const sure = window.confirm('PERMANENTLY DELETE this app and its build? This cannot be undone.');
-    if (!sure) return;
     const target = resolveItemTarget(item) || item.id;
     try {
       await apiPost(`/review/builds/${target}/force-delete`, {}, { auth: true });
@@ -470,10 +572,104 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { type, item } = confirmAction;
+    try {
+      if (type === 'approve') {
+        await approve(item);
+      } else if (type === 'delete') {
+        await deleteApp(item);
+      } else if (type === 'force-delete') {
+        await forceDeleteApp(item);
+      } else if (type === 'restore') {
+        await restoreApp(item);
+      }
+    } finally {
+      setConfirmAction(null);
+    }
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectState) return;
+    try {
+      const reason = rejectState.reason.trim() || 'No reason provided';
+      await reject(rejectState.item, reason);
+    } finally {
+      setRejectState(null);
+    }
+  };
+
 const filtered = items.filter((it) =>
   (it.title || '').toLowerCase().includes(search.toLowerCase()) ||
   (it.ownerEmail || '').toLowerCase().includes(search.toLowerCase()),
 );
+
+const confirmDialog = confirmAction
+  ? (() => {
+      const { item, type } = confirmAction;
+      const name = item.title || item.slug || item.id;
+      switch (type) {
+        case 'approve':
+          return {
+            title: 'Confirm approval',
+            message: (
+              <div className="space-y-2 text-sm">
+                <p>
+                  Approve <strong>{name}</strong>? The app will become visible to users.
+                </p>
+              </div>
+            ),
+            confirmLabel: 'Approve',
+            confirmTone: 'default' as const,
+          };
+        case 'delete':
+          return {
+            title: 'Confirm delete',
+            message: (
+              <div className="space-y-2 text-sm">
+                <p>
+                  This moves <strong>{name}</strong> to the deleted tab. You can restore it later.
+                </p>
+              </div>
+            ),
+            confirmLabel: 'Delete',
+            confirmTone: 'danger' as const,
+          };
+        case 'force-delete':
+          return {
+            title: 'Delete permanently',
+            message: (
+              <div className="space-y-2 text-sm">
+                <p>
+                  Permanently remove <strong>{name}</strong> and its build artifacts. This cannot be
+                  undone.
+                </p>
+                <p className="font-semibold text-red-600">Type DELETE below to confirm.</p>
+              </div>
+            ),
+            confirmLabel: 'Delete permanently',
+            confirmTone: 'danger' as const,
+            requireText: 'DELETE' as const,
+          };
+        case 'restore':
+          return {
+            title: 'Restore app',
+            message: (
+              <div className="space-y-2 text-sm">
+                <p>
+                  Restore <strong>{name}</strong> to the review queue?
+                </p>
+              </div>
+            ),
+            confirmLabel: 'Restore',
+            confirmTone: 'default' as const,
+          };
+        default:
+          return null;
+      }
+    })()
+  : null;
 
 if (error)
   return (
@@ -504,13 +700,76 @@ if (error)
 
 return (
   <>
-      <div className="w-full border-b bg-white/80 backdrop-blur">
-        <div className="max-w-6xl mx-auto p-3">
-          <Logo />
-        </div>
-      </div>
       <div className="p-4 space-y-4">
         <h1 className="text-xl font-bold">Admin Review</h1>
+        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Postavke admin sučelja</h2>
+              <p className="text-sm text-gray-500">
+                Upravlja popisom računa koji smiju otključati skriveni admin pristup.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRefreshAllowed}
+              disabled={adminSettingsLoading}
+              className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            >
+              Osvježi
+            </button>
+          </div>
+          {adminSettingsError && (
+            <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+              {adminSettingsError}
+            </div>
+          )}
+          <div className="mt-3">
+            {adminSettingsLoading ? (
+              <div className="text-sm text-gray-500">Učitavanje…</div>
+            ) : allowedEmails.length === 0 ? (
+              <div className="text-sm text-gray-500">Nema dopuštenih e-mail adresa.</div>
+            ) : (
+              <ul className="space-y-2">
+                {allowedEmails.map((email) => (
+                  <li
+                    key={email}
+                    className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm text-gray-800"
+                  >
+                    <span className="truncate">{email}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAdminEmail(email)}
+                      disabled={adminSettingsSaving}
+                      className="text-rose-600 transition hover:text-rose-700 disabled:opacity-40"
+                    >
+                      Ukloni
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <form onSubmit={handleAddAdminEmail} className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="email"
+              value={newAdminEmail}
+              onChange={(event) => {
+                setNewAdminEmail(event.target.value);
+                if (adminSettingsError) setAdminSettingsError(null);
+              }}
+              placeholder="admin@example.com"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-300"
+            />
+            <button
+              type="submit"
+              disabled={adminSettingsSaving || adminSettingsLoading}
+              className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+            >
+              Dodaj
+            </button>
+          </form>
+        </section>
         <div className="flex gap-4">
           {(['all', 'pending', 'approved', 'rejected', 'deleted'] as const).map((t) => (
             <button
@@ -676,13 +935,13 @@ return (
                     {tab === 'deleted' ? (
                       <>
                         <button
-                          onClick={() => restoreApp(it)}
+                          onClick={() => setConfirmAction({ type: 'restore', item: it })}
                           className="px-2 py-1 bg-emerald-600 text-white rounded"
                         >
                           Restore
                         </button>
                         <button
-                          onClick={() => forceDeleteApp(it)}
+                          onClick={() => setConfirmAction({ type: 'force-delete', item: it })}
                           className="px-2 py-1 bg-black text-white rounded"
                           title="Permanently delete"
                         >
@@ -692,14 +951,14 @@ return (
                     ) : (
                       <>
                         <button
-                          onClick={() => approve(it)}
+                          onClick={() => setConfirmAction({ type: 'approve', item: it })}
                           className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
                           disabled={!actionTarget}
                         >
                           Approve
                         </button>
                         <button
-                          onClick={() => reject(it)}
+                          onClick={() => actionTarget && setRejectState({ item: it, reason: '' })}
                           className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50"
                           disabled={!actionTarget}
                         >
@@ -717,7 +976,7 @@ return (
                           </button>
                         )}
                         <button
-                          onClick={() => deleteApp(it)}
+                          onClick={() => setConfirmAction({ type: 'delete', item: it })}
                           className="px-2 py-1 bg-black text-white rounded"
                           title="Delete"
                         >
@@ -1112,6 +1371,42 @@ return (
             )}
           </div>
         </div>
+      )}
+      {confirmDialog && (
+        <ConfirmDialog
+          open
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmLabel={confirmDialog.confirmLabel}
+          confirmTone={confirmDialog.confirmTone}
+          requireText={confirmDialog.requireText}
+          onConfirm={handleConfirmAction}
+          onClose={() => setConfirmAction(null)}
+        />
+      )}
+      {rejectState && (
+        <ConfirmDialog
+          open
+          title={`Reject ${rejectState.item.title || rejectState.item.slug || rejectState.item.id}?`}
+          message={
+            <div className="space-y-3 text-sm">
+              <p>Enter a rejection reason that will be shown to the creator.</p>
+              <textarea
+                className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                rows={4}
+                value={rejectState.reason}
+                onChange={(e) =>
+                  setRejectState((prev) => (prev ? { ...prev, reason: e.target.value } : prev))
+                }
+                placeholder="Reason for rejection"
+              />
+            </div>
+          }
+          confirmLabel="Reject"
+          confirmTone="danger"
+          onConfirm={handleRejectConfirm}
+          onClose={() => setRejectState(null)}
+        />
       )}
     </>
   );

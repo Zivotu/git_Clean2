@@ -3,91 +3,301 @@ import nodemailer from 'nodemailer';
 import { getConfig } from './config.js';
 import { db } from './db.js';
 
-// prvo probaj iz configa (ako postoji), a zatim fallback na .env varijable
+type MailboxKey = 'admin' | 'welcome' | 'reports';
+
+type Mailbox = {
+  key: MailboxKey;
+  host?: string;
+  port?: number;
+  user?: string;
+  pass?: string;
+  from?: string;
+  to?: string;
+};
+
+export type NotifyUserOptions = {
+  email?: string | null;
+  mailbox?: MailboxKey;
+  context?: string;
+};
+
 const cfg = (() => {
   try {
     return getConfig();
   } catch {
-    return { ADMIN_NOTIFIER: {} as any };
+    return {
+      ADMIN_NOTIFIER: {} as any,
+      WELCOME_NOTIFIER: {} as any,
+      REPORTS_NOTIFIER: {} as any,
+    };
   }
 })();
 
-const fromCfg = cfg.ADMIN_NOTIFIER || {};
-const SMTP_HOST = process.env.SMTP_HOST || fromCfg.smtpHost;
-const SMTP_PORT = Number(process.env.SMTP_PORT || fromCfg.smtpPort);
-const SMTP_USER = process.env.SMTP_USER || fromCfg.smtpUser;
-const SMTP_PASS = process.env.SMTP_PASS || fromCfg.smtpPass;
-const EMAIL_FROM = process.env.ADMIN_EMAIL_FROM || fromCfg.emailFrom;
-const ADMIN_EMAIL_TO = process.env.ADMIN_EMAIL_TO || 'info@neurobiz.me';
+const adminDefaults = cfg.ADMIN_NOTIFIER || {};
+const welcomeDefaults = cfg.WELCOME_NOTIFIER || {};
+const reportsDefaults = cfg.REPORTS_NOTIFIER || {};
 
-// pomoÄ‡na funkcija da vidimo Å¡to fali (bez da ispisujemo tajne)
-function missingFields() {
+function sanitize(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const result = String(value).trim();
+  return result ? result : undefined;
+}
+
+function coercePort(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+const mailboxes: Record<MailboxKey, Mailbox> = {
+  admin: {
+    key: 'admin',
+    host: sanitize(process.env.SMTP_HOST) ?? sanitize(adminDefaults.smtpHost),
+    port: coercePort(process.env.SMTP_PORT ?? adminDefaults.smtpPort),
+    user: sanitize(process.env.SMTP_USER) ?? sanitize(adminDefaults.smtpUser),
+    pass: sanitize(process.env.SMTP_PASS) ?? sanitize(adminDefaults.smtpPass),
+    from: sanitize(process.env.ADMIN_EMAIL_FROM) ?? sanitize(adminDefaults.emailFrom),
+    to:
+      sanitize(process.env.ADMIN_EMAIL_TO) ??
+      sanitize(adminDefaults.emailTo) ??
+      'activity@thesara.space',
+  },
+  welcome: {
+    key: 'welcome',
+    host:
+      sanitize(process.env.WELCOME_SMTP_HOST) ??
+      sanitize(welcomeDefaults.smtpHost) ??
+      sanitize(process.env.SMTP_HOST) ??
+      sanitize(adminDefaults.smtpHost),
+    port: coercePort(
+      process.env.WELCOME_SMTP_PORT ??
+        welcomeDefaults.smtpPort ??
+        process.env.SMTP_PORT ??
+        adminDefaults.smtpPort,
+    ),
+    user:
+      sanitize(process.env.WELCOME_SMTP_USER) ??
+      sanitize(welcomeDefaults.smtpUser) ??
+      sanitize(process.env.SMTP_USER) ??
+      sanitize(adminDefaults.smtpUser),
+    pass:
+      sanitize(process.env.WELCOME_SMTP_PASS) ??
+      sanitize(welcomeDefaults.smtpPass) ??
+      sanitize(process.env.SMTP_PASS) ??
+      sanitize(adminDefaults.smtpPass),
+    from:
+      sanitize(process.env.WELCOME_EMAIL_FROM) ??
+      sanitize(welcomeDefaults.emailFrom) ??
+      'welcome@thesara.space',
+  },
+  reports: {
+    key: 'reports',
+    host:
+      sanitize(process.env.REPORTS_SMTP_HOST) ??
+      sanitize(reportsDefaults.smtpHost) ??
+      sanitize(process.env.SMTP_HOST) ??
+      sanitize(adminDefaults.smtpHost),
+    port: coercePort(
+      process.env.REPORTS_SMTP_PORT ??
+        reportsDefaults.smtpPort ??
+        process.env.SMTP_PORT ??
+        adminDefaults.smtpPort,
+    ),
+    user:
+      sanitize(process.env.REPORTS_SMTP_USER) ??
+      sanitize(reportsDefaults.smtpUser) ??
+      sanitize(process.env.SMTP_USER) ??
+      sanitize(adminDefaults.smtpUser),
+    pass:
+      sanitize(process.env.REPORTS_SMTP_PASS) ??
+      sanitize(reportsDefaults.smtpPass) ??
+      sanitize(process.env.SMTP_PASS) ??
+      sanitize(adminDefaults.smtpPass),
+    from:
+      sanitize(process.env.REPORTS_EMAIL_FROM) ??
+      sanitize(reportsDefaults.emailFrom) ??
+      'reports@thesara.space',
+  },
+};
+
+if (!mailboxes.admin.user && mailboxes.admin.from) {
+  mailboxes.admin.user = mailboxes.admin.from;
+}
+if (!mailboxes.welcome.user && mailboxes.welcome.from) {
+  mailboxes.welcome.user = mailboxes.welcome.from;
+}
+if (!mailboxes.reports.user && mailboxes.reports.from) {
+  mailboxes.reports.user = mailboxes.reports.from;
+}
+
+function missingFields(mailbox: Mailbox, requireTo: boolean): string[] {
   const miss: string[] = [];
-  if (!SMTP_HOST) miss.push('SMTP_HOST');
-  if (!SMTP_PORT) miss.push('SMTP_PORT');
-  if (!SMTP_USER) miss.push('SMTP_USER');
-  if (!SMTP_PASS) miss.push('SMTP_PASS');
-  if (!EMAIL_FROM) miss.push('ADMIN_EMAIL_FROM');
-  if (!ADMIN_EMAIL_TO) miss.push('ADMIN_EMAIL_TO');
+  if (!mailbox.host) miss.push('smtpHost');
+  if (!mailbox.port) miss.push('smtpPort');
+  if (!mailbox.user) miss.push('smtpUser');
+  if (!mailbox.pass) miss.push('smtpPass');
+  if (!mailbox.from) miss.push('emailFrom');
+  if (requireTo && !mailbox.to) miss.push('emailTo');
   return miss;
 }
 
-export async function notifyAdmins(subject: string, body: string): Promise<void> {
-  const miss = missingFields();
-  if (miss.length) {
-    console.warn({ subject, missing: miss }, 'admin_notifier_not_configured');
-    return;
+function prepareMailbox(
+  key: MailboxKey,
+  context: string,
+  requireTo = false,
+): { key: MailboxKey; mailbox: Mailbox } | null {
+  const selected = mailboxes[key];
+  const missing = missingFields(selected, requireTo);
+  if (!missing.length) return { key, mailbox: selected };
+
+  if (key !== 'admin') {
+    const fallback = mailboxes.admin;
+    const fallbackMissing = missingFields(fallback, requireTo);
+    if (!fallbackMissing.length) {
+      console.warn(
+        { context, mailbox: key, missing, fallback: 'admin' },
+        'mailbox_config_missing_fallback',
+      );
+      return { key: 'admin', mailbox: fallback };
+    }
   }
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-  });
-
-  await transporter.sendMail({
-    from: EMAIL_FROM,
-    to: ADMIN_EMAIL_TO,
-    subject,
-    text: body,
-  });
+  console.warn({ context, mailbox: key, missing }, 'mailbox_not_configured');
+  return null;
 }
 
-export async function notifyUser(uid: string, subject: string, body: string): Promise<void> {
-  const miss = missingFields();
-  if (miss.length) {
-    console.warn({ subject, missing: miss }, 'user_notifier_not_configured');
+function createTransportOptions(mailbox: Mailbox) {
+  return {
+    host: mailbox.host!,
+    port: mailbox.port!,
+    secure: mailbox.port === 465,
+    auth: {
+      user: mailbox.user!,
+      pass: mailbox.pass!,
+    },
+  };
+}
+
+function sanitizeEmailAddress(value: string | null | undefined): string | undefined {
+  const trimmed = sanitize(value);
+  if (!trimmed) return undefined;
+  if (!trimmed.includes('@')) return undefined;
+  return trimmed;
+}
+
+async function lookupUserEmail(uid: string): Promise<string | undefined> {
+  try {
+    const snap = await db.collection('users').doc(uid).get();
+    if (!snap.exists) return undefined;
+    const data = snap.data() as any;
+    const primary = sanitizeEmailAddress(data?.email);
+    if (primary) return primary;
+    const nested =
+      sanitizeEmailAddress(data?.contactEmail) ??
+      sanitizeEmailAddress(data?.emails?.primary);
+    return nested ?? undefined;
+  } catch (err) {
+    console.error(err, 'lookup_user_email_failed');
+    return undefined;
+  }
+}
+
+async function dispatchMail(
+  mailboxKey: MailboxKey,
+  to: string,
+  subject: string,
+  body: string,
+  context: string,
+): Promise<void> {
+  const prepared = prepareMailbox(mailboxKey, context, false);
+  if (!prepared) return;
+  const { mailbox, key } = prepared;
+
+  try {
+    const transporter = nodemailer.createTransport(createTransportOptions(mailbox));
+    await transporter.sendMail({ from: mailbox.from!, to, subject, text: body });
+  } catch (err) {
+    console.error({ err, to, context, mailbox: key }, 'mail_send_failed');
+  }
+}
+
+export async function notifyAdmins(subject: string, body: string): Promise<void> {
+  const prepared = prepareMailbox('admin', 'notifyAdmins', true);
+  if (!prepared) return;
+  const { mailbox } = prepared;
+  const to = mailbox.to;
+  if (!to) {
+    console.warn({ context: 'notifyAdmins' }, 'admin_mailbox_missing_recipient');
     return;
   }
   try {
-    const snap = await db.collection('users').doc(uid).get();
-    const email = (snap.data() as any)?.email;
-    if (!email) return;
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_PORT === 465,
-      auth: { user: SMTP_USER, pass: SMTP_PASS },
-    });
-    await transporter.sendMail({ from: EMAIL_FROM, to: email, subject, text: body });
+    const transporter = nodemailer.createTransport(createTransportOptions(mailbox));
+    await transporter.sendMail({ from: mailbox.from!, to, subject, text: body });
   } catch (err) {
-    console.error(err, 'notify_user_failed');
+    console.error({ err, to, subject }, 'notify_admins_failed');
   }
 }
 
-// Generic helper to send an email to an arbitrary address
-export async function sendEmail(to: string, subject: string, body: string): Promise<void> {
-  const miss = missingFields();
-  if (miss.length) {
-    console.warn({ subject, missing: miss }, 'generic_mail_not_configured');
+export async function notifyUser(
+  uid: string,
+  subject: string,
+  body: string,
+  options: NotifyUserOptions = {},
+): Promise<void> {
+  const mailboxKey = options.mailbox ?? 'admin';
+  const context = options.context ?? `notifyUser:${mailboxKey}`;
+  const email =
+    sanitizeEmailAddress(options.email ?? undefined) ?? (await lookupUserEmail(uid));
+
+  if (!email) {
+    console.warn({ uid, subject, mailbox: mailboxKey }, 'notify_user_missing_email');
     return;
   }
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
-    secure: SMTP_PORT === 465,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
+
+  await dispatchMail(mailboxKey, email, subject, body, context);
+}
+
+export async function sendEmail(
+  to: string,
+  subject: string,
+  body: string,
+  mailbox: MailboxKey = 'admin',
+): Promise<void> {
+  const email = sanitizeEmailAddress(to);
+  if (!email) {
+    console.warn({ to }, 'send_email_invalid_recipient');
+    return;
+  }
+  await dispatchMail(mailbox, email, subject, body, 'sendEmail');
+}
+
+export async function sendWelcomeEmail(
+  uid: string,
+  subject: string,
+  body: string,
+  options: Omit<NotifyUserOptions, 'mailbox'> = {},
+): Promise<void> {
+  await notifyUser(uid, subject, body, {
+    ...options,
+    mailbox: 'welcome',
+    context: options.context ?? 'sendWelcomeEmail',
   });
-  await transporter.sendMail({ from: EMAIL_FROM, to, subject, text: body });
+}
+
+export async function notifyUserModeration(
+  uid: string,
+  subject: string,
+  body: string,
+  options: Omit<NotifyUserOptions, 'mailbox'> = {},
+): Promise<void> {
+  await notifyUser(uid, subject, body, {
+    ...options,
+    mailbox: 'reports',
+    context: options.context ?? 'notifyUserModeration',
+  });
 }

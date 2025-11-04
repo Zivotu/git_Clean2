@@ -27,7 +27,7 @@ import {
   openStripeDashboard,
 } from '@/hooks/useConnectStatus';
 import AmbassadorSection from '@/components/AmbassadorSection';
-import { playHref } from '@/lib/urls';
+import { playHref, appDetailsHref } from '@/lib/urls';
 
 interface ProfileData {
   items: Listing[];
@@ -840,7 +840,7 @@ export default function ProfilePage() {
                         Open
                       </a>
                       <Link
-                        href={{ pathname: '/app', query: { slug: app.slug } }}
+                        href={appDetailsHref(app.slug)}
                         className={buttonVariants({ variant: 'outline', className: 'text-sm' })}
                       >
                         Manage

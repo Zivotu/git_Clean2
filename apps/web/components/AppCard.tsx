@@ -14,6 +14,7 @@ import { resolvePreviewUrl } from '@/lib/preview';
 import Avatar from '@/components/Avatar';
 import { useI18n } from '@/lib/i18n-provider';
 import { useRelativeTime } from '@/hooks/useRelativeTime';
+import { appDetailsHref } from '@/lib/urls';
 
 // Types
 export type Listing = {
@@ -86,7 +87,7 @@ const AppCard = React.memo(
     const isHot = likedCount > 100;
     const imgProps = priority ? { priority: true, loading: 'eager' as const } : {};
 
-    const goToDetails = () => router.push(`/app?slug=${encodeURIComponent(item.slug)}`);
+    const goToDetails = () => router.push(appDetailsHref(item.slug));
     const onKey = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') goToDetails();
     };

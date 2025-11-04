@@ -171,7 +171,7 @@ export default async function publicRoutes(app: FastifyInstance) {
   app.get('/play/:id', async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
-      const apps = await readApps();
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
       const item = apps.find((a) => a.slug === id || String(a.id) === id) as
         | (AppRecord & { buildId?: string })
         | undefined;
@@ -201,8 +201,8 @@ export default async function publicRoutes(app: FastifyInstance) {
         } catch {}
         return tempRedirect(reply, appendQuery(`/review/builds/${encSeg(mapped)}/`, req));
       }
-  const byBuild = apps.find((a) => a.buildId === id);
-  if (byBuild) return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
+      const byBuild = apps.find((a) => a.buildId === id);
+      if (byBuild) return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
   });
@@ -212,7 +212,7 @@ export default async function publicRoutes(app: FastifyInstance) {
     const rest = (restRaw || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
     const encRestSafe = encRest(rest);
     try {
-      const apps = await readApps();
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
       const item = apps.find((a) => a.slug === id || String(a.id) === id) as
         | (AppRecord & { buildId?: string })
         | undefined;
@@ -390,7 +390,7 @@ export default async function publicRoutes(app: FastifyInstance) {
   const appMetaHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
-      const apps = await readApps();
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
       // Debug: log all app ids and slugs
       const allIds = apps.map(a => a.id);
       const allSlugs = apps.map(a => a.slug);
@@ -415,7 +415,7 @@ export default async function publicRoutes(app: FastifyInstance) {
   // Public app route by slug for published listings
   app.get('/app/:slug', async (req: FastifyRequest, reply: FastifyReply) => {
     const { slug } = req.params as { slug: string };
-    const apps = await readApps();
+    const apps = (await readApps()).filter((a) => !a.deletedAt);
     const item = apps.find((a) => a.slug === slug || String(a.id) === slug) as
       | (AppRecord & { buildId?: string; pendingBuildId?: string })
       | undefined;
@@ -499,7 +499,7 @@ export default async function publicRoutes(app: FastifyInstance) {
   app.get('/app/:slug/*', async (req: FastifyRequest, reply: FastifyReply) => {
     const { slug } = req.params as { slug: string };
     const rest = (req.params as any)['*'] as string;
-    const apps = await readApps();
+    const apps = (await readApps()).filter((a) => !a.deletedAt);
     const item = apps.find((a) => a.slug === slug || String(a.id) === slug) as
       | (AppRecord & { buildId?: string; pendingBuildId?: string })
       | undefined;

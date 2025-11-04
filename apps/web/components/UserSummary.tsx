@@ -17,9 +17,18 @@ export default function UserSummary() {
   if (entitlements?.noAds) subs.push('No Ads');
   const purchases = entitlements?.purchases || [];
   if (purchases.length) {
-    const appSubs = purchases.filter((p) => p === 'app-subscription').length;
-    const creators = purchases.filter((p) => p === 'creator-all-access').length;
-    const trials = purchases.filter((p) => p === 'app-trial').length;
+    const appSubs = purchases.filter((p) => {
+      if (typeof p !== 'string') return false;
+      return p === 'app-subscription' || p.startsWith('app-subscription:');
+    }).length;
+    const creators = purchases.filter((p) => {
+      if (typeof p !== 'string') return false;
+      return p === 'creator-all-access' || p.startsWith('creator-all-access:');
+    }).length;
+    const trials = purchases.filter((p) => {
+      if (typeof p !== 'string') return false;
+      return p === 'app-trial' || p.startsWith('app-trial:');
+    }).length;
     if (appSubs > 0) subs.push(locale === 'hr' ? `Pretplate na aplikacije: ${appSubs}` : `App subscriptions: ${appSubs}`);
     if (creators > 0) subs.push(locale === 'hr' ? `All‑access kreatori: ${creators}` : `All‑access creators: ${creators}`);
     if (trials > 0) subs.push(locale === 'hr' ? `Probna razdoblja: ${trials}` : `Trials: ${trials}`);

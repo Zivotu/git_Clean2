@@ -18,7 +18,7 @@ import {
   useConnectStatus,
   startStripeOnboarding,
 } from '@/hooks/useConnectStatus';
-import { playHref } from '@/lib/urls';
+import { playHref, appDetailsHref } from '@/lib/urls';
 
 // ————————————————————————————————————————
 // Types
@@ -618,7 +618,7 @@ export default function MyProjectsPage() {
                   className="group bg-white border border-gray-200 rounded-2xl shadow-md overflow-hidden flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                 >
                   <div className="relative">
-                    <Link href={{ pathname: '/app', query: { slug: it.slug } }} title={it.title}>
+                    <Link href={appDetailsHref(it.slug)} title={it.title}>
                       {hasPreview ? (
                         <Image
                           src={img}
@@ -775,7 +775,7 @@ export default function MyProjectsPage() {
                         Play
                       </button>
                       <button
-                        onClick={() => router.push(`/app?slug=${encodeURIComponent(it.slug)}`)}
+                        onClick={() => router.push(appDetailsHref(it.slug))}
                         className={cn(
                           'flex-1 text-center px-4 py-2 rounded-full border text-sm font-medium transition',
                           busy[it.slug]

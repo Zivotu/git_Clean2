@@ -42,6 +42,8 @@ export default async function listingsRoutes(app: FastifyInstance) {
       }
     }
 
+    items = items.filter((a) => !a.deletedAt);
+
     if (ownerId) {
       items = items.filter(
         (a) => a.author?.uid === ownerId || (a as any).ownerUid === ownerId,
@@ -83,7 +85,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
   const DEBUG_LISTING_AUTH = process.env.DEBUG_LISTING_AUTH === '1';
 
-  app.get('/listing/:slug', async (req: FastifyRequest, reply: FastifyReply) => {
+  const getListingHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const slug = String((req.params as any).slug);
     const apps = await readApps();
     const idx = apps.findIndex(
@@ -93,6 +95,9 @@ export default async function listingsRoutes(app: FastifyInstance) {
       return reply.code(404).send({ ok: false, error: 'not_found' });
     }
     const item = apps[idx];
+    if (item.deletedAt) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
     const { next: normalizedItem, changed: previewChanged } = ensureListingPreview(item);
     if (previewChanged) {
       apps[idx] = normalizedItem;
@@ -135,7 +140,10 @@ export default async function listingsRoutes(app: FastifyInstance) {
       delete result.moderation;
     }
     return { ok: true, item: result };
-  });
+  };
+
+  app.get('/listing/:slug', getListingHandler);
+  app.route({ method: ['GET', 'HEAD'], url: '/api/listing/:slug', handler: getListingHandler });
 
   // Upload or replace preview image (owner or admin only)
   app.post('/listing/:slug/preview', async (req: FastifyRequest, reply: FastifyReply) => {
@@ -146,6 +154,9 @@ export default async function listingsRoutes(app: FastifyInstance) {
       return reply.code(404).send({ ok: false, error: 'not_found' });
     }
     const item = apps[idx];
+    if (item.deletedAt) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
 
     const uid = (req.authUser?.uid || (req.query as any)?.uid) as string | undefined;
     const ownerUid = item.author?.uid || (item as any).ownerUid;
@@ -226,6 +237,9 @@ export default async function listingsRoutes(app: FastifyInstance) {
     }
 
     const item = apps[idx];
+    if (item.deletedAt) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
     const uid = req.authUser?.uid;
     const ownerUid = item.author?.uid || (item as any).ownerUid;
     const isOwner = Boolean(uid && uid === ownerUid);
@@ -280,6 +294,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     const apps = await readApps();
     const appRec = apps.find((a) => a.slug === slug || String(a.id) === slug);
     if (!appRec) return reply.code(404).send({ ok: false, error: 'not_found' });
+    if (appRec.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
 
     const like = Boolean((req.body as any)?.like);
     try {
@@ -298,6 +313,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
     if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
     const item = apps[idx];
+    if (item.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
 
     const uid = req.authUser?.uid;
     const ownerUid = item.author?.uid || (item as any).ownerUid;
@@ -393,6 +409,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
     if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
     const item = apps[idx];
+    if (item.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
 
     const uid = req.authUser?.uid;
     const ownerUid = item.author?.uid || (item as any).ownerUid;
@@ -421,6 +438,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
     if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
     const item = apps[idx];
+    if (item.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
 
     const uid = req.authUser?.uid;
     if (!uid) return reply.code(401).send({ ok: false, error: 'unauthenticated' });

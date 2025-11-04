@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { useEffect, useState } from 'react';
 import { hasEntitlement } from '@/lib/entitlements';
 import { apiGet } from '@/lib/api';
+import { appDetailsHref } from '@/lib/urls';
 
 interface Ad {
   id: string;
@@ -38,7 +39,7 @@ export default function AdsBanner() {
   if (!ad) return null;
 
   return (
-    <a href={`/app?slug=${encodeURIComponent(ad.slug)}`} className="block p-4 bg-gray-100 text-center text-gray-900">
+    <a href={appDetailsHref(ad.slug)} className="block p-4 bg-gray-100 text-center text-gray-900">
       {ad.title}
     </a>
   );

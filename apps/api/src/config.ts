@@ -313,6 +313,27 @@ export function getConfig() {
       smtpUser: process.env.SMTP_USER,
       smtpPass: process.env.SMTP_PASS,
       emailFrom: process.env.ADMIN_EMAIL_FROM,
+      emailTo: process.env.ADMIN_EMAIL_TO || 'activity@thesara.space',
+    },
+    WELCOME_NOTIFIER: {
+      smtpHost: process.env.WELCOME_SMTP_HOST || process.env.SMTP_HOST,
+      smtpPort: parseNumberEnv(
+        'WELCOME_SMTP_PORT',
+        parseNumberEnv('SMTP_PORT', 587),
+      ),
+      smtpUser: process.env.WELCOME_SMTP_USER || process.env.SMTP_USER,
+      smtpPass: process.env.WELCOME_SMTP_PASS || process.env.SMTP_PASS,
+      emailFrom: process.env.WELCOME_EMAIL_FROM || 'welcome@thesara.space',
+    },
+    REPORTS_NOTIFIER: {
+      smtpHost: process.env.REPORTS_SMTP_HOST || process.env.SMTP_HOST,
+      smtpPort: parseNumberEnv(
+        'REPORTS_SMTP_PORT',
+        parseNumberEnv('SMTP_PORT', 587),
+      ),
+      smtpUser: process.env.REPORTS_SMTP_USER || process.env.SMTP_USER,
+      smtpPass: process.env.REPORTS_SMTP_PASS || process.env.SMTP_PASS,
+      emailFrom: process.env.REPORTS_EMAIL_FROM || 'reports@thesara.space',
     },
     RATE_LIMIT: {
       backend: process.env.RATE_LIMIT_BACKEND || 'firestore',

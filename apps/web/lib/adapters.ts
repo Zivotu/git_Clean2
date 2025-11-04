@@ -1,4 +1,5 @@
-﻿﻿import type { Listing } from './types';
+import type { Listing } from './types';
+import { summarizeEntitlementResponse } from './entitlementSummary';
 
 // Normalize list responses coming from BE (can be items, listings, apps, results, data, data_v2.items)
 export function normalizeList(res: any): {
@@ -26,17 +27,24 @@ export function normalizeDetail(res: any): Listing | null {
   return toListing(obj);
 }
 
-// Entitlements adapter (BE stub → FE shape)
-export function normalizeEntitlements(res: any): { purchases: any[]; gold: boolean; noAds: boolean } {
-  const items = res?.items ?? res?.apps ?? res?.entitlements ?? [];
-  return { purchases: items, gold: false, noAds: false };
+export function normalizeEntitlements(res: any): { purchases: string[]; gold: boolean; noAds: boolean } {
+  const summary = summarizeEntitlementResponse(res);
+  if (summary) {
+    return {
+      purchases: summary.purchases,
+      gold: summary.gold,
+      noAds: summary.noAds,
+    };
+  }
+  return { purchases: [], gold: false, noAds: false };
 }
 
 export function toListing(x: any): Listing {
   if (!x) return x;
   const rawAuthor = typeof x.author === 'object' && x.author ? x.author : undefined;
   const authorUid = rawAuthor?.uid ?? x.ownerUid ?? x.owner ?? undefined;
-  const authorName = rawAuthor?.name ?? x.ownerName ?? x.owner_name ?? x.ownerDisplayName ?? x.owner ?? undefined;
+  const authorName =
+    rawAuthor?.name ?? x.ownerName ?? x.owner_name ?? x.ownerDisplayName ?? x.owner ?? undefined;
   const authorHandle = rawAuthor?.handle ?? x.ownerHandle ?? x.handle ?? undefined;
   const authorPhoto = rawAuthor?.photo ?? x.authorPhoto ?? x.ownerPhoto ?? undefined;
   const author =
@@ -54,7 +62,7 @@ export function toListing(x: any): Listing {
     title: String(x.title ?? x.name ?? 'Untitled'),
     description: x.description ?? undefined,
     previewUrl: x.previewUrl ?? x.image ?? x.logo ?? x.thumbnail ?? undefined,
-    tags: Array.isArray(x.tags) ? x.tags : (x.tags ? [String(x.tags)] : []),
+    tags: Array.isArray(x.tags) ? x.tags : x.tags ? [String(x.tags)] : [],
     playUrl: x.playUrl ?? `/play/${x.id}/`, // Ensure playUrl is present
     visibility: x.visibility ?? 'public',
     createdAt: x.createdAt ?? undefined,

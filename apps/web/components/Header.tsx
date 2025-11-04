@@ -21,31 +21,7 @@ export default function Header() {
   const { user } = useAuth();
   const name = getDisplayName(user);
   const [hasApps, setHasApps] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const check = async () => {
-      let adminClaim = false;
-      if (user) {
-        try {
-          const tok = await auth?.currentUser?.getIdTokenResult();
-          adminClaim =
-            !!tok?.claims?.admin ||
-            tok?.claims?.role === 'admin' ||
-            !!tok?.claims?.isAdmin;
-        } catch {
-          adminClaim = false;
-        }
-      }
-      if (!cancelled) setIsAdmin(adminClaim);
-    };
-    check();
-    return () => {
-      cancelled = true;
-    };
-  }, [user]);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -154,18 +130,6 @@ export default function Header() {
                 {tNav('faq')}
               </Link>
             )}
-            {isAdmin &&
-              (pathname.startsWith('/admin') ? (
-                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('admin') || 'Admin'}</span>
-              ) : (
-                <Link
-                  href="/admin"
-                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                  title="Admin dashboard"
-                >
-                  {tNav('admin') || 'Admin'}
-                </Link>
-              ))}
             {user ? (
               <div className="flex items-center gap-3 ml-2">
                 <button

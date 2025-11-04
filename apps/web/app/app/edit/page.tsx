@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import { useAuth } from '@/lib/auth';
 import { apiGet, apiPatch } from '@/lib/api';
+import { appDetailsHref } from '@/lib/urls';
 
 interface Listing {
   slug: string;
@@ -56,7 +57,7 @@ function EditAppClient() {
         const res = await apiGet<{ item?: Listing }>(`/listing/${encodeURIComponent(slug)}`, { auth: true });
         const item = res.item || (res as any);
         if (item?.author?.uid !== user.uid) {
-          router.push(`/app?slug=${encodeURIComponent(slug)}`);
+          router.push(appDetailsHref(slug));
           return;
         }
         setTitle(item.title || '');

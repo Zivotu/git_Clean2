@@ -25,7 +25,8 @@ export type BuildState =
   | 'publish_failed'
   | 'published'
   | 'rejected'
-  | 'failed';
+  | 'failed'
+  | 'deleted';
 
 export interface BuildRecord {
   id: string;
@@ -41,6 +42,8 @@ export interface BuildRecord {
   llmReportPath?: string;
   networkPolicy?: 'NO_NET' | 'MEDIA_ONLY' | 'OPEN_NET';
   networkPolicyReason?: string;
+  previousState?: Exclude<BuildState, 'deleted'>;
+  deletedAt?: number;
 }
 
 const { BUNDLE_STORAGE_PATH } = getConfig();
@@ -122,6 +125,8 @@ export async function updateBuild(
       | 'networkPolicyReason'
       | 'llmAttempts'
       | 'llmAttemptWindowStart'
+      | 'previousState'
+      | 'deletedAt'
     >
   >,
 ): Promise<BuildRecord> {

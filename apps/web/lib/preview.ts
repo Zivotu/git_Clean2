@@ -43,7 +43,7 @@ function buildApiAssetUrl(resourcePath: string): string {
   );
   
   if (typeof window === 'undefined' && isStaticPath) {
-    // SSR: Use public site URL for static assets
+    // SSR: Prefer public site URL for static assets if defined
     const publicUrl = process.env.NEXT_PUBLIC_SITE_URL || 
                       process.env.SITE_URL || 
                       process.env.NEXT_PUBLIC_WEB_URL || 
@@ -56,7 +56,7 @@ function buildApiAssetUrl(resourcePath: string): string {
         // Fall through to relative base
       }
     }
-    return resolveRelativeBase(normalizedPath);
+    // If no public URL is provided, fall through and use API_URL handling below
   }
   
   const base = (API_URL || '').trim();
