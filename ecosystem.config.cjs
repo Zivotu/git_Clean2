@@ -39,6 +39,8 @@ module.exports = {
         // Ensure Next.js rewrites proxy to the local API service on port 8788
         // next.config.mjs expects the base to include the /api prefix
         INTERNAL_API_URL: 'http://127.0.0.1:8788/api',
+        // Also expose the client-facing URL at build time for Next.js
+        NEXT_PUBLIC_INTERNAL_API_URL: 'http://127.0.0.1:8788/api',
       },
       max_memory_restart: '512M',
       restart_delay: 5000,
