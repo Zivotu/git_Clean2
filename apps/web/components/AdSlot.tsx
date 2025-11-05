@@ -42,11 +42,7 @@ export default function AdSlot({
   const effectiveSlotId = slotId?.trim();
 
   // Make TypeScript aware of the adsbygoogle property on window without using `any`.
-  declare global {
-    interface Window {
-      adsbygoogle?: Array<Record<string, unknown>>;
-    }
-  }
+  // window.adsbygoogle is declared globally in apps/web/types/global.d.ts
 
   useEffect(() => {
     if (!showAds || closed || !effectiveSlotId) return;

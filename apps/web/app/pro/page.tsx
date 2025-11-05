@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState, useCallback } from 'react';
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
@@ -47,7 +47,7 @@ function ProPageClient() {
     return undefined;
   });
   const { locale, messages } = useI18n();
-  const tPro = (k: string) => messages[`Pro.${k}`] || k;
+  const tPro = useCallback((k: string) => messages[`Pro.${k}`] || k, [messages]);
   const [packages, setPackages] = useState<BillingPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

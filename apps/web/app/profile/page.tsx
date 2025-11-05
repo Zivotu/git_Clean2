@@ -337,6 +337,37 @@ export default function ProfilePage() {
     }
   }, [user]);
 
+  // Cancel subscription helper (memoized) — declared before effects that reference it
+
+  const cancelSubscription = useCallback(
+    async (id?: string, opts?: { silent?: boolean }) => {
+      const subId = id ?? subscription.id;
+      if (!user || !subId) return;
+      try {
+        const res = await fetch(`${PUBLIC_API_URL}/billing/subscriptions/cancel`, {
+          method: 'POST',
+          headers: await buildHeaders(true),
+          credentials: 'include',
+          body: JSON.stringify({ subscriptionId: subId }),
+        });
+        if (res.status === 200) {
+          setErrorMessage('');
+          if (opts?.silent) {
+            setActiveSubs((arr) => arr.filter((x) => x.id !== subId));
+          } else {
+            await loadProfile();
+          }
+        } else {
+          setErrorMessage('Cancel failed');
+        }
+      } catch (err) {
+        console.error('Cancel failed', err);
+        setErrorMessage('Cancel failed');
+      }
+    },
+    [user, subscription?.id, loadProfile],
+  );
+
   // Try to resolve app titles for app-subscription entries missing a friendly label
   useEffect(() => {
     (async () => {
@@ -549,31 +580,7 @@ export default function ProfilePage() {
     }
   }
 
-  async function cancelSubscription(id?: string, opts?: { silent?: boolean }) {
-    const subId = id ?? subscription.id;
-    if (!user || !subId) return;
-    try {
-      const res = await fetch(`${PUBLIC_API_URL}/billing/subscriptions/cancel`, {
-        method: 'POST',
-        headers: await buildHeaders(true),
-        credentials: 'include',
-        body: JSON.stringify({ subscriptionId: subId }),
-      });
-      if (res.status === 200) {
-        setErrorMessage('');
-        if (opts?.silent) {
-          setActiveSubs((arr) => arr.filter((x) => x.id !== subId));
-        } else {
-          await loadProfile();
-        }
-      } else {
-        setErrorMessage('Cancel failed');
-      }
-    } catch (err) {
-      console.error('Cancel failed', err);
-      setErrorMessage('Cancel failed');
-    }
-  }
+  
 
   if (loading || busy) {
     return (

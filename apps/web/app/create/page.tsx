@@ -112,7 +112,9 @@ export default function CreatePage() {
 
   const previewInputRef = useRef<HTMLInputElement | null>(null);
   const [previewChoice, setPreviewChoice] = useState<'preset' | 'custom'>('preset');
-  const [selectedPreset, setSelectedPreset] = useState(() => PREVIEW_PRESET_PATHS[0]);
+  const [selectedPreset, setSelectedPreset] = useState<
+    (typeof PREVIEW_PRESET_PATHS)[number]
+  >(() => PREVIEW_PRESET_PATHS[0]);
   const [overlayTitle, setOverlayTitle] = useState('');
   const [customPreview, setCustomPreview] = useState<{ file: File; dataUrl: string } | null>(null);
   const [previewError, setPreviewError] = useState('');
