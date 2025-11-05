@@ -1,6 +1,7 @@
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getAuth } from 'firebase-admin/auth';
+import type { DocumentSnapshot } from 'firebase-admin/firestore';
 import { db } from '../db.js';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
@@ -26,20 +27,25 @@ export default async function adminRoutes(app: FastifyInstance) {
     try {
       const userRecords = await getAuth().listUsers(limit, pageToken);
 
-      const userDocs = await Promise.all(
+      const userDocs: Array<DocumentSnapshot> = await Promise.all(
         userRecords.users.map((user) => db.collection('users').doc(user.uid).get()),
       );
 
       const users = userRecords.users.map((user, index) => {
         const userDoc = userDocs[index];
-        const userData = userDoc.exists ? userDoc.data() : {};
+        const userData = userDoc && userDoc.exists ? (userDoc.data() as Record<string, unknown>) : {};
+
+        // Safely extract `ambassador` only if it's a string; otherwise null.
+        const ambassador =
+          userData && typeof userData['ambassador'] === 'string' ? (userData['ambassador'] as string) : null;
+
         return {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
           customClaims: user.customClaims,
           disabled: user.disabled,
-          ambassador: (userData as any)?.ambassador ?? null,
+          ambassador,
         };
       });
 
