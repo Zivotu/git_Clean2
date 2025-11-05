@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useAds } from './AdsProvider';
 import { ADSENSE_CLIENT_ID, ADSENSE_TEST_MODE } from '@/config/ads';
@@ -41,6 +41,13 @@ export default function AdSlot({
   const [scriptReady, setScriptReady] = useState(false);
   const effectiveSlotId = slotId?.trim();
 
+  // Make TypeScript aware of the adsbygoogle property on window without using `any`.
+  declare global {
+    interface Window {
+      adsbygoogle?: Array<Record<string, unknown>>;
+    }
+  }
+
   useEffect(() => {
     if (!showAds || closed || !effectiveSlotId) return;
     const node = insRef.current;
@@ -48,11 +55,12 @@ export default function AdSlot({
 
     const initAd = () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window.adsbygoogle = window.adsbygoogle || []).push({});
         setScriptReady(true);
-      } catch (err) {
-        console.warn("[AdSlot] Failed to push ad slot", err);
+      } catch (err: unknown) {
+        // Avoid using `any` for linting — stringify unknown error safely for logs.
+        const errMsg = err instanceof Error ? err : String(err);
+        console.warn('[AdSlot] Failed to push ad slot', errMsg);
       }
     };
 
