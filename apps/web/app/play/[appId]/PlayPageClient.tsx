@@ -1,7 +1,10 @@
-"use client"
+'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '@/lib/api'
+import AdSlot from '@/components/AdSlot'
+import { useAds } from '@/components/AdsProvider'
+import { AD_SLOT_IDS } from '@/config/ads'
 import {
   getJwt,
   fetchSnapshot,
@@ -73,6 +76,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const [error, setError] = useState<string | null>(null)
 
   const { id: appId, buildId, securityPolicy } = app;
+  const { showAds } = useAds()
+  const topAdSlot = (AD_SLOT_IDS.playTop || '').trim()
+  const bottomAdSlot = (AD_SLOT_IDS.playBottom || '').trim()
+  const showTopAd = showAds && topAdSlot.length > 0
+  const showBottomAd = showAds && bottomAdSlot.length > 0
 
   const appNamespace = useMemo(() => makeNamespace(appId, undefined), [appId])
   
@@ -389,7 +397,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       title="Thesara App"
       referrerPolicy="no-referrer"
       sandbox={sandboxFlags}
-      style={{ border: 'none', width: '100%', height: '100vh' }}
+      style={{ border: 'none', width: '100%', height: '100vh', display: 'block' }}
     />
   )
 }

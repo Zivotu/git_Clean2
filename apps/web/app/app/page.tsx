@@ -12,6 +12,7 @@ import { auth } from '@/lib/firebase';
 import Avatar from '@/components/Avatar';
 import { useI18n } from '@/lib/i18n-provider';
 import AdSlot from '@/components/AdSlot';
+import { AD_SLOT_IDS } from '@/config/ads';
 import { checkAccess } from '@/lib/access';
 import type { AccessMode } from '@/lib/types';
 import { handleFetchError } from '@/lib/handleFetchError';
@@ -1137,7 +1138,7 @@ useEffect(() => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto p-4 md:p-8">
-        <AdSlot className="mb-6" />
+        <AdSlot slotId={AD_SLOT_IDS.appDetailHeader} className="mb-6" />
         {showStatusNotice && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             {canViewUnpublished

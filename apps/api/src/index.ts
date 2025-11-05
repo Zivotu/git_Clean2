@@ -54,7 +54,9 @@ import storageRoutes from './routes/storage.js';
 import roomsBridge from './routes/rooms-bridge.js';
 import proxyRoutes from './routes/proxy.js';
 import ambassadorRoutes from './routes/ambassador.js';
+import adminRoutes from './routes/admin.js';
 import jwtRoutes from './routes/jwt.js';
+// admin routes
 import buildEventsRoutes from './routes/buildEvents.js';
 import testingRoutes from './routes/testing.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
@@ -605,6 +607,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(billingRoutes);
   await app.register(billingRoutes, { prefix: '/api' });
   await app.register(meRoutes);
+  await app.register(adminRoutes);
   await app.register(ambassadorRoutes);
   await app.register(versionRoutes);
   await app.register(oglasiRoutes);

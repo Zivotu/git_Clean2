@@ -11,6 +11,9 @@ import { PUBLIC_API_URL } from '@/lib/config';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { useBuildSse } from '@/components/useBuildSse';
+import UserManagement from '@/components/UserManagement';
+import Tabs from '@/components/Tabs';
+import AmbassadorProgram from '@/components/AmbassadorProgram';
 import { fetchAllowedAdminEmails, saveAllowedAdminEmails } from '@/lib/adminAccess';
 
 async function buildHeaders(withJson: boolean): Promise<Record<string, string>> {
@@ -159,6 +162,7 @@ export default function AdminDashboard() {
   const [adminSettingsSaving, setAdminSettingsSaving] = useState(false);
   const [adminSettingsError, setAdminSettingsError] = useState<string | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [adminTab, setAdminTab] = useState('Aplikacije');
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
     if (!item) return null; // Prioritize pending build, then current build, then ID as fallback
@@ -702,335 +706,344 @@ if (error)
   return (
     <>
       <div className="p-4 space-y-4">
-        <h1 className="text-xl font-bold">Admin Review</h1>
-
-        {/* Ambassador admin quick access */}
-        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Ambassador program</h2>
-              <p className="text-sm text-gray-500">Upravljaj prijavama, promo kodovima i isplatama ambasadora.</p>
-            </div>
-            <Link
-              href="/admin/ambassador"
-              className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
-            >
-              Otvori Ambassador admin
-            </Link>
-          </div>
-        </section>
-        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold">Postavke admin sučelja</h2>
-              <p className="text-sm text-gray-500">
-                Upravlja popisom računa koji smiju otključati skriveni admin pristup.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleRefreshAllowed}
-              disabled={adminSettingsLoading}
-              className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-            >
-              Osvježi
-            </button>
-          </div>
-          {adminSettingsError && (
-            <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-              {adminSettingsError}
-            </div>
-          )}
-          <div className="mt-3">
-            {adminSettingsLoading ? (
-              <div className="text-sm text-gray-500">Učitavanje…</div>
-            ) : allowedEmails.length === 0 ? (
-              <div className="text-sm text-gray-500">Nema dopuštenih e-mail adresa.</div>
-            ) : (
-              <ul className="space-y-2">
-                {allowedEmails.map((email) => (
-                  <li
-                    key={email}
-                    className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm text-gray-800"
+        <h1 className="text-xl font-bold">Admin Dashboard</h1>
+        <Tabs tabs={['Aplikacije', 'Users', 'AmbasadorProgram', 'Admins']} activeTab={adminTab} onTabChange={setAdminTab}>
+          {adminTab === 'Aplikacije' && (
+            <>
+              {/* Ambassador admin quick access */}
+              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold">Ambassador program</h2>
+                    <p className="text-sm text-gray-500">Upravljaj prijavama, promo kodovima i isplatama ambasadora.</p>
+                  </div>
+                  <Link
+                    href="/admin/ambassador"
+                    className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
                   >
-                    <span className="truncate">{email}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveAdminEmail(email)}
-                      disabled={adminSettingsSaving}
-                      className="text-rose-600 transition hover:text-rose-700 disabled:opacity-40"
-                    >
-                      Ukloni
-                    </button>
-                  </li>
+                    Otvori Ambassador admin
+                  </Link>
+                </div>
+              </section>
+              <div className="flex gap-4">
+                {(['all', 'pending', 'approved', 'rejected', 'deleted'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTab(t)}
+                    className={`px-3 py-1 rounded ${tab === t ? 'bg-emerald-600 text-white' : 'bg-gray-200'}`}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
                 ))}
-              </ul>
-            )}
-          </div>
-          <form onSubmit={handleAddAdminEmail} className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input
-              type="email"
-              value={newAdminEmail}
-              onChange={(event) => {
-                setNewAdminEmail(event.target.value);
-                if (adminSettingsError) setAdminSettingsError(null);
-              }}
-              placeholder="admin@example.com"
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-300"
-            />
-            <button
-              type="submit"
-              disabled={adminSettingsSaving || adminSettingsLoading}
-              className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
-            >
-              Dodaj
-            </button>
-          </form>
-        </section>
-        <div className="flex gap-4">
-          {(['all', 'pending', 'approved', 'rejected', 'deleted'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-3 py-1 rounded ${tab === t ? 'bg-emerald-600 text-white' : 'bg-gray-200'}`}
-            >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
-          ))}
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search"
-            className="ml-auto border px-2 py-1 rounded"
-          />
-          {search && (
-            <button onClick={() => setSearch('')} className="px-2 py-1 border rounded">
-              Clear
-            </button>
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search"
+                  className="ml-auto border px-2 py-1 rounded"
+                />
+                {search && (
+                  <button onClick={() => setSearch('')} className="px-2 py-1 border rounded">
+                    Clear
+                  </button>
+                )}
+                <button onClick={() => load()} className="px-2 py-1 border rounded">
+                  Refresh
+                </button>
+              </div>
+              <div className="text-xs text-gray-500">Pronađeno {filtered.length} aplikacija</div>
+              {llmEnabled === false && (
+                <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  AI provjera je privremeno isključena. Objave čekaju ručni pregled.
+                </div>
+              )}
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left p-2">App ID</th>
+                    <th className="text-left p-2">Preview</th>
+                    <th className="text-left p-2">Name</th>
+                    <th className="text-left p-2">Owner Email</th>
+                    <th className="text-left p-2">Submitted</th>
+                    <th className="text-left p-2">Network</th>
+                    <th className="text-left p-2">LLM</th>
+                    <th className="p-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((it) => {
+                    const imgSrc = resolvePreviewUrl(it.previewUrl);
+                    const hasPreview = Boolean(imgSrc);
+                    const actionTarget = resolveItemTarget(it);
+                    const detailId = actionTarget || '';
+                    const isRegenerating = actionTarget ? regeneratingId === actionTarget : false;
+                    return (
+                      <tr key={it.id} className="border-t">
+                        <td className="p-2">{it.appId}</td>
+                        <td className="p-2">
+                          {hasPreview ? (
+                            <Image
+                              src={imgSrc}
+                              alt="preview"
+                              width={40}
+                              height={40}
+                              unoptimized
+                              style={{ color: 'transparent' }}
+                              className="w-10 h-10 object-cover rounded"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-slate-100 text-slate-500 text-[10px] font-medium grid place-items-center">
+                              Bez
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-2">{it.title}</td>
+                        <td className="p-2">
+                          {it.ownerEmail ? (
+                            <a href={`mailto:${it.ownerEmail}`} className="text-emerald-600 underline">
+                              {it.ownerEmail}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="p-2">{it.submittedAt ? new Date(it.submittedAt).toLocaleString() : '-'}</td>
+                        <td className="p-2">
+                          {it.networkPolicy || '-'}
+                          {it.networkDomains && it.networkDomains.length > 0 && (
+                            <div className="text-xs text-gray-600">
+                              {it.networkDomains
+                                .map((d) => `fetch prema ${d}`)
+                                .join(', ')}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          {llmEnabled === false ? (
+                            <span className="text-xs text-gray-500">LLM disabled</span>
+                          ) : it.llm?.status === 'complete' ? (
+                            <>
+                              {it.llm.data?.publishRecommendation && (
+                                <span
+                                  className={`px-1 text-xs rounded ${
+                                    it.llm.data.publishRecommendation === 'approve'
+                                      ? 'bg-green-100 text-green-800'
+                                      : it.llm.data.publishRecommendation === 'reject'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}
+                                >
+                                  AI preporuka: {it.llm.data.publishRecommendation}
+                                </span>
+                              )}
+                              {it.llm.data?.summary && (
+                                <div className="text-xs mt-1">{it.llm.data.summary}</div>
+                              )}
+                              <div className="w-24 bg-gray-200 h-2 rounded mt-1">
+                                <div
+                                  className="h-2 bg-emerald-600 rounded"
+                                  style={{ width: `${(it.llm.data?.confidence || 0) * 100}%` }}
+                                />
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {it.llm.data?.risks?.map((r) => (
+                                  <span
+                                    key={r.id || r.title}
+                                    className="px-1 text-xs rounded bg-red-100 text-red-800"
+                                  >
+                                    {r.title}
+                                  </span>
+                                ))}
+                              </div>
+                            </>
+                          ) : it.state === 'llm_failed' ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-red-600">
+                                LLM failed
+                              </span>
+                              {actionTarget && (
+                                <button
+                                  onClick={() => triggerLlm(actionTarget)}
+                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                                  disabled={isRegenerating}>
+                                  {isRegenerating ? 'Running...' : 'Try again'}
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-600">
+                                LLM waiting{it.llmAttempts ? ` (${it.llmAttempts})` : ''}
+                              </span>
+                              {actionTarget && (
+                                <button
+                                  onClick={() => triggerLlm(actionTarget)}
+                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                                  disabled={isRegenerating}
+                                >
+                                  {isRegenerating ? 'Running...' : 'Try again'}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-2 flex flex-wrap gap-2">
+                          {tab === 'deleted' ? (
+                            <>
+                              <button
+                                onClick={() => setConfirmAction({ type: 'restore', item: it })}
+                                className="px-2 py-1 bg-emerald-600 text-white rounded"
+                              >
+                                Restore
+                              </button>
+                              <button
+                                onClick={() => setConfirmAction({ type: 'force-delete', item: it })}
+                                className="px-2 py-1 bg-black text-white rounded"
+                                title="Permanently delete"
+                              >
+                                Delete Permanently
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setConfirmAction({ type: 'approve', item: it })}
+                                className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                                disabled={!actionTarget}
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => actionTarget && setRejectState({ item: it, reason: '' })}
+                                className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50"
+                                disabled={!actionTarget}
+                              >
+                                Reject
+                              </button>
+                              {isRegenerating ? (
+                                <span className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
+                              ) : (
+                                <button
+                                  onClick={() => detailId && viewReport(detailId)}
+                                  className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
+                                  disabled={!detailId}
+                                >
+                                  Details
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setConfirmAction({ type: 'delete', item: it })}
+                                className="px-2 py-1 bg-black text-white rounded"
+                                title="Delete"
+                              >
+                                Delete
+                              </button>
+                              {it.playUrl && (
+                                <button
+                                  onClick={() => {
+                                    if (typeof window === 'undefined') return;
+                                    const url = it.playUrl!.startsWith('http')
+                                      ? it.playUrl!
+                                      : new URL(it.playUrl!, window.location.origin).toString();
+                                    window.open(url, '_blank', 'noopener');
+                                  }}
+                                  className="px-2 py-1 border rounded"
+                                >
+                                  Play
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {nextCursor && (
+                <div className="text-center mt-4">
+                  <button
+                    onClick={() => load(nextCursor)}
+                    className="px-2 py-1 border rounded"
+                  >
+                    Load more
+                  </button>
+                </div>
+              )}
+            </>
           )}
-          <button onClick={() => load()} className="px-2 py-1 border rounded">
-            Refresh
-          </button>
-        </div>
-        <div className="text-xs text-gray-500">Pronađeno {filtered.length} aplikacija</div>
-        {llmEnabled === false && (
-          <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            AI provjera je privremeno isključena. Objave čekaju ručni pregled.
-          </div>
-        )}
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left p-2">App ID</th>
-              <th className="text-left p-2">Preview</th>
-              <th className="text-left p-2">Name</th>
-              <th className="text-left p-2">Owner Email</th>
-              <th className="text-left p-2">Submitted</th>
-              <th className="text-left p-2">Network</th>
-              <th className="text-left p-2">LLM</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((it) => {
-              const imgSrc = resolvePreviewUrl(it.previewUrl);
-              const hasPreview = Boolean(imgSrc);
-              const actionTarget = resolveItemTarget(it);
-              const detailId = actionTarget || '';
-              const isRegenerating = actionTarget ? regeneratingId === actionTarget : false;
-              return (
-                <tr key={it.id} className="border-t">
-                  <td className="p-2">{it.appId}</td>
-                  <td className="p-2">
-                    {hasPreview ? (
-                      <Image
-                        src={imgSrc}
-                        alt="preview"
-                        width={40}
-                        height={40}
-                        unoptimized
-                        style={{ color: 'transparent' }}
-                        className="w-10 h-10 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded bg-slate-100 text-slate-500 text-[10px] font-medium grid place-items-center">
-                        Bez
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-2">{it.title}</td>
-                  <td className="p-2">
-                    {it.ownerEmail ? (
-                      <a href={`mailto:${it.ownerEmail}`} className="text-emerald-600 underline">
-                        {it.ownerEmail}
-                      </a>
-                    ) : (
-                      '-'
-                    )}
-                  </td>
-                  <td className="p-2">{it.submittedAt ? new Date(it.submittedAt).toLocaleString() : '-'}</td>
-                  <td className="p-2">
-                    {it.networkPolicy || '-'}
-                    {it.networkDomains && it.networkDomains.length > 0 && (
-                      <div className="text-xs text-gray-600">
-                        {it.networkDomains
-                          .map((d) => `fetch prema ${d}`)
-                          .join(', ')}
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    {llmEnabled === false ? (
-                      <span className="text-xs text-gray-500">LLM disabled</span>
-                    ) : it.llm?.status === 'complete' ? (
-                      <>
-                        {it.llm.data?.publishRecommendation && (
-                          <span
-                            className={`px-1 text-xs rounded ${
-                              it.llm.data.publishRecommendation === 'approve'
-                                ? 'bg-green-100 text-green-800'
-                                : it.llm.data.publishRecommendation === 'reject'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-yellow-100 text-yellow-800'
-                            }`}
-                          >
-                            AI preporuka: {it.llm.data.publishRecommendation}
-                          </span>
-                        )}
-                        {it.llm.data?.summary && (
-                          <div className="text-xs mt-1">{it.llm.data.summary}</div>
-                        )}
-                        <div className="w-24 bg-gray-200 h-2 rounded mt-1">
-                          <div
-                            className="h-2 bg-emerald-600 rounded"
-                            style={{ width: `${(it.llm.data?.confidence || 0) * 100}%` }}
-                          />
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {it.llm.data?.risks?.map((r) => (
-                            <span
-                              key={r.id || r.title}
-                              className="px-1 text-xs rounded bg-red-100 text-red-800"
-                            >
-                              {r.title}
-                            </span>
-                          ))}
-                        </div>
-                      </>
-                    ) : it.state === 'llm_failed' ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-red-600">
-                          LLM failed
-                        </span>
-                        {actionTarget && (
-                          <button
-                            onClick={() => triggerLlm(actionTarget)}
-                            className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                            disabled={isRegenerating}>
-                            {isRegenerating ? 'Running...' : 'Try again'}
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-600">
-                          LLM waiting{it.llmAttempts ? ` (${it.llmAttempts})` : ''}
-                        </span>
-                        {actionTarget && (
-                          <button
-                            onClick={() => triggerLlm(actionTarget)}
-                            className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                            disabled={isRegenerating}
-                          >
-                            {isRegenerating ? 'Running...' : 'Try again'}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-2 flex flex-wrap gap-2">
-                    {tab === 'deleted' ? (
-                      <>
+          {adminTab === 'Users' && <UserManagement />}
+          {adminTab === 'AmbasadorProgram' && <AmbassadorProgram />}
+          {adminTab === 'Admins' && (
+            <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Postavke admin sučelja</h2>
+                  <p className="text-sm text-gray-500">
+                    Upravlja popisom računa koji smiju otključati skriveni admin pristup.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRefreshAllowed}
+                  disabled={adminSettingsLoading}
+                  className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Osvježi
+                </button>
+              </div>
+              {adminSettingsError && (
+                <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
+                  {adminSettingsError}
+                </div>
+              )}
+              <div className="mt-3">
+                {adminSettingsLoading ? (
+                  <div className="text-sm text-gray-500">Učitavanje…</div>
+                ) : allowedEmails.length === 0 ? (
+                  <div className="text-sm text-gray-500">Nema dopuštenih e-mail adresa.</div>
+                ) : (
+                  <ul className="space-y-2">
+                    {allowedEmails.map((email) => (
+                      <li
+                        key={email}
+                        className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm text-gray-800"
+                      >
+                        <span className="truncate">{email}</span>
                         <button
-                          onClick={() => setConfirmAction({ type: 'restore', item: it })}
-                          className="px-2 py-1 bg-emerald-600 text-white rounded"
+                          type="button"
+                          onClick={() => handleRemoveAdminEmail(email)}
+                          disabled={adminSettingsSaving}
+                          className="text-rose-600 transition hover:text-rose-700 disabled:opacity-40"
                         >
-                          Restore
+                          Ukloni
                         </button>
-                        <button
-                          onClick={() => setConfirmAction({ type: 'force-delete', item: it })}
-                          className="px-2 py-1 bg-black text-white rounded"
-                          title="Permanently delete"
-                        >
-                          Delete Permanently
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setConfirmAction({ type: 'approve', item: it })}
-                          className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                          disabled={!actionTarget}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => actionTarget && setRejectState({ item: it, reason: '' })}
-                          className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50"
-                          disabled={!actionTarget}
-                        >
-                          Reject
-                        </button>
-                        {isRegenerating ? (
-                          <span className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
-                        ) : (
-                          <button
-                            onClick={() => detailId && viewReport(detailId)}
-                            className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
-                            disabled={!detailId}
-                          >
-                            Details
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setConfirmAction({ type: 'delete', item: it })}
-                          className="px-2 py-1 bg-black text-white rounded"
-                          title="Delete"
-                        >
-                          Delete
-                        </button>
-                        {it.playUrl && (
-                          <button
-                            onClick={() => {
-                              if (typeof window === 'undefined') return;
-                              const url = it.playUrl!.startsWith('http')
-                                ? it.playUrl!
-                                : new URL(it.playUrl!, window.location.origin).toString();
-                              window.open(url, '_blank', 'noopener');
-                            }}
-                            className="px-2 py-1 border rounded"
-                          >
-                            Play
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {nextCursor && (
-          <div className="text-center mt-4">
-            <button
-              onClick={() => load(nextCursor)}
-              className="px-2 py-1 border rounded"
-            >
-              Load more
-            </button>
-          </div>
-        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <form onSubmit={handleAddAdminEmail} className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  type="email"
+                  value={newAdminEmail}
+                  onChange={(event) => {
+                    setNewAdminEmail(event.target.value);
+                    if (adminSettingsError) setAdminSettingsError(null);
+                  }}
+                  placeholder="admin@example.com"
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-300"
+                />
+                <button
+                  type="submit"
+                  disabled={adminSettingsSaving || adminSettingsLoading}
+                  className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  Dodaj
+                </button>
+              </form>
+            </section>
+          )}
+        </Tabs>
       </div>
       {showDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
