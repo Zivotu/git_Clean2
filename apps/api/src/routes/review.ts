@@ -952,6 +952,56 @@ export default async function reviewRoutes(app: FastifyInstance) {
   };
   route('POST', '/review/builds/:id/policy', admin, postPolicyHandler)(app);
 
+  // Admin: update listing fields (visibility, accessMode, status, state, etc.)
+  const adminUpdateHandler = async (req: any, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const body = (req.body || {}) as Record<string, any>;
+
+    const allowed = new Set([
+      'visibility',
+      'accessMode',
+      'status',
+      'state',
+      'publishedAt',
+      'playUrl',
+      'bundlePublicUrl',
+      'updatedAt',
+    ]);
+
+    const patch: Record<string, any> = {};
+    for (const k of Object.keys(body)) {
+      if (allowed.has(k)) patch[k] = body[k];
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return reply.code(400).send({ ok: false, error: 'no_allowed_fields' });
+    }
+
+    try {
+      const apps = await readApps();
+      const resolved = await resolveBuildContext(id, { apps });
+      const idx = resolved?.appIndex ?? -1;
+      if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
+      const app = resolved!.apps[idx];
+
+      // normalize timestamps if provided as strings
+      if (typeof patch.publishedAt === 'string' && /^\d+$/.test(patch.publishedAt)) {
+        patch.publishedAt = Number(patch.publishedAt);
+      }
+      if (typeof patch.updatedAt === 'string' && /^\d+$/.test(patch.updatedAt)) {
+        patch.updatedAt = Number(patch.updatedAt);
+      }
+
+      await updateApp(app.id, patch as any);
+
+      return reply.send({ ok: true });
+    } catch (err: unknown) {
+      req.log.error({ err, id }, 'admin_update_failed');
+      return reply.code(500).send({ ok: false, error: 'admin_update_failed' });
+    }
+  };
+  route('POST', '/review/builds/:id/admin-update', admin, adminUpdateHandler)(app);
+
   const deleteHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const now = Date.now();
@@ -1024,23 +1074,81 @@ export default async function reviewRoutes(app: FastifyInstance) {
         (a: any) => a.buildId === buildId || a.slug === id || String(a.id) === id || a.pendingBuildId === buildId,
       );
       const removed = idx >= 0 ? apps[idx] : undefined;
+
+      // If there's no buildId and nothing to remove, surface not_found
+      if (!buildId && idx < 0) {
+        return reply.code(404).send({ ok: false, error: 'not_found' });
+      }
+
+      let cleanupError: Error | null = null;
+
+      if (buildId) {
+        // Attempt filesystem + bucket cleanup first. If these succeed we will
+        // remove the listing from the apps list. If they fail, we will not
+        // silently drop the listing; instead we write an observability field
+        // so admins can retry and inspect the error.
+        try {
+          const dir = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', buildId);
+
+          // Try rm with retries in case of transient FS errors
+          const tryRm = async () => {
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                await fs.rm(dir, { recursive: true, force: true });
+                return;
+              } catch (err: any) {
+                if (attempt === 3) throw err;
+                // small backoff
+                await new Promise((res) => setTimeout(res, 250 * attempt));
+              }
+            }
+          };
+
+          await tryRm();
+
+          // Try bucket cleanup with retries
+          const tryBucketDelete = async () => {
+            const bucket = getBucket();
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                await bucket.deleteFiles({ prefix: `builds/${buildId}/` });
+                return;
+              } catch (err: any) {
+                if (attempt === 3) throw err;
+                await new Promise((res) => setTimeout(res, 250 * attempt));
+              }
+            }
+          };
+
+          await tryBucketDelete();
+        } catch (err: any) {
+          cleanupError = err instanceof Error ? err : new Error(String(err));
+          req.log.error({ err: cleanupError, buildId, id }, 'force_delete_cleanup_failed');
+        }
+      }
+
+      if (cleanupError) {
+        // Mark the listing with a deletionAttempted timestamp and the error so
+        // admins can see and retry. Do NOT remove the listing to avoid
+        // orphaned/unrecoverable artifact state.
+        try {
+          if (removed?.id) {
+            await updateApp(removed.id, {
+              deletionAttemptedAt: Date.now(),
+              deletionError: String(cleanupError.message || cleanupError),
+              updatedAt: Date.now(),
+            } as any);
+          }
+        } catch (err: any) {
+          req.log.error({ err, buildId, id }, 'force_delete_mark_failed');
+        }
+        return reply.code(500).send({ ok: false, error: 'cleanup_failed', detail: String(cleanupError.message || cleanupError) });
+      }
+
+      // Cleanup succeeded (or there was no buildId). Remove the listing if present
       if (idx >= 0) {
         apps.splice(idx, 1);
         await writeApps(apps);
-      }
-
-      if (buildId) {
-        // Best-effort filesystem cleanup of build artifacts
-        try {
-          const dir = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', buildId);
-          await fs.rm(dir, { recursive: true, force: true });
-        } catch {}
-
-        // Best-effort bucket cleanup
-        try {
-          const bucket = getBucket();
-          await bucket.deleteFiles({ prefix: `builds/${buildId}/` });
-        } catch {}
       }
 
       return reply.send({ ok: true, removedListingId: removed?.id });

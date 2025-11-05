@@ -157,6 +157,12 @@ export default function AdminDashboard() {
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
   const [policy, setPolicy] = useState<{ camera?: boolean; microphone?: boolean; geolocation?: boolean; clipboardRead?: boolean; clipboardWrite?: boolean; } | null>(null);
   const [policySaving, setPolicySaving] = useState(false);
+  // Admin editable fields for current item
+  const [editableVisibility, setEditableVisibility] = useState<string>('public');
+  const [editableAccessMode, setEditableAccessMode] = useState<string>('public');
+  const [editableStatus, setEditableStatus] = useState<string>('draft');
+  const [editableState, setEditableState] = useState<string>('inactive');
+  const [adminSaving, setAdminSaving] = useState(false);
   const [allowedEmails, setAllowedEmails] = useState<string[]>([]);
   const [adminSettingsLoading, setAdminSettingsLoading] = useState(false);
   const [adminSettingsSaving, setAdminSettingsSaving] = useState(false);
@@ -256,6 +262,18 @@ export default function AdminDashboard() {
       setArtifacts(idx);
       const resolvedBuildId = idx.buildId || resolveItemTarget(match) || '';
       setCurrentBuildId(resolvedBuildId || null);
+      // initialize editable admin fields when viewing an item
+      if (match) {
+        setEditableVisibility(match.visibility || 'public');
+        setEditableAccessMode(match.accessMode || 'public');
+        setEditableStatus((match as any).status || 'draft');
+        setEditableState((match as any).state || 'inactive');
+      } else {
+        setEditableVisibility('public');
+        setEditableAccessMode('public');
+        setEditableStatus('draft');
+        setEditableState('inactive');
+      }
       setZipReady(Boolean(idx.bundle?.exists));
 
       // Use the direct bundle URL if available (bundle-first), otherwise fallback
@@ -1310,6 +1328,89 @@ if (error)
                   >
                     {policySaving ? 'Spremam…' : 'Spremi dozvole'}
                   </button>
+                </div>
+                {/* Admin editable controls: visibility, accessMode, status, state */}
+                <div className="mt-3 p-3 border rounded bg-gray-50">
+                  <div className="text-sm font-medium mb-2">Admin: Uredi postavke</div>
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <label className="text-xs">Vidljivost</label>
+                    <select
+                      value={editableVisibility}
+                      onChange={(e) => setEditableVisibility(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="public">public</option>
+                      <option value="pin">pin</option>
+                      <option value="invite">invite</option>
+                      <option value="private">private</option>
+                    </select>
+
+                    <label className="text-xs">Pristup</label>
+                    <select
+                      value={editableAccessMode}
+                      onChange={(e) => setEditableAccessMode(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="public">public</option>
+                      <option value="pin">pin</option>
+                      <option value="invite">invite</option>
+                      <option value="private">private</option>
+                    </select>
+
+                    <label className="text-xs">Status</label>
+                    <select
+                      value={editableStatus}
+                      onChange={(e) => setEditableStatus(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="published">published</option>
+                      <option value="draft">draft</option>
+                      <option value="rejected">rejected</option>
+                    </select>
+
+                    <label className="text-xs">State</label>
+                    <select
+                      value={editableState}
+                      onChange={(e) => setEditableState(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                    </select>
+
+                    <button
+                      onClick={async () => {
+                        if (!currentIdentifier && !currentItem) {
+                          alert('Nema odabranog unosa');
+                          return;
+                        }
+                        const target = currentIdentifier || currentItem?.id || currentItem?.slug || '';
+                        setAdminSaving(true);
+                        try {
+                          await apiPost(`/review/builds/${target}/admin-update`, {
+                            visibility: editableVisibility,
+                            accessMode: editableAccessMode,
+                            status: editableStatus,
+                            state: editableState,
+                            updatedAt: Date.now(),
+                          }, { auth: true });
+                          // refresh view
+                          await viewReport(target);
+                          await load();
+                          alert('Saved');
+                        } catch (err) {
+                          console.error(err);
+                          alert('Save failed');
+                        } finally {
+                          setAdminSaving(false);
+                        }
+                      }}
+                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm disabled:opacity-50"
+                      disabled={adminSaving}
+                    >
+                      {adminSaving ? 'Spremam…' : 'Spremi promjene'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
