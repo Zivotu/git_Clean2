@@ -3,7 +3,7 @@ import { requireRole } from '../middleware/auth.js'
 import { db, listEntitlements, readApps } from '../db.js'
 import type { Entitlement } from '../entitlements/service.js'
 import type { AppRecord } from '../types.js'
-import { sendWelcomeEmail } from '../notifier.js'
+import { sendTemplateToUser } from '../notifier.js'
 import { getConfig } from '../config.js'
 
 type EntitlementSummary = {
@@ -368,9 +368,11 @@ export default async function meRoutes(app: FastifyInstance) {
           'THESARA tim',
         ]
 
-        await sendWelcomeEmail(uid, subject, lines.join('\n'), {
+        await sendTemplateToUser('welcome', uid, {
+          displayName: displayName ?? data?.displayName,
+          supportEmail: 'welcome@thesara.space',
+          // ensure email override if provided
           email: explicitEmail ?? data?.email,
-          context: 'welcome:first_login',
         })
 
         const now = Date.now()

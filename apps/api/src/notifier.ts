@@ -3,6 +3,10 @@ import nodemailer from 'nodemailer';
 import { getConfig } from './config.js';
 import { db } from './db.js';
 
+// Simple in-memory cache for templates to avoid repeated Firestore reads.
+const templateCache: Map<string, { subject?: string; body?: string; updatedAt?: number }> = new Map();
+const TEMPLATE_CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
 type MailboxKey = 'admin' | 'welcome' | 'reports';
 
 type Mailbox = {
@@ -260,6 +264,116 @@ export async function notifyUser(
   }
 
   await dispatchMail(mailboxKey, email, subject, body, context);
+}
+
+async function fetchTemplate(id: string) {
+  const now = Date.now();
+  const cached = templateCache.get(id);
+  if (cached && cached.updatedAt && now - cached.updatedAt < TEMPLATE_CACHE_TTL) return cached;
+  try {
+    const doc = await db.collection('emailTemplates').doc(id).get();
+    if (!doc.exists) return null;
+    const data = doc.data() as any;
+    const next = { subject: data?.subject, body: data?.body, updatedAt: Date.now() };
+    templateCache.set(id, next);
+    return next;
+  } catch (err) {
+    console.error({ err, id }, 'fetch_template_failed');
+    return null;
+  }
+}
+
+function escapePlainText(value: unknown): string {
+  if (value == null) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderTemplate(tmpl: string | undefined, data: Record<string, unknown> = {}): string {
+  if (!tmpl) return '';
+  return tmpl.replace(/{{\s*([a-zA-Z0-9_:-]+)\s*}}/g, (_m, key) => {
+    const v = data?.[key];
+    return escapePlainText(v);
+  });
+}
+
+function getMailboxForTemplate(id: string): MailboxKey {
+  if (!id) return 'admin';
+  if (id.startsWith('welcome')) return 'welcome';
+  if (id.startsWith('review:') || id.startsWith('publish:') || id.startsWith('reports')) return 'reports';
+  return 'admin';
+}
+
+// Known fallback templates used when no stored template exists. Keep minimal safe text.
+function getFallbackTemplate(id: string): { subject: string; body: string } | null {
+  switch (id) {
+    case 'welcome':
+      return {
+        subject: 'Dobrodošli u Thesaru',
+        body: 'Bok {{displayName}},\n\nDobrodošli u Thesaru! Spremni smo pomoći vam u stvaranju i objavi vaših aplikacija.\n\nAko trebate pomoć, javite nam se na {{supportEmail}}.\n\nTHESARA tim',
+      };
+    case 'review:approval_notification':
+      return {
+        subject: 'Vaša aplikacija "{{appTitle}}" je odobrena',
+        body: 'Bok {{displayName}},\n\nVaša aplikacija "{{appTitle}}" (ID: {{appId}}) je odobrena i objavljena.\n\nLink za upravljanje: {{manageUrl}}\n\nTHESARA tim',
+      };
+    case 'review:reject_notification':
+      return {
+        subject: 'Aplikacija "{{appTitle}}" nije prihvaćena',
+        body: 'Bok {{displayName}},\n\nNažalost, Vaša aplikacija "{{appTitle}}" (ID: {{appId}}) nije prošla pregled.\nRazlog: {{reason}}\n\nMožete urediti aplikaciju i ponovno je poslati.\n\nTHESARA tim',
+      };
+    case 'publish:pending_notification':
+      return {
+        subject: 'Vaša aplikacija "{{appTitle}}" čeka odobrenje',
+        body: 'Bok {{displayName}},\n\nZaprimili smo vaš zahtjev za objavu aplikacije "{{appTitle}}". Naš tim će pregledati sadržaj i obavijestiti vas o odluci.\n\nTHESARA tim',
+      };
+    default:
+      return null;
+  }
+}
+
+export async function sendTemplate(
+  templateId: string,
+  to: string,
+  data: Record<string, unknown> = {},
+  mailboxKey?: MailboxKey,
+): Promise<void> {
+  const tmpl = (await fetchTemplate(templateId)) ?? getFallbackTemplate(templateId);
+  if (!tmpl) {
+    console.warn({ templateId }, 'template_not_found');
+    return;
+  }
+  const subject = renderTemplate(tmpl.subject, data);
+  const body = renderTemplate(tmpl.body, data);
+  const mailbox = mailboxKey ?? getMailboxForTemplate(templateId);
+  await dispatchMail(mailbox, to, subject, body, `template:${templateId}`);
+}
+
+export async function sendTemplateToUser(
+  templateId: string,
+  uid: string,
+  data: Record<string, unknown> = {},
+  options: Omit<NotifyUserOptions, 'mailbox'> = {},
+): Promise<void> {
+  const email = sanitizeEmailAddress(options.email ?? undefined) ?? (await lookupUserEmail(uid));
+  if (!email) return;
+  // Merge user data (lookup) into data if available
+  try {
+    const snap = await db.collection('users').doc(uid).get();
+    if (snap.exists) {
+      const u = snap.data() as any;
+      if (u?.displayName && !data.displayName) data.displayName = u.displayName;
+      if (u?.email && !data.email) data.email = u.email;
+    }
+  } catch (err) {
+    // ignore
+  }
+  const mailbox = getMailboxForTemplate(templateId);
+  await sendTemplate(templateId, email, data, mailbox);
 }
 
 export async function sendEmail(

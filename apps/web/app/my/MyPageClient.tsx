@@ -19,6 +19,7 @@ import {
   startStripeOnboarding,
 } from '@/hooks/useConnectStatus';
 import { playHref, appDetailsHref } from '@/lib/urls';
+import CongratsModal from '@/components/CongratsModal';
 
 // ————————————————————————————————————————
 // Types
@@ -128,6 +129,7 @@ export default function MyProjectsPage() {
 
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [showCongrats, setShowCongrats] = useState(false);
   const [handle, setHandle] = useState<string | null>(null);
   const [allAccessPrice, setAllAccessPrice] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
@@ -347,7 +349,8 @@ export default function MyProjectsPage() {
 
   useEffect(() => {
     if (submitted) {
-      setToast({ message: 'Čestitamo! Tvoja aplikacija je poslana i čeka odobrenje.', type: 'success' });
+      // show a centered congrats modal instead of a small toast
+      setShowCongrats(true);
     }
   }, [submitted]);
 
@@ -797,6 +800,17 @@ export default function MyProjectsPage() {
       </main>
 
       {/* Toast */}
+      {showCongrats && (
+        <CongratsModal
+          message={"Čestitamo! Sad samo pričekajte da objavimo Vašu aplikaciju. I SRETNO!"}
+          onClose={() => {
+            setShowCongrats(false);
+            // remove the submitted flag from the URL by replacing the route
+            router.replace('/my');
+          }}
+        />
+      )}
+
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Animations */}

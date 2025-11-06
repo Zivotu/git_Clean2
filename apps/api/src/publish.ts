@@ -258,6 +258,15 @@ export default async function publishRoutes(app: FastifyInstance) {
       if (isHtml) {
         indexHtml = body.inlineCode;
         appJs = '';
+        // Ensure a minimal entry file exists so the async build worker
+        // can run consistently (worker expects build/_app_entry.tsx).
+        try {
+          const entryPath = path.join(buildDir, '_app_entry.tsx');
+          const stub = `export default function App(){ return null; }\n`;
+          await fs.writeFile(entryPath, stub, 'utf8');
+        } catch (err) {
+          req.log?.warn?.({ err, buildId }, 'publish:write_stub_entry_failed');
+        }
       } else {
         // Add ESM imports for common dependencies
         const preamble = `

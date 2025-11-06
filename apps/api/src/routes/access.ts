@@ -21,7 +21,7 @@ export default async function accessRoutes(app: FastifyInstance) {
   });
 
   // List active PIN sessions (owner only)
-  app.get('/app/:id/pin/sessions', async (req: FastifyRequest, reply: FastifyReply) => {
+  const listSessionsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const id = (req.params as any).id as string;
     const uid = req.authUser?.uid;
     const apps = await readApps();
@@ -34,7 +34,10 @@ export default async function accessRoutes(app: FastifyInstance) {
     }
     const sess = await sessions.list(record.id);
     return { sessions: sess };
-  });
+  };
+
+  app.get('/app/:id/pin/sessions', listSessionsHandler);
+  app.get('/api/app/:id/pin/sessions', listSessionsHandler);
 
   // Revoke a specific session (owner only)
   app.post(

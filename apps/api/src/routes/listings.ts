@@ -146,7 +146,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
   app.route({ method: ['GET', 'HEAD'], url: '/api/listing/:slug', handler: getListingHandler });
 
   // Upload or replace preview image (owner or admin only)
-  app.post('/listing/:slug/preview', async (req: FastifyRequest, reply: FastifyReply) => {
+  const previewUploadHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const slug = String((req.params as any).slug);
     const apps = await readApps();
     const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
@@ -168,7 +168,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         : reply.code(404).send({ ok: false, error: 'not_found' });
     }
 
-    try {
+  try {
       const ct = (req.headers['content-type'] || '').toString();
       // Support preset application via JSON body { path: '/preview-presets/..' | '/assets/..' }
       if (/^application\/json/i.test(ct)) {
@@ -219,10 +219,17 @@ export default async function listingsRoutes(app: FastifyInstance) {
       await writeApps(apps);
       return reply.send({ ok: true, previewUrl });
     } catch (err) {
+      // Log full stack to tmp for easier debugging when terminal output is unavailable
+      try {
+        const p = path.join(process.cwd(), 'tmp', 'preview-upload-errors.log');
+        const entry = { ts: new Date().toISOString(), slug, err: (err as any)?.stack || String(err) };
+        await fs.mkdir(path.dirname(p), { recursive: true });
+        await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
+      } catch {}
       req.log.error({ err, slug }, 'preview_upload_failed');
       return reply.code(500).send({ ok: false, error: 'preview_failed' });
     }
-  });
+  };
 
   // Delete listing (owner or admin). Supports soft delete (default) and hard delete via ?hard=true
   app.delete('/listing/:slug', async (req: FastifyRequest, reply: FastifyReply) => {
@@ -297,7 +304,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     if (appRec.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
 
     const like = Boolean((req.body as any)?.like);
-    try {
+  try {
       await setAppLike(appRec.id, uid, like);
       return reply.send({ ok: true, like });
     } catch (err) {
@@ -305,9 +312,12 @@ export default async function listingsRoutes(app: FastifyInstance) {
       return reply.code(500).send({ ok: false, error: 'like_failed' });
     }
   });
+  app.post('/listing/:slug/preview', previewUploadHandler);
+  // Alias to support clients that POST to /api/ prefixed paths
+  app.post('/api/listing/:slug/preview', previewUploadHandler);
 
   // Update listing fields (owner or admin). Allows title/description/tags/visibility/accessMode/price/maxConcurrentPins
-  app.patch('/listing/:slug', async (req: FastifyRequest, reply: FastifyReply) => {
+  const patchListingHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const slug = String((req.params as any).slug);
     const apps = await readApps();
     const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
@@ -371,6 +381,62 @@ export default async function listingsRoutes(app: FastifyInstance) {
       delete next.translations;
     }
     next.updatedAt = Date.now();
+    // Support updating preview via PATCH body
+    try {
+      const previewBody = (body.preview || {}) as any;
+      // JSON path selection: { path: '/preview-presets/...' }
+      if (typeof previewBody.path === 'string' && previewBody.path.trim()) {
+        const rawPath = previewBody.path.toString().trim();
+        const normalized = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+        const allowed = normalized.startsWith('/preview-presets/') || normalized.startsWith('/assets/');
+        if (!allowed) {
+          return reply.code(400).send({ ok: false, error: 'invalid_preview_path' });
+        }
+        try {
+          await removeExistingPreviewFile(item.previewUrl);
+        } catch {}
+        next.previewUrl = normalized;
+        next.updatedAt = Date.now();
+      }
+      // Data URL upload: { dataUrl: 'data:image/png;base64,...' }
+      else if (typeof previewBody.dataUrl === 'string' && /^data:[^;]+;base64,/.test(previewBody.dataUrl.trim())) {
+        try {
+          const m = /^data:([^;]+);base64,(.+)$/i.exec(previewBody.dataUrl.trim());
+          if (m) {
+            const buffer = Buffer.from(m[2], 'base64');
+            const mimeType = m[1] || 'image/png';
+            const previewUrl = await saveListingPreviewFile({
+              listingId: String(item.id),
+              slug: item.slug,
+              buffer,
+              mimeType,
+              previousUrl: item.previewUrl,
+            });
+            next.previewUrl = previewUrl;
+            next.updatedAt = Date.now();
+          }
+        } catch (e) {
+          // Persist stack to tmp for debugging
+          try {
+            const p = path.join(process.cwd(), 'tmp', 'preview-upload-errors.log');
+            const entry = { ts: new Date().toISOString(), slug, context: 'patch_store', err: (e as any)?.stack || String(e) };
+            await fs.mkdir(path.dirname(p), { recursive: true });
+            await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
+          } catch {}
+          req.log?.warn?.({ e, slug }, 'patch_preview_store_failed');
+          return reply.code(500).send({ ok: false, error: 'preview_failed' });
+        }
+      }
+    } catch (e) {
+      // Log preview parsing errors to tmp for easier debugging
+      try {
+        const p = path.join(process.cwd(), 'tmp', 'preview-upload-errors.log');
+        const entry = { ts: new Date().toISOString(), slug, context: 'patch_parse', err: (e as any)?.stack || String(e) };
+        await fs.mkdir(path.dirname(p), { recursive: true });
+        await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
+      } catch {}
+      req.log?.warn?.({ e, slug }, 'patch_preview_parse_failed');
+    }
     if (typeof next.price === 'number' && next.price > 0) {
       const status = await getConnectStatus(ownerUid);
       if (!status.payouts_enabled || (status.requirements_due ?? 0) > 0) {
@@ -396,7 +462,10 @@ export default async function listingsRoutes(app: FastifyInstance) {
       }
     }
     return reply.send({ ok: true, item: apps[idx] });
-  });
+  };
+  app.patch('/listing/:slug', patchListingHandler);
+  // Alias for clients using /api prefix
+  app.patch('/api/listing/:slug', patchListingHandler);
 
   // Toggle active/inactive state (owner or admin)
   app.patch('/app/:slug/state', async (req: FastifyRequest, reply: FastifyReply) => {

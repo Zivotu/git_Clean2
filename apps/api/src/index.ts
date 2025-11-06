@@ -31,6 +31,7 @@ import authDebug from './routes/authDebug.js';
 import billingRoutes from './routes/billing.js';
 import createxProxy from './routes/createxProxy.js';
 import recenzijeRoutes from './routes/recenzije.js';
+import feedbackRoutes from './routes/feedback.js';
 import roomsRoutes from './routes/rooms.js';
 import shims from './routes/shims.js';
 import oglasiRoutes from './routes/oglasi.js';
@@ -347,6 +348,24 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     decorateReply: false,
   });
 
+  // Also serve the web app's public folder (preview presets and assets)
+  try {
+    // Serve only the preview-presets directory from the web public folder
+    // to avoid registering two fastify-static handlers for the root '/'
+    // (which causes duplicate HEAD/GET route conflicts). This keeps the API
+    // project's public directory mounted at '/' while exposing presets at
+    // '/preview-presets/*'.
+    const webPresets = path.join(process.cwd(), '..', 'web', 'public', 'preview-presets');
+    if (fsSync.existsSync(webPresets)) {
+      await app.register(fastifyStatic, {
+        root: webPresets,
+        prefix: '/preview-presets/',
+        decorateReply: false,
+        index: false,
+      });
+    }
+  } catch {}
+
   app.get('/', async (_req, reply) => {
     return reply.type('text/html').send('OK');
   });
@@ -461,7 +480,17 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   // Helper to bypass CORS plugin for /builds/ routes (iframe lacks Origin header)
   const bypassCors = async (req: FastifyRequest, reply: FastifyReply) => {
-    reply.header('Access-Control-Allow-Origin', '*');
+    // If request provides an Origin, reflect it and allow credentials.
+    // Browsers block credentialed requests when Access-Control-Allow-Origin is '*'.
+    const origin = (req.headers.origin as string | undefined) || null;
+    if (origin && origin !== 'null' && isOriginAllowed(origin)) {
+      reply.header('Access-Control-Allow-Origin', origin);
+      reply.header('Access-Control-Allow-Credentials', 'true');
+      reply.header('Vary', 'Origin');
+    } else if (!origin) {
+      // No Origin (curl, SSR) — allow wildcard
+      reply.header('Access-Control-Allow-Origin', '*');
+    }
     reply.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
   };
@@ -514,7 +543,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       const html = await readFile(indexPath, 'utf8');
       reply
         .header('Cross-Origin-Resource-Policy', 'cross-origin')
-        .header('Access-Control-Allow-Origin', '*')
         .type('text/html; charset=utf-8');
       return reply.send(html);
     } catch (err) {
@@ -544,7 +572,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
     reply
       .header('Cross-Origin-Resource-Policy', 'cross-origin')
-      .header('Access-Control-Allow-Origin', '*')
       .header('Cache-Control', 'public, max-age=31536000, immutable');
 
     try {
@@ -554,6 +581,78 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         return reply.send(content);
       }
       // Binary and other assets
+      const buf = await readFile(path.join(rootDir, wildcard));
+      return reply.send(buf);
+    } catch (err) {
+      req.log?.warn?.({ err, buildId, file: wildcard }, 'build_asset_not_found');
+      return reply.code(404).send({ error: 'not_found' });
+    }
+  });
+
+  // Serve top-level manifest when requested under the `build/` prefix.
+  // Some clients request `/builds/:id/build/manifest_v1.json` while the
+  // canonical file is stored at `.../builds/:id/manifest_v1.json`. Provide a
+  // small compatibility route to avoid 404s.
+  app.get('/builds/:buildId/build/manifest_v1.json', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const manifestPath = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'manifest_v1.json');
+    try {
+      const raw = await readFile(manifestPath, 'utf8');
+      reply
+        .header('Cross-Origin-Resource-Policy', 'cross-origin')
+        .type('application/json; charset=utf-8');
+      return reply.send(raw);
+    } catch (err) {
+      req.log?.warn?.({ err, buildId, manifestPath }, 'manifest_not_found');
+      return reply.code(404).send({ error: 'not_found' });
+    }
+  });
+
+  // Compatibility routes for clients that proxy via Next.js rewrites which
+  // forward requests under the `/api` prefix. These mirror the above
+  // handlers so local dev proxies (which may include /api) still work.
+  // Keep these minimal and safe — they simply delegate to the same storage
+  // paths and headers as the non-prefixed routes.
+  app.get('/api/builds/:buildId/build/manifest_v1.json', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const manifestPath = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'manifest_v1.json');
+    try {
+      const raw = await readFile(manifestPath, 'utf8');
+      reply
+        .header('Cross-Origin-Resource-Policy', 'cross-origin')
+        .type('application/json; charset=utf-8');
+      return reply.send(raw);
+    } catch (err) {
+      req.log?.warn?.({ err, buildId, manifestPath }, 'manifest_not_found');
+      return reply.code(404).send({ error: 'not_found' });
+    }
+  });
+
+  app.get('/api/builds/:buildId/build/*', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    const wildcard = (req.params as any)['*'] as string;
+    if (!wildcard) return reply.callNotFound();
+
+    const rootDir = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'build');
+    const ext = path.extname(wildcard).toLowerCase();
+
+    if (ext === '.js' || ext === '.mjs') {
+      reply.type('application/javascript; charset=utf-8');
+    } else if (ext === '.css') {
+      reply.type('text/css; charset=utf-8');
+    } else if (ext === '.html' || ext === '.htm') {
+      reply.type('text/html; charset=utf-8');
+    }
+
+    reply
+      .header('Cross-Origin-Resource-Policy', 'cross-origin')
+      .header('Cache-Control', 'public, max-age=31536000, immutable');
+
+    try {
+      if (ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.html' || ext === '.htm') {
+        const content = await readFile(path.join(rootDir, wildcard), 'utf8');
+        return reply.send(content);
+      }
       const buf = await readFile(path.join(rootDir, wildcard));
       return reply.send(buf);
     } catch (err) {
@@ -595,6 +694,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(authDebug);
   await app.register(createxProxy);
   await app.register(recenzijeRoutes);
+  await app.register(feedbackRoutes);
   await app.register(roomsRoutes);
   await app.register(roomsSyncV1Routes);
   await app.register(shims);

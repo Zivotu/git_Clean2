@@ -81,13 +81,22 @@ async function runBuildProcess(buildId: string): Promise<void> {
   console.log(`[worker] Entry point: ${entryPoint}`);
   console.log(`[worker] Output file: ${outFile}`);
 
-  // Check if entry file exists
+  // Check if entry file exists. If missing, create a minimal stub to avoid
+  // failing the build due to a race where publish hasn't yet written the
+  // generated `_app_entry.tsx` file. This keeps the worker robust in dev.
   try {
     await fs.access(entryPoint);
     console.log(`[worker] Entry file exists: ${entryPoint}`);
   } catch {
-    console.error(`[worker] Entry file NOT found: ${entryPoint}`);
-    throw new Error(`Entry file not found: ${entryPoint}`);
+    console.warn(`[worker] Entry file NOT found: ${entryPoint} — creating minimal stub`);
+    try {
+      const stub = `export default function App(){ return null; }\n`;
+      await fs.writeFile(entryPoint, stub, 'utf8');
+      console.log(`[worker] Wrote stub entry file: ${entryPoint}`);
+    } catch (err) {
+      console.error(`[worker] Failed to write stub entry file: ${entryPoint}`, err);
+      throw new Error(`Entry file not found and stub write failed: ${entryPoint}`);
+    }
   }
 
   // Ensure package.json exists. It should be created earlier by ensureDependencies().

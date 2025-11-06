@@ -8,10 +8,13 @@ import { getBuildDir } from '../paths.js';
 import { readApps } from '../db.js';
 
 export default async function configRoutes(app: FastifyInstance) {
-  app.get('/config', async () => {
+  const handler = async () => {
     const { PRICE_MIN, PRICE_MAX } = getConfig();
     return { priceMin: PRICE_MIN, priceMax: PRICE_MAX };
-  });
+  };
+
+  app.get('/config', handler);
+  app.get('/api/config', handler);
 
   // Debug endpoint to verify Storage configuration
   app.get('/debug/storage', { preHandler: requireRole('admin') }, async (_req) => {

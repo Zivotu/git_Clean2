@@ -4,12 +4,12 @@ import fs from 'node:fs/promises';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import * as esbuild from 'esbuild';
 import { enqueueCreatexBuild } from '../workers/createxBuildWorker.js';
-import { notifyAdmins, notifyUserModeration } from '../notifier.js';
+import { notifyAdmins, sendTemplateToUser } from '../notifier.js';
 import { getBuildDir } from '../paths.js';
 import { readApps, writeApps, updateApp, type AppRecord, listEntitlements } from '../db.js';
 import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
-import { ensureListingPreview, saveListingPreviewFile } from '../lib/preview.js';
+import { ensureListingPreview, saveListingPreviewFile, pickRandomPreviewPreset } from '../lib/preview.js';
 import { writeArtifact } from '../utils/artifacts.js';
 import { sseEmitter } from '../sse.js';
 import { ensureDependencies } from '../lib/dependencies.js';
@@ -569,6 +569,13 @@ if (typeof window !== 'undefined') {
         req.log.warn({ err, slug }, 'publish_preview_store_failed');
       }
 
+      // If no preview provided/uploaded and there's no existing preview, pick a random preset
+      if (!payloadPreviewUrl) {
+        // Only assign a preset for brand new listings (no existing preview)
+        // existing may be undefined for new app; ensure we don't overwrite an explicit preview
+        payloadPreviewUrl = pickRandomPreviewPreset();
+      }
+
       if (existing) {
         const base: AppRecord = {
           ...existing,
@@ -639,17 +646,19 @@ if (typeof window !== 'undefined') {
         apps.push(next);
       }
 
-  await writeApps(apps);
+      await writeApps(apps);
       req.log.info({ buildId, listingId, slug }, 'publish:created');
+
+      // Hoist some notification vars so subsequent try blocks can reference them
+      let title = (body.title || '').trim() || `App ${listingId}`;
+      let authorUid = body.author?.uid || uid;
+      let authorHandle = (body.author as any)?.handle || undefined;
+      const claims: any = (req as any).authUser?.claims || {};
+      let displayName = claims.name || claims.displayName || undefined;
+      let email = claims.email || undefined;
 
       try {
         const cfg = getConfig();
-        const title = (body.title || '').trim() || `App ${listingId}`;
-        const authorUid = body.author?.uid || uid;
-        const authorHandle = (body.author as any)?.handle || undefined;
-        const claims: any = (req as any).authUser?.claims || {};
-        const displayName = claims.name || claims.displayName || undefined;
-        const email = claims.email || undefined;
         const prettyAuthor = [displayName, authorHandle].filter(Boolean).join(' · ');
         const subject = `Novo slanje: ${title}${prettyAuthor ? ` — ${prettyAuthor}` : ''}`;
         const lines: string[] = [];
@@ -695,10 +704,15 @@ if (typeof window !== 'undefined') {
           'Hvala na strpljenju,',
           'THESARA tim',
         ];
-        await notifyUserModeration(authorUid, pendingSubject, messageLines.join('\n'), {
-          email,
-          context: 'publish:pending_notification',
-        });
+        try {
+          await sendTemplateToUser('publish:pending_notification', authorUid, {
+            displayName: displayName ?? authorHandle,
+            appTitle: title,
+            appId: String(listingId),
+          }, { email });
+        } catch (err) {
+          req.log?.warn?.({ err }, 'publish:send_pending_template_failed');
+        }
       } catch (err) {
         req.log?.warn?.({ err, listingId, buildId }, 'publish:notify_user_pending_failed');
       }

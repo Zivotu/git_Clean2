@@ -169,6 +169,13 @@ export default function AdminDashboard() {
   const [adminSettingsError, setAdminSettingsError] = useState<string | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [adminTab, setAdminTab] = useState('Aplikacije');
+  // Email templates editor state
+  const [templates, setTemplates] = useState<Array<{ id: string; subject?: string; body?: string; description?: string }>>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [newTemplateId, setNewTemplateId] = useState('');
+  const [newTemplateSubject, setNewTemplateSubject] = useState('');
+  const [newTemplateBody, setNewTemplateBody] = useState('');
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
     if (!item) return null; // Prioritize pending build, then current build, then ID as fallback
@@ -725,24 +732,10 @@ if (error)
     <>
       <div className="p-4 space-y-4">
         <h1 className="text-xl font-bold">Admin Dashboard</h1>
-        <Tabs tabs={['Aplikacije', 'Users', 'AmbasadorProgram', 'Admins']} activeTab={adminTab} onTabChange={setAdminTab}>
+  <Tabs tabs={['Aplikacije', 'Users', 'AmbasadorProgram', 'Admins', 'EmailTemplates']} activeTab={adminTab} onTabChange={setAdminTab}>
           {adminTab === 'Aplikacije' && (
             <>
-              {/* Ambassador admin quick access */}
-              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">Ambassador program</h2>
-                    <p className="text-sm text-gray-500">Upravljaj prijavama, promo kodovima i isplatama ambasadora.</p>
-                  </div>
-                  <Link
-                    href="/admin/ambassador"
-                    className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
-                  >
-                    Otvori Ambassador admin
-                  </Link>
-                </div>
-              </section>
+              {/* Ambassador program quick access removed — separate tab exists */}
               <div className="flex gap-4">
                 {(['all', 'pending', 'approved', 'rejected', 'deleted'] as const).map((t) => (
                   <button
@@ -1059,6 +1052,244 @@ if (error)
                   Dodaj
                 </button>
               </form>
+            </section>
+          )}
+          {adminTab === 'EmailTemplates' && (
+            <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Email templates</h2>
+                  <p className="text-sm text-gray-500">Uredi sadržaj e‑mailova koje sustav može slati. Koristi {'{{placeholders}}'} za dinamičke vrijednosti (npr. {'{{displayName}}'}, {'{{appTitle}}'}).</p>
+                </div>
+                <div>
+                  <button
+                    onClick={async () => {
+                      setTemplatesError(null);
+                      setTemplatesLoading(true);
+                      try {
+                        const resp = await apiGet<any>('/admin/email-templates', { auth: true });
+                        setTemplates(resp.items || []);
+                      } catch (err) {
+                        console.error('Failed to load templates', err);
+                        setTemplatesError('Ne mogu učitati predloške');
+                      } finally {
+                        setTemplatesLoading(false);
+                      }
+                    }}
+                    className="px-3 py-1 border rounded bg-emerald-50 text-emerald-700"
+                  >
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Scenario quick-edit panel */}
+              <div className="mt-4 p-3 border rounded bg-gray-50">
+                <div className="flex items-start gap-4">
+                  <div className="w-64">
+                    <label className="text-xs font-medium">Scenario</label>
+                    <select
+                      className="w-full border rounded px-2 py-1 text-sm mt-1"
+                      value={newTemplateId}
+                      onChange={(e) => {
+                        setNewTemplateId(e.target.value);
+                        // clear subject/body when switching
+                        setNewTemplateSubject('');
+                        setNewTemplateBody('');
+                      }}
+                    >
+                      <option value="">-- odaberi scenario --</option>
+                      <option value="welcome">welcome (new user)</option>
+                      <option value="review:approval_notification">review:approval_notification (approval)</option>
+                      <option value="review:reject_notification">review:reject_notification (rejection)</option>
+                      <option value="publish:pending_notification">publish:pending_notification (pending)</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2 items-end">
+                    <button
+                      onClick={async () => {
+                        const id = (newTemplateId || '').trim();
+                        if (!id) {
+                          alert('Odaberi scenario iz padajućeg izbornika.');
+                          return;
+                        }
+                        setTemplatesError(null);
+                        setTemplatesLoading(true);
+                        try {
+                          // Try to fetch stored template first
+                          try {
+                            const stored = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}`, { auth: true });
+                            setNewTemplateSubject(stored.subject || '');
+                            setNewTemplateBody(stored.body || '');
+                          } catch (err: any) {
+                            // If not found, fetch fallback
+                            try {
+                              const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
+                              setNewTemplateSubject(fb.subject || '');
+                              setNewTemplateBody(fb.body || '');
+                            } catch (fbErr) {
+                              console.error('Failed to load fallback', fbErr);
+                              alert('Ne mogu učitati predložak ili rezervni tekst za ovaj scenario.');
+                            }
+                          }
+                        } finally {
+                          setTemplatesLoading(false);
+                        }
+                      }}
+                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                    >
+                      Load
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const id = (newTemplateId || '').trim();
+                        if (!id) { alert('Odaberi scenario'); return; }
+                        try {
+                          await apiPost(`/admin/email-templates/${encodeURIComponent(id)}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
+                          alert('Saved');
+                          // refresh list
+                          const resp = await apiGet<any>('/admin/email-templates', { auth: true });
+                          setTemplates(resp.items || []);
+                        } catch (err) { console.error(err); alert('Save failed'); }
+                      }}
+                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const id = (newTemplateId || '').trim();
+                        if (!id) { alert('Odaberi scenario'); return; }
+                        try {
+                          const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
+                          setNewTemplateSubject(fb.subject || '');
+                          setNewTemplateBody(fb.body || '');
+                          alert('Fallback restored locally — remember to Save to persist');
+                        } catch (err) { console.error(err); alert('Restore fallback failed'); }
+                      }}
+                      className="px-3 py-1 border rounded text-sm"
+                    >
+                      Restore fallback
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3">
+                  <label className="text-xs block mb-1">Subject</label>
+                  <input className="w-full border rounded px-2 py-1 text-sm" value={newTemplateSubject} onChange={(e) => setNewTemplateSubject(e.target.value)} />
+                </div>
+                <div className="mt-3">
+                  <label className="text-xs block mb-1">Body</label>
+                  <textarea rows={6} className="w-full border rounded px-2 py-1 text-sm" value={newTemplateBody} onChange={(e) => setNewTemplateBody(e.target.value)} />
+                </div>
+              </div>
+
+              {templatesError && (
+                <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">{templatesError}</div>
+              )}
+
+              <div className="mt-4 space-y-3">
+                {templatesLoading ? (
+                  <div className="text-sm text-gray-500">Učitavanje…</div>
+                ) : templates.length === 0 ? (
+                  <div className="text-sm text-gray-500">Nema definiranih predložaka.</div>
+                ) : (
+                  templates.map((t) => (
+                    <div key={t.id} className="border rounded p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="font-mono text-xs text-gray-600">{t.id}</div>
+                        <div className="text-xs text-gray-500">{t.description || ''}</div>
+                      </div>
+                      <div className="mb-2">
+                        <label className="text-xs block mb-1">Subject</label>
+                        <input
+                          className="w-full border rounded px-2 py-1 text-sm"
+                          value={t.subject || ''}
+                          onChange={(e) => setTemplates((prev) => prev.map((x) => (x.id === t.id ? { ...x, subject: e.target.value } : x)))}
+                        />
+                      </div>
+                      <div className="mb-2">
+                        <label className="text-xs block mb-1">Body</label>
+                        <textarea
+                          rows={6}
+                          className="w-full border rounded px-2 py-1 text-sm"
+                          value={t.body || ''}
+                          onChange={(e) => setTemplates((prev) => prev.map((x) => (x.id === t.id ? { ...x, body: e.target.value } : x)))}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await apiPost(`/admin/email-templates/${t.id}`, { subject: t.subject || '', body: t.body || '' }, { auth: true });
+                              alert('Saved');
+                            } catch (err) {
+                              console.error(err);
+                              alert('Save failed');
+                            }
+                          }}
+                          className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-6 border-t pt-4">
+                <h3 className="text-sm font-medium">Create new template</h3>
+                <p className="text-xs text-gray-500">Unesi jedinstveni ID (npr. welcome, review:approval_notification)</p>
+                <div className="mt-2 grid grid-cols-1 gap-2">
+                  <input
+                    placeholder="template id"
+                    className="border rounded px-2 py-1 text-sm"
+                    value={newTemplateId}
+                    onChange={(e) => setNewTemplateId(e.target.value)}
+                  />
+                  <input
+                    placeholder="subject"
+                    className="border rounded px-2 py-1 text-sm"
+                    value={newTemplateSubject}
+                    onChange={(e) => setNewTemplateSubject(e.target.value)}
+                  />
+                  <textarea
+                    placeholder="body"
+                    rows={6}
+                    className="border rounded px-2 py-1 text-sm"
+                    value={newTemplateBody}
+                    onChange={(e) => setNewTemplateBody(e.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        const id = (newTemplateId || '').trim();
+                        if (!id) {
+                          alert('Provide template id');
+                          return;
+                        }
+                        try {
+                          await apiPost(`/admin/email-templates/${id}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
+                          // reload
+                          const resp = await apiGet<any>('/admin/email-templates', { auth: true });
+                          setTemplates(resp.items || []);
+                          setNewTemplateId('');
+                          setNewTemplateSubject('');
+                          setNewTemplateBody('');
+                          alert('Created');
+                        } catch (err) {
+                          console.error(err);
+                          alert('Create failed');
+                        }
+                      }}
+                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                    >
+                      Create
+                    </button>
+                  </div>
+                </div>
+              </div>
             </section>
           )}
         </Tabs>

@@ -9,6 +9,7 @@ import { useAuth, getDisplayName } from '@/lib/auth';
 import Avatar from '@/components/Avatar';
 import Logo from '@/components/Logo';
 import { triggerConfetti } from '@/components/Confetti';
+import FeedbackModal from '@/components/FeedbackModal';
 import { getListingCount } from '@/lib/listings';
 import { useI18n } from '@/lib/i18n-provider';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
@@ -22,6 +23,7 @@ export default function Header() {
   const name = getDisplayName(user);
   const [hasApps, setHasApps] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -130,6 +132,15 @@ export default function Header() {
                 {tNav('faq')}
               </Link>
             )}
+            {/* Feedback button (text only) */}
+            <button
+              type="button"
+              onClick={() => setShowFeedback(true)}
+              className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+              title="Vaši prijedlozi"
+            >
+              Vaši prijedlozi
+            </button>
             {user ? (
               <div className="flex items-center gap-3 ml-2">
                 <button
@@ -251,6 +262,16 @@ export default function Header() {
                 {tNav('faq')}
               </Link>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                setShowMobileMenu(false);
+                setShowFeedback(true);
+              }}
+              className="block px-4 py-2 rounded-lg text-gray-600 text-center"
+            >
+              Vaši prijedlozi
+            </button>
             {user ? (
               <>
                 {pathname === '/profile' ? (
@@ -283,6 +304,8 @@ export default function Header() {
             )}
           </nav>
         )}
+        {/* Feedback modal rendered at top-level of header so it's part of header component tree */}
+        <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
       </div>
     </header>
   );

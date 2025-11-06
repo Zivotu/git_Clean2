@@ -65,7 +65,7 @@ export default async function buildRoutes(app: FastifyInstance) {
     reply.send({ ok: true, ...data });
   });
 
-  app.get('/build/:id/status', { config: { rateLimit: { max: 1000 } } }, async (req, reply) => {
+  const statusHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const job = await readBuild(id);
     if (!job) return reply.code(404).send({ ok: false, error: 'not_found' });
@@ -114,6 +114,9 @@ export default async function buildRoutes(app: FastifyInstance) {
     if (error && !resp.error) resp.error = error;
     if (publicUrl) resp.public = publicUrl;
     reply.send(resp);
-  });
+  };
+
+  app.get('/build/:id/status', { config: { rateLimit: { max: 1000 } } }, statusHandler);
+  app.get('/api/build/:id/status', { config: { rateLimit: { max: 1000 } } }, statusHandler);
 
 }

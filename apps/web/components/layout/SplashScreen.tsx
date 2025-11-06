@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -6,7 +6,7 @@ import styles from './SplashScreen.module.css';
 
 const SplashScreen = () => {
   const [visible, setVisible] = useState(false);
-  const [imageSrc, setImageSrc] = useState<string | null>(null); // Initial state is null
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (localStorage.getItem('hasSeenSplashScreen') === 'true') {
@@ -15,7 +15,7 @@ const SplashScreen = () => {
     }
     setVisible(true);
 
-    const mediaQuery = window.matchMedia("(orientation: portrait)");
+    const mediaQuery = window.matchMedia('(orientation: portrait)');
 
     const updateImage = () => {
       if (mediaQuery.matches) {
@@ -36,20 +36,21 @@ const SplashScreen = () => {
     setVisible(false);
   };
 
-  if (!visible) {
-    return null;
-  }
+  if (!visible) return null;
 
   return (
     <div className={styles.splashOverlay} onClick={handleClick}>
-      {imageSrc && ( // Only render the image if the src is set
-        <Image
-          src={imageSrc}
-          alt="Thesara Splash Screen"
-          layout="fill"
-          objectFit="cover"
-          className={styles.splashImage}
-        />
+      {imageSrc && (
+        <div className={styles.splashImageWrapper}>
+          <Image
+            src={imageSrc}
+            alt="Thesara Splash Screen"
+            width={1200}
+            height={800}
+            className={styles.splashImage}
+            priority
+          />
+        </div>
       )}
     </div>
   );

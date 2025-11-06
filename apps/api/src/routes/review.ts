@@ -25,7 +25,7 @@ import { computeNextVersion } from '../lib/versioning.js';
 import { createJob, isJobActive } from '../buildQueue.js';
 import { ensureListingPreview } from '../lib/preview.js';
 import { sse } from '../sse.js';
-import { notifyUserModeration } from '../notifier.js';
+import { sendTemplateToUser } from '../notifier.js';
 
 // Note: This file is being refactored to remove array paths and use a helper.
 // The original file had duplicate route registrations which are being cleaned up.
@@ -767,27 +767,16 @@ export default async function reviewRoutes(app: FastifyInstance) {
             ? webBaseRaw.replace(/\/$/, '')
             : '';
         const manageUrl = webBase ? `${webBase}/my` : undefined;
-        const subject = `Aplikacija "${titleForMail}" je odobrena`;
-        const lines = [
-          'Bok,',
-          '',
-          `vaša aplikacija "${titleForMail}" upravo je odobrena i objavljena na Thesari.`,
-        ];
-        if (manageUrl) {
-          lines.push(`Možete je pratiti i uređivati ovdje: ${manageUrl}`);
+        try {
+          await sendTemplateToUser('review:approval_notification', approvalRecipient.uid, {
+            displayName: approvalRecipient?.title ?? undefined,
+            appTitle: titleForMail,
+            appId: approvalRecipient.appId,
+            manageUrl,
+          }, { email: approvalRecipient.email });
+        } catch (err) {
+          req.log.warn({ err, buildId, uid: approvalRecipient.uid }, 'review_approve_send_template_failed');
         }
-        lines.push('');
-        lines.push('Hvala što gradite uz nas!');
-        lines.push('THESARA tim');
-        await notifyUserModeration(
-          approvalRecipient.uid,
-          subject,
-          lines.join('\n'),
-          {
-            email: approvalRecipient.email,
-            context: 'review:approval_notification',
-          },
-        );
       } catch (err) {
         req.log.warn(
           { err, buildId, uid: approvalRecipient.uid },
@@ -876,33 +865,17 @@ export default async function reviewRoutes(app: FastifyInstance) {
             ? webBaseRaw.replace(/\/$/, '')
             : '';
         const manageUrl = webBase ? `${webBase}/my` : undefined;
-        const subject = `Aplikacija "${titleForMail}" nije odobrena`;
-        const lines = [
-          'Bok,',
-          '',
-          `trenutačno nismo odobrili aplikaciju "${titleForMail}".`,
-        ];
-        if (reason) {
-          lines.push(`Razlog: ${reason}`);
-          lines.push('');
+        try {
+          await sendTemplateToUser('review:reject_notification', rejectionRecipient.uid, {
+            displayName: rejectionRecipient?.title ?? undefined,
+            appTitle: titleForMail,
+            appId: rejectionRecipient.appId,
+            reason: reason ?? undefined,
+            manageUrl,
+          }, { email: rejectionRecipient.email });
+        } catch (err) {
+          req.log.warn({ err, id: buildId ?? id, uid: rejectionRecipient.uid }, 'review_reject_send_template_failed');
         }
-        lines.push('Možete urediti aplikaciju i ponovno je poslati iz Thesara Studija.');
-        if (manageUrl) {
-          lines.push(`Otvorite studio: ${manageUrl}`);
-        }
-        lines.push('');
-        lines.push('Ako trebate dodatnu pomoć, pišite nam na reports@thesara.space.');
-        lines.push('');
-        lines.push('THESARA tim');
-        await notifyUserModeration(
-          rejectionRecipient.uid,
-          subject,
-          lines.join('\n'),
-          {
-            email: rejectionRecipient.email,
-            context: 'review:reject_notification',
-          },
-        );
       } catch (err) {
         req.log.warn(
           { err, id: buildId ?? id, uid: rejectionRecipient.uid },
