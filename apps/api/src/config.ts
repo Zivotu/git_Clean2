@@ -51,6 +51,8 @@ export const ALLOWED_ORIGINS = (
 export const REQUIRE_PUBLISH_APPROVAL =
   process.env.REQUIRE_PUBLISH_APPROVAL !== 'false';
 export const INJECT_SESSION_SDK = process.env.INJECT_SESSION_SDK !== 'false';
+export const SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE =
+  process.env.SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE === 'true';
 export const STRIPE_AUTOMATIC_TAX =
   process.env.STRIPE_AUTOMATIC_TAX === 'true';
 export const PUBLISH_STATIC_BUILDER = process.env.PUBLISH_STATIC_BUILDER !== '0';
@@ -78,7 +80,7 @@ export const CONFIG = {
   PUBLISH_CSP_AUTOFIX_STRICT,
   PUBLISH_VENDOR_MAX_MB,
   PUBLISH_VENDOR_TIMEOUT_MS,
-  
+  SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE,
 };
 
 function getEnv(key: string, def?: string): string {
@@ -359,7 +361,8 @@ export function getConfig() {
     PUBLISH_CSP_AUTOFIX: publishCspAutofix,
     PUBLISH_CSP_AUTOFIX_STRICT: publishCspAutofixStrict,
     PUBLISH_VENDOR_MAX_DOWNLOAD_BYTES: Math.max(0, publishVendorMaxMb * 1024 * 1024),
-    PUBLISH_VENDOR_TIMEOUT_MS: publishVendorTimeoutMs,
+  PUBLISH_VENDOR_TIMEOUT_MS: publishVendorTimeoutMs,
+  SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE: SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE,
 
   };
 }

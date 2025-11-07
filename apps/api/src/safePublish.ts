@@ -305,6 +305,71 @@ export class SafePublishPipeline {
     await fs.promises.writeFile(path.join(dir, 'transform_plan_v1.json'), planJson);
     await writeArtifact(buildId, 'build/transform_plan_v1.json', planJson);
 
+    // If the published bundle contains references to rooms storage keys, inject
+    // a small runtime configuration script so the app (and shims) know which
+    // namespaces to use and what API base to call. This ensures published
+    // apps will use the platform storage shim (/api/storage) instead of
+    // relying solely on localStorage in the browser.
+    try {
+      const roomsKeys = detectRoomsStorageKeys(dir);
+      if (roomsKeys && roomsKeys.length > 0) {
+        const apiBase = String(getConfig().PUBLIC_BASE || '').replace(/\/$/, '');
+        const manifestForConfig = manifest || {};
+        const entries: { src: string; attrs?: Record<string, string> }[] = [];
+        if (manifestForConfig.entry) {
+          entries.push({ src: String(manifestForConfig.entry) });
+        }
+        const configObj: Record<string, any> = {
+          keys: roomsKeys,
+          entries,
+          entry: entries[0]?.src ?? null,
+        };
+        if (apiBase) configObj.apiBase = apiBase;
+
+        const configScript = [
+          `window.__THESARA_ROOMS_CONFIG__ = ${JSON.stringify(configObj)};`,
+          'window.__THESARA_ROOMS_KEYS__ = window.__THESARA_ROOMS_CONFIG__.keys;',
+          'window.__THESARA_ROOMS_ENTRIES__ = window.__THESARA_ROOMS_CONFIG__.entries;',
+          'window.__THESARA_ROOMS_ENTRY__ = window.__THESARA_ROOMS_CONFIG__.entry;',
+        ];
+        if (apiBase) configScript.push('window.__THESARA_API_BASE__ = window.__THESARA_ROOMS_CONFIG__.apiBase;');
+        const payload = configScript.join('\n') + '\n';
+
+        // Try to inject into index.html (multiple possible locations)
+        const tryPaths = [path.join(dir, 'index.html'), path.join(dir, 'build', 'index.html'), path.join(dir, 'bundle', 'index.html')];
+        for (const p of tryPaths) {
+          try {
+            await fs.promises.access(p);
+            let html = await fs.promises.readFile(p, 'utf8');
+            if (!html.includes('__THESARA_ROOMS_CONFIG__')) {
+              const injectTag = `<script>${payload}</script>`;
+              const headMatch = /<head[^>]*>/i.exec(html);
+              if (headMatch && headMatch.index != null) {
+                const insertAt = headMatch.index + headMatch[0].length;
+                html = html.slice(0, insertAt) + injectTag + html.slice(insertAt);
+              } else {
+                const bodyMatch = /<body[^>]*>/i.exec(html);
+                if (bodyMatch && bodyMatch.index != null) {
+                  const insertAt = bodyMatch.index + bodyMatch[0].length;
+                  html = html.slice(0, insertAt) + injectTag + html.slice(insertAt);
+                } else {
+                  html = injectTag + html;
+                }
+              }
+              await fs.promises.writeFile(p, html, 'utf8');
+              // Also write as an artifact so admins/previewers can inspect it
+              await writeArtifact(buildId, 'build/thesara-rooms-config.js', payload);
+            }
+            break; // injected into first available index.html
+          } catch (e) {
+            // ignore missing files and continue to next candidate
+          }
+        }
+      }
+    } catch (err) {
+      this.log.warn?.({ id: buildId, err }, 'publish:rooms_config_inject_failed');
+    }
+
     try {
       const transformReportPath = path.join(dir, 'transform_report_v1.json');
       const transformReport = await fs.promises.readFile(transformReportPath, 'utf8');
