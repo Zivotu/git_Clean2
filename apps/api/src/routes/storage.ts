@@ -8,6 +8,11 @@ import { setCors } from '../utils/cors.js';
 export { setCors };
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import { getConfig } from '../config.js';
+import {
+  parseRoomNamespace,
+  verifyRoomStorageToken,
+  type RoomStorageTokenPayload,
+} from '../lib/roomAccessTokens.js';
 
 // CORS helper moved to ../utils/cors.js to avoid circular import with auth plugin
 
@@ -34,6 +39,35 @@ type StorageRouteQuery = { Querystring: { ns: string } };
 type StoragePatchRoute = StorageRouteQuery & { Body: unknown };
 
 const ensureUser = requireRole('user');
+
+function ensureRoomAccess(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  namespace: string,
+): { ok: true; payload: RoomStorageTokenPayload | null } | { ok: false } {
+  const parsed = parseRoomNamespace(namespace);
+  if (!parsed) {
+    return { ok: true, payload: null };
+  }
+  const tokenHeader =
+    (request.headers['x-thesara-room-token'] as string | undefined) ||
+    (request.headers['x-room-token'] as string | undefined);
+  if (!tokenHeader) {
+    void reply.code(403).send({ error: 'room_token_missing' });
+    return { ok: false };
+  }
+  const payload = verifyRoomStorageToken(tokenHeader);
+  if (
+    !payload ||
+    payload.namespace !== namespace ||
+    payload.appId !== parsed.appId ||
+    payload.roomCode !== parsed.roomCode
+  ) {
+    void reply.code(403).send({ error: 'invalid_room_token' });
+    return { ok: false };
+  }
+  return { ok: true, payload };
+}
 
 function maskAuthorizationHeader(header: string | undefined | null) {
   try {
@@ -85,6 +119,10 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
 
       const userId = (request as any).authUser.uid;
       const { ns } = request.query;
+      const roomAccess = ensureRoomAccess(request, reply, ns);
+      if (!roomAccess.ok) {
+        return;
+      }
       const scope = (request.headers['x-thesara-scope'] as string | undefined)?.toLowerCase() === 'shared' ? 'shared' : 'user';
       const key = scope === 'shared' ? ns : `${userId}/${ns}`;
       try {
@@ -156,8 +194,13 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
       const endTimer = server.metrics.storage_patch_duration_seconds.startTimer();
       server.metrics.storage_patch_total.inc();
 
-  const userId = (request as any).authUser.uid;
-  const { ns } = request.query;
+      const userId = (request as any).authUser.uid;
+      const { ns } = request.query;
+      const roomAccess = ensureRoomAccess(request, reply, ns);
+      if (!roomAccess.ok) {
+        endTimer();
+        return;
+      }
       const appId = request.headers['x-thesara-app-id'] as string;
       const ifMatch = stripQuotes(request.headers['if-match']);
   const scope = (request.headers['x-thesara-scope'] as string | undefined)?.toLowerCase() === 'shared' ? 'shared' : 'user';

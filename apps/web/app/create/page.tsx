@@ -19,6 +19,7 @@ import {
   PREVIEW_PRESET_PATHS,
   createPresetPreviewFile,
 } from '@/lib/previewClient';
+import type { RoomsMode } from '@/lib/types';
 
 type Mode = 'html' | 'react';
 type SubmissionType = 'code' | 'bundle';
@@ -102,6 +103,7 @@ export default function CreatePage() {
       download: false,
     },
   });
+  const [roomsMode, setRoomsMode] = useState<RoomsMode>('off');
 
   const [trEn, setTrEn] = useState({ title: '', description: '' });
   const [trDe, setTrDe] = useState({ title: '', description: '' });
@@ -408,6 +410,9 @@ export default function CreatePage() {
             webgl: manifest.permissions.webgl,
             fileDownload: manifest.permissions.download,
           },
+          storage: {
+            roomsMode,
+          },
         },
         inlineCode: code,
         visibility: 'public',
@@ -689,6 +694,34 @@ export default function CreatePage() {
                       placeholder="Kratak opis tvoje aplikacije..."
                     />
                   </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        Sobe s PIN-om (Thesara Rooms)
+                      </p>
+                      <p className="text-xs text-slate-600">
+                        Thesara dodatno traži naziv sobe i PIN prije učitavanja iframea, drži PIN izvan tvoje aplikacije i
+                        nudi javnu demo sobu (PIN 1111) za testiranje.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-700">
+                      Beta
+                    </span>
+                  </div>
+                  <select
+                    className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    value={roomsMode}
+                    onChange={(event) => setRoomsMode(event.target.value as RoomsMode)}
+                  >
+                    <option value="off">Isključeno — svi korisnici dijele istu pohranu</option>
+                    <option value="optional">Demo soba + korisnik može kreirati privatnu sobu</option>
+                    <option value="required">Korisnik mora unijeti naziv i PIN prije korištenja</option>
+                  </select>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Opciju možeš naknadno promijeniti prilikom sljedeće objave aplikacije.
+                  </p>
                 </div>
 
                 <div className="space-y-3">

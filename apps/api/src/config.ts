@@ -116,6 +116,12 @@ export function getConfig() {
   if (!roomsJwtSecret) {
     throw new Error('JWT_SECRET is required to issue room session tokens.');
   }
+  const roomsStorageSecret =
+    process.env.ROOMS_STORAGE_SECRET || roomsJwtSecret;
+  const roomsStorageTokenTtlMs = parseNumberEnv(
+    'ROOMS_STORAGE_TOKEN_TTL_MS',
+    30 * 24 * 60 * 60 * 1000,
+  );
   const publishStaticBuilder = process.env.PUBLISH_STATIC_BUILDER !== '0';
   const publishCspAutofix = process.env.PUBLISH_CSP_AUTOFIX !== '0';
   const publishCspAutofixStrict = process.env.PUBLISH_CSP_AUTOFIX_STRICT === '1';
@@ -356,6 +362,10 @@ export function getConfig() {
       rateLimitMax: parseNumberEnv('RATE_LIMIT_MAX', 60),
       tokenTtlSeconds: parseNumberEnv('ROOMS_TOKEN_TTL_SECONDS', 24 * 60 * 60),
       idempotencyTtlMs: parseNumberEnv('ROOMS_IDEMPOTENCY_TTL_MS', 15 * 60 * 1000),
+    },
+    ROOMS_STORAGE: {
+      secret: roomsStorageSecret,
+      tokenTtlMs: roomsStorageTokenTtlMs,
     },
     PUBLISH_STATIC_BUILDER: publishStaticBuilder,
     PUBLISH_CSP_AUTOFIX: publishCspAutofix,

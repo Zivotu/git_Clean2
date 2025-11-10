@@ -25,11 +25,12 @@ export async function getJwt(): Promise<string> {
 }
 
 /**
- * Creates a unique namespace string for an app's storage.
+ * Creates a namespace string for an app's storage, optionally scoped per room.
  */
-export function makeNamespace(appId: string, userId?: string): string {
-  // The client currently calls this with userId as undefined.
-  // Format is simple but can be extended if per-user storage is needed.
+export function makeNamespace(appId: string, roomCode?: string): string {
+  if (roomCode) {
+    return `app:${appId}:room:${roomCode}`;
+  }
   return `app:${appId}`;
 }
 
@@ -37,16 +38,19 @@ export function makeNamespace(appId: string, userId?: string): string {
  * Fetches the entire storage snapshot for a given namespace from the API.
  * @param jwt The authentication token.
  * @param ns The namespace to fetch.
+ * @param roomToken Optional room access token for scoped namespaces.
  * @returns The snapshot data and its current version (ETag).
  */
 export async function fetchSnapshot(
   jwt: string,
-  ns: string
+  ns: string,
+  roomToken?: string | null
 ): Promise<{ snapshot: Record<string, unknown>; version: string }> {
   const response = await fetch(`/api/storage?ns=${encodeURIComponent(ns)}`, {
     headers: {
       Authorization: `Bearer ${jwt}`,
       'X-Thesara-Scope': 'shared',
+      ...(roomToken ? { 'X-Thesara-Room-Token': roomToken } : {}),
     },
   });
 
@@ -95,26 +99,32 @@ export function applyBatchOperations(
  * @param ns The namespace to patch.
  * @param version The current version (ETag) to ensure consistency.
  * @param batch The operations to apply.
+ * @param roomToken Optional room access token for scoped namespaces.
  * @returns The new version and, if provided by the API, the new snapshot.
  */
 export async function patchStorage(
   jwt: string,
   ns: string,
   version: string,
-  batch: BatchItem[]
+  batch: BatchItem[],
+  roomToken?: string | null
 ): Promise<{ newVersion: string; newSnapshot?: Record<string, unknown> }> {
   // Derive app id for audit/ratelimiting on the API side
   // Expected namespace format: "app:<appId>"; fall back to the raw ns if not parseable
   const appIdHeader = ns.startsWith('app:') ? ns.slice('app:'.length) : ns;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'If-Match': `"${version}"`,
+    Authorization: `Bearer ${jwt}`,
+    'X-Thesara-App-Id': appIdHeader,
+    'X-Thesara-Scope': 'shared',
+  };
+  if (roomToken) {
+    headers['X-Thesara-Room-Token'] = roomToken;
+  }
   const response = await fetch(`/api/storage?ns=${encodeURIComponent(ns)}`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'If-Match': `"${version}"`,
-      Authorization: `Bearer ${jwt}`,
-      'X-Thesara-App-Id': appIdHeader,
-      'X-Thesara-Scope': 'shared',
-    },
+    headers,
     body: JSON.stringify(batch),
   });
 

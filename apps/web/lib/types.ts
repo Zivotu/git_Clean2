@@ -7,6 +7,8 @@ export interface Author {
   photo?: string;
 }
 
+export type RoomsMode = 'off' | 'optional' | 'required';
+
 export interface AppCapabilities {
   permissions?: {
     camera?: boolean;
@@ -23,7 +25,9 @@ export interface AppCapabilities {
   };
   storage?: {
     enabled?: boolean;
-    rooms?: boolean;
+    roomsMode?: RoomsMode;
+    roomsDemoPin?: string;
+    roomsDemoName?: string;
     [key: string]: any;
   };
   features?: string[];

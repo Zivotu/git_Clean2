@@ -16,6 +16,7 @@ import { ensureDependencies } from '../lib/dependencies.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { initBuild } from '../models/Build.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
+import type { RoomsMode } from '../types.js';
 
 function slugify(input: string): string {
   return input
@@ -46,6 +47,7 @@ interface PublishPayload {
     };
     storage?: {
       enabled?: boolean;
+      roomsMode?: RoomsMode;
     };
     features?: string[];
   };
@@ -53,6 +55,35 @@ interface PublishPayload {
   visibility?: string;
   preview?: {
     dataUrl?: string;
+  };
+}
+
+const ROOMS_MODE_VALUES: RoomsMode[] = ['off', 'optional', 'required'];
+const DEFAULT_ROOMS_MODE: RoomsMode = 'off';
+
+function normalizeRoomsMode(value: unknown): RoomsMode {
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase() as RoomsMode;
+    if (ROOMS_MODE_VALUES.includes(lower)) {
+      return lower;
+    }
+  }
+  return DEFAULT_ROOMS_MODE;
+}
+
+function normalizeCapabilities(raw?: PublishPayload['capabilities']): PublishPayload['capabilities'] {
+  const permissions = raw?.permissions ? { ...raw.permissions } : undefined;
+  const network = raw?.network ? { ...raw.network } : undefined;
+  const features = raw?.features ? [...raw.features] : undefined;
+  const storage = {
+    ...(raw?.storage ?? {}),
+    roomsMode: normalizeRoomsMode(raw?.storage?.roomsMode),
+  };
+  return {
+    ...(permissions ? { permissions } : {}),
+    ...(network ? { network } : {}),
+    ...(features ? { features } : {}),
+    storage,
   };
 }
 
@@ -157,6 +188,7 @@ export default async function publishRoutes(app: FastifyInstance) {
     const webBase = (cfg.WEB_BASE || '').replace(/\/$/, '');
     const apiBaseHint = publicBase ? `${publicBase}/api` : '/api';
     const buildPlayUrl = (id: string | number) => (webBase ? `${webBase}/play/${id}/?run=1` : '');
+    const normalizedCapabilities = normalizeCapabilities(body.capabilities);
 
     if (!existingOwned && !isAdmin) {
       const ents = await listEntitlements(uid);
@@ -600,7 +632,7 @@ if (typeof window !== 'undefined') {
           visibility: (body.visibility as any) || existing.visibility,
           accessMode: existing.accessMode,
           author: body.author,
-          capabilities: body.capabilities as any,
+          capabilities: normalizedCapabilities as any,
           updatedAt: now,
           status: existing.status,
           state: existing.state ?? 'draft',
@@ -638,7 +670,7 @@ if (typeof window !== 'undefined') {
           visibility: (body.visibility as any) || 'public',
           accessMode: 'public',
           author: body.author,
-          capabilities: body.capabilities as any,
+          capabilities: normalizedCapabilities as any,
           createdAt: now,
           updatedAt: now,
           status: 'pending-review',

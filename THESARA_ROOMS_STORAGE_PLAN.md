@@ -101,6 +101,11 @@ control so we can track rollout.
 1. Example app (`temp_extract/App.tsx`) now uses Rooms V1 + storage helper with token propagation.
 2. Need to prepare public migration guide and refresh LLM templates/prompts to discourage direct `localStorage`.
 3. Audit other sample code for compliance.
+4. **NEW (2025-02)** Play host dobio je “Rooms toolbar”:
+   - Upload wizard ima `capabilities.storage.roomsMode` (`off` | `optional` | `required`).
+   - `/rooms/storage/demo|create|join` vraćaju `namespace` i `roomToken`; storage namespace = `app:<appId>:room:<slug>`.
+   - `storage.ts` traži `X-Thesara-Room-Token` za svaki `app:*:room:*` namespace, shim ga automatski dodaje.
+   - Demo soba (PIN 1111) uvijek se otvara prva kako bi iframe odmah radio, korisnik zatim preko toolbara kreira ili join-a vlastitu sobu.
 
 ### Phase 4 — Observability & Hardening ⏳ *Not started*
 1. Add dashboards/alerts for `/rooms/v1` and `/api/storage`.

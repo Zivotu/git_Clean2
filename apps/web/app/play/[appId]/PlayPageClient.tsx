@@ -1,5 +1,6 @@
 'use client'
 
+import { Buffer } from 'buffer'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError } from '@/lib/api'
 import AdSlot from '@/components/AdSlot'
@@ -29,6 +30,16 @@ type ShimBatchItem = {
   value?: string
 }
 
+type RoomSession = {
+  namespace: string
+  token: string | null
+  room: {
+    id: string
+    name: string
+    isDemo?: boolean
+  }
+}
+
 function buildIframeSrc(appId: string): string {
   const base = (APPS_HOST || '').replace(/\/$/, '')
   const encodedId = encodeURIComponent(appId)
@@ -38,17 +49,30 @@ function buildIframeSrc(appId: string): string {
   return `${base}/${encodedId}/build/`
 }
 
-function withToken(url: string, token: string | null): string {
-  if (!token) return url
+function withToken(
+  url: string,
+  token: string | null,
+  extraParams?: Record<string, string>,
+): string {
   try {
     const [base, rawQuery = ''] = url.split('?')
     const params = new URLSearchParams(rawQuery)
-    params.set('token', token)
+    if (token) params.set('token', token)
+    if (extraParams) {
+      for (const [key, value] of Object.entries(extraParams)) {
+        if (value != null) params.set(key, value)
+      }
+    }
     const query = params.toString()
     return query ? `${base}?${query}` : base
   } catch {
     const separator = url.includes('?') ? '&' : '?'
-    return `${url}${separator}token=${encodeURIComponent(token)}`
+    const parts: string[] = []
+    if (token) parts.push(`token=${encodeURIComponent(token)}`)
+    if (extraParams && Object.keys(extraParams).length) {
+      parts.push(new URLSearchParams(extraParams).toString())
+    }
+    return parts.length ? `${url}${separator}${parts.join('&')}` : url
   }
 }
 
@@ -60,7 +84,61 @@ function createCapability(): string {
     .join('')
 }
 
-import type { AppRecord } from '@/lib/types';
+const ROOMS_ENDPOINTS = {
+  demo: '/api/rooms/storage/demo',
+  create: '/api/rooms/storage/create',
+  join: '/api/rooms/storage/join',
+} as const
+
+function encodeBootstrapPayload(payload: SnapshotState | null): string | null {
+  if (!payload) return null
+  try {
+    const data = JSON.stringify(payload)
+    return Buffer.from(data, 'utf-8').toString('base64')
+  } catch (err) {
+    console.warn('[Play] Failed to encode bootstrap payload', err)
+    return null
+  }
+}
+
+type RoomsApiResponse = {
+  ok?: boolean
+  namespace?: string
+  token?: string | null
+  room?: { id: string; name: string; isDemo?: boolean }
+  pin?: string
+  error?: string
+  message?: string
+}
+
+async function requestRoomSession(
+  endpoint: string,
+  payload: Record<string, unknown>,
+): Promise<RoomSession> {
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  })
+  let json: RoomsApiResponse | null = null
+  try {
+    json = await res.json()
+  } catch {
+    json = null
+  }
+  if (!res.ok || !json?.namespace || !json?.room) {
+    const message = json?.message || json?.error || `Rooms request failed (${endpoint})`
+    throw new ApiError(res.status, message, json?.error)
+  }
+  return {
+    namespace: json.namespace,
+    token: json.token || null,
+    room: json.room,
+  }
+}
+
+import type { AppRecord, RoomsMode } from '@/lib/types';
 
 export default function PlayPageClient({ app }: { app: AppRecord }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
@@ -70,10 +148,15 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const snapshotRef = useRef<Record<string, unknown>>({})
   const namespaceRef = useRef<string>('')
   const jwtRef = useRef<string | null>(null)
+  const roomTokenRef = useRef<string | null>(null)
 
   const [bootstrap, setBootstrap] = useState<SnapshotState | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [roomSession, setRoomSession] = useState<RoomSession | null>(null)
+  const [roomsBusy, setRoomsBusy] = useState(false)
+  const [roomsError, setRoomsError] = useState<string | null>(null)
+  const [autoDemoRequested, setAutoDemoRequested] = useState(false)
 
   const { id: appId, buildId, securityPolicy } = app;
   const { showAds } = useAds()
@@ -82,7 +165,21 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const showTopAd = showAds && topAdSlot.length > 0
   const showBottomAd = showAds && bottomAdSlot.length > 0
 
-  const appNamespace = useMemo(() => makeNamespace(appId, undefined), [appId])
+  const GLOBAL_ROOMS_ENABLED = process.env.NEXT_PUBLIC_ROOMS_ENABLED !== 'false'
+  const rawRoomsMode = app.capabilities?.storage?.roomsMode as RoomsMode | undefined
+  const inferredMode: RoomsMode =
+    rawRoomsMode === 'optional' || rawRoomsMode === 'required'
+      ? rawRoomsMode
+      : GLOBAL_ROOMS_ENABLED
+        ? 'optional'
+        : 'off'
+  const roomsMode: RoomsMode =
+    inferredMode === 'optional' || inferredMode === 'required' ? inferredMode : 'off'
+  const roomsEnabled = roomsMode !== 'off'
+  const baseNamespace = useMemo(() => makeNamespace(appId), [appId])
+  const activeNamespace = roomSession?.namespace ?? baseNamespace
+  const roomsReady = !roomsEnabled || Boolean(roomSession)
+  const waitingForRoom = roomsEnabled && !roomSession
   
   // Use direct /builds/:buildId/build/ path instead of alias to get correct CSP headers
   const baseIframeSrc = useMemo(() => {
@@ -105,43 +202,154 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return flags.join(' ');
   }, [securityPolicy]);
 
+  const updateIframeSrc = useCallback(
+    (token: string | null, namespace: string, roomToken?: string | null) => {
+      const params: Record<string, string> = { ns: namespace };
+      if (roomToken) {
+        params.roomToken = roomToken;
+      }
+      setIframeUrl(withToken(baseIframeSrc, token, params));
+    },
+    [baseIframeSrc],
+  );
+
   const ensureJwt = useCallback(async () => {
     if (jwtRef.current) return jwtRef.current
     const jwt = await getJwt()
     jwtRef.current = jwt
-    setIframeUrl((current) => withToken(baseIframeSrc, jwt))
     return jwt
-  }, [baseIframeSrc])
+  }, [])
+
+  useEffect(() => {
+    namespaceRef.current = activeNamespace
+  }, [activeNamespace])
+
+  useEffect(() => {
+    roomTokenRef.current = roomSession?.token ?? null
+  }, [roomSession])
+
+  useEffect(() => {
+    if (!roomsReady || !SHIM_ENABLED) return
+    if (jwtRef.current) {
+      updateIframeSrc(jwtRef.current, activeNamespace, roomTokenRef.current)
+    }
+  }, [roomsReady, activeNamespace, roomSession?.token, updateIframeSrc])
+
+  useEffect(() => {
+    setRoomSession(null)
+    setRoomsError(null)
+    setAutoDemoRequested(false)
+  }, [appId])
+
+  const performRoomAction = useCallback(
+    async (
+      action: 'demo' | 'create' | 'join',
+      params?: { roomName?: string; pin?: string },
+    ) => {
+      setRoomsBusy(true)
+      setRoomsError(null)
+      try {
+        let session: RoomSession
+        if (action === 'demo') {
+          session = await requestRoomSession(ROOMS_ENDPOINTS.demo, { appId })
+        } else if (action === 'create') {
+          session = await requestRoomSession(ROOMS_ENDPOINTS.create, {
+            appId,
+            roomName: params?.roomName,
+            pin: params?.pin,
+          })
+        } else {
+          session = await requestRoomSession(ROOMS_ENDPOINTS.join, {
+            appId,
+            roomName: params?.roomName,
+            pin: params?.pin,
+          })
+        }
+        setRoomSession(session)
+        return session
+      } catch (err: any) {
+        console.error('[Rooms] action failed', err)
+        setRoomsError(err?.message || 'Rad sa sobom je trenutno onemogućen.')
+        throw err
+      } finally {
+        setRoomsBusy(false)
+      }
+    },
+    [appId],
+  )
+
+  const handleUseDemo = useCallback(async () => {
+    await performRoomAction('demo')
+  }, [performRoomAction])
+
+  const handleCreateRoom = useCallback(
+    async (roomName: string, pin: string) => {
+      const trimmedName = roomName.trim()
+      const safePin = pin.trim()
+      if (!trimmedName || !safePin) {
+        setRoomsError('Unesi naziv sobe i PIN.')
+        return
+      }
+      await performRoomAction('create', { roomName: trimmedName, pin: safePin })
+    },
+    [performRoomAction],
+  )
+
+  const handleJoinRoom = useCallback(
+    async (roomName: string, pin: string) => {
+      const trimmedName = roomName.trim()
+      const safePin = pin.trim()
+      if (!trimmedName || !safePin) {
+        setRoomsError('Unesi naziv sobe i PIN.')
+        return
+      }
+      await performRoomAction('join', { roomName: trimmedName, pin: safePin })
+    },
+    [performRoomAction],
+  )
+
+  useEffect(() => {
+    if (!roomsEnabled) return
+    if (autoDemoRequested) return
+    setAutoDemoRequested(true)
+    void handleUseDemo()
+  }, [roomsEnabled, autoDemoRequested, handleUseDemo])
 
   useEffect(() => {
     if (!SHIM_ENABLED) {
       setLoading(false)
       return
     }
+    if (!roomsReady) return
 
     let cancelled = false
 
     async function bootstrapStorage() {
       setLoading(true)
       setError(null)
+      namespaceRef.current = activeNamespace
+      storageVersionRef.current = '0'
+      snapshotRef.current = {}
       try {
         let token: string | null = null
         if (typeof window !== 'undefined') {
           const searchParams = new URLSearchParams(window.location.search)
           token = searchParams.get('token')
+          if (token) {
+            jwtRef.current = token
+            updateIframeSrc(token, activeNamespace, roomTokenRef.current)
+          }
         }
 
-        if (token) {
-          jwtRef.current = token
-          setIframeUrl(withToken(baseIframeSrc, token))
+        const jwt = token ?? (await ensureJwt())
+        if (!token) {
+          updateIframeSrc(jwt, activeNamespace, roomTokenRef.current)
         }
-
-        const jwt = token ?? (await getJwt())
-        jwtRef.current = jwt
-        setIframeUrl(withToken(baseIframeSrc, jwt))
-        namespaceRef.current = appNamespace
-
-        const { snapshot, version } = await fetchSnapshot(jwt, appNamespace)
+        const { snapshot, version } = await fetchSnapshot(
+          jwt,
+          activeNamespace,
+          roomTokenRef.current,
+        )
         if (cancelled) return
 
         storageVersionRef.current = version || '0'
@@ -163,11 +371,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return () => {
       cancelled = true
     }
-  }, [appId, appNamespace, baseIframeSrc])
+  }, [activeNamespace, ensureJwt, roomsReady, updateIframeSrc, roomSession?.token])
 
   useEffect(() => {
     if (!bootstrap) return
-    const channel = new BroadcastChannel(`thesara-storage-${appId}`)
+    const channel = new BroadcastChannel(`thesara-storage-${activeNamespace}`)
     bcRef.current = channel
 
     const handleBroadcast = (event: MessageEvent) => {
@@ -186,6 +394,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             snapshot: snapshotRef.current,
             version: storageVersionRef.current,
             cap: capRef.current,
+            roomToken: roomTokenRef.current,
           },
           '*',
         )
@@ -199,7 +408,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       channel.close()
       if (bcRef.current === channel) bcRef.current = null
     }
-  }, [appId, bootstrap])
+  }, [activeNamespace, bootstrap])
 
   const projectSnapshot = useCallback(
     (batch: BatchItem[]) => applyBatchOperations(snapshotRef.current, batch),
@@ -210,7 +419,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     async (batch: ShimBatchItem[]) => {
       if (!batch || batch.length === 0) return
 
-      const ns = namespaceRef.current || appNamespace
+      const ns = namespaceRef.current || activeNamespace
       const frame = iframeRef.current?.contentWindow
       const cap = capRef.current
       if (!frame || !cap) return
@@ -245,11 +454,13 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
         attempts += 1
         try {
           const jwt = await ensureJwt()
+          const roomToken = roomTokenRef.current
           const { newVersion, newSnapshot } = await patchStorage(
             jwt,
             ns,
             storageVersionRef.current,
             serverBatch,
+            roomToken,
           )
 
           const finalSnapshot =
@@ -267,6 +478,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             version: storageVersionRef.current,
             namespace: namespaceRef.current,
             cap,
+            roomToken,
           })
 
           // Ensure our own iframe stays in sync as well.
@@ -278,6 +490,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
               namespace: namespaceRef.current,
               token: jwtRef.current,
               cap,
+              roomToken,
             },
             '*',
           )
@@ -287,7 +500,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           if (err instanceof ApiError || err?.status === 412) {
             try {
               const jwt = await ensureJwt()
-              const latest = await fetchSnapshot(jwt, ns)
+              const latest = await fetchSnapshot(jwt, ns, roomTokenRef.current)
               storageVersionRef.current = latest.version || '0'
               // Re-project the pending changes onto the new snapshot
               snapshotRef.current = applyBatchOperations(latest.snapshot, serverBatch)
@@ -302,7 +515,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
       console.error('[Play] Failed to flush storage batch', lastError)
     },
-    [appNamespace, ensureJwt, projectSnapshot],
+    [activeNamespace, ensureJwt, projectSnapshot],
   )
 
   const onMessage = useCallback(
@@ -323,6 +536,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             version: storageVersionRef.current,
             namespace: namespaceRef.current,
             token: jwtRef.current,
+            roomToken: roomTokenRef.current,
             cap,
           },
           '*',
@@ -372,30 +586,190 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     }
   }, [onMessage])
 
+  const roomsControl = roomsEnabled ? (
+    <RoomsToolbar
+      mode={roomsMode}
+      session={roomSession}
+      loading={roomsBusy}
+      error={roomsError}
+      onUseDemo={handleUseDemo}
+      onCreate={handleCreateRoom}
+      onJoin={handleJoinRoom}
+      variant={roomSession ? 'compact' : 'full'}
+    />
+  ) : null
+
+  const iframeBootstrapName = useMemo(() => {
+    const encoded = encodeBootstrapPayload(bootstrap)
+    return encoded ? `thesara-bootstrap:${encoded}` : undefined
+  }, [bootstrap])
+
   if (!SHIM_ENABLED) {
     return <div className="p-6">App storage is temporarily unavailable.</div>
   }
 
+  if (waitingForRoom) {
+    return (
+      <div className="mx-auto flex max-w-4xl flex-col gap-4 p-4">
+        {roomsControl}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          {roomsError
+            ? roomsError
+            : 'Odaberi demo sobu ili unesi vlastiti naziv i PIN kako bi nastavio/la s aplikacijom.'}
+        </div>
+      </div>
+    )
+  }
+
   if (loading) {
-    return <div className="p-6">Loading app...</div>
+    return (
+      <div className="flex flex-col gap-4 p-6">
+        {roomsControl}
+        <div>Loading app...</div>
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="p-6">Error: {error}</div>
+    return (
+      <div className="flex flex-col gap-4 p-6">
+        {roomsControl}
+        <div>Error: {error}</div>
+      </div>
+    )
   }
 
   if (!bootstrap) {
-    return <div className="p-6">Preparing app bootstrap...</div>
+    return (
+      <div className="flex flex-col gap-4 p-6">
+        {roomsControl}
+        <div>Preparing app bootstrap...</div>
+      </div>
+    )
   }
 
   return (
-    <iframe
-      ref={iframeRef}
-      src={iframeUrl}
-      title="Thesara App"
-      referrerPolicy="no-referrer"
-      sandbox={sandboxFlags}
-      style={{ border: 'none', width: '100%', height: '100vh', display: 'block' }}
-    />
+    <div className="flex flex-col gap-4">
+      {roomsControl}
+      <iframe
+        ref={iframeRef}
+        src={iframeUrl}
+        title="Thesara App"
+        name={iframeBootstrapName}
+        referrerPolicy="no-referrer"
+        sandbox={sandboxFlags}
+        style={{ border: 'none', width: '100%', height: '100vh', display: 'block' }}
+      />
+    </div>
+  )
+}
+
+function RoomsToolbar({
+  mode,
+  session,
+  loading,
+  error,
+  onUseDemo,
+  onCreate,
+  onJoin,
+  variant = 'compact',
+}: {
+  mode: RoomsMode
+  session: RoomSession | null
+  loading: boolean
+  error: string | null
+  onUseDemo: () => void | Promise<void>
+  onCreate: (roomName: string, pin: string) => void | Promise<void>
+  onJoin: (roomName: string, pin: string) => void | Promise<void>
+  variant?: 'compact' | 'full'
+}) {
+  const [roomName, setRoomName] = useState('')
+  const [pin, setPin] = useState('')
+
+  const handleCreate = () => void onCreate(roomName, pin)
+  const handleJoin = () => void onJoin(roomName, pin)
+
+  const isDemo = session?.room?.isDemo ?? true
+
+  const containerClasses =
+    variant === 'full'
+      ? 'rounded-3xl border border-slate-200 bg-slate-900 text-white shadow-lg'
+      : 'rounded-2xl border border-slate-200 bg-slate-900 text-white shadow-sm'
+
+  return (
+    <div className={containerClasses}>
+      <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-slate-400">Aktivna soba</p>
+          <p className="text-lg font-semibold">
+            {session?.room?.name || 'Javna demo soba (PIN 1111)'}
+          </p>
+          <p className="text-xs text-slate-300">
+            {variant === 'full'
+              ? isDemo
+                ? 'Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.'
+                : 'Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.'
+              : isDemo
+                ? 'Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.'
+                : 'Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-50"
+          onClick={() => void onUseDemo()}
+          disabled={loading}
+        >
+          Vrati se u demo (PIN 1111)
+        </button>
+      </div>
+
+      <div className="border-t border-white/10 p-4">
+        {mode === 'required' && (
+          <p className="text-xs text-emerald-200">
+            Za trajnu i privatnu pohranu kreiraj svoju sobu s PIN-om.
+          </p>
+        )}
+        <div className="mt-3 grid gap-3 md:grid-cols-[2fr,1fr]">
+          <div className="flex flex-col gap-2">
+            <input
+              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
+              placeholder="Naziv sobe (npr. Shopping tim)"
+              value={roomName}
+              onChange={(event) => setRoomName(event.target.value)}
+              disabled={loading}
+            />
+            <input
+              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
+              placeholder="PIN (4-8 znamenki)"
+              value={pin}
+              onChange={(event) => setPin(event.target.value)}
+              inputMode="numeric"
+              maxLength={8}
+              disabled={loading}
+            />
+            {error && <p className="text-xs text-rose-300">{error}</p>}
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              className="rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
+              onClick={handleCreate}
+              disabled={loading}
+            >
+              Kreiraj novu sobu
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-50"
+              onClick={handleJoin}
+              disabled={loading}
+            >
+              Pridruži se postojećoj sobi
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

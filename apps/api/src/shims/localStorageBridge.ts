@@ -80,6 +80,77 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     local: new Map(),
     session: new Map(),
   };
+  let ROOM_TOKEN = getQueryParam('roomToken');
+  let HAS_INITIAL_SNAPSHOT = false;
+
+  const DEBUG =
+    window.__THESARA_SHIM_DEBUG__ === '1' ||
+    /(?:^|[?&])shimDebug=1(?:&|$)/.test(window.location.search) ||
+    /localhost|127\.0\.0\.1|\.local/i.test(window.location.hostname);
+  function debugLog(...args) {
+    if (!DEBUG) return;
+    try {
+      console.log('[Thesara Shim]', ...args);
+    } catch (e) {}
+  }
+  debugLog('boot', { ns: (window.__THESARA_APP_NS || getNamespace()), hasToken: !!getJwtToken() });
+
+  function decodeBase64(str) {
+    try {
+      if (typeof atob !== 'function') return null;
+      const binary = atob(str);
+      let result = '';
+      for (let i = 0; i < binary.length; i++) {
+        const code = binary.charCodeAt(i);
+        result += '%' + ('00' + code.toString(16)).slice(-2);
+      }
+      return decodeURIComponent(result);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function describeBatch(batch) {
+    return (batch || []).slice(0, 5).map((item) => {
+      if (!item || typeof item !== 'object') return item;
+      if (item.op === 'set') {
+        return {
+          op: 'set',
+          key: item.key,
+          valuePreview:
+            typeof item.value === 'string'
+              ? item.value.slice(0, 80)
+              : Object.prototype.toString.call(item.value),
+        };
+      }
+      if (item.op === 'del') {
+        return { op: 'del', key: item.key };
+      }
+      if (item.op === 'clear') {
+        return { op: 'clear' };
+      }
+      return item;
+    });
+  }
+
+  const BOOTSTRAP_PREFIX = 'thesara-bootstrap:';
+  let PREFETCH_BOOTSTRAP = null;
+  try {
+    const rawName = window.name || '';
+    if (typeof rawName === 'string' && rawName.startsWith(BOOTSTRAP_PREFIX)) {
+      const encoded = rawName.slice(BOOTSTRAP_PREFIX.length);
+      const decoded = decodeBase64(encoded);
+      if (decoded) {
+        const payload = JSON.parse(decoded);
+        if (payload && typeof payload === 'object') {
+          PREFETCH_BOOTSTRAP = payload;
+        }
+      }
+      window.name = '';
+    }
+  } catch (err) {
+    debugLog('failed to parse bootstrap payload', err);
+  }
 
   function toStringValue(value) {
     return value === undefined || value === null ? '' : String(value);
@@ -108,9 +179,24 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
 
     const batch = offlineQueue.splice(0, offlineQueue.length).concat(pending.splice(0, pending.length));
     if (batch.length === 0) return;
+    debugLog('flush attempt', {
+      force: !!force,
+      batchSize: batch.length,
+      hasSnapshot: HAS_INITIAL_SNAPSHOT,
+      capReady: !!CAP,
+      awaitingAck,
+      ops: describeBatch(batch),
+    });
+
+    if (!HAS_INITIAL_SNAPSHOT) {
+      debugLog('deferring flush until snapshot', { force, batchSize: batch.length });
+      offlineQueue.push(...batch);
+      return;
+    }
 
     // Standalone: sync directly to Thesara storage API using JWT token from URL (?token=) and namespace
     if (STANDALONE) {
+      debugLog('directSync (standalone)', { batchSize: batch.length });
       await directSync(batch);
       return;
     }
@@ -122,11 +208,13 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     if (!CAP || awaitingAck) {
       try {
         if (getJwtToken()) {
+          debugLog('directSync (no CAP yet)', { batchSize: batch.length, awaitingAck });
           await directSync(batch);
           return;
         }
       } catch (e) {}
       offlineQueue.push(...batch);
+      debugLog('queued batch (no CAP)', { queued: offlineQueue.length });
       return;
     }
 
@@ -136,6 +224,7 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
         '*'
       );
       awaitingAck = true;
+      debugLog('sent batch to parent', { batchSize: batch.length, ops: describeBatch(batch) });
     } catch (err) {
       try { console.error('[Thesara Shim] Failed to postMessage batch, queueing offline.', err); } catch (e) {}
       offlineQueue.push(...batch);
@@ -220,16 +309,35 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     },
   });
 
+  function markSnapshotReady() {
+    if (!HAS_INITIAL_SNAPSHOT) {
+      HAS_INITIAL_SNAPSHOT = true;
+      pending.length = 0;
+      offlineQueue.length = 0;
+       debugLog('initial snapshot ready');
+      try {
+        flush(true).catch(() => {});
+      } catch (e) {}
+    }
+  }
+
   function reconcileSnapshot(payload) {
+    debugLog('reconcile snapshot', {
+      hasPayload: !!payload && typeof payload === 'object',
+      keys: payload && typeof payload === 'object' ? Object.keys(payload).slice(0, 5) : [],
+    });
     if (!payload || typeof payload !== 'object') {
       applySnapshot('local', Object.create(null));
+      markSnapshotReady();
       return;
     }
     if ('local' in payload || 'session' in payload) {
       applySnapshot('local', payload.local || {});
+      markSnapshotReady();
       return;
     }
     applySnapshot('local', payload);
+    markSnapshotReady();
   }
 
   function handleMessage(event) {
@@ -244,28 +352,36 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
           return;
         }
         CAP = msg.cap;
+        ROOM_TOKEN = typeof msg.roomToken === 'string' ? msg.roomToken : null;
         awaitingAck = false;
         offlineQueue.length = 0;
         pending.length = 0;
         reconcileSnapshot(msg.snapshot);
+        debugLog('received storage:init', { hasRoomToken: !!ROOM_TOKEN });
         return;
       }
       case 'thesara:storage:sync': {
         if (!CAP || msg.cap !== CAP) return;
+        if (typeof msg.roomToken === 'string') {
+          ROOM_TOKEN = msg.roomToken;
+        }
         reconcileSnapshot(msg.snapshot);
         awaitingAck = false;
         flush();
+        debugLog('applied storage:sync', { hasRoomToken: !!ROOM_TOKEN });
         return;
       }
       case 'thesara:shim:ack': {
         if (!CAP || msg.cap !== CAP) return;
         awaitingAck = false;
         flush();
+        debugLog('received shim ack');
         return;
       }
       case 'thesara:storage:flush-now': {
         if (!CAP || msg.cap !== CAP) return;
         flush(true);
+        debugLog('flush-now requested');
         return;
       }
       default:
@@ -277,6 +393,17 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
 
   // --- Standalone direct sync implementation ---
   let VERSION = '0';
+  if (PREFETCH_BOOTSTRAP && PREFETCH_BOOTSTRAP.snapshot) {
+    if (typeof PREFETCH_BOOTSTRAP.version === 'string') {
+      VERSION = PREFETCH_BOOTSTRAP.version;
+    }
+    reconcileSnapshot(PREFETCH_BOOTSTRAP.snapshot);
+    debugLog('applied bootstrap from window.name', {
+      version: VERSION,
+      keys: Object.keys(PREFETCH_BOOTSTRAP.snapshot || {}).slice(0, 5),
+    });
+    PREFETCH_BOOTSTRAP = null;
+  }
   function getQueryParam(name) {
     try { return new URLSearchParams(window.location.search).get(name) || null; } catch (e) { return null; }
   }
@@ -353,6 +480,9 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     if (token) headers['Authorization'] = 'Bearer ' + token;
     headers['X-Thesara-App-Id'] = APP_ID_HEADER;
     headers['X-Thesara-Scope'] = 'shared';
+    if (ROOM_TOKEN) {
+      headers['X-Thesara-Room-Token'] = ROOM_TOKEN;
+    }
     const init = Object.assign({}, opts, { headers });
     return fetch(buildApiUrl(path), init);
   }
