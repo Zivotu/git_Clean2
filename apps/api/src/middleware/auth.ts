@@ -150,10 +150,28 @@ const plugin: FastifyPluginAsync = async (app) => {
         }
       } catch (jwtError) {
         req.log.debug({ err: jwtError }, 'auth:jwt_fallback_failed');
-        // Invalid token. Send 401.
+        // If invalid and we're in development, fall back to dev user for local testing.
+        if (process.env.NODE_ENV !== 'production') {
+          req.authUser = {
+            uid: 'dev-user',
+            role: 'admin',
+            claims: { uid: 'dev-user', role: 'admin', admin: true } as any,
+          };
+          return;
+        }
+        // In production, reject.
         setCors(reply, origin);
         return reply.code(401).send({ error: 'Unauthorized', reason: 'invalid_token' });
       }
+    }
+    // No fallback secret configured. In development, permit dev-user so storage works locally.
+    if (process.env.NODE_ENV !== 'production') {
+      req.authUser = {
+        uid: 'dev-user',
+        role: 'admin',
+        claims: { uid: 'dev-user', role: 'admin', admin: true } as any,
+      };
+      return;
     }
   });
 };

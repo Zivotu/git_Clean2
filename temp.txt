@@ -1,0 +1,120 @@
+
+  const resetCustomPreview = () => {
+    setCustomPreview(null);
+    setPreviewChoice('preset');
+    setPreviewError('');
+    if (previewInputRef.current) previewInputRef.current.value = '';
+  };
+
+  const ensurePreviewForSlug = async () => {
+    setPreviewUploading(true);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    setPreviewUploading(false);
+    return true;
+  };
+
+  const publish = async () => {
+    stopJobPolling();
+    setPublishError('');
+    setAuthError('');
+    setBundleError('');
+    setPreviewError('');
+    setLocalJobLog('');
+    setLocalPreviewUrl(null);
+    setManualBuildState(null);
+    setCurrentBuildId(null);
+
+    try {
+      if (!user) {
+        setAuthError('Za objavu se prvo prijavi.');
+        return;
+      }
+
+      if (submissionType === 'bundle') {
+        if (!bundleFile) {
+          setBundleError('Odaberi ZIP datoteku.');
+          return;
+        }
+        setPublishing(true);
+        try {
+          const appId = deriveAppId(manifest.name || bundleFile.name);
+          const form = new FormData();
+          form.append('file', bundleFile, bundleFile.name);
+          const upload = await apiPost<{ jobId?: string }>(
+            `/apps/${appId}/upload`,
+            form,
+            { auth: true },
+          );
+          if (!upload?.jobId) {
+            setPublishError('Upload paketa nije uspio. Pokušaj ponovno.');
+            setPublishing(false);
+            return;
+          }
+          watchLocalBundle(appId, upload.jobId);
+        } catch (err) {
+          setPublishing(false);
+          if (err instanceof ApiError) {
+            if (err.status === 401) {
+              setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokušaj ponovno.');
+            } else {
+              setPublishError(err.message || 'Upload nije uspio.');
+            }
+          } else {
+            setPublishError(String(err));
+          }
+        }
+        return;
+      }
+
+      const sesRe =
+        /(lockdown\s*\(|\brequire\s*\(\s*['"]ses['"]\s*\)|\bfrom\s+['"]ses['"]|import\s*\(\s*['"]ses['"]\s*\))/;
+      if (sesRe.test(code)) {
+        setPublishError('SES/lockdown nije podržan u browseru. Ukloni ga iz koda ili ga pokreni samo na serveru.');
+        return;
+      }
+
+      const norm = (value: string) => value.trim();
+      const translations: Record<string, { title?: string; description?: string }> = {};
+      if (norm(trEn.title) || norm(trEn.description)) {
+        translations.en = {
+          ...(norm(trEn.title) ? { title: norm(trEn.title) } : {}),
+          ...(norm(trEn.description) ? { description: norm(trEn.description) } : {}),
+        };
+      }
+      if (norm(trDe.title) || norm(trDe.description)) {
+        translations.de = {
+          ...(norm(trDe.title) ? { title: norm(trDe.title) } : {}),
+          ...(norm(trDe.description) ? { description: norm(trDe.description) } : {}),
+        };
+      }
+      if (norm(trHr.title) || norm(trHr.description)) {
+        translations.hr = {
+          ...(norm(trHr.title) ? { title: norm(trHr.title) } : {}),
+          ...(norm(trHr.description) ? { description: norm(trHr.description) } : {}),
+        };
+      }
+
+      let previewAttachment: { dataUrl: string } | undefined;
+      try {
+        if (previewChoice === 'custom' && customPreview?.dataUrl) {
+          previewAttachment = { dataUrl: customPreview.dataUrl };
+        } else {
+          const file = await createPresetPreviewFile(selectedPreset, {
+            overlayText: overlayTitle.trim() || undefined,
+          });
+          const dataUrl = await readFileAsDataUrl(file);
+          previewAttachment = { dataUrl };
+        }
+      } catch (err) {
+        console.warn('preview-prep-failed', err);
+      }
+
+      setPublishing(true);
+      setManualBuildState('queued');
+      setShowProgress(true);
+      const payload = {
+        title: manifest.name,
+        description: manifest.description,
+        ...(Object.keys(translations).length ? { translations } : {}),
+        author: {
+          uid: user.uid || '',

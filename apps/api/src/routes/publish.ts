@@ -152,11 +152,15 @@ export default async function publishRoutes(app: FastifyInstance) {
     const existingOwned = idxOwned >= 0 ? owned[idxOwned] : undefined;
     const isAdmin =
       (req as any).authUser?.role === 'admin' || (req as any).authUser?.claims?.admin === true;
+    const cfg = getConfig();
+    const publicBase = (cfg.PUBLIC_BASE || '').replace(/\/$/, '');
+    const webBase = (cfg.WEB_BASE || '').replace(/\/$/, '');
+    const apiBaseHint = publicBase ? `${publicBase}/api` : '/api';
+    const buildPlayUrl = (id: string | number) => (webBase ? `${webBase}/play/${id}/?run=1` : '');
 
     if (!existingOwned && !isAdmin) {
       const ents = await listEntitlements(uid);
       const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
-      const cfg = getConfig();
       const limit = gold ? cfg.GOLD_MAX_APPS_PER_USER : cfg.MAX_APPS_PER_USER;
       // For free users we enforce total owned apps (including drafts/inactive),
       // to prevent storage usage from accumulating.
@@ -240,12 +244,21 @@ export default async function publishRoutes(app: FastifyInstance) {
     body{overflow-x:hidden}
     #root{min-height:100vh}
   </style>
-  <!-- Thesara Storage namespace for standalone mode -->
-  <script>window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};</script>
+  <!-- Thesara namespace + shims -->
+  <script>
+    window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};
+    window.__THESARA_APP_ID__ = ${JSON.stringify(String(listingId))};
+    window.__THESARA_API_BASE__ = ${JSON.stringify(apiBaseHint)};
+    window.__THESARA_PLAY_URL__ = ${JSON.stringify(buildPlayUrl(listingId))};
+    window.thesara = window.thesara || {};
+    window.thesara.app = Object.assign({}, window.thesara.app, { id: ${JSON.stringify(String(listingId))} });
+  </script>
+  <script type="module" src="/shims/rooms.js?v=${buildId}"></script>
+  <script type="module" src="/shims/storage.js?v=${buildId}"></script>
   <!-- Thesara Storage bridge: replaces localStorage in iframe and batches changes to parent;
     in standalone mode it syncs directly to server using __THESARA_APP_NS and optional ?token=
     NOTE: use /api/ prefix so that frontend proxy (Next.js) forwards to API in production. -->
-  <script src="/shims/localstorage.js"></script>
+  <script src="/shims/localstorage.js?v=${buildId}"></script>
   <script>
     // crypto.randomUUID polyfill for non-secure contexts (plain JS, no TS syntax)
     (function() {
@@ -357,7 +370,8 @@ export default async function publishRoutes(app: FastifyInstance) {
       if (isHtml) {
         // Inject storage shim and namespace even when full HTML is provided
         const ns = `app:${listingId}`;
-  const inject = `\n  <!-- Thesara Storage namespace for standalone mode -->\n  <script>window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};<\/script>\n  <!-- Thesara Storage bridge: replaces localStorage in iframe and batches changes to parent; in standalone mode it syncs directly to server using __THESARA_APP_NS and optional ?token= -->\n  <script src=\"/shims/localstorage.js\"><\/script>\n`;
+        const playUrl = buildPlayUrl(listingId);
+        const inject = `\n  <!-- Thesara namespace + shims -->\n  <script>\n    window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};\n    window.__THESARA_APP_ID__ = ${JSON.stringify(String(listingId))};\n    window.__THESARA_API_BASE__ = ${JSON.stringify(apiBaseHint)};\n    window.__THESARA_PLAY_URL__ = ${JSON.stringify(playUrl)};\n    window.thesara = window.thesara || {};\n    window.thesara.app = Object.assign({}, window.thesara.app, { id: ${JSON.stringify(String(listingId))} });\n  <\/script>\n  <script type=\"module\" src=\"/shims/rooms.js\"><\/script>\n  <script type=\"module\" src=\"/shims/storage.js\"><\/script>\n  <!-- Thesara Storage bridge: replaces localStorage in iframe and batches changes to parent; in standalone mode it syncs directly to server using __THESARA_APP_NS and optional ?token= -->\n  <script src=\"/shims/localstorage.js\"><\/script>\n`;
         let html = String(body.inlineCode || '');
         if (/<\/head>/i.test(html)) {
           html = html.replace(/<\/head>/i, inject + "\n</head>");

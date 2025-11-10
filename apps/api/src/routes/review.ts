@@ -16,6 +16,7 @@ import {
   getBuildArtifacts,
   publishBundle,
 } from '../models/Build.js';
+import type { BuildState } from '../models/Build.js';
 import { getConfig, LLM_REVIEW_ENABLED } from '../config.js';
 import { BUNDLE_ROOT, PREVIEW_ROOT } from '../paths.js';
 import { readApps, writeApps, updateApp, type AppRecord } from '../db.js';
@@ -26,6 +27,11 @@ import { createJob, isJobActive } from '../buildQueue.js';
 import { ensureListingPreview } from '../lib/preview.js';
 import { sse } from '../sse.js';
 import { sendTemplateToUser } from '../notifier.js';
+
+type DeletableAppPayload = Omit<Partial<AppRecord>, 'deletedAt' | 'adminDeleteSnapshot'> & {
+  deletedAt?: number | FieldValue;
+  adminDeleteSnapshot?: AppRecord['adminDeleteSnapshot'] | FieldValue;
+};
 
 // Note: This file is being refactored to remove array paths and use a helper.
 // The original file had duplicate route registrations which are being cleaned up.
@@ -117,6 +123,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
       return candidates.some((candidate) => normaliseIdentifier(candidate) === needle);
     });
   }
+
+  const asStringState = (value?: string): string | undefined =>
+    typeof value === 'string' ? value : undefined;
+
+  const asNonDeletedBuildState = (value?: string): Exclude<BuildState, 'deleted'> | undefined => {
+    const str = asStringState(value);
+    return str && str !== 'deleted' ? (str as Exclude<BuildState, 'deleted'>) : undefined;
+  };
 
   type BuildResolveContext = {
     buildId: string;
@@ -786,7 +800,11 @@ export default async function reviewRoutes(app: FastifyInstance) {
     }
 
     try {
-      sse.emit(buildId, 'final', { status: 'published', reason: 'approved', buildId });
+      if (buildId) {
+        const payload: any = { status: 'published', reason: 'approved', buildId };
+        if (approvalRecipient?.appId) payload.listingId = approvalRecipient.appId;
+        sse.emit(buildId, 'final', payload);
+      }
     } catch {}
 
     req.log.info({ id: buildId, uid: req.authUser?.uid }, 'review_approved');
@@ -811,7 +829,8 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
     if (buildId) {
       await updateBuild(buildId, { state: 'rejected', ...(reason ? { error: reason } : {}) });
-      sse.emit(buildId, 'final', { status: 'rejected', reason, buildId });
+      // Defer emitting the final SSE until after we determine the listing (rejectionRecipient)
+      // so the event can include the listingId for clients.
     }
 
     try {
@@ -850,7 +869,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
       req.log.error({ err, id: buildId ?? id }, 'listing_reject_update_failed');
     }
 
-    if (rejectionRecipient?.uid) {
+  if (rejectionRecipient?.uid) {
       try {
         const cfgLinks = getConfig();
         const titleForMail =
@@ -883,6 +902,14 @@ export default async function reviewRoutes(app: FastifyInstance) {
         );
       }
     }
+
+    try {
+      if (buildId) {
+        const payload: any = { status: 'rejected', reason, buildId };
+        if (rejectionRecipient?.appId) payload.listingId = rejectionRecipient.appId;
+        sse.emit(buildId, 'final', payload);
+      }
+    } catch {}
 
     req.log.info({ id: buildId ?? id, uid: req.authUser?.uid, reason }, 'review_rejected');
     return { ok: true };
@@ -1011,11 +1038,8 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
       if (buildId) {
         const previousState =
-          build?.state && build.state !== 'deleted'
-            ? build.state
-            : build?.previousState && build.previousState !== 'deleted'
-            ? build.previousState
-            : undefined;
+          asNonDeletedBuildState(build?.state) ??
+          asNonDeletedBuildState(build?.previousState);
 
         const patch: Parameters<typeof updateBuild>[1] = {
           state: 'deleted',
@@ -1150,7 +1174,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
             ? snapshot.status
             : 'pending-review';
 
-        const payload: Partial<AppRecord> = {
+        const payload: DeletableAppPayload = {
           deletedAt: FieldValue.delete(),
           state: restoredState,
           status: restoredStatus,
@@ -1162,17 +1186,16 @@ export default async function reviewRoutes(app: FastifyInstance) {
           payload.publishedAt = snapshot.publishedAt;
         }
 
-        await updateApp(app.id, payload);
+        await updateApp(app.id, payload as Partial<AppRecord>);
       }
 
       const buildId = resolved?.buildId;
       if (buildId) {
         const build = resolved?.build ?? (await readBuild(buildId));
         if (build) {
-          const fallbackState =
-            build.previousState && build.previousState !== 'deleted'
-              ? build.previousState
-              : 'pending_review';
+        const previousStateValue = asNonDeletedBuildState(build.previousState);
+        const fallbackState: Exclude<BuildState, 'deleted'> =
+          previousStateValue ?? 'pending_review';
           await updateBuild(buildId, {
             state: fallbackState,
             previousState: undefined,

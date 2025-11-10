@@ -1,6 +1,11 @@
 const CDN_ORIGIN = 'https://esm.sh';
 const STRIPE_CONNECT_ORIGINS = ['https://api.stripe.com'];
 const STRIPE_FRAME_ORIGINS = ['https://js.stripe.com', 'https://m.stripe.network'];
+const GOOGLE_AD_ORIGINS = [
+  'https://pagead2.googlesyndication.com',
+  'https://tpc.googlesyndication.com',
+  'https://googleads.g.doubleclick.net',
+];
 import { getConfig } from '../config.js';
 import type { AppSecurityPolicy } from '../types.js';
 
@@ -125,15 +130,23 @@ export function buildCsp({
   STRIPE_CONNECT_ORIGINS.forEach((origin) => connectSrc.add(origin));
   STRIPE_FRAME_ORIGINS.forEach((origin) => frameSrc.add(origin));
 
-  const imgSrc =
+  const imgSrc = new Set(
     netPolicy === 'MEDIA_ONLY' || netPolicy === 'OPEN_NET'
-      ? ['*', 'data:', 'blob:'] // Allow all images for open policies
-      : ["'self'", 'data:', 'blob:'];
+      ? ['*', 'data:', 'blob:']
+      : ["'self'", 'data:', 'blob:'],
+  );
 
   const mediaSrc =
     netPolicy === 'MEDIA_ONLY' || netPolicy === 'OPEN_NET'
       ? ['*', 'blob:'] // Allow all media for open policies
       : ["'self'", 'blob:'];
+
+  GOOGLE_AD_ORIGINS.forEach((origin) => {
+    scriptSrc.add(origin);
+    connectSrc.add(origin);
+    frameSrc.add(origin);
+    imgSrc.add(origin);
+  });
 
   const frameAncestorSources = normalizeSources(frameAncestors);
   if (!frameAncestorSources.includes("'self'")) {
@@ -144,7 +157,7 @@ export function buildCsp({
     `default-src 'self'`,
     directive('script-src', Array.from(scriptSrc)),
     directive('style-src', Array.from(styleSrc)),
-    directive('img-src', imgSrc),
+    directive('img-src', Array.from(imgSrc)),
     directive('media-src', mediaSrc),
     directive('connect-src', Array.from(connectSrc)),
     directive('frame-src', Array.from(frameSrc)),

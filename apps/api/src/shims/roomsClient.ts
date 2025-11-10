@@ -6,10 +6,35 @@ const base = (() => {
     // Use same-origin API base
     const u = new URL(window.location.origin);
     return u.origin;
-  } catch {
+  } catch (e) {
     return '';
   }
 })();
+
+function getInjectedAppId() {
+  try {
+    if (typeof window.__THESARA_APP_ID__ === 'string' && window.__THESARA_APP_ID__) {
+      return window.__THESARA_APP_ID__;
+    }
+    const hintedNs = (window.__THESARA_APP_NS || '').toString();
+    if (hintedNs.startsWith('app:')) {
+      const trimmed = hintedNs.slice(4);
+      if (trimmed) return trimmed;
+    }
+    if (window.thesara && window.thesara.app && window.thesara.app.id) {
+      return window.thesara.app.id;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function getQueryParam(name) {
+  try {
+    return new URLSearchParams(window.location.search).get(name) || null;
+  } catch (e) {
+    return null;
+  }
+}
 
 async function j(url, opts = {}) {
   const res = await fetch(url, {
@@ -32,20 +57,39 @@ async function j(url, opts = {}) {
  * @param {string} appId
  * @param {string} idToken - Firebase ID token (or platform session bearer if applicable)
  */
-export async function createRoom(appId, idToken) {
+export async function createRoom(appIdOrOptions, idToken) {
+  let appId = appIdOrOptions;
+  let pin = null;
+  let token = idToken;
+  if (appIdOrOptions && typeof appIdOrOptions === 'object') {
+    const opts = appIdOrOptions;
+    appId = opts.appId || opts.id || opts.listingId || opts.app || null;
+    pin = typeof opts.pin === 'string' ? opts.pin : opts.joinToken || null;
+    token = opts.token || opts.idToken || token || null;
+  }
+  if (!appId) {
+    appId = getInjectedAppId();
+  }
   if (!appId) throw new Error('appId required');
   const url = base + '/rooms/create';
+  const body = { appId };
+  if (pin) body.pin = pin;
+  const headers = {};
+  const bearer = token || getQueryParam('token');
+  if (bearer) headers.Authorization = 'Bearer ' + bearer;
   return j(url, {
     method: 'POST',
-    headers: idToken ? { Authorization: 'Bearer ' + idToken } : {},
-    body: JSON.stringify({ appId }),
+    headers,
+    body: JSON.stringify(body),
   });
 }
 
 /**
  * Player: join by roomId + joinToken issued by host.
  */
-export async function joinRoom(roomId, { name, joinToken }) {
+export async function joinRoom(roomId, options = {}) {
+  const name = options?.name || '';
+  const joinToken = options?.joinToken || options?.pin || options?.token;
   if (!roomId) throw new Error('roomId required');
   if (!joinToken) throw new Error('joinToken required');
   const url = base + '/rooms/' + encodeURIComponent(roomId) + '/join';
@@ -65,9 +109,10 @@ export async function listPlayers(roomId) {
  */
 export async function postEvent(roomId, event, idToken) {
   const url = base + '/rooms/' + encodeURIComponent(roomId) + '/events';
+  const token = idToken || getQueryParam('token');
   return j(url, {
     method: 'POST',
-    headers: idToken ? { Authorization: 'Bearer ' + idToken } : {},
+    headers: token ? { Authorization: 'Bearer ' + token } : {},
     body: JSON.stringify(event || {}),
   });
 }
@@ -93,10 +138,25 @@ export function pollEvents(roomId, { intervalMs = 1000, onEvents } = {}) {
         since = Math.max(since, ...evs.map(e => e.createdAt || 0));
         onEvents && onEvents(evs);
       }
-    } catch {}
+    } catch (e) {}
     setTimeout(tick, intervalMs);
   }
   tick();
   return () => { stop = true; };
+}
+
+const roomsV1 = {
+  create: (options) => createRoom(options),
+  join: (roomId, options) => joinRoom(roomId, options || {}),
+  listPlayers,
+  postEvent: (roomId, event, token) => postEvent(roomId, event, token),
+  getEvents,
+  pollEvents,
+};
+
+if (typeof window !== 'undefined') {
+  window.roomsV1 = roomsV1;
+  window.thesara = window.thesara || {};
+  window.thesara.rooms = roomsV1;
 }
 `;

@@ -40,6 +40,7 @@ import buildRoutes from './routes/build.js';
 import buildAlias from './routes/buildAlias.js';
 import avatarRoutes from './routes/avatar.js';
 import publishRoutes from './routes/publish.js';
+import publishBundleRoutes from './routes/publish-bundle.js';
 import reviewRoutes from './routes/review.js';
 import listingsRoutes from './routes/listings.js';
 import accessRoutes from './routes/access.js';
@@ -61,6 +62,7 @@ import jwtRoutes from './routes/jwt.js';
 import buildEventsRoutes from './routes/buildEvents.js';
 import testingRoutes from './routes/testing.js';
 import { startCreatexBuildWorker } from './workers/createxBuildWorker.js';
+import { startBundleBuildWorker } from './workers/bundleBuildWorker.js';
 import localDevRoutes from './localdev/routes.js';
 import { startLocalDevWorker } from './localdev/worker.js';
 import { ensureDbInitialized, readAppKv, getAppByIdOrSlug } from './db.js';
@@ -86,6 +88,33 @@ type ManifestCacheEntry = {
 };
 
 const manifestMetaCache = new Map<string, ManifestCacheEntry>();
+const projectRoot = path.resolve(__dirname, '..', '..');
+const LOG_FILE_PATH = path.join(projectRoot, 'thesara-api.log');
+fsSync.mkdirSync(path.dirname(LOG_FILE_PATH), { recursive: true });
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
+const enableStdoutLogging = process.env.THESARA_LOG_STDOUT !== '0';
+const transportTargets: Array<{
+  target: string;
+  level: string;
+  options: Record<string, unknown>;
+}> = [
+  {
+    target: 'pino/file',
+    level: LOG_LEVEL,
+    options: { destination: LOG_FILE_PATH, mkdir: true },
+  },
+];
+if (enableStdoutLogging) {
+  transportTargets.push({
+    target: 'pino/file',
+    level: LOG_LEVEL,
+    options: { destination: 1 },
+  });
+}
+const loggerOptions =
+  transportTargets.length === 1
+    ? { level: LOG_LEVEL, transport: transportTargets[0] }
+    : { level: LOG_LEVEL, transport: { targets: transportTargets } };
 
 function tryReadManifest(manifestPath: string): BuildSecurityMetadata | null {
   try {
@@ -163,9 +192,10 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await ensureDbInitialized();
 
   app = fastify({ 
-    logger: true, 
+    logger: loggerOptions,
     bodyLimit: 5 * 1024 * 1024
   });
+  app.log.info({ dest: LOG_FILE_PATH }, 'pino_file_logging_enabled');
 
   // HOTFIX: globalni redirect sanitizer za FST_ERR_BAD_STATUS_CODE
   app.setErrorHandler((err, req, reply) => {
@@ -496,7 +526,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   };
 
   // Compatibility redirects: older web clients may use "/bundle" path
-  // Redirect /builds/:buildId/bundle[/*] -> /builds/:buildId/build[/*]
+  // Redirect /builds/:buildId/bundle[/*] -> /builds/:buildId/build[/*] whenever bundle assets are missing.
   const appendQuery = (location: string, request: FastifyRequest): string => {
     try {
       const rawUrl = request.raw.url;
@@ -510,19 +540,84 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     }
   };
 
-  app.get('/builds/:buildId/bundle', { preHandler: bypassCors }, async (req, reply) => {
-    const { buildId } = req.params as { buildId: string };
-    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build/`, req), 307);
-  });
+  const encodeRest = (rest: string): string =>
+    rest
+      .split('/')
+      .map((segment) => encodeURIComponent(segment))
+      .join('/');
+
+  async function sendBundleIndex(req: FastifyRequest, reply: FastifyReply, buildId: string) {
+    const bundleIndex = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'bundle', 'index.html');
+    const fallbackLocation = appendQuery(`/builds/${encodeURIComponent(buildId)}/build/`, req);
+    try {
+      const html = await readFile(bundleIndex, 'utf8');
+      req.log?.info?.({ buildId, bundleIndex }, 'serving_bundle_index');
+      reply
+        .header('Cross-Origin-Resource-Policy', 'cross-origin')
+        .type('text/html; charset=utf-8');
+      return reply.send(html);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException)?.code;
+      if (code === 'ENOENT') {
+        req.log?.info?.({ buildId }, 'bundle_index_missing_redirecting_to_build');
+        return reply.redirect(fallbackLocation, 307);
+      }
+      req.log?.warn?.({ err, buildId, bundleIndex }, 'bundle_index_not_found');
+      return reply.redirect(fallbackLocation, 307);
+    }
+  }
+
   app.get('/builds/:buildId/bundle/', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
-    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build/`, req), 307);
+    return sendBundleIndex(req, reply, buildId);
   });
+
+  app.get('/builds/:buildId/bundle', { preHandler: bypassCors }, async (req, reply) => {
+    const { buildId } = req.params as { buildId: string };
+    return sendBundleIndex(req, reply, buildId);
+  });
+
   app.get('/builds/:buildId/bundle/*', { preHandler: bypassCors }, async (req, reply) => {
     const { buildId } = req.params as { buildId: string };
     const wildcard = (req.params as any)['*'] as string | undefined;
-    const suffix = wildcard ? `/${wildcard}` : '/';
-    return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build${suffix}`, req), 307);
+    const fallbackSuffix = wildcard ? `/${encodeRest(wildcard)}` : '/';
+    const fallbackLocation = appendQuery(
+      `/builds/${encodeURIComponent(buildId)}/build${fallbackSuffix}`,
+      req,
+    );
+    if (!wildcard) {
+      return reply.redirect(fallbackLocation, 307);
+    }
+
+    const bundleRoot = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'bundle');
+    const ext = path.extname(wildcard).toLowerCase();
+
+    if (ext === '.js' || ext === '.mjs') {
+      reply.type('application/javascript; charset=utf-8');
+    } else if (ext === '.css') {
+      reply.type('text/css; charset=utf-8');
+    } else if (ext === '.html' || ext === '.htm') {
+      reply.type('text/html; charset=utf-8');
+    }
+
+    reply
+      .header('Cross-Origin-Resource-Policy', 'cross-origin')
+      .header('Cache-Control', 'public, max-age=31536000, immutable');
+
+    try {
+      const target = path.join(bundleRoot, wildcard);
+      const isText = ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.html' || ext === '.htm';
+      const data = isText ? await readFile(target, 'utf8') : await readFile(target);
+      return reply.send(data);
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException)?.code;
+      if (code === 'ENOENT') {
+        req.log?.info?.({ buildId, file: wildcard }, 'bundle_asset_missing_redirecting_to_build');
+        return reply.redirect(fallbackLocation, 307);
+      }
+      req.log?.warn?.({ err, buildId, file: wildcard }, 'bundle_asset_not_found');
+      return reply.redirect(fallbackLocation, 307);
+    }
   });
 
   // 1) Serve index.html for the build root — handle both /build and /build/
@@ -546,8 +641,20 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         .type('text/html; charset=utf-8');
       return reply.send(html);
     } catch (err) {
-      req.log?.warn?.({ err, buildId, indexPath }, 'build_index_not_found');
-      return reply.code(404).send({ error: 'not_found' });
+      // Fallback: some local dev builds are shipped under `bundle/` instead of `build/`.
+      // Try serving `bundle/index.html` before returning 404 to make local previews more resilient.
+      const bundleIndex = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'bundle', 'index.html');
+      try {
+        const html = await readFile(bundleIndex, 'utf8');
+        req.log?.info?.({ buildId, bundleIndex }, 'serving_bundle_index_as_fallback');
+        reply
+          .header('Cross-Origin-Resource-Policy', 'cross-origin')
+          .type('text/html; charset=utf-8');
+        return reply.send(html);
+      } catch (err2) {
+        req.log?.warn?.({ err, err2, buildId, indexPath, bundleIndex }, 'build_index_not_found');
+        return reply.code(404).send({ error: 'not_found' });
+      }
     }
   });
 
@@ -584,8 +691,22 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       const buf = await readFile(path.join(rootDir, wildcard));
       return reply.send(buf);
     } catch (err) {
-      req.log?.warn?.({ err, buildId, file: wildcard }, 'build_asset_not_found');
-      return reply.code(404).send({ error: 'not_found' });
+      // Fallback: attempt to serve the same file from `bundle/` directory for local dev builds
+      const bundleRoot = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'bundle');
+      try {
+        if (ext === '.js' || ext === '.mjs' || ext === '.css' || ext === '.html' || ext === '.htm') {
+          const content = await readFile(path.join(bundleRoot, wildcard), 'utf8');
+          req.log?.info?.({ buildId, file: wildcard }, 'serving_bundle_asset_as_fallback');
+          return reply.send(content);
+        }
+        const buf = await readFile(path.join(bundleRoot, wildcard));
+        req.log?.info?.({ buildId, file: wildcard }, 'serving_bundle_asset_as_fallback');
+        return reply.send(buf);
+      } catch (err2) {
+        req.log?.warn?.({ err, err2, buildId, file: wildcard }, 'build_asset_not_found');
+        reply.code(404).type('text/plain').send('Not found');
+        return;
+      }
     }
   });
 
@@ -700,6 +821,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(shims);
   await app.register(uploadRoutes);
   await app.register(publishRoutes);
+  await app.register(publishBundleRoutes);
   await app.register(storageRoutes);
   await app.register(roomsBridge);
   await app.register(listingsRoutes);
@@ -809,11 +931,13 @@ export async function start(): Promise<void> {
   const enableWorker = process.env.CREATEX_WORKER_ENABLED === 'true';
   const inlineLocalDevWorker = process.env.LOCAL_DEV_WORKER_INLINE === 'true';
   const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => {} };
+  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => {} };
   const localDevWorker = inlineLocalDevWorker ? startLocalDevWorker() : null;
 
   const shutdown = async (signal: string) => {
     app.log.info({ signal }, 'shutting down');
     await buildWorker.close();
+    await bundleWorker.close();
     if (localDevWorker) {
       await localDevWorker.close();
     }

@@ -16,5 +16,5 @@ if (typeof swcHelpers.applyDecoratedDescriptor !== 'function') {
         writable: true,
       });
     }
-  } catch {}
+  } catch (e) {}
 }

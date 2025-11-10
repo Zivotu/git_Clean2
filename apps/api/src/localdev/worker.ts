@@ -10,6 +10,8 @@ import { sha256File } from './utils.js';
 import { rmrf } from './fs.js';
 import * as tar from 'tar';
 import { readApps, writeApps } from '../db.js';
+import { getBuildDir } from '../paths.js';
+import { sseEmitter } from '../sse.js';
 import { getConfig } from '../config.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { initBuild, updateBuild } from '../models/Build.js';
@@ -93,7 +95,7 @@ async function readBundleMetadata(projectDir: string): Promise<BundleMetadata> {
     if (Array.isArray(rawMetadata.tags)) {
       const tags = rawMetadata.tags
         .map((tag: unknown) => pickString(tag))
-        .filter((tag): tag is string => !!tag);
+        .filter((tag: string | undefined): tag is string => !!tag);
       if (tags.length) result.tags = tags;
     }
     if (
@@ -136,12 +138,12 @@ async function readBundleMetadata(projectDir: string): Promise<BundleMetadata> {
           const pkgDescription = pickString(pkgJson.description);
           if (pkgDescription) result.description = pkgDescription;
         }
-        if (!result.tags?.length && Array.isArray(pkgJson.keywords)) {
+          if (!result.tags?.length && Array.isArray(pkgJson.keywords)) {
           const tags = pkgJson.keywords
             .map((kw: unknown) => pickString(kw))
-            .filter((kw): kw is string => !!kw);
-          if (tags.length) result.tags = tags;
-        }
+            .filter((kw: string | undefined): kw is string => !!kw);
+            if (tags.length) result.tags = tags;
+          }
       }
     }
   }
@@ -558,6 +560,27 @@ export function startLocalDevWorker() {
         buildId,
         preview,
       );
+
+      // Persist build-info.json so SSE consumers (and workers) can read listingId
+      // This mirrors behavior in the main `publish-bundle` flow and prevents
+      // races where the SSE initial check runs before the listing is visible.
+      try {
+        const dir = getBuildDir(buildId);
+        await fsp.mkdir(dir, { recursive: true });
+        await fsp.writeFile(
+          path.join(dir, 'build-info.json'),
+          JSON.stringify({ listingId: String(listingId) }, null, 2),
+          'utf8',
+        );
+      } catch (err: any) {
+        log(`[warn] build-info.json write failed: ${err?.message || err}`);
+      }
+      // Emit SSE final event so any connected clients get notified immediately
+      try {
+        sseEmitter.emit(buildId, 'final', { status: 'success', buildId, listingId });
+      } catch (err: any) {
+        log(`[warn] sse emit failed: ${err?.message || err}`);
+      }
 
       return {
         status: 'completed',

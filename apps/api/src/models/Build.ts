@@ -8,6 +8,137 @@ import { fileExists, dirExists } from '../lib/fs.js';
 import * as tar from 'tar';
 import type { SafePublishResult } from '../safePublish.js';
 
+function injectBaseHref(html: string, baseHref: string): string {
+  const baseRegex = /<base\s+[^>]*href\s*=\s*["'][^"']*["'][^>]*>/i;
+  const baseTag = `<base href="${baseHref}">`;
+  if (baseRegex.test(html)) return html.replace(baseRegex, baseTag);
+  const headRegex = /<head[^>]*>/i;
+  const match = html.match(headRegex);
+  if (match) return html.replace(match[0], `${match[0]}\n${baseTag}`);
+  return `${baseTag}\n${html}`;
+}
+
+function stripDisallowedScripts(html: string): string {
+  // Previously we stripped ads scripts entirely; now we keep them so AdSense can load.
+  return html;
+}
+
+function rewriteAbsoluteAssetUrls(html: string): string {
+  const absoluteRegex = /(src|href)\s*=\s*(['"])\/(?!\/|https?:|data:)([^"' ]*)(\2)/gi;
+  const buildPrefixRegex = /(src|href)\s*=\s*(['"])(?:\.\/)?build\/([^"' ]*)(\2)/gi;
+
+  const rewrite = (match: string, attr: string, quote: string, pathPart: string) => {
+    const lowered = String(pathPart || '').toLowerCase();
+    if (
+      !pathPart ||
+      lowered.startsWith('shims/') ||
+      lowered.startsWith('builds/') ||
+      lowered.startsWith('api/')
+    ) {
+      return match;
+    }
+    const normalizedPath = pathPart.startsWith('./') ? pathPart : `./${pathPart}`;
+    return `${attr}=${quote}${normalizedPath}${quote}`;
+  };
+
+  let nextHtml = html.replace(absoluteRegex, (match, attr, quote, pathPart) =>
+    rewrite(match, attr, quote, pathPart),
+  );
+  nextHtml = nextHtml.replace(buildPrefixRegex, (match, attr, quote, pathPart) => {
+    const sanitized = pathPart.startsWith('./') ? pathPart : pathPart;
+    return `${attr}=${quote}./${sanitized.replace(/^\.\/+/, '')}${quote}`;
+  });
+  return nextHtml;
+}
+
+async function sanitizeBundleIndex(dir: string, buildId: string): Promise<void> {
+  const indexPath = path.join(dir, 'index.html');
+  try {
+    let html = await fs.readFile(indexPath, 'utf8');
+    html = stripDisallowedScripts(html);
+    html = injectBaseHref(html, `/builds/${buildId}/bundle/`);
+    html = rewriteAbsoluteAssetUrls(html);
+    await fs.writeFile(indexPath, html, 'utf8');
+  } catch (err) {
+    console.warn('sanitizeBundleIndex_failed', { dir, buildId, err });
+  }
+}
+
+function normaliseScriptReference(baseDir: string, scriptSrc: string): string | null {
+  if (!scriptSrc) return null;
+  const trimmed = scriptSrc.trim();
+  if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith('data:')) return null;
+  const withoutQuery = trimmed.split(/[?#]/)[0] ?? '';
+  if (!withoutQuery) return null;
+  let relativePath = withoutQuery;
+  if (relativePath.startsWith('/')) {
+    relativePath = relativePath.slice(1);
+  }
+  relativePath = relativePath.replace(/^\.\/+/, '');
+  if (!relativePath) return null;
+  return path.resolve(baseDir, relativePath);
+}
+
+async function findFirstJsRecursive(dir: string): Promise<string | null> {
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    const jsFiles = entries
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.js'))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (jsFiles.length) {
+      return path.join(dir, jsFiles[0].name);
+    }
+    for (const subDir of entries.filter((entry) => entry.isDirectory())) {
+      const nested = await findFirstJsRecursive(path.join(dir, subDir.name));
+      if (nested) return nested;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+async function detectEntrypointScript(searchDir: string): Promise<string | null> {
+  const indexPath = path.join(searchDir, 'index.html');
+  let html: string | null = null;
+  try {
+    html = await fs.readFile(indexPath, 'utf8');
+  } catch {
+    html = null;
+  }
+
+  if (html) {
+    const scriptRegex = /<script\b[^>]*\bsrc\s*=\s*(['"])([^"'#?]+\.js(?:[?#][^"' ]*)?)\1[^>]*>/gi;
+    type Candidate = { path: string; priority: number };
+    const candidates: Candidate[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = scriptRegex.exec(html))) {
+      const rawSrc = match[2];
+      const absolutePath = normaliseScriptReference(searchDir, rawSrc);
+      if (!absolutePath) continue;
+      let priority = 0;
+      const tag = match[0];
+      if (/type\s*=\s*['"]module['"]/i.test(tag)) priority += 5;
+      if (/index|main|app/i.test(rawSrc)) priority += 3;
+      if (/crossorigin/i.test(tag)) priority += 1;
+      candidates.push({ path: absolutePath, priority });
+    }
+    candidates.sort((a, b) => b.priority - a.priority);
+    for (const candidate of candidates) {
+      if (await fileExists(candidate.path)) {
+        return candidate.path;
+      }
+    }
+  }
+
+  const assetsDir = path.join(searchDir, 'assets');
+  if (await dirExists(assetsDir)) {
+    const assetJs = await findFirstJsRecursive(assetsDir);
+    if (assetJs) return assetJs;
+  }
+  return findFirstJsRecursive(searchDir);
+}
+
 export type BuildState =
   | 'queued'
   | 'init'
@@ -271,21 +402,30 @@ export async function getBuildData(id: string): Promise<{ listingId?: string } |
 }
 
 export async function publishBundle(id: string): Promise<string> {
-  // Prefer 'bundle/' but fall back to 'build/' in local/dev pipeline
+  // Prefer whichever directory already contains a full bundle (build/ first, then bundle/)
   const baseDir = path.join(BUILDS_ROOT, id);
   await fs.mkdir(baseDir, { recursive: true });
-  let src = path.join(baseDir, 'bundle');
-  if (!(await dirExists(src))) {
-    const alt = path.join(baseDir, 'build');
-    if (await dirExists(alt)) {
-      src = alt;
-    } else {
-      throw new AppError('BUNDLE_SRC_NOT_FOUND');
+  const buildCandidate = path.join(baseDir, 'build');
+  const bundleCandidate = path.join(baseDir, 'bundle');
+  const candidates = [buildCandidate, bundleCandidate];
+
+  let src: string | null = null;
+  for (const candidate of candidates) {
+    if (!(await dirExists(candidate))) continue;
+    const hasIndex = await fileExists(path.join(candidate, 'index.html'));
+    if (hasIndex) {
+      src = candidate;
+      break;
     }
+    if (!src) src = candidate;
+  }
+
+  if (!src) {
+    throw new AppError('BUNDLE_SRC_NOT_FOUND');
   }
 
   // verify essential files exist before publishing; if missing try to hydrate from root copies
-  const required = ['index.html', 'app.js'];
+  const required = ['index.html'];
   for (const file of required) {
     const target = path.join(src, file);
     const rootCopy = path.join(baseDir, file);
@@ -328,16 +468,20 @@ export async function publishBundle(id: string): Promise<string> {
     return null;
   };
 
-  const canonicalBundleDir = path.join(baseDir, 'bundle');
-  if (!(await dirExists(canonicalBundleDir))) {
+  const canonicalBundleDir = bundleCandidate;
+  if (src !== canonicalBundleDir) {
+    await fs.rm(canonicalBundleDir, { recursive: true, force: true });
     await copyDir(src, canonicalBundleDir);
   }
+  await sanitizeBundleIndex(canonicalBundleDir, id);
   src = canonicalBundleDir;
 
-  const canonicalBuildDir = path.join(baseDir, 'build');
-  if (!(await dirExists(canonicalBuildDir))) {
+  const canonicalBuildDir = buildCandidate;
+  if (src !== canonicalBuildDir) {
+    await fs.rm(canonicalBuildDir, { recursive: true, force: true });
     await copyDir(src, canonicalBuildDir);
   }
+  await sanitizeBundleIndex(canonicalBuildDir, id);
 
   const ensureRootFile = async (name: string) => {
     const dest = path.join(baseDir, name);
@@ -358,7 +502,27 @@ export async function publishBundle(id: string): Promise<string> {
   };
 
   await ensureRootFile('index.html');
-  await ensureRootFile('app.js');
+
+  const ensureAppEntrypoint = async () => {
+    const bundleApp = path.join(src, 'app.js');
+    const canonicalApp = path.join(canonicalBuildDir, 'app.js');
+    if (!(await fileExists(bundleApp)) && !(await fileExists(canonicalApp))) {
+      const resolved =
+        (await detectEntrypointScript(canonicalBuildDir)) ?? (await detectEntrypointScript(src));
+      if (resolved) {
+        await fs.mkdir(path.dirname(canonicalApp), { recursive: true });
+        await fs.copyFile(resolved, canonicalApp);
+        await fs.mkdir(path.dirname(bundleApp), { recursive: true });
+        await fs.copyFile(canonicalApp, bundleApp);
+        console.log(
+          `publishBundle: synthesized app.js from ${path.relative(canonicalBuildDir, resolved)}`,
+        );
+      }
+    }
+    await ensureRootFile('app.js');
+  };
+
+  await ensureAppEntrypoint();
 
   const manifestCandidates = [
     path.join(src, 'manifest_v1.json'),
@@ -367,14 +531,36 @@ export async function publishBundle(id: string): Promise<string> {
     path.join(src, 'manifest.json'),
     path.join(canonicalBuildDir, 'manifest.json'),
   ];
-  const manifestSource = await firstExisting(manifestCandidates);
-  if (!manifestSource) {
-    throw new AppError(
-      'BUILD_REQUIRED_FILE_MISSING',
-      'Missing required file(s): manifest_v1.json',
-    );
-  }
+  let manifestSource = await firstExisting(manifestCandidates);
   const manifestDest = path.join(baseDir, 'manifest_v1.json');
+
+  if (!manifestSource) {
+    let metadata: { name?: string; title?: string; description?: string; networkDomains?: string[] } = {};
+    try {
+      const rawMeta = await fs.readFile(path.join(baseDir, 'metadata.json'), 'utf8');
+      metadata = JSON.parse(rawMeta);
+    } catch {
+      // best-effort; metadata is optional
+    }
+    const networkDomains = Array.isArray(metadata.networkDomains)
+      ? metadata.networkDomains
+          .map((domain) => (domain == null ? undefined : String(domain)))
+          .filter((domain): domain is string => Boolean(domain))
+      : [];
+
+    const manifestPayload = {
+      id,
+      entry: 'app.js',
+      name: String(metadata.name || metadata.title || 'Untitled Bundle'),
+      description: String(metadata.description || ''),
+      networkPolicy: 'OPEN_NET',
+      networkDomains,
+      source: 'bundle-upload',
+    };
+    await fs.writeFile(manifestDest, JSON.stringify(manifestPayload, null, 2), 'utf8');
+    manifestSource = manifestDest;
+  }
+
   if (manifestSource !== manifestDest) {
     await fs.copyFile(manifestSource, manifestDest);
   }

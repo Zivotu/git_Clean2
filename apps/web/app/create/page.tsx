@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { apiAuthedPost, ApiError, apiGet, apiPost } from '@/lib/api';
+import { apiAuthedPost, ApiError, apiPost } from '@/lib/api';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import ProgressModal, { type BuildState as ProgressModalState } from '@/components/ProgressModal';
 import { useBuildEvents, type BuildStatus } from '@/hooks/useBuildEvents';
@@ -136,7 +136,6 @@ export default function CreatePage() {
   const [localJobLog, setLocalJobLog] = useState('');
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
 
-  const jobPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { status: buildStatus, reason: buildError, listingId } = useBuildEvents(currentBuildId);
 
@@ -164,13 +163,6 @@ export default function CreatePage() {
     }
   }, [buildStatus, listingId, router]);
 
-  useEffect(() => () => {
-    if (jobPollRef.current) {
-      clearInterval(jobPollRef.current);
-      jobPollRef.current = null;
-    }
-  }, []);
-
   useEffect(() => {
     const permissions = {
       camera: false,
@@ -192,76 +184,6 @@ export default function CreatePage() {
       permissions: { ...prev.permissions, ...permissions },
     }));
   }, [code]);
-
-  const stopJobPolling = useCallback(() => {
-    if (jobPollRef.current) {
-      clearInterval(jobPollRef.current);
-      jobPollRef.current = null;
-    }
-  }, []);
-
-  const watchLocalBundle = useCallback(
-    (appId: string, jobId: string) => {
-      stopJobPolling();
-      setShowProgress(true);
-      setManualBuildState('queued');
-      setBuildStep('queued');
-      setPublishError('');
-      setBundleError('');
-      setLocalJobLog('');
-      setLocalPreviewUrl(null);
-      setCurrentBuildId(null);
-
-      const fetchStatus = async () => {
-        try {
-          const data = await apiGet<{
-            state?: string;
-            status?: string;
-            step?: string;
-            log?: string;
-            preview?: string;
-            error?: string;
-            buildId?: string;
-          }>(`/apps/${appId}/build-status/${jobId}`, { auth: true });
-          const state = data.state || data.status || '';
-          const mapped = mapJobState(state);
-          setManualBuildState(mapped);
-          if (data.step) setBuildStep(data.step);
-          if (data.log) {
-            setLocalJobLog((prev) => (prev ? `${prev}\n${data.log}` : data.log || ''));
-          }
-          if (data.preview) {
-            setLocalPreviewUrl(data.preview);
-          }
-          if (mapped === 'error') {
-            stopJobPolling();
-            setPublishing(false);
-            setPublishError(data.error || 'Build nije uspio. Provjeri log ispod.');
-          } else if (mapped === 'success' && data.buildId) {
-            stopJobPolling();
-            setManualBuildState(null);
-            setCurrentBuildId(data.buildId);
-            setPublishing(false);
-          }
-        } catch (err) {
-          stopJobPolling();
-          setManualBuildState('error');
-          setPublishing(false);
-          const message =
-            err instanceof ApiError && err.message
-              ? err.message
-              : 'Greška pri praćenju builda.';
-          setPublishError(message);
-        }
-      };
-
-      void fetchStatus();
-      jobPollRef.current = setInterval(() => {
-        void fetchStatus();
-      }, 1500);
-    },
-    [stopJobPolling],
-  );
 
   const handleSubmissionTypeChange = (value: SubmissionType) => {
     setSubmissionType(value);
@@ -354,7 +276,6 @@ export default function CreatePage() {
   };
 
   const publish = async () => {
-    stopJobPolling();
     setPublishError('');
     setAuthError('');
     setBundleError('');
@@ -370,38 +291,71 @@ export default function CreatePage() {
         return;
       }
 
+      let previewAttachment: { dataUrl: string } | undefined;
+      try {
+        if (previewChoice === 'custom' && customPreview?.dataUrl) {
+          previewAttachment = { dataUrl: customPreview.dataUrl };
+        } else {
+          const file = await createPresetPreviewFile(selectedPreset, {
+            overlayText: overlayTitle.trim() || undefined,
+          });
+          const dataUrl = await readFileAsDataUrl(file);
+          previewAttachment = { dataUrl };
+        }
+      } catch (err) {
+        console.warn('preview-prep-failed', err);
+      }
+
       if (submissionType === 'bundle') {
         if (!bundleFile) {
           setBundleError('Odaberi ZIP datoteku.');
           return;
         }
+        setShowProgress(true);
+        setManualBuildState('queued');
+        setBuildStep('queued');
         setPublishing(true);
         try {
           const appId = deriveAppId(manifest.name || bundleFile.name);
           const form = new FormData();
           form.append('file', bundleFile, bundleFile.name);
-          const upload = await apiPost<{ jobId?: string }>(
-            `/apps/${appId}/upload`,
+          form.append('title', manifest.name || bundleFile.name);
+          form.append('description', manifest.description || '');
+          form.append('visibility', 'public');
+          form.append('id', appId);
+          if (previewAttachment?.dataUrl) {
+            form.append('preview', previewAttachment.dataUrl);
+          }
+          const bundlePublish = await apiPost<{ ok?: boolean; buildId?: string; listingId?: string | number; slug?: string; error?: string; }>(
+            '/publish/bundle',
             form,
             { auth: true },
           );
-          if (!upload?.jobId) {
-            setPublishError('Upload paketa nije uspio. Pokušaj ponovno.');
-            setPublishing(false);
-            return;
+
+          if (bundlePublish?.buildId) {
+            setCurrentBuildId(bundlePublish.buildId);
+            if (bundlePublish.slug) {
+              void ensurePreviewForSlug();
+            }
+          } else {
+            const message =
+              bundlePublish?.error || 'Build ID nije vracen s posluzitelja.';
+            setPublishError(message);
+            setShowProgress(false);
+            setManualBuildState(null);
           }
-          watchLocalBundle(appId, upload.jobId);
         } catch (err) {
-          setPublishing(false);
           if (err instanceof ApiError) {
             if (err.status === 401) {
-              setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokušaj ponovno.');
+              setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokusaj ponovno.');
             } else {
               setPublishError(err.message || 'Upload nije uspio.');
             }
           } else {
             setPublishError(String(err));
           }
+          setShowProgress(false);
+          setManualBuildState(null);
         }
         return;
       }
@@ -432,21 +386,6 @@ export default function CreatePage() {
           ...(norm(trHr.title) ? { title: norm(trHr.title) } : {}),
           ...(norm(trHr.description) ? { description: norm(trHr.description) } : {}),
         };
-      }
-
-      let previewAttachment: { dataUrl: string } | undefined;
-      try {
-        if (previewChoice === 'custom' && customPreview?.dataUrl) {
-          previewAttachment = { dataUrl: customPreview.dataUrl };
-        } else {
-          const file = await createPresetPreviewFile(selectedPreset, {
-            overlayText: overlayTitle.trim() || undefined,
-          });
-          const dataUrl = await readFileAsDataUrl(file);
-          previewAttachment = { dataUrl };
-        }
-      } catch (err) {
-        console.warn('preview-prep-failed', err);
       }
 
       setPublishing(true);

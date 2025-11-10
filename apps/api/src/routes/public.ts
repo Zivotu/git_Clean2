@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getBucket } from '../storage.js';
 import { readApps, type AppRecord, listEntitlements, hasAppSubscription, hasCreatorAllAccess } from '../db.js';
-import { getBuildDir } from '../paths.js';
+import { getBuildDir, BUNDLE_ROOT } from '../paths.js';
 import { getConfig } from '../config.js';
 import { createHmac } from 'node:crypto';
 import { getAuth } from 'firebase-admin/auth';
@@ -27,6 +27,33 @@ function appendQuery(location: string, request: FastifyRequest): string {
 export const __testing: Record<string, any> = {};
 
 export default async function publicRoutes(app: FastifyInstance) {
+  const cfg = getConfig();
+  const playWebBase = (cfg.WEB_BASE || '').replace(/\/$/, '');
+
+  app.addHook('onRequest', async (req, reply) => {
+    try {
+      const rawUrl = req.raw.url || '';
+      if (!rawUrl.startsWith('/builds/')) return;
+      const dest = String((req.headers['sec-fetch-dest'] as string) || '').toLowerCase();
+      if (dest && dest !== 'document') return;
+      const urlObj = new URL(rawUrl, 'http://thesara.local');
+      if (urlObj.searchParams.get('run') === '1') return;
+      const referer = String((req.headers.referer || req.headers.referrer || '') ?? '');
+      if (referer.includes('/play/')) return;
+      const [, buildId] = urlObj.pathname.split('/');
+      if (!buildId) return;
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
+      const match = apps.find((a) => a.buildId === buildId || a.pendingBuildId === buildId);
+      if (!match || !playWebBase) return;
+      const appIdentifier = match.slug || match.id;
+      const playUrl = `${playWebBase}/play/${appIdentifier}/?run=1`;
+      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8" />\n<style>body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center}button{background:#10b981;border:none;border-radius:999px;color:#fff;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px}</style></head><body><div><div style=\"font-size:20px;font-weight:700;margin-bottom:12px;\">Otvorite aplikaciju kroz Thesara Play</div><div style=\"font-size:15px;line-height:1.6;opacity:.9;\">Ovaj URL radi samo lokalno. Da bi se podaci sinkronizirali između uređaja, pokrenite ga preko Play sučelja.</div><button onclick=\"window.location.href='${playUrl}'\">Otvori u Play</button></div><script>setTimeout(function(){ try { window.location.href='${playUrl}'; } catch(e){} }, 1500);</script></body></html>`;
+      reply.code(403).type('text/html').send(html);
+    } catch (err) {
+      req.log?.trace?.({ err }, 'play_guard_error');
+    }
+  });
+
   const encSeg = (s: string) => encodeURIComponent(String(s));
   const encRest = (p: string) =>
     String(p || '')
@@ -387,6 +414,64 @@ export default async function publicRoutes(app: FastifyInstance) {
 
   __testing.isAllowedToPlay = isAllowedToPlay;
 
+  // Try to locate a local build directory that matches the provided slug.
+  // This reads build-info.json files under the bundle builds directory and
+  // attempts to match common fields to the requested slug. It's intentionally
+  // permissive for local-dev convenience but conservative: verifies that
+  // index/bundle files exist before returning a candidate.
+  async function findBuildForSlug(slug: string): Promise<string | undefined> {
+    try {
+      const buildsRoot = path.join(BUNDLE_ROOT, 'builds');
+      const entries = await fs.readdir(buildsRoot, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e.isDirectory()) continue;
+        const id = e.name;
+        const infoPath = path.join(buildsRoot, id, 'build-info.json');
+        try {
+          const txt = await fs.readFile(infoPath, 'utf8');
+          const parsed = JSON.parse(txt || '{}') as any;
+          const candidates = [parsed.listingId, parsed.listing_id, parsed.slug, parsed.appId, parsed.id, parsed.title].filter(Boolean).map(String);
+          if (candidates.some((c) => c === slug || c === `/${slug}`)) {
+            // verify presence of bundle/index.html or index.html
+            const bundleIndex = path.join(buildsRoot, id, 'bundle', 'index.html');
+            const rootIndex = path.join(buildsRoot, id, 'index.html');
+            try {
+              await fs.access(bundleIndex);
+              return id;
+            } catch {}
+            try {
+              await fs.access(rootIndex);
+              return id;
+            } catch {}
+          }
+        } catch {
+          // ignore unreadable or unparsable build-info
+        }
+      }
+
+      // Last resort: look for a directory name that contains the slug (helps
+      // with names like local-vv-72 when slug is 'vv') and ensure it has content.
+      for (const e of entries) {
+        if (!e.isDirectory()) continue;
+        const id = e.name;
+        if (!id.toLowerCase().includes(slug.toLowerCase())) continue;
+        const bundleIndex = path.join(BUNDLE_ROOT, 'builds', id, 'bundle', 'index.html');
+        const rootIndex = path.join(BUNDLE_ROOT, 'builds', id, 'index.html');
+        try {
+          await fs.access(bundleIndex);
+          return id;
+        } catch {}
+        try {
+          await fs.access(rootIndex);
+          return id;
+        } catch {}
+      }
+    } catch (err) {
+      // ignore and return undefined
+    }
+    return undefined;
+  }
+
   const appMetaHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     try {
@@ -413,18 +498,38 @@ export default async function publicRoutes(app: FastifyInstance) {
   app.route({ method: ['GET', 'HEAD'], url: '/api/app-meta/:id', handler: appMetaHandler });
 
   // Public app route by slug for published listings
-  app.get('/app/:slug', async (req: FastifyRequest, reply: FastifyReply) => {
+  const appBySlugHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { slug } = req.params as { slug: string };
     const apps = (await readApps()).filter((a) => !a.deletedAt);
+    const allIds = apps.map(a => a.id);
+    const allSlugs = apps.map(a => a.slug);
     const item = apps.find((a) => a.slug === slug || String(a.id) === slug) as
       | (AppRecord & { buildId?: string; pendingBuildId?: string })
       | undefined;
 
     const buildId = item?.pendingBuildId || item?.buildId;
 
-    if (!item || !buildId) return reply.code(404).send({ error: 'not_found' });
+    if (!item || !buildId) {
+      req.log.info({ requested: slug, allIds, allSlugs, found: Boolean(item), buildId }, 'app-by-slug-not-found');
+      // Fallback (local-dev): try to find a build directory whose build-info.json
+      // references this slug/listing id. This helps when Firestore is out of sync
+      // but the local build artifacts are present (common in local development).
+      try {
+        const candidate = await findBuildForSlug(slug);
+        if (candidate) {
+          req.log.info({ requested: slug, fallbackBuild: candidate }, 'app-by-slug-fallback-found');
+          return tempRedirect(reply, `/builds/${encSeg(candidate)}/bundle/`);
+        }
+      } catch (err) {
+        req.log.error({ err, slug }, 'app-by-slug-fallback-error');
+      }
+      return reply.code(404).send({ error: 'not_found' });
+    }
     const isPublic = item.status === 'published' || item.state === 'active';
-    if (!isPublic) return reply.code(404).send({ error: 'not_found' });
+    if (!isPublic) {
+      req.log.info({ requested: slug, status: item.status, state: item.state }, 'app-by-slug-not-public');
+      return reply.code(404).send({ error: 'not_found' });
+    }
     await ensureAuthUid(req);
     const canPlay = await isAllowedToPlay(req, item);
     if (!canPlay) {
@@ -495,20 +600,39 @@ export default async function publicRoutes(app: FastifyInstance) {
       return tempRedirect(reply, `/builds/${encSeg(buildId)}/`);
     } catch {}
     return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/`);
-  });
-  app.get('/app/:slug/*', async (req: FastifyRequest, reply: FastifyReply) => {
+  };
+  app.get('/app/:slug', appBySlugHandler);
+  app.get('/api/app/:slug', appBySlugHandler);
+  const appBySlugWildcardHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { slug } = req.params as { slug: string };
     const rest = (req.params as any)['*'] as string;
     const apps = (await readApps()).filter((a) => !a.deletedAt);
+    const allIds = apps.map(a => a.id);
+    const allSlugs = apps.map(a => a.slug);
     const item = apps.find((a) => a.slug === slug || String(a.id) === slug) as
       | (AppRecord & { buildId?: string; pendingBuildId?: string })
       | undefined;
 
     const buildId = item?.pendingBuildId || item?.buildId;
 
-    if (!item || !buildId) return reply.code(404).send({ error: 'not_found' });
+    if (!item || !buildId) {
+      req.log.info({ requested: slug, allIds, allSlugs, found: Boolean(item), buildId }, 'app-by-slug-wildcard-not-found');
+      try {
+        const candidate = await findBuildForSlug(slug);
+        if (candidate) {
+          req.log.info({ requested: slug, fallbackBuild: candidate }, 'app-by-slug-wildcard-fallback-found');
+          return tempRedirect(reply, `/builds/${encSeg(candidate)}/bundle/${encRest(rest)}`);
+        }
+      } catch (err) {
+        req.log.error({ err, slug }, 'app-by-slug-wildcard-fallback-error');
+      }
+      return reply.code(404).send({ error: 'not_found' });
+    }
     const isPublic = item.status === 'published' || item.state === 'active';
-    if (!isPublic) return reply.code(404).send({ error: 'not_found' });
+    if (!isPublic) {
+      req.log.info({ requested: slug, status: item.status, state: item.state }, 'app-by-slug-wildcard-not-public');
+      return reply.code(404).send({ error: 'not_found' });
+    }
     await ensureAuthUid(req);
     const canPlay = await isAllowedToPlay(req, item);
     if (!canPlay) {
@@ -524,7 +648,7 @@ export default async function publicRoutes(app: FastifyInstance) {
         }
         if (locale === 'de') {
           return key === 'title' ? 'Bestätigung für Testversion erforderlich'
-            : key === 'lead' ? 'Dies ist eine Testversion (Trial), die nur mit gültigem Code verfügbar ist.'
+            : key === 'lead' ? 'Dies ist eine Testversion (Trial), die nur mit gültigem Code dostupna ist.'
             : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
             : 'Zur Startseite';
         }
@@ -579,5 +703,7 @@ export default async function publicRoutes(app: FastifyInstance) {
       return tempRedirect(reply, `/builds/${encSeg(buildId)}/${encRest(rest)}`);
     } catch {}
     return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/${encRest(rest)}`);
-  });
+  };
+  app.get('/app/:slug/*', appBySlugWildcardHandler);
+  app.get('/api/app/:slug/*', appBySlugWildcardHandler);
 }

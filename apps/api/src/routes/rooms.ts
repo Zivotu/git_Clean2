@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   FastifyInstance,
   FastifyRequest,
   FastifyReply,
@@ -36,6 +36,7 @@ export default async function roomsRoutes(app: FastifyInstance) {
     ROOM_EVENTS_BURST_PER_ROOM,
   } = getConfig();
   const rateLimitCollection = RATE_LIMIT.collection || 'rate_limits';
+  const includeDebugInfo = process.env.THESARA_ENV !== 'production';
 
   const eventsRateLimit = new Map<string, { tokens: number; last: number }>();
 
@@ -79,56 +80,79 @@ export default async function roomsRoutes(app: FastifyInstance) {
   app.post('/rooms/create', async (req, reply) => {
     const uid = await getUidFromRequest(req);
     if (!uid) return reply.code(401).send({ ok: false, error: 'unauthenticated' });
-    const { appId } = (req.body as any) || {};
+    const { appId, pin: rawPin } = (typeof req.body === "string" ? (()=>{ try { return JSON.parse(req.body) } catch { return {} } })() : (req.body as any)) || {};
     if (typeof appId !== 'string') return reply.code(400).send({ ok: false, error: 'invalid_app' });
-    const existing = await db.collection('rooms').where('appId', '==', appId).get();
-    if (existing.size >= MAX_ROOMS_PER_APP) {
+    const pin =
+      typeof rawPin === 'string' && /^\d{4,8}$/.test(rawPin.trim())
+        ? rawPin.trim()
+        : null;
+
+    req.log?.info?.({ uid, appId }, 'rooms_create_requested');
+
+    try {
+      const existing = await db.collection('rooms').where('appId', '==', appId).get();
+      if (existing.size >= MAX_ROOMS_PER_APP) {
+        if (SAFE_PUBLISH_ENABLED) {
+          await db
+            .collection('telemetry')
+            .doc('rooms')
+            .set({ limitBreaches: FieldValue.increment(1) }, { merge: true });
+        }
+        req.log?.warn?.({ uid, appId, existingRooms: existing.size }, 'rooms_create_limit_reached');
+        return reply
+          .code(400)
+          .send({ ok: false, error: 'room_limit', message: `Dosegnut maksimalan broj soba (${MAX_ROOMS_PER_APP})` });
+      }
+
+      const id = Math.random().toString(36).slice(2, 8).toUpperCase();
+      const now = Date.now();
+      const joinToken = pin ?? randomUUID();
+      const joinTokenHash = createHash('sha256').update(joinToken).digest('hex');
+      await db.collection('rooms').doc(id).set({
+        appId,
+        hostId: uid,
+        createdAt: now,
+        expiresAt: now + 24 * 60 * 60 * 1000,
+        joinTokenHash,
+        joinTokenExpiresAt: now + 30 * 60 * 1000,
+      });
       if (SAFE_PUBLISH_ENABLED) {
         await db
           .collection('telemetry')
           .doc('rooms')
-          .set({ limitBreaches: FieldValue.increment(1) }, { merge: true });
+          .set({ activeRooms: FieldValue.increment(1) }, { merge: true });
       }
-      return reply
-        .code(400)
-        .send({ ok: false, error: 'room_limit', message: `Dosegnut maksimalan broj soba (${MAX_ROOMS_PER_APP})` });
+      const createdSnap = await db.collection('rooms').doc(id).get();
+      const createdData = createdSnap.exists ? createdSnap.data() : undefined;
+      req.log?.info?.({ uid, appId, roomId: id, createdData }, 'rooms_create_success');
+      const response: Record<string, unknown> = { ok: true, roomId: id, joinToken, pin: pin ?? null };
+      if (includeDebugInfo) {
+        response.debugRoom = { id, ...createdData };
+      }
+      return response;
+    } catch (error) {
+      req.log?.error?.({ err: error, uid, appId }, 'rooms_create_failed');
+      return reply.code(500).send({ ok: false, error: 'internal_error' });
     }
-    const id = Math.random().toString(36).slice(2, 8).toUpperCase();
-    const now = Date.now();
-    const joinToken = randomUUID();
-    const joinTokenHash = createHash('sha256').update(joinToken).digest('hex');
-    await db.collection('rooms').doc(id).set({
-      appId,
-      hostId: uid,
-      createdAt: now,
-      expiresAt: now + 24 * 60 * 60 * 1000,
-      joinTokenHash,
-      joinTokenExpiresAt: now + 30 * 60 * 1000,
-    });
-    if (SAFE_PUBLISH_ENABLED) {
-      await db
-        .collection('telemetry')
-        .doc('rooms')
-        .set({ activeRooms: FieldValue.increment(1) }, { merge: true });
-    }
-    return { ok: true, roomId: id, joinToken };
   });
 
   app.post('/rooms/:id/join', async (req, reply) => {
     const roomId = (req.params as any).id;
-    const { name, joinToken } = (req.body as any) || {};
-    if (typeof joinToken !== 'string') {
+    const { name, joinToken, pin } = (typeof req.body === "string" ? (()=>{ try { return JSON.parse(req.body) } catch { return {} } })() : (req.body as any)) || {};
+    const suppliedToken = typeof joinToken === 'string' && joinToken ? joinToken : (typeof pin === 'string' ? pin : '');
+    if (!suppliedToken) {
       return reply.code(401).send({ ok: false, error: 'invalid_token' });
     }
+    req.log?.info?.({ roomId, name }, 'rooms_join_requested');
     const roomRef = db.collection('rooms').doc(roomId);
     const roomSnap = await roomRef.get();
     if (!roomSnap.exists) return reply.code(404).send({ ok: false, error: 'not_found' });
     const room = roomSnap.data()!;
-    const tokenHash = createHash('sha256').update(joinToken).digest('hex');
+    const tokenHash = createHash('sha256').update(suppliedToken).digest('hex');
     if (room.joinTokenHash !== tokenHash || Date.now() > room.joinTokenExpiresAt) {
       return reply
         .code(401)
-        .send({ ok: false, error: 'invalid_token', message: 'Join token je nevažeći ili je istekao.' });
+        .send({ ok: false, error: 'invalid_token', message: 'Join token je nevaÅ¾eÄ‡i ili je istekao.' });
     }
 
     const ip = req.ip || 'unknown';
@@ -161,7 +185,7 @@ export default async function roomsRoutes(app: FastifyInstance) {
         .send({
           ok: false,
           error: 'rate_limit',
-          message: `Prekoračen maksimalan broj pridruživanja (${ROOM_JOIN_MAX_PER_5MIN}/5min).`,
+          message: `PrekoraÄen maksimalan broj pridruÅ¾ivanja (${ROOM_JOIN_MAX_PER_5MIN}/5min).`,
         });
     }
 
@@ -186,10 +210,11 @@ export default async function roomsRoutes(app: FastifyInstance) {
         .send({
           ok: false,
           error: 'player_limit',
-          message: `Dosegnut maksimalan broj igrača (${MAX_PLAYERS_PER_ROOM})`,
+          message: `Dosegnut maksimalan broj igraÄa (${MAX_PLAYERS_PER_ROOM})`,
         });
     }
     await roomRef.collection('players').doc(playerId).set(player);
+    req.log?.info?.({ roomId, playerId }, 'rooms_player_joined');
     if (SAFE_PUBLISH_ENABLED) {
       await db
         .collection('telemetry')
@@ -273,7 +298,7 @@ export default async function roomsRoutes(app: FastifyInstance) {
         .send({
           ok: false,
           error: 'rate_limit',
-          message: 'Previše događaja u kratkom vremenu. Pokušaj ponovno kasnije.',
+          message: 'PreviÅ¡e dogaÄ‘aja u kratkom vremenu. PokuÅ¡aj ponovno kasnije.',
         });
     }
 
@@ -298,4 +323,5 @@ export default async function roomsRoutes(app: FastifyInstance) {
     return { events };
   });
 }
+
 

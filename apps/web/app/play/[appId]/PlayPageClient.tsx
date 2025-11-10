@@ -94,10 +94,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     }
     return `${base}/builds/${encodedId}/build/`;
   }, [appId, buildId])
-  const [iframeUrl, setIframeUrl] = useState<string>(() => baseIframeSrc)
-  useEffect(() => {
-    setIframeUrl(baseIframeSrc)
-  }, [baseIframeSrc])
+  // Delay setting iframe URL until we have token/snapshot to avoid first-load race
+  const [iframeUrl, setIframeUrl] = useState<string>('')
   
   const sandboxFlags = useMemo(() => {
     const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin'];
