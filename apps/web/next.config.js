@@ -80,18 +80,35 @@ const baseConfig = {
               const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.thesara.space/api';
               const api = new URL(apiBase).origin;
               const apps = process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space';
+              const firebaseAuthDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
+
+              const firebaseConnect = [
+                'https://identitytoolkit.googleapis.com',
+                'https://securetoken.googleapis.com',
+                'https://firestore.googleapis.com',
+                'https://*.googleapis.com',
+                'https://*.gstatic.com',
+              ];
+              if (firebaseAuthDomain) {
+                firebaseConnect.push(`https://${firebaseAuthDomain}`);
+              }
+
+              const adScriptHosts = [
+                'https://pagead2.googlesyndication.com',
+                'https://www.googletagservices.com',
+              ];
+
               const devConnect = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
               const devImg = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
-              const devFirebase =
-                isDev
-                  ? ' https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://securetoken.googleapis.com https://*.googleapis.com https://*.gstatic.com'
-                  : '';
-              
+
+              const connectSrc = [`'self'`, api, ...firebaseConnect].join(' ');
+              const scriptSrc = [`'self'`, "'unsafe-inline'", "'unsafe-eval'", ...adScriptHosts].join(' ');
+
               const policies = [
                 "default-src 'self'",
-                `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+                `script-src ${scriptSrc}`,
                 "style-src 'self' 'unsafe-inline'",
-                `connect-src 'self' ${api}${devConnect}${devFirebase}`,
+                `connect-src ${connectSrc}${devConnect}`,
                 `frame-src ${apps}`,
                 `img-src 'self' data: https: https://lh3.googleusercontent.com${devImg}`,
                 "frame-ancestors 'none'",
