@@ -9,7 +9,7 @@ import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Logo from '@/components/Logo';
-import { triggerConfetti } from '@/components/Confetti';
+import { triggerConfetti, triggerHearts } from '@/components/Confetti';
 import { handleFetchError } from '@/lib/handleFetchError';
 import { apiFetch, apiGet, ApiError } from '@/lib/api';
 import AppCard, { type Listing } from '@/components/AppCard';
@@ -310,7 +310,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
           el.classList.add('animate-bounce');
           setTimeout(() => el.classList.remove('animate-bounce'), 500);
         }
-        if (like) triggerConfetti();
+  if (like) triggerHearts();
       } catch (e) {
         handleFetchError(e, 'Failed to toggle like');
         setToast({ message: tToast('likeError'), type: 'error' });

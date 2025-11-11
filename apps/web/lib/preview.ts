@@ -12,9 +12,6 @@ function joinPath(basePath: string, resourcePath: string): string {
 }
 
 function resolveRelativeBase(normalizedPath: string): string {
-  if (typeof window !== 'undefined') {
-    return `${window.location.origin}${normalizedPath}`;
-  }
   const envOrigin =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.SITE_URL ||
@@ -33,63 +30,41 @@ function resolveRelativeBase(normalizedPath: string): string {
 
 const STATIC_API_PATHS = ['/uploads/', '/builds/', '/public/builds/', '/review/builds/', '/play/'] as const;
 
+function getApiOrigin(): string {
+  const explicitOrigin = (process.env.NEXT_PUBLIC_API_ORIGIN || '').trim().replace(/\/+$/, '');
+  if (explicitOrigin) return explicitOrigin;
+  if (API_URL) {
+    try {
+      return new URL(API_URL).origin;
+    } catch {}
+  }
+  return '';
+}
+
 function buildApiAssetUrl(resourcePath: string): string {
   const normalizedPath = normalizePath(resourcePath);
-  
-  // For static assets in SSR, use PUBLIC_SITE_URL instead of INTERNAL_API_URL
-  // to avoid generating 127.0.0.1 URLs that browsers can't access
-  const isStaticPath = STATIC_API_PATHS.some((prefix) =>
-    normalizedPath.startsWith(prefix),
-  );
-  
-  if (typeof window === 'undefined' && isStaticPath) {
-    // SSR: Prefer public site URL for static assets if defined
-    const publicUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                      process.env.SITE_URL || 
-                      process.env.NEXT_PUBLIC_WEB_URL || 
-                      '';
-    if (publicUrl && /^https?:\/\//i.test(publicUrl)) {
-      try {
-        const url = new URL(publicUrl);
-        return `${url.origin}${normalizedPath}`;
-      } catch {
-        // Fall through to relative base
-      }
-    }
-    // If no public URL is provided, fall through and use API_URL handling below
-  }
-  
-  const base = (API_URL || '').trim();
-  if (!base) {
+  const isStaticPath = STATIC_API_PATHS.some((prefix) => normalizedPath.startsWith(prefix));
+
+  const origin = getApiOrigin();
+  if (!origin) {
     return resolveRelativeBase(normalizedPath);
   }
 
-  const protocolRelativeMatch = base.startsWith('//')
-    ? `https:${base}`
-    : base;
+  if (isStaticPath) {
+    return `${origin}${normalizedPath}`;
+  }
 
-  if (/^https?:\/\//i.test(protocolRelativeMatch)) {
+  let pathname = '/';
+  if (API_URL) {
     try {
-      const api = new URL(protocolRelativeMatch);
-      if (isStaticPath) {
-        return `${api.origin}${normalizedPath}`;
-      }
-      const joinedPath = joinPath(api.pathname || '/', normalizedPath);
-      return `${api.origin}${joinedPath}`;
+      const parsed = new URL(API_URL);
+      pathname = parsed.pathname;
     } catch {
-      // ignore and fall through to concatenation
+      pathname = '/';
     }
   }
-
-  if (base.startsWith('/')) {
-    if (isStaticPath) {
-      return resolveRelativeBase(normalizedPath);
-    }
-    const joinedPath = joinPath(base, normalizedPath);
-    return resolveRelativeBase(joinedPath);
-  }
-
-  return joinPath(base, normalizedPath);
+  const joinedPath = joinPath(pathname || '/', normalizedPath);
+  return `${origin}${joinedPath}`;
 }
 
 export function resolvePreviewUrl(previewUrl?: string | null): string {

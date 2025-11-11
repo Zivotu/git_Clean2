@@ -690,6 +690,31 @@ export async function setAppLike(appId: string, uid: string, like: boolean): Pro
   });
 }
 
+export async function hasUserLikedApp(appId: string, uid: string): Promise<boolean> {
+  if (!uid) return false;
+  const doc = await db.collection('apps').doc(appId).collection('likes').doc(uid).get();
+  return doc.exists;
+}
+
+export async function getUserLikesForApps(
+  appIds: string[],
+  uid: string,
+): Promise<Set<string>> {
+  const liked = new Set<string>();
+  if (!uid || !appIds.length) return liked;
+  await Promise.all(
+    appIds.map(async (appId) => {
+      try {
+        const doc = await db.collection('apps').doc(appId).collection('likes').doc(uid).get();
+        if (doc.exists) liked.add(appId);
+      } catch (err) {
+        console.warn('[likes] failed_to_check_user_like', { appId, uid, err });
+      }
+    }),
+  );
+  return liked;
+}
+
 export async function writeScore(
   appId: string,
   uid: string,

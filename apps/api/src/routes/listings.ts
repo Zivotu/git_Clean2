@@ -1,7 +1,15 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { readApps, writeApps, type AppRecord, setAppLike } from '../db.js';
+import {
+  readApps,
+  writeApps,
+  type AppRecord,
+  setAppLike,
+  getUserLikesForApps,
+  hasUserLikedApp,
+  incrementAppPlay,
+} from '../db.js';
 import { notifyAdmins } from '../notifier.js';
 import { z } from 'zod';
 import { ensureAppProductPrice } from '../billing/products.js';
@@ -57,11 +65,29 @@ export default async function listingsRoutes(app: FastifyInstance) {
       items = items.filter((a) => a.status === 'published' || a.state === 'active');
     }
 
+    const viewerUid = req.authUser?.uid;
+    let likedByMe: Set<string> | undefined;
+    if (viewerUid) {
+      try {
+        likedByMe = await getUserLikesForApps(
+          items.map((it) => it.id),
+          viewerUid,
+        );
+      } catch (err) {
+        req.log?.warn?.({ err, viewerUid }, 'listings_like_lookup_failed');
+      }
+    }
+
+    const itemsWithLikes =
+      likedByMe && likedByMe.size
+        ? items.map((it) => (likedByMe!.has(it.id) ? { ...it, likedByMe: true } : it))
+        : items;
+
     const lang = pickLang(req);
-    if (!lang) return reply.send({ items });
+    if (!lang) return reply.send({ items: itemsWithLikes });
     // Best-effort translate missing items for the requested language
     const out = await Promise.all(
-      items.map(async (it) => {
+      itemsWithLikes.map(async (it) => {
         try {
           const tr = it.translations?.[lang];
           if (!tr?.title) {
@@ -109,6 +135,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     }
 
     const uid = (req.authUser?.uid || (req.query as any)?.uid) as string | undefined;
+    const viewerUid = req.authUser?.uid;
     const ownerUid = item.author?.uid || (item as any).ownerUid;
     const isOwner = Boolean(uid && uid === ownerUid);
     const isModerator = Boolean(uid && item.moderation?.by === uid);
@@ -122,6 +149,13 @@ export default async function listingsRoutes(app: FastifyInstance) {
     }
 
     const result: any = { ...normalizedItem };
+    if (viewerUid) {
+      try {
+        result.likedByMe = await hasUserLikedApp(item.id, viewerUid);
+      } catch (err) {
+        req.log?.warn?.({ err, slug, uid: viewerUid }, 'listing_like_status_failed');
+      }
+    }
     // Localize title/description if requested
     const lang = pickLang(req);
     if (lang) {
@@ -232,7 +266,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
   };
 
   // Delete listing (owner or admin). Supports soft delete (default) and hard delete via ?hard=true
-  app.delete('/listing/:slug', async (req: FastifyRequest, reply: FastifyReply) => {
+  const deleteListingHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const slug = String((req.params as any).slug);
     const hardParam = (req.query as any)?.hard;
     const hard = String(hardParam || '').toLowerCase() === 'true' || hardParam === true;
@@ -290,10 +324,10 @@ export default async function listingsRoutes(app: FastifyInstance) {
       await writeApps(apps);
       return reply.send({ ok: true, hard: false, item: updated });
     }
-  });
+  };
 
   // Toggle like for a listing (auth required)
-  app.post('/listing/:slug/like', async (req: FastifyRequest, reply: FastifyReply) => {
+  const likeHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const slug = String((req.params as any).slug);
     const uid = req.authUser?.uid;
     if (!uid) return reply.code(401).send({ ok: false, error: 'unauthenticated' });
@@ -311,7 +345,27 @@ export default async function listingsRoutes(app: FastifyInstance) {
       req.log.error({ err, slug, uid }, 'like_toggle_failed');
       return reply.code(500).send({ ok: false, error: 'like_failed' });
     }
-  });
+  };
+  app.post('/listing/:slug/like', likeHandler);
+  app.post('/api/listing/:slug/like', likeHandler);
+
+  const playCountHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const slug = String((req.params as any).slug);
+    const apps = await readApps();
+    const appRec = apps.find((a) => a.slug === slug || String(a.id) === slug);
+    if (!appRec || appRec.deletedAt) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+    try {
+      await incrementAppPlay(appRec.id);
+      return reply.send({ ok: true });
+    } catch (err) {
+      req.log.warn({ err, slug }, 'play_count_increment_failed');
+      return reply.code(500).send({ ok: false, error: 'play_increment_failed' });
+    }
+  };
+  app.post('/listing/:slug/play', playCountHandler);
+  app.post('/api/listing/:slug/play', playCountHandler);
   app.post('/listing/:slug/preview', previewUploadHandler);
   // Alias to support clients that POST to /api/ prefixed paths
   app.post('/api/listing/:slug/preview', previewUploadHandler);
@@ -555,4 +609,5 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
     return reply.send({ ok: true });
   });
+  app.delete('/api/listing/:slug', deleteListingHandler);
 }

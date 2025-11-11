@@ -99,7 +99,7 @@ const baseConfig = {
               ];
 
               const devConnect = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
-              const devImg = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
+              const devImg = isDev ? ' http://127.0.0.1:8789 http://localhost:8789 http://127.0.0.1:8788 http://localhost:8788' : '';
 
               const connectSrc = [`'self'`, api, ...firebaseConnect].join(' ');
               const scriptSrc = [`'self'`, "'unsafe-inline'", "'unsafe-eval'", ...adScriptHosts].join(' ');
@@ -109,7 +109,7 @@ const baseConfig = {
                 `script-src ${scriptSrc}`,
                 "style-src 'self' 'unsafe-inline'",
                 `connect-src ${connectSrc}${devConnect}`,
-                `frame-src ${apps}`,
+                `frame-src ${apps} blob:`,
                 `img-src 'self' data: https: https://lh3.googleusercontent.com${devImg}`,
                 "frame-ancestors 'none'",
               ];

@@ -1,5 +1,6 @@
 ﻿import path from 'node:path';
 import { randomBytes } from 'node:crypto';
+import { DEFAULT_ALLOWED_ORIGINS } from './constants/origins.js';
 const PKG_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(PKG_ROOT, '../..');
 
@@ -43,11 +44,13 @@ export const LLM_REVIEW_FORCE_ALLOWED =
 export const AUTH_DEBUG = process.env.AUTH_DEBUG === '1';
 export const LLM_ENDPOINT = process.env.LLM_ENDPOINT;
 export const REDIS_URL = (process.env.REDIS_URL || '').trim();
+const rawAllowedOrigins = process.env.ALLOWED_ORIGINS;
 export const ALLOWED_ORIGINS = (
-  process.env.ALLOWED_ORIGINS || 'http://localhost:3000'
+  rawAllowedOrigins ?? DEFAULT_ALLOWED_ORIGINS.join(',')
 )
   .split(',')
-  .map((s) => s.trim());
+  .map((s) => s.trim())
+  .filter(Boolean);
 export const REQUIRE_PUBLISH_APPROVAL =
   process.env.REQUIRE_PUBLISH_APPROVAL !== 'false';
 export const INJECT_SESSION_SDK = process.env.INJECT_SESSION_SDK !== 'false';

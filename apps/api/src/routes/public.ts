@@ -2,7 +2,14 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { getBucket } from '../storage.js';
-import { readApps, type AppRecord, listEntitlements, hasAppSubscription, hasCreatorAllAccess } from '../db.js';
+import {
+  readApps,
+  type AppRecord,
+  listEntitlements,
+  hasAppSubscription,
+  hasCreatorAllAccess,
+  incrementAppPlay,
+} from '../db.js';
 import { getBuildDir, BUNDLE_ROOT } from '../paths.js';
 import { getConfig } from '../config.js';
 import { createHmac } from 'node:crypto';
@@ -193,6 +200,13 @@ export default async function publicRoutes(app: FastifyInstance) {
     });
   }
 
+  const bumpPlayCount = (appId: string | undefined, req: FastifyRequest) => {
+    if (!appId) return;
+    incrementAppPlay(appId).catch((err) => {
+      req.log?.warn?.({ err, appId }, 'increment_play_failed');
+    });
+  };
+
   // Lightweight player routes -------------------------------------------------
   // Redirect /play/:appId[/...rest] to the built bundle for the latest build
   app.get('/play/:id', async (req: FastifyRequest, reply: FastifyReply) => {
@@ -203,6 +217,7 @@ export default async function publicRoutes(app: FastifyInstance) {
         | (AppRecord & { buildId?: string })
         | undefined;
       if (item?.buildId) {
+        bumpPlayCount(item.id, req);
         const mapped = item.buildId;
         // Prefer bucket-hosted public files if present
         try {
@@ -229,7 +244,10 @@ export default async function publicRoutes(app: FastifyInstance) {
         return tempRedirect(reply, appendQuery(`/review/builds/${encSeg(mapped)}/`, req));
       }
       const byBuild = apps.find((a) => a.buildId === id);
-      if (byBuild) return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
+      if (byBuild) {
+        bumpPlayCount(byBuild.id, req);
+        return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
+      }
     } catch {}
     return reply.code(404).send({ error: 'not_found' });
   });

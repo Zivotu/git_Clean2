@@ -2,7 +2,7 @@
 
 import { Buffer } from 'buffer'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ApiError } from '@/lib/api'
+import { ApiError, apiFetch } from '@/lib/api'
 import AdSlot from '@/components/AdSlot'
 import { useAds } from '@/components/AdsProvider'
 import { AD_SLOT_IDS } from '@/config/ads'
@@ -17,6 +17,14 @@ import {
 const APPS_HOST =
   (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '')
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false'
+
+function notifyPlay(slugOrId?: string) {
+  if (!slugOrId) return
+  const encoded = encodeURIComponent(slugOrId)
+  void apiFetch(`/listing/${encoded}/play`, { method: 'POST' }).catch(() => {
+    // fire-and-forget
+  })
+}
 
 type SnapshotState = {
   snapshot: Record<string, unknown>
@@ -158,6 +166,10 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const [roomsError, setRoomsError] = useState<string | null>(null)
   const [autoDemoRequested, setAutoDemoRequested] = useState(false)
 
+  useEffect(() => {
+    notifyPlay(app.slug || app.id)
+  }, [app.slug, app.id])
+
   const { id: appId, buildId, securityPolicy } = app;
   const { showAds } = useAds()
   const topAdSlot = (AD_SLOT_IDS.playTop || '').trim()
@@ -195,7 +207,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const [iframeUrl, setIframeUrl] = useState<string>('')
   
   const sandboxFlags = useMemo(() => {
-    const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin'];
+    const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads'];
     if (securityPolicy?.sandbox?.allowModals) {
       flags.push('allow-modals');
     }

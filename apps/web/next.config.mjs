@@ -104,8 +104,12 @@ const baseConfig = {
               }
 
               const connectSrc = new Set(["'self'", apiOrigin, ...devApiOrigins, ...firebaseOrigins]);
-              const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins]);
+              const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins, 'blob:']);
               const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com']);
+              if (isDev) {
+                imgSrc.add('http://127.0.0.1:8788');
+                imgSrc.add('http://localhost:8788');
+              }
 
               const policies = [
                 "default-src 'self'",

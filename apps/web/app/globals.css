@@ -67,6 +67,33 @@
   }
 }
 
+/* hearts used when a user likes an app */
+.heart-piece {
+  position: fixed;
+  top: -14px;
+  opacity: 0.95;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  pointer-events: none;
+  animation: heart-fall linear forwards;
+  z-index: 9999;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.06);
+}
+
+@keyframes heart-fall {
+  0% {
+    transform: translateY(0) scale(0.9) rotate(-8deg);
+    opacity: 0.95;
+  }
+  60% {
+    transform: translateY(55vh) translateX(6px) scale(1.02) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) translateX(12px) rotate(18deg) scale(1.06);
+    opacity: 0.9;
+  }
+}
+
 @layer components {
   .timeline-step {
     @apply px-2 py-0.5 rounded-full text-xs bg-gray-200;

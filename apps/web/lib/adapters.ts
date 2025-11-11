@@ -56,6 +56,23 @@ export function toListing(x: any): Listing {
           photo: authorPhoto ? String(authorPhoto) : undefined,
         }
       : undefined;
+  const likesCount =
+    typeof x.likesCount === 'number'
+      ? x.likesCount
+      : typeof x.likes === 'number'
+      ? x.likes
+      : typeof x.metrics?.likes === 'number'
+      ? x.metrics.likes
+      : undefined;
+  const playsCount =
+    typeof x.playsCount === 'number'
+      ? x.playsCount
+      : typeof x.plays === 'number'
+      ? x.plays
+      : typeof x.metrics?.plays === 'number'
+      ? x.metrics.plays
+      : undefined;
+  const likedByMe = typeof x.likedByMe === 'boolean' ? x.likedByMe : undefined;
   return {
     id: String(x.id ?? ''),
     slug: String(x.slug ?? '').toLowerCase(),
@@ -68,5 +85,8 @@ export function toListing(x: any): Listing {
     createdAt: x.createdAt ?? undefined,
     updatedAt: x.updatedAt ?? undefined,
     author,
+    likesCount,
+    playsCount,
+    likedByMe,
   };
 }

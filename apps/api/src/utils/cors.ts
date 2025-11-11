@@ -1,17 +1,19 @@
-export const ALLOWED_ORIGINS = new Set([
-  'https://thesara.space',
-  'https://www.thesara.space',
-  'https://apps.thesara.space',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:8788',
-  'http://127.0.0.1:8788',
-  'http://localhost:8789',
-  'http://127.0.0.1:8789',
-]);
+import { ALLOWED_ORIGINS as CONFIG_ALLOWED_ORIGINS } from '../config.js';
+import { DEFAULT_ALLOWED_ORIGINS } from '../constants/origins.js';
 
-export function setCors(reply: any, origin?: string) {
-  const allow = origin && ALLOWED_ORIGINS.has(origin) ? origin : 'https://thesara.space';
+export const ALLOWED_ORIGINS = new Set(CONFIG_ALLOWED_ORIGINS);
+
+const FALLBACK_ORIGIN = DEFAULT_ALLOWED_ORIGINS[0] ?? 'https://thesara.space';
+
+export function setCors(reply: any, origin?: string | null) {
+  let allow: string;
+  if (origin === 'null') {
+    allow = 'null';
+  } else if (origin && ALLOWED_ORIGINS.has(origin)) {
+    allow = origin;
+  } else {
+    allow = FALLBACK_ORIGIN;
+  }
   reply.header('Access-Control-Allow-Origin', allow);
   reply.header('Vary', 'Origin');
   reply.header('Access-Control-Allow-Headers', 'Authorization, If-Match, Content-Type, X-Thesara-App-Id, X-Thesara-Scope');

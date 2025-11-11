@@ -33,6 +33,7 @@ import {
 } from '@/lib/previewClient';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { playHref, appDetailsHref } from '@/lib/urls';
+import { getPlayUrl } from '@/lib/play';
 
 // ------------------------------------------------------------------
 // Types
@@ -313,7 +314,7 @@ function AppDetailClient() {
   const { messages } = useI18n();
   const tApp = useCallback((k: string) => messages[`App.${k}`] || k, [messages]);
 
-  const userId = user?.uid ?? null;
+  const userId = user?.uid ?? auth?.currentUser?.uid ?? null;
   const normalizedSlug = useMemo(() => (slug ?? '').trim(), [slug]);
 
   const [item, setItem] = useState<Listing | null>(null);
@@ -325,6 +326,17 @@ function AppDetailClient() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const [authorHandle, setAuthorHandle] = useState<string | undefined>(undefined);
+
+  const playListing = useCallback(async () => {
+    if (!item) return;
+    try {
+      const dest = await getPlayUrl(item.id);
+      window.open(dest, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      console.error('Failed to open app', err);
+      setToast({ message: 'Failed to open app. Please try again.', type: 'error' });
+    }
+  }, [item, setToast]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -560,11 +572,14 @@ useEffect(() => {
   const buildHeaders = useCallback(
     async (withJson: boolean): Promise<Record<string, string>> => {
       const headers: Record<string, string> = withJson ? { 'Content-Type': 'application/json' } : {};
-      try {
-        const token = await (user as any)?.getIdToken?.();
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-      } catch {
-        // ignore
+      const activeUser = (user as any) ?? auth?.currentUser ?? null;
+      if (activeUser?.getIdToken) {
+        try {
+          const token = await activeUser.getIdToken();
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+        } catch {
+          // ignore token fetch failures to avoid blocking UI actions
+        }
       }
       return headers;
     },
@@ -1274,10 +1289,9 @@ useEffect(() => {
                   </span>
                 </button>
               ) : (
-                <a
-                  href={playHref(item.id, { run: 1 })}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  type="button"
+                  onClick={playListing}
                   className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
                 >
                   <span className="flex items-center gap-2">
@@ -1286,7 +1300,7 @@ useEffect(() => {
                     </svg>
                     {tApp('playNow')}
                   </span>
-                </a>
+                </button>
               )}
 
               <button
@@ -1396,10 +1410,9 @@ useEffect(() => {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8 z-10">
                   {user ? (
-                    <a
-                      href={playHref(item.id, { run: 1 })}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
+                      onClick={playListing}
                       className="px-6 py-3 rounded-full bg-white/95 backdrop-blur text-gray-900 font-medium shadow-lg hover:bg-white transform hover:scale-105 transition"
                     >
                       <span className="flex items-center gap-2">
@@ -1408,7 +1421,7 @@ useEffect(() => {
                         </svg>
                         {tApp('playInNewTab')}
                       </span>
-                    </a>
+                    </button>
                   ) : (
                     <button
                       onClick={() => setShowLoginPrompt(true)}
@@ -2259,4 +2272,3 @@ function ReportIssueModal({
     </div>
   );
 }
-

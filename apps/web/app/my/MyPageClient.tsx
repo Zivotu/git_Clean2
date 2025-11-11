@@ -10,7 +10,6 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { translateReason } from '@/lib/reviewReasons';
 import { useI18n } from '@/lib/i18n-provider';
-import { getPlayUrl } from '@/lib/play';
 import { useRelativeTime } from '@/hooks/useRelativeTime';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
@@ -19,6 +18,7 @@ import {
   startStripeOnboarding,
 } from '@/hooks/useConnectStatus';
 import { playHref, appDetailsHref } from '@/lib/urls';
+import { getPlayUrl } from '@/lib/play';
 import CongratsModal from '@/components/CongratsModal';
 
 // ————————————————————————————————————————
@@ -219,19 +219,19 @@ export default function MyProjectsPage() {
       [busy]
     );
 
-  const handlePlayClick = useCallback(
-    async (e: React.MouseEvent, item: Listing & { status?: string }) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (item.status !== 'published') {
-        setToast({ message: 'App must be approved before it can run.', type: 'info' });
-        return;
-      }
-      const dest = await getPlayUrl(item.id);
-      window.open(dest, '_blank', 'noopener,noreferrer');
-    },
-    [setToast]
-  );
+const handlePlayClick = useCallback(
+  async (e: React.MouseEvent, item: Listing & { status?: string }) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (item.status !== 'published') {
+      setToast({ message: 'App must be approved before it can run.', type: 'info' });
+      return;
+    }
+    const dest = await getPlayUrl(item.id);
+    window.open(dest, '_blank', 'noopener,noreferrer');
+  },
+  [setToast]
+);
 
   // — Load my listings (localized)
   useEffect(() => {

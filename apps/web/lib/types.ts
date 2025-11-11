@@ -116,4 +116,5 @@ export type Listing = Pick<
   createdAt?: number | string | Date;
   // (opcionalno korisno, ako se negdje koristi)
   updatedAt?: number | string | Date;
+  likedByMe?: boolean;
 };

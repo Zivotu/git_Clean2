@@ -94,7 +94,7 @@ export function buildCsp({
   const scriptSrc = new Set<string>(["'self'"]);
   const styleSrc = new Set<string>(["'self'", "'unsafe-inline'"]); // unsafe-inline is common for CSS-in-JS
   const connectSrc = new Set<string>(["'self'", 'blob:']);
-  const frameSrc = new Set<string>(["'self'"]);
+  const frameSrc = new Set<string>(["'self'", 'blob:']);
 
   if (legacyScript) {
     // Legacy app.js bundles often rely on eval-like constructs.
