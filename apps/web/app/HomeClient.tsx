@@ -647,7 +647,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
                 <h4 className="font-medium mb-3 text-gray-900">Company</h4>
                 <ul className="space-y-2">
                   <li><Link href="/about" prefetch={false} className="hover:text-emerald-600 transition">About Us</Link></li>
-                  <li><Link href="/terms" prefetch={false} className="hover:text-emerald-600 transition">Terms</Link></li>
+                  <li><Link href="/docs/thesara_terms.html" prefetch={false} className="hover:text-emerald-600 transition">Terms</Link></li>
                   <li><Link href="/privacy" prefetch={false} className="hover:text-emerald-600 transition">Privacy</Link></li>
                 </ul>
               </div>

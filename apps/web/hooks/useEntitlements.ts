@@ -25,6 +25,27 @@ let cache: Entitlements | null = null;
 let inFlight: Promise<Entitlements> | null = null;
 let controller: AbortController | null = null;
 let lastUid: string | null = null;
+let version = 0;
+const listeners = new Set<(v: number) => void>();
+
+function notifyVersion() {
+  version += 1;
+  listeners.forEach((listener) => {
+    try {
+      listener(version);
+    } catch (err) {
+      console.error('[useEntitlements] listener failed', err);
+    }
+  });
+}
+
+export function invalidateEntitlementsCache() {
+  cache = null;
+  inFlight = null;
+  controller?.abort();
+  controller = null;
+  notifyVersion();
+}
 
 export function useEntitlements() {
   const { user } = useAuth();
@@ -33,6 +54,15 @@ export function useEntitlements() {
   );
   const [loading, setLoading] = useState(!cache);
   const [error, setError] = useState<string | undefined>(undefined);
+  const [refreshVersion, setRefreshVersion] = useState(version);
+
+  useEffect(() => {
+    const listener = (v: number) => setRefreshVersion(v);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -130,7 +160,7 @@ export function useEntitlements() {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid]);
+  }, [user?.uid, refreshVersion]);
 
   return { loading, error, data };
 }

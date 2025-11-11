@@ -16,6 +16,9 @@ VPS (per deployment notes in `reportProblems.md`).
   the required `X-Thesara-App-Id` header, so calls fail when routed through the API.
 - Some Play iframe loads succeed only because `PlayPageClient.tsx` uses the new
   `/api/storage` helper; standalone bundles do not share that implementation.
+- **2025-11 update:** `/api/storage` now defaults to `shared` scope for namespaces
+  starting with `app:`/`global:` when a client forgets the `X-Thesara-Scope` header,
+  so non-room apps automatically share leaderboard/state data across all users.
 
 ### 1.2 Rooms
 - The old Firestore-based `/rooms/*` API is disabled unless `ROOMS_ENABLED=true` and

@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyRequest } from 'fastify';
+import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { writeFile } from 'fs/promises';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
@@ -39,6 +39,20 @@ type StorageRouteQuery = { Querystring: { ns: string } };
 type StoragePatchRoute = StorageRouteQuery & { Body: unknown };
 
 const ensureUser = requireRole('user');
+
+function resolveScope(ns: string, header: string | string[] | undefined): 'shared' | 'user' {
+  const raw = Array.isArray(header) ? header[0] : header;
+  if (typeof raw === 'string') {
+    return raw.toLowerCase() === 'shared' ? 'shared' : 'user';
+  }
+  if (typeof ns === 'string') {
+    const lowered = ns.toLowerCase();
+    if (lowered.startsWith('app:') || lowered.startsWith('global:')) {
+      return 'shared';
+    }
+  }
+  return 'user';
+}
 
 function ensureRoomAccess(
   request: FastifyRequest,
@@ -94,6 +108,7 @@ function maskAuthorizationHeader(header: string | undefined | null) {
 
 // Helper function to register storage routes under a given prefix
 function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
+  const metrics = (server as any).metrics;
   const base = `${prefix}/storage`;
 
   server.options(base, async (request, reply) => {
@@ -123,7 +138,7 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
       if (!roomAccess.ok) {
         return;
       }
-      const scope = (request.headers['x-thesara-scope'] as string | undefined)?.toLowerCase() === 'shared' ? 'shared' : 'user';
+      const scope = resolveScope(ns, request.headers['x-thesara-scope']);
       const key = scope === 'shared' ? ns : `${userId}/${ns}`;
       try {
         const { etag, json } = await backend.read(key);
@@ -168,14 +183,14 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
       rateLimit: {
         max: 6,
         timeWindow: '10 seconds',
-        keyGenerator: (req) => {
+        keyGenerator: (req: FastifyRequest<StoragePatchRoute>) => {
           const request = req as FastifyRequest<StoragePatchRoute>;
           const userId = (request as any).authUser?.uid || 'anon';
           const ns = request.query.ns || 'default';
           return `${userId}:${ns}`;
         },
-        onExceeded: (_req, _key) => {
-          server.metrics.storage_patch_rate_limited_total.inc();
+        onExceeded: (_req: FastifyRequest, _key: string) => {
+          metrics?.storage_patch_rate_limited_total?.inc?.();
         },
       },
     },
@@ -191,8 +206,8 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
       const origin = request.headers.origin as string | undefined;
       setCors(reply, origin);
       
-      const endTimer = server.metrics.storage_patch_duration_seconds.startTimer();
-      server.metrics.storage_patch_total.inc();
+      const endTimer = metrics?.storage_patch_duration_seconds?.startTimer?.();
+      metrics?.storage_patch_total?.inc?.();
 
       const userId = (request as any).authUser.uid;
       const { ns } = request.query;
@@ -203,7 +218,7 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
       }
       const appId = request.headers['x-thesara-app-id'] as string;
       const ifMatch = stripQuotes(request.headers['if-match']);
-  const scope = (request.headers['x-thesara-scope'] as string | undefined)?.toLowerCase() === 'shared' ? 'shared' : 'user';
+  const scope = resolveScope(ns, request.headers['x-thesara-scope']);
   const key = scope === 'shared' ? ns : `${userId}/${ns}`;
 
   const logPayload = { userId, ns, ifMatch, appId, scope, backend: backend.kind };
@@ -231,8 +246,8 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
         reply.header('ETag', `"${newEtag}"`);
         reply.header('Access-Control-Expose-Headers', 'ETag');
 
-        server.metrics.storage_batch_size.observe(operations.length);
-        server.metrics.storage_patch_success_total.inc();
+        metrics?.storage_batch_size?.observe?.(operations.length);
+        metrics?.storage_patch_success_total?.inc?.();
         endTimer();
 
         request.log.info(
@@ -247,7 +262,7 @@ function registerStorage(server: FastifyInstance, prefix = '', backend: any) {
         endTimer();
         if (error instanceof StorageError) {
            if (error.statusCode === 412) {
-            server.metrics.storage_patch_412_total.inc();
+            metrics?.storage_patch_412_total?.inc?.();
           }
            request.log.warn(
             { ...logPayload, code: error.statusCode, err: error.message },

@@ -71,7 +71,16 @@
     "selectPackage": "Odaberi paket",
     "noPackagesTitle": "Nema dostupnih paketa",
     "noPackagesText": "Paketi će uskoro biti dostupni",
-    "loadError": "Došlo je do greške prilikom učitavanja paketa. Molimo pokušajte ponovno."
+    "loadError": "Došlo je do greške prilikom učitavanja paketa. Molimo pokušajte ponovno.",
+    "perMonth": "mjesečno",
+    "goldDescription": "Otključajte veće limite, više prostora i prioritetnu podršku pri objavi.",
+    "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Free uključuje {freeLimit})",
+    "goldFeatureStorage": "Veći upload i storage za bundlove te assete",
+    "goldFeatureAds": "Uklanja CreateX oglase iz sučelja i objavljenih aplikacija",
+    "goldFeatureSupport": "Prioritetna obrada objava i brži pristup podršci",
+    "noAdsDescription": "Plan koji uklanja sve CreateX oglase iz sučelja i iskustava.",
+    "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vašim aplikacijama",
+    "noAdsFeatureFocus": "Publika ostaje fokusirana na sadržaj (bez bannera i pop-upova)"
   }
   ,
   "Login": {
@@ -150,5 +159,27 @@
     "previewSelectFileFirst": "Najprije odaberi sliku.",
     "saveGraphic": "Spremi grafiku",
     "savingGraphic": "Spremamo…"
+  },
+  "Rooms": {
+    "headerActiveLabel": "Aktivna soba",
+    "panelLabel": "Panel soba",
+    "defaultRoomName": "Javna demo soba (PIN 1111)",
+    "descriptionDemoCompact": "Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.",
+    "descriptionPrivateCompact": "Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.",
+    "descriptionDemoFull": "Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.",
+    "descriptionPrivateFull": "Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.",
+    "roomLabel": "Naziv sobe",
+    "pinLabel": "PIN",
+    "roomPlaceholder": "Naziv sobe (npr. Kuhinja)",
+    "pinPlaceholder": "PIN (4-8 znamenki)",
+    "modeHint": "Za trajnu i privatnu pohranu kreiraj svoju sobu s PIN-om.",
+    "toggleLabel": "Preklopi panel soba",
+    "createButton": "Kreiraj novu sobu",
+    "joinButton": "Pridruži se postojećoj sobi",
+    "demoButton": "Vrati se u demo (PIN 1111)",
+    "errors": {
+      "missingCredentials": "Unesi naziv sobe i PIN.",
+      "generic": "Rad sa sobama je trenutno onemogućen."
+    }
   }
 }

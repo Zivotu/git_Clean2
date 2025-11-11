@@ -6,9 +6,13 @@ import { createUserWithEmailAndPassword, UserCredential, updateProfile } from 'f
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { ensureUserDoc } from '@/lib/ensureUserDoc';
+import { useTerms } from '@/components/terms/TermsProvider';
+import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
+import { TERMS_POLICY } from '@thesara/policies/terms';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { accept: acceptTerms } = useTerms();
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -22,6 +26,9 @@ export default function RegisterPage() {
     bio: '',
   });
   const [error, setError] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -31,8 +38,13 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setTermsError(null);
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+    if (!agreed) {
+      setTermsError('Molimo potvrdi da prihvaćaš uvjete korištenja prije registracije.');
       return;
     }
     const collection = 'users';
@@ -65,6 +77,11 @@ export default function RegisterPage() {
         { merge: true }
       );
       await auth.currentUser?.getIdToken(true);
+      try {
+        await acceptTerms('manual-register');
+      } catch (acceptErr) {
+        console.warn('terms_accept_failed', acceptErr);
+      }
       router.push('/?welcome=1');
     } catch (err: any) {
       console.error(`Error writing to ${collection} for user ${cred?.user?.uid}`, err);
@@ -167,6 +184,32 @@ export default function RegisterPage() {
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
         />
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm text-gray-800">
+          <label className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(event) => {
+                setAgreed(event.target.checked);
+                if (event.target.checked) setTermsError(null);
+              }}
+              className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
+              required
+            />
+            <span>
+              Prihvaćam{' '}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-emerald-700 underline underline-offset-2"
+              >
+                {TERMS_POLICY.shortLabel}
+              </button>{' '}
+              i slažem se s pravilima korištenja platforme.
+            </span>
+          </label>
+          {termsError && <p className="mt-2 text-xs text-red-600">{termsError}</p>}
+        </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           type="submit"
@@ -175,6 +218,7 @@ export default function RegisterPage() {
           Register
         </button>
       </form>
+      <TermsPreviewModal open={showTerms} onClose={() => setShowTerms(false)} title={TERMS_POLICY.shortLabel} />
     </main>
   );
 }

@@ -8,6 +8,7 @@ export interface PackageCardProps {
   features?: string[];
   price?: number;
   currency?: string;
+  priceSuffix?: string;
   cta: string;
   href: string;
 }
@@ -18,6 +19,7 @@ export default function PackageCard({
   features = [],
   price,
   currency,
+  priceSuffix,
   cta,
   href,
 }: PackageCardProps) {
@@ -38,8 +40,11 @@ export default function PackageCard({
         </ul>
       )}
       {price != null && currency && (
-        <div className="text-lg font-medium text-blue-600">
+        <div className="text-lg font-medium text-blue-600 flex items-baseline gap-1">
           {formatPrice(price, currency)}
+          {priceSuffix && (
+            <span className="text-sm font-normal text-gray-500">{priceSuffix}</span>
+          )}
         </div>
       )}
       <button

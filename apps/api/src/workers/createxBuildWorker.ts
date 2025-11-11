@@ -27,6 +27,12 @@ export class QueueDisabledError extends Error {
 let queueConnection: ConnectionOptions | null = null;
 let createxBuildQueue: Queue | null = null;
 
+function createChildEnv(overrides?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env, ...overrides };
+  delete env.NODE_OPTIONS;
+  return env;
+}
+
 async function resolveRedisConnection(): Promise<ConnectionOptions | null> {
   if (REDIS_URL) {
     const url = new URL(REDIS_URL);
@@ -130,6 +136,7 @@ async function runBuildProcess(buildId: string): Promise<void> {
       cwd: buildDir, // Install in buildDir where package.json is
       shell: true,
       windowsHide: true,
+      env: createChildEnv(),
     });
     
     npm.stdout?.on('data', (data) => {
@@ -224,7 +231,12 @@ async function runBuildProcess(buildId: string): Promise<void> {
         let output = '';
         let errorOutput = '';
         const args = ['install', '--no-audit', '--loglevel=error', ...toInstall.map((n) => `${n}@${catalog[n]}`)];
-        const npm = spawn('npm', args, { cwd: buildDir, shell: true, windowsHide: true });
+        const npm = spawn('npm', args, {
+          cwd: buildDir,
+          shell: true,
+          windowsHide: true,
+          env: createChildEnv(),
+        });
         npm.stdout?.on('data', (d) => (output += d.toString()));
         npm.stderr?.on('data', (d) => (errorOutput += d.toString()));
         npm.on('close', (code) => {

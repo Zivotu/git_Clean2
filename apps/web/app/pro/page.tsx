@@ -12,15 +12,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useI18n } from '@/lib/i18n-provider';
 import { getListingCount } from '@/lib/listings';
-
-type BillingPackage = {
-  id: string;
-  name: string;
-  description?: string;
-  priceId: string;
-  price?: number;
-  currency?: string;
-};
+import type { BillingPackage } from '@/types/billing';
+import { applyPackageCopy } from './packageCopy';
 
 type UsageInfo = {
   plan: string;
@@ -163,10 +156,11 @@ function ProPageClient() {
   }, [user]);
 
   const goToCheckout = async (pkg: BillingPackage) => {
+    const targetPriceId = pkg.priceId || pkg.id;
     setCheckoutLoading(pkg.id);
     try {
       await new Promise((resolve) => setTimeout(resolve, 300));
-      router.push(`/pro/checkout?priceId=${encodeURIComponent(pkg.id)}`);
+      router.push(`/pro/checkout?priceId=${encodeURIComponent(targetPriceId)}`);
     } catch (err) {
       console.error('Checkout navigation error:', err);
     } finally {
@@ -226,6 +220,10 @@ function ProPageClient() {
   };
 
   const recommendedId = 'gold';
+  const pricePeriodLabel = tPro('perMonth') || 'mjesečno';
+  const enhancedPackages = packages.map((pkg) =>
+    applyPackageCopy(pkg, messages, locale),
+  );
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -323,10 +321,15 @@ function ProPageClient() {
 
         {/* Packages */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {packages.map((pkg) => {
+          {enhancedPackages.map((pkg) => {
             const owned = hasPackage(pkg);
             const recommended = pkg.id === recommendedId;
             const isPackageLoading = checkoutLoading === pkg.id;
+            const featureList = pkg.features || [];
+            const suffix =
+              pkg.billingPeriod && pkg.billingPeriod !== 'month'
+                ? `/${pkg.billingPeriod}`
+                : pricePeriodLabel;
             return (
               <Card key={pkg.id} className={`p-6 bg-white border ${owned ? 'border-emerald-300' : 'border-gray-200'} shadow-sm`}>
                 <div className="flex items-start justify-between mb-3">
@@ -339,7 +342,17 @@ function ProPageClient() {
                 </div>
                 {pkg.description && <p className="text-sm text-gray-600 mb-4">{pkg.description}</p>}
                 {pkg.price != null && pkg.currency && (
-                  <div className="text-2xl font-bold text-gray-900 mb-4">{formatPrice(pkg.price, pkg.currency)}</div>
+                  <div className="text-2xl font-bold text-gray-900 mb-4 flex items-baseline gap-2">
+                    {formatPrice(pkg.price, pkg.currency)}
+                    <span className="text-sm font-normal text-gray-500">{suffix}</span>
+                  </div>
+                )}
+                {featureList.length > 0 && (
+                  <ul className="mb-4 list-disc pl-5 text-sm text-gray-700 space-y-1">
+                    {featureList.map((feature) => (
+                      <li key={`${pkg.id}-${feature}`}>{feature}</li>
+                    ))}
+                  </ul>
                 )}
                 <Button
                   className={`w-full ${owned ? 'bg-gray-200 text-gray-600 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
@@ -354,7 +367,7 @@ function ProPageClient() {
         </div>
 
         {/* Empty state */}
-        {packages.length === 0 && !error && (
+        {enhancedPackages.length === 0 && !error && (
           <Card className="mt-8 p-8 text-center border border-gray-200 bg-white">
             <p className="text-gray-600">{tPro('noPackagesTitle') || 'Trenutno nema dostupnih paketa'}</p>
             <p className="text-sm text-gray-500">{tPro('noPackagesText') || 'Provjerite kasnije ili kontaktirajte podršku.'}</p>

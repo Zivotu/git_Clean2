@@ -4,10 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { apiAuthedPost } from '@/lib/api';
-import CheckoutReview, {
-  BillingPackage,
-  CheckoutItem,
-} from '@/components/CheckoutReview';
+import CheckoutReview, { CheckoutItem } from '@/components/CheckoutReview';
 import CheckoutStepper from '@/components/CheckoutStepper';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -15,6 +12,7 @@ import { useEntitlements, type Entitlements } from '@/hooks/useEntitlements';
 import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import { Card } from '@/components/ui/Card';
+import type { BillingPackage } from '@/types/billing';
 
 
 async function loadStripe() {
@@ -89,16 +87,19 @@ function ProCheckoutClient() {
         const found =
           data.find((p) => p.id === priceId || p.priceId === priceId) || null;
         setPkg(found);
-        if (found && found.price != null) {
+        if (found) {
+          const priceValue =
+            typeof found.price === 'number' && Number.isFinite(found.price)
+              ? found.price
+              : 0;
           const mapped: CheckoutItem = {
             name: found.name,
             description: found.description,
-            price: found.price,
-            currency: found.currency,
+            price: priceValue,
+            currency: found.currency || 'eur',
           };
           setItem(mapped);
-          // simple tax/discount placeholders
-          setTax(Math.round(found.price * 0.0));
+          setTax(Math.round(priceValue * 0.0));
           setDiscount(0);
         }
       })
@@ -204,8 +205,22 @@ function ProCheckoutClient() {
     }
   };
 
-  if (loading || entitlementsLoading || !pkg || !item) {
-    return <p>Loading...</p>;
+  if (loading || entitlementsLoading) {
+    return (
+      <main className="p-4">
+        <Card className="p-6 text-center text-gray-600">Učitavanje paketa…</Card>
+      </main>
+    );
+  }
+
+  if (!pkg || !item) {
+    return (
+      <main className="p-4">
+        <Card className="p-6 text-center text-gray-600">
+          Paket nije pronađen. Vratite se na Go Pro stranicu i pokušajte ponovno.
+        </Card>
+      </main>
+    );
   }
 
   if (owned) {

@@ -10,7 +10,7 @@ import {
   hasUserLikedApp,
   incrementAppPlay,
 } from '../db.js';
-import { notifyAdmins } from '../notifier.js';
+import { notifyAdmins, sendEmail } from '../notifier.js';
 import { z } from 'zod';
 import { ensureAppProductPrice } from '../billing/products.js';
 import { getConnectStatus } from '../billing/service.js';
@@ -609,5 +609,64 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
     return reply.send({ ok: true });
   });
+
+  // Report inappropriate content (viewers)
+  const reportContentHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const slug = String((req.params as any).slug);
+    const apps = await readApps();
+    const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
+    if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
+    const item = apps[idx];
+    if (item.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
+
+    const uid = req.authUser?.uid;
+    if (!uid) return reply.code(401).send({ ok: false, error: 'unauthenticated' });
+    const ownerUid = item.author?.uid || (item as any).ownerUid;
+    if (ownerUid && uid === ownerUid) {
+      return reply.code(403).send({ ok: false, error: 'owners_cannot_report' });
+    }
+
+    const schema = z.object({ description: z.string().min(10).max(2000) });
+    const parsed = schema.safeParse((req.body as any) || {});
+    if (!parsed.success) {
+      return reply.code(400).send({ ok: false, error: 'invalid_input' });
+    }
+    const { description } = parsed.data;
+
+    const now = Date.now();
+    const next = { ...item } as any;
+    next.reports = Array.isArray(next.reports) ? next.reports : [];
+    const already = next.reports.find((r: any) => r.by === uid && r.kind === 'user-content');
+    if (already) {
+      return reply.code(429).send({ ok: false, error: 'already_reported' });
+    }
+    next.reports.push({ by: uid, reason: description, at: now, kind: 'user-content' });
+    next.updatedAt = now;
+    apps[idx] = next;
+    await writeApps(apps);
+
+    try {
+      const claims: any = (req as any).authUser?.claims || {};
+      const reporterName = claims?.name || claims?.displayName || undefined;
+      const reporterEmail = claims?.email || undefined;
+      const lines = [
+        'Nova prijava sadržaja korisnika.',
+        `App: ${item.title || '-'} (ID: ${item.id}, slug: ${item.slug})`,
+        `Prijavio UID: ${uid}`,
+        reporterName ? `Ime: ${reporterName}` : null,
+        reporterEmail ? `Email: ${reporterEmail}` : null,
+        '',
+        'Opis prijave:',
+        description,
+      ].filter(Boolean).join('\n');
+      await sendEmail('reports@thesara.space', 'REPORTED APPS', lines, 'reports');
+    } catch (err) {
+      req.log?.error?.({ err, slug, uid }, 'report_content_email_failed');
+    }
+
+    return reply.send({ ok: true });
+  };
+  app.post('/listing/:slug/report-content', reportContentHandler);
+  app.post('/api/listing/:slug/report-content', reportContentHandler);
   app.delete('/api/listing/:slug', deleteListingHandler);
 }

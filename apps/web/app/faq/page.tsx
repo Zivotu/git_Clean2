@@ -5,9 +5,9 @@ import Link from 'next/link';
 import Logo from '@/components/Logo';
 import { SITE_NAME } from '@/lib/config';
 import { useI18n } from '@/lib/i18n-provider';
-import faqEn from '@/messages/faq.en.json';
-import faqHr from '@/messages/faq.hr.json';
-import faqDe from '@/messages/faq.de.json';
+import faqEn from '@/messages/faq.en.manual.json';
+import faqHr from '@/messages/faq.hr.manual.json';
+import faqDe from '@/messages/faq.de.manual.json';
 
 type QA = { q: string; a: string };
 type Section = { id: string; title: string; items: QA[] };

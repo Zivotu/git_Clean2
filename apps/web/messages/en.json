@@ -71,7 +71,16 @@
     "selectPackage": "Select package",
     "noPackagesTitle": "No packages available",
     "noPackagesText": "Packages will be available soon",
-    "loadError": "Failed to load packages. Please try again."
+    "loadError": "Failed to load packages. Please try again.",
+    "perMonth": "per month",
+    "goldDescription": "Unlock higher limits, premium storage and priority publish support.",
+    "goldFeatureApps": "Up to {goldLimit} active apps (Free includes {freeLimit})",
+    "goldFeatureStorage": "Larger upload & storage quota for bundles and assets",
+    "goldFeatureAds": "Removes CreateX ads for you and your published apps",
+    "goldFeatureSupport": "Priority publish review and dedicated support channel",
+    "noAdsDescription": "Remove CreateX ad slots from dashboards and every published experience.",
+    "noAdsFeatureRemoval": "Zero ads in the editor, dashboard and your apps",
+    "noAdsFeatureFocus": "Keeps players focused on your content (no banners or interstitials)"
   }
   ,
   "Login": {
@@ -150,5 +159,27 @@
     "previewSelectFileFirst": "Please choose an image first.",
     "saveGraphic": "Save graphic",
     "savingGraphic": "Saving…"
+  },
+  "Rooms": {
+    "headerActiveLabel": "Active room",
+    "panelLabel": "Rooms panel",
+    "defaultRoomName": "Public demo room (PIN 1111)",
+    "descriptionDemoCompact": "Demo room is public and used for quick testing. Everyone shares the same data.",
+    "descriptionPrivateCompact": "This room has private storage shared only between members with the same PIN.",
+    "descriptionDemoFull": "This demo room is public and designed to showcase the app. Create your own room and PIN for private storage.",
+    "descriptionPrivateFull": "The room you selected has private storage shared with everyone who knows the name and PIN.",
+    "roomLabel": "Room name",
+    "pinLabel": "PIN",
+    "roomPlaceholder": "Room name (e.g. Kitchen)",
+    "pinPlaceholder": "PIN (4-8 digits)",
+    "modeHint": "For permanent and private storage, create your own room and PIN.",
+    "toggleLabel": "Toggle rooms panel",
+    "createButton": "Create new room",
+    "joinButton": "Join existing room",
+    "demoButton": "Return to demo (PIN 1111)",
+    "errors": {
+      "missingCredentials": "Enter a room name and PIN.",
+      "generic": "Working with rooms is temporarily unavailable."
+    }
   }
 }

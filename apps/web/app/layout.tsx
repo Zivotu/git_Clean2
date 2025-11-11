@@ -8,6 +8,7 @@ import { AuthProvider } from '@/lib/auth';
 import I18nRootProvider from '@/components/I18nRootProvider';
 import { AdsProvider } from '@/components/AdsProvider';
 import AdScriptLoader from '@/components/AdScriptLoader';
+import { TermsProvider } from '@/components/terms/TermsProvider';
 import { messages as ALL_MESSAGES, type Locale, defaultLocale } from '@/i18n/config';
 import { getServerLocale } from '@/lib/locale';
 
@@ -39,13 +40,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
         <ChunkErrorBoundary>
           <AuthProvider>
-            <AdsProvider>
-              <I18nRootProvider locale={locale} messages={messages}>
-                <AdScriptLoader />
-                <Header />
-                {children}
-              </I18nRootProvider>
-            </AdsProvider>
+            <TermsProvider>
+              <AdsProvider>
+                <I18nRootProvider locale={locale} messages={messages}>
+                  <AdScriptLoader />
+                  <Header />
+                  {children}
+                </I18nRootProvider>
+              </AdsProvider>
+            </TermsProvider>
           </AuthProvider>
         </ChunkErrorBoundary>
       </body>

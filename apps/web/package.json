@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@loopyway/entitlements": "workspace:*",
+    "@thesara/policies": "workspace:*",
     "@radix-ui/react-slider": "^1.x",
     "firebase": "^12.1.0",
     "framer-motion": "^11.0.0",

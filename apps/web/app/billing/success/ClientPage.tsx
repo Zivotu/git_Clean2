@@ -11,6 +11,7 @@ import type { User } from 'firebase/auth';
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { appDetailsHref } from "@/lib/urls";
+import { invalidateEntitlementsCache } from "@/hooks/useEntitlements";
 
 type BillingPackage = {
   id: string;
@@ -156,6 +157,7 @@ export default function BillingSuccessClient() {
         // Refetch /me/entitlements
         await fetch(`${PUBLIC_API_URL}/me/entitlements`, { headers, cache: 'no-store' });
         console.log('Refetched /me/entitlements after successful purchase.');
+        invalidateEntitlementsCache();
       } catch (err) {
         console.error("failed_to_refetch_entitlements", err);
       }

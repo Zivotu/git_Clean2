@@ -73,14 +73,20 @@ const STATEMENT_DESCRIPTOR = 'CreateX';
 export async function listPackages(): Promise<Package[]> {
   return Promise.all(
     PACKAGES.map(async (p) => {
+      if (!p.priceId) return p;
       try {
-        const price = await stripe.prices.retrieve(p.priceId);
+        const normalizedPriceId = await resolveStripePriceId(p.priceId);
+        const price = await retrieveStripePrice(normalizedPriceId);
         return {
           ...p,
-          price: price.unit_amount ?? undefined,
-          currency: price.currency,
+          priceId: normalizedPriceId,
+          price: price?.unit_amount ?? p.price,
+          currency: price?.currency ?? p.currency,
+          billingPeriod: price?.recurring?.interval ?? p.billingPeriod,
         };
-      } catch {
+      } catch (err) {
+        const logger = (app?.log as any) || console;
+        logger.warn?.({ err, packageId: p.id }, 'billing_package_price_failed');
         return p;
       }
     }),
@@ -172,6 +178,66 @@ const priceIdMap = new Map<
   { appId?: string; creatorId?: string; priceId?: string }
 >();
 let priceIdMapBuiltAt = 0;
+
+const resolvedPriceIdCache = new Map<string, string>();
+const stripePriceCache = new Map<string, Stripe.Price>();
+let resolvedGoldPriceId: string | null = null;
+let resolvedNoAdsPriceId: string | null = null;
+
+async function getResolvedGoldPriceId(): Promise<string> {
+  if (resolvedGoldPriceId) return resolvedGoldPriceId;
+  resolvedGoldPriceId = await resolveStripePriceId(GOLD_PRICE_ID);
+  return resolvedGoldPriceId;
+}
+
+async function getResolvedNoAdsPriceId(): Promise<string> {
+  if (resolvedNoAdsPriceId) return resolvedNoAdsPriceId;
+  resolvedNoAdsPriceId = await resolveStripePriceId(NOADS_PRICE_ID);
+  return resolvedNoAdsPriceId;
+}
+
+async function resolveStripePriceId(rawId: string): Promise<string> {
+  const trimmed = (rawId || '').trim();
+  if (!trimmed) throw new Error('price_id_missing');
+  const cached = resolvedPriceIdCache.get(trimmed);
+  if (cached) return cached;
+  if (trimmed.startsWith('price_')) {
+    resolvedPriceIdCache.set(trimmed, trimmed);
+    return trimmed;
+  }
+  if (trimmed.startsWith('prod_')) {
+    const product = await stripe.products.retrieve(trimmed);
+    const defaultPrice = product.default_price;
+    const resolved =
+      typeof defaultPrice === 'string'
+        ? defaultPrice
+        : defaultPrice?.id;
+    if (!resolved) {
+      throw new Error('product_missing_price');
+    }
+    resolvedPriceIdCache.set(trimmed, resolved);
+    resolvedPriceIdCache.set(resolved, resolved);
+    return resolved;
+  }
+  resolvedPriceIdCache.set(trimmed, trimmed);
+  return trimmed;
+}
+
+async function retrieveStripePrice(rawId: string): Promise<Stripe.Price | null> {
+  try {
+    const normalized = await resolveStripePriceId(rawId);
+    if (stripePriceCache.has(normalized)) {
+      return stripePriceCache.get(normalized)!;
+    }
+    const price = await stripe.prices.retrieve(normalized);
+    stripePriceCache.set(normalized, price);
+    return price;
+  } catch (err) {
+    const logger = (app?.log as any) || console;
+    logger.warn?.({ err, priceId: rawId }, 'stripe_price_lookup_failed');
+    return null;
+  }
+}
 
 async function buildPriceIdMap(force = false): Promise<void> {
   const now = Date.now();
@@ -330,11 +396,12 @@ async function createFixedSubscription(
   idempotencyKey?: string,
   ctx?: { appId?: string; hasActive?: boolean },
 ) {
+  const normalizedPriceId = await resolveStripePriceId(priceId);
   // Determine connected account for revenue split based on priceId
   let destinationAccount: string | undefined;
   let hasOwnerMeta = false;
   try {
-    const meta = await getPriceMetadata(priceId);
+    const meta = await getPriceMetadata(normalizedPriceId);
     if (meta?.creatorId) {
       hasOwnerMeta = true;
       destinationAccount = await dbAccess.getStripeAccountId(meta.creatorId);
@@ -360,7 +427,7 @@ async function createFixedSubscription(
       customer: customerId,
       customer_email: customerEmail,
       automatic_tax: STRIPE_AUTOMATIC_TAX ? { enabled: true } : undefined,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: normalizedPriceId, quantity: 1 }],
       custom_text: { submit: { message: 'Complete your purchase' } },
       success_url: `${STRIPE_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: STRIPE_CANCEL_URL,
@@ -414,15 +481,16 @@ export async function createSubscriptionByPriceId(
   customerId?: string,
   idempotencyKey?: string,
 ): Promise<{ id: string; url: string } | { alreadySubscribed: true }> {
+  const normalizedPriceId = await resolveStripePriceId(priceId);
   const hasActive = await dbAccess.hasSubscriptionByPriceId(
     userId,
-    priceId,
+    normalizedPriceId,
   );
   if (hasActive) {
     return { alreadySubscribed: true } as const;
   }
   return createFixedSubscription(
-    priceId,
+    normalizedPriceId,
     userId,
     customerEmail,
     customerId,
@@ -535,12 +603,12 @@ export async function createAppSubscription(
   if (customerId) {
     const subs = await stripe.subscriptions.list({
       customer: customerId,
-      price: priceId,
+      price: normalizedPriceId,
       status: 'active',
     });
     if (subs.data.length > 0) {
       logger.info(
-        { appId, userId, customerId, priceId },
+        { appId, userId, customerId, priceId: normalizedPriceId },
         'app_subscription_session_skipped',
       );
       return { alreadySubscribed: true } as const;
@@ -604,6 +672,10 @@ async function syncSubscription(
   const currentPeriodEnd = sub.current_period_end
     ? new Date(sub.current_period_end * 1000).toISOString()
     : undefined;
+  const [goldPriceId, noAdsPriceId] = await Promise.all([
+    getResolvedGoldPriceId(),
+    getResolvedNoAdsPriceId(),
+  ]);
   for (const item of sub.items.data) {
     const price = item.price;
     const priceId = price.id;
@@ -625,7 +697,7 @@ async function syncSubscription(
       expiresAt: currentPeriodEnd,
       itemId: item.id,
     });
-    if (priceId === GOLD_PRICE_ID) {
+    if (priceId === goldPriceId) {
       await dbAccess.upsertEntitlement(
         cleanUndefined({
           id: `gold-${item.id}`,
@@ -638,7 +710,7 @@ async function syncSubscription(
       if (!active) {
         await enforceAppLimit(uid);
       }
-    } else if (priceId === NOADS_PRICE_ID) {
+    } else if (priceId === noAdsPriceId) {
       await dbAccess.upsertEntitlement(
         cleanUndefined({
           id: `noAds-${item.id}`,

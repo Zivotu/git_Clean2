@@ -4,7 +4,7 @@ import { promises as fs } from 'node:fs';
 import { Readable } from 'node:stream';
 import { PassThrough } from 'node:stream';
 import { finished } from 'node:stream/promises';
-import { load, type Cheerio } from 'cheerio';
+import { load, type Cheerio, type CheerioOptions } from 'cheerio';
 import * as esbuild from 'esbuild';
 
 interface VendoredResource {
@@ -234,7 +234,10 @@ export async function transformHtmlLite(options: HtmlTransformOptions): Promise<
     workingHtml = workingHtml.slice(doctypeMatch.index! + doctype.length);
   }
 
-  const $ = load(workingHtml, { decodeEntities: false });
+  const cheerioOptions: CheerioOptions & { decodeEntities?: boolean } = {
+    decodeEntities: false,
+  };
+  const $ = load(workingHtml, cheerioOptions);
   await fs.mkdir(rootDir, { recursive: true });
 
   const inlineScripts: InlineScriptReport[] = [];
@@ -245,6 +248,17 @@ export async function transformHtmlLite(options: HtmlTransformOptions): Promise<
   const seenScriptHashes = new Map<string, string>();
 
   // Lint: inline styles/events
+  const resolveTagName = (node: unknown): string => {
+    const asElement = node as { tagName?: string; name?: string };
+    if (typeof asElement.tagName === 'string') {
+      return asElement.tagName;
+    }
+    if (typeof asElement.name === 'string') {
+      return asElement.name;
+    }
+    return 'unknown';
+  };
+
   $('*').each((_, node) => {
     const elem = $(node);
     const attribs = (node as any).attribs || {};
@@ -252,7 +266,7 @@ export async function transformHtmlLite(options: HtmlTransformOptions): Promise<
       for (const [name, value] of Object.entries(attribs)) {
         if (/^on[a-z]+$/i.test(name)) {
           inlineEventHandlers.push({
-            tag: node.tagName || node.name || 'unknown',
+            tag: resolveTagName(node),
             attribute: name.toLowerCase(),
             snippet: String(value || '').trim().slice(0, 80),
           });
@@ -261,7 +275,7 @@ export async function transformHtmlLite(options: HtmlTransformOptions): Promise<
     }
     if (typeof attribs?.style === 'string' && attribs.style.trim().length > 0) {
       inlineStyles.push({
-        tag: node.tagName || node.name || 'unknown',
+        tag: resolveTagName(node),
         location: 'attribute',
         snippet: attribs.style.trim().slice(0, 120),
       });
@@ -507,10 +521,10 @@ export async function transformHtmlLite(options: HtmlTransformOptions): Promise<
       await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
     }
   }
-
-
-
-  const serialised = $.html({ decodeEntities: false });
+  const htmlOptions: CheerioOptions & { decodeEntities?: boolean } = {
+    decodeEntities: false,
+  };
+  const serialised = $.html(htmlOptions);
   let finalHtml = doctype ? `${doctype}\n${serialised}` : serialised;
   if (originalHtml.endsWith('\n') && !finalHtml.endsWith('\n')) {
     finalHtml += '\n';

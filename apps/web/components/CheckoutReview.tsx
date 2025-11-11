@@ -4,17 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-
-// Original BillingPackage type is kept for convenience when mapping API
-// responses to checkout items in the page component.
-export type BillingPackage = {
-  id: string;
-  name: string;
-  description?: string;
-  priceId: string;
-  price?: number;
-  currency?: string;
-};
+import type { BillingPackage } from '@/types/billing';
 
 export type CheckoutItem = {
   name: string;

@@ -443,6 +443,11 @@ function AppDetailClient() {
   const [showReport, setShowReport] = useState(false);
   const [reportText, setReportText] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
+  const [showContentReport, setShowContentReport] = useState(false);
+  const [contentReportText, setContentReportText] = useState('');
+  const [contentReportBusy, setContentReportBusy] = useState(false);
+  const [viewerHandle, setViewerHandle] = useState<string | undefined>(undefined);
+  const viewerUid = useMemo(() => user?.uid || auth?.currentUser?.uid || '', [user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -473,11 +478,37 @@ useEffect(() => {
   }
 }, [item?.id, item?.price]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!viewerUid) {
+      setViewerHandle(undefined);
+      return () => {
+        cancelled = true;
+      };
+    }
+    getCreatorHandle(viewerUid)
+      .then((handle) => {
+        if (!cancelled) setViewerHandle(handle);
+      })
+      .catch(() => {
+        if (!cancelled) setViewerHandle(undefined);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewerUid]);
+
   const canEdit = !!user && !!item?.author?.uid && item.author.uid === user.uid;
   const connect = useConnectStatus();
   const canMonetize =
     connect?.payouts_enabled && (connect.requirements_due ?? 0) === 0;
   const canViewUnpublished = canEdit || isAdmin;
+  const canReportContent = Boolean(user && viewerUid && !canEdit);
+  const viewerIdentity =
+    (name && name.trim()) ||
+    (viewerHandle ? `@${viewerHandle}` : '') ||
+    viewerUid ||
+    '';
   const isPublished = item?.status === 'published';
   const previewDisplayUrl = useMemo(
     () =>
@@ -1081,6 +1112,47 @@ useEffect(() => {
       setReportBusy(false);
     }
   }, [item, reportText, buildHeaders]);
+
+  const submitContentReport = useCallback(async () => {
+    if (!item || !viewerUid) return;
+    const msg = contentReportText.trim();
+    if (msg.length < 10) {
+      setToast({ message: 'Molimo opišite razlog (min 10 znakova).', type: 'error' });
+      return;
+    }
+    setContentReportBusy(true);
+    try {
+      const res = await fetch(`${PUBLIC_API_URL}/listing/${encodeURIComponent(item.slug)}/report-content`, {
+        method: 'POST',
+        headers: await buildHeaders(true),
+        credentials: 'include',
+        body: JSON.stringify({ description: msg }),
+      });
+      const json = await res.json().catch(() => null);
+      if (res.status === 404) {
+        setToast({ message: 'Ova aplikacija više nije dostupna za prijavu.', type: 'error' });
+        return;
+      }
+      if (res.status === 429 || json?.error === 'already_reported') {
+        setToast({ message: 'Već ste prijavili ovaj sadržaj. Hvala!', type: 'info' });
+        return;
+      }
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `http_${res.status}`);
+      }
+      setToast({ message: 'Prijava je zaprimljena. Hvala vam!', type: 'success' });
+      setContentReportText('');
+      setShowContentReport(false);
+    } catch (err) {
+      handleFetchError(err, 'Neuspješna prijava sadržaja');
+      setToast({
+        message: 'Nismo uspjeli poslati prijavu. Pokušajte ponovno.',
+        type: 'error',
+      });
+    } finally {
+      setContentReportBusy(false);
+    }
+  }, [item, viewerUid, contentReportText, buildHeaders]);
 
   // Loading state
   if (!hasFetched || loading) {
@@ -2071,6 +2143,77 @@ useEffect(() => {
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+              {canReportContent && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowContentReport((prev) => !prev)}
+                    className="text-sm font-medium text-black underline underline-offset-2 hover:text-emerald-700 transition"
+                  >
+                    Prijavi sadržaj
+                  </button>
+                  {showContentReport && (
+                    <form
+                      className="mt-3 space-y-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-md"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (!contentReportBusy) submitContentReport();
+                      }}
+                    >
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Vaš identitet (ime i prezime / korisničko ime / ID)
+                        </label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={viewerIdentity}
+                          className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-900"
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500">
+                          Podatak se popunjava automatski i nije ga moguće uređivati.
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Opišite razlog prijave
+                        </label>
+                        <textarea
+                          value={contentReportText}
+                          onChange={(e) => setContentReportText(e.target.value)}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500"
+                          rows={4}
+                          placeholder="Npr. neprikladan sadržaj, prijevara, zlouporaba…"
+                          maxLength={2000}
+                        />
+                        <p className="mt-1 text-[11px] text-gray-500">
+                          Minimalno 10 znakova. Poruka se šalje na reports@thesara.space.
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowContentReport(false);
+                            setContentReportText('');
+                          }}
+                          className="text-sm text-gray-500 hover:text-gray-700"
+                          disabled={contentReportBusy}
+                        >
+                          Odustani
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={contentReportBusy || contentReportText.trim().length < 10}
+                          className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {contentReportBusy ? 'Slanje...' : 'Pošalji prijavu'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               )}
             </div>

@@ -1,7 +1,8 @@
 'use client'
 
 import { Buffer } from 'buffer'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useCallback, useEffect, useMemo, useRef, useState, type HTMLInputTypeAttribute, type InputHTMLAttributes } from 'react'
 import { ApiError, apiFetch } from '@/lib/api'
 import AdSlot from '@/components/AdSlot'
 import { useAds } from '@/components/AdsProvider'
@@ -14,6 +15,7 @@ import {
   type BatchItem,
   applyBatchOperations,
 } from '@/lib/storage/snapshot-loader'
+import { useI18n } from '@/lib/i18n-provider'
 const APPS_HOST =
   (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '')
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false'
@@ -172,6 +174,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   const { id: appId, buildId, securityPolicy } = app;
   const { showAds } = useAds()
+  const { messages } = useI18n()
   const topAdSlot = (AD_SLOT_IDS.playTop || '').trim()
   const bottomAdSlot = (AD_SLOT_IDS.playBottom || '').trim()
   const showTopAd = showAds && topAdSlot.length > 0
@@ -285,13 +288,15 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
         return session
       } catch (err: any) {
         console.error('[Rooms] action failed', err)
-        setRoomsError(err?.message || 'Rad sa sobom je trenutno onemogućen.')
+        const genericError =
+          messages['Rooms.errors.generic'] ?? 'Rad sa sobom je trenutno onemogućen.'
+        setRoomsError(err?.message || genericError)
         throw err
       } finally {
         setRoomsBusy(false)
       }
     },
-    [appId],
+    [appId, messages],
   )
 
   const handleUseDemo = useCallback(async () => {
@@ -303,12 +308,14 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       const trimmedName = roomName.trim()
       const safePin = pin.trim()
       if (!trimmedName || !safePin) {
-        setRoomsError('Unesi naziv sobe i PIN.')
+        const missingFields =
+          messages['Rooms.errors.missingCredentials'] ?? 'Unesi naziv sobe i PIN.'
+        setRoomsError(missingFields)
         return
       }
       await performRoomAction('create', { roomName: trimmedName, pin: safePin })
     },
-    [performRoomAction],
+    [performRoomAction, messages],
   )
 
   const handleJoinRoom = useCallback(
@@ -316,12 +323,14 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       const trimmedName = roomName.trim()
       const safePin = pin.trim()
       if (!trimmedName || !safePin) {
-        setRoomsError('Unesi naziv sobe i PIN.')
+        const missingFields =
+          messages['Rooms.errors.missingCredentials'] ?? 'Unesi naziv sobe i PIN.'
+        setRoomsError(missingFields)
         return
       }
       await performRoomAction('join', { roomName: trimmedName, pin: safePin })
     },
-    [performRoomAction],
+    [performRoomAction, messages],
   )
 
   useEffect(() => {
@@ -611,7 +620,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       onUseDemo={handleUseDemo}
       onCreate={handleCreateRoom}
       onJoin={handleJoinRoom}
-      variant={roomSession ? 'compact' : 'full'}
+      variant="compact"
     />
   ) : null
 
@@ -701,91 +710,196 @@ function RoomsToolbar({
 }) {
   const [roomName, setRoomName] = useState('')
   const [pin, setPin] = useState('')
+  const [collapsed, setCollapsed] = useState(() => variant === 'compact')
+  const { messages } = useI18n()
 
-  const handleCreate = () => void onCreate(roomName, pin)
-  const handleJoin = () => void onJoin(roomName, pin)
+  useEffect(() => {
+    setCollapsed(variant === 'compact')
+  }, [variant])
 
   const isDemo = session?.room?.isDemo ?? true
+  const panelLabel = session
+    ? messages['Rooms.headerActiveLabel'] ?? 'Aktivna soba'
+    : messages['Rooms.panelLabel'] ?? 'Rooms panel'
+  const displayName =
+    session?.room?.name ?? messages['Rooms.defaultRoomName'] ?? 'Javna demo soba (PIN 1111)'
+  const summaryText = isDemo
+    ? messages['Rooms.descriptionDemoCompact'] ??
+      'Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.'
+    : messages['Rooms.descriptionPrivateCompact'] ??
+      'Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.'
+  const fullDescription = isDemo
+    ? messages['Rooms.descriptionDemoFull'] ??
+      'Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.'
+    : messages['Rooms.descriptionPrivateFull'] ??
+      'Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.'
+  const roomLabel = messages['Rooms.roomLabel'] ?? 'Naziv sobe'
+  const pinLabel = messages['Rooms.pinLabel'] ?? 'PIN'
+  const roomPlaceholder = messages['Rooms.roomPlaceholder'] ?? 'Naziv sobe (npr. Kuhinja)'
+  const pinPlaceholder = messages['Rooms.pinPlaceholder'] ?? 'PIN (4-8 znamenki)'
+  const modeHint = messages['Rooms.modeHint'] ?? 'Za trajnu i privatnu pohranu kreiraj svoju sobu s PIN-om.'
+  const toggleLabel = messages['Rooms.toggleLabel'] ?? 'Toggle rooms panel'
+  const createLabel = messages['Rooms.createButton'] ?? 'Kreiraj novu sobu'
+  const joinLabel = messages['Rooms.joinButton'] ?? 'Pridruži se postojećoj sobi'
+  const demoLabel = messages['Rooms.demoButton'] ?? 'Vrati se u demo (PIN 1111)'
 
-  const containerClasses =
+  const contentDescription = variant === 'full' ? fullDescription : summaryText
+  const contentVisible = variant === 'full' || !collapsed
+  const showSummaryLabel = variant === 'compact' && collapsed && summaryText
+  const panelClasses =
     variant === 'full'
-      ? 'rounded-3xl border border-slate-200 bg-slate-900 text-white shadow-lg'
-      : 'rounded-2xl border border-slate-200 bg-slate-900 text-white shadow-sm'
+      ? 'rounded-3xl border border-slate-800 bg-slate-950 text-white shadow-2xl'
+      : 'fixed right-4 top-4 z-50 w-[22rem] rounded-2xl border border-slate-200 bg-white/95 text-slate-900 shadow-xl backdrop-blur-sm'
+  const borderColorClass = variant === 'full' ? 'border-white/10' : 'border-slate-200/60'
+  const labelTextColor = variant === 'full' ? 'text-slate-400' : 'text-slate-500'
+  const titleTextColor = variant === 'full' ? 'text-white' : 'text-slate-900'
+  const toggleArrow = variant === 'compact' ? (collapsed ? '▾' : '▴') : undefined
+
+  const handleToggle = () => {
+    if (variant === 'compact') {
+      setCollapsed((prev) => !prev)
+    }
+  }
+
+  const handleAction = (action: () => void | Promise<void>) => {
+    const result = action()
+    if (variant === 'compact') {
+      void Promise.resolve(result)
+        .then(() => setCollapsed(true))
+        .catch(() => {})
+    }
+  }
 
   return (
-    <div className={containerClasses}>
-      <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-widest text-slate-400">Aktivna soba</p>
-          <p className="text-lg font-semibold">
-            {session?.room?.name || 'Javna demo soba (PIN 1111)'}
-          </p>
-          <p className="text-xs text-slate-300">
-            {variant === 'full'
-              ? isDemo
-                ? 'Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.'
-                : 'Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.'
-              : isDemo
-                ? 'Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.'
-                : 'Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.'}
-          </p>
-        </div>
+    <div className={panelClasses}>
+      <div className="px-4 py-3">
         <button
           type="button"
-          className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-50"
-          onClick={() => void onUseDemo()}
-          disabled={loading}
+          onClick={handleToggle}
+          aria-label={toggleLabel}
+          aria-expanded={contentVisible}
+          className="flex w-full items-center justify-between gap-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
         >
-          Vrati se u demo (PIN 1111)
+          <div className="space-y-1">
+            <p className={`text-[10px] uppercase tracking-[0.3em] ${labelTextColor}`}>{panelLabel}</p>
+            <p className={`text-sm font-semibold ${titleTextColor}`}>{displayName}</p>
+          </div>
+          {toggleArrow && (
+            <span className="text-sm text-slate-500" aria-hidden="true">
+              {toggleArrow}
+            </span>
+          )}
         </button>
+        {showSummaryLabel && <p className="mt-2 text-[11px] text-slate-500">{summaryText}</p>}
+        {error && <p className="mt-2 text-xs text-rose-500">{error}</p>}
       </div>
-
-      <div className="border-t border-white/10 p-4">
-        {mode === 'required' && (
-          <p className="text-xs text-emerald-200">
-            Za trajnu i privatnu pohranu kreiraj svoju sobu s PIN-om.
-          </p>
+      <AnimatePresence initial={false}>
+        {contentVisible && (
+          <motion.div
+            key="roomsContent"
+            initial={{ y: -12, opacity: 0, height: 0 }}
+            animate={{ y: 0, opacity: 1, height: 'auto' }}
+            exit={{ y: -12, opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className={`border-t px-4 pb-4 ${borderColorClass}`}
+          >
+            {mode === 'required' && <p className="text-xs text-emerald-500">{modeHint}</p>}
+            <p className={`mt-2 text-xs ${variant === 'full' ? 'text-slate-300' : 'text-slate-500'}`}>
+              {contentDescription}
+            </p>
+            <div className="mt-4 flex flex-col gap-3">
+              <div className="grid gap-3">
+                <Field
+                  label={roomLabel}
+                  placeholder={roomPlaceholder}
+                  value={roomName}
+                  onChange={setRoomName}
+                  inputProps={{ disabled: loading, autoComplete: 'off' }}
+                />
+                <Field
+                  label={pinLabel}
+                  placeholder={pinPlaceholder}
+                  value={pin}
+                  onChange={setPin}
+                  inputProps={{
+                    disabled: loading,
+                    inputMode: 'numeric',
+                    maxLength: 8,
+                    autoComplete: 'off',
+                  }}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500 disabled:opacity-60"
+                  onClick={() => handleAction(() => onCreate(roomName, pin))}
+                  disabled={loading}
+                >
+                  {createLabel}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:opacity-60"
+                  onClick={() => handleAction(() => onJoin(roomName, pin))}
+                  disabled={loading}
+                >
+                  {joinLabel}
+                </button>
+                <button
+                  type="button"
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    variant === 'full'
+                      ? 'border border-white/30 bg-white/10 text-white hover:bg-white/20 disabled:border-white/20'
+                      : 'border border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
+                  }`}
+                  onClick={() => void onUseDemo()}
+                  disabled={loading}
+                >
+                  {demoLabel}
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
-        <div className="mt-3 grid gap-3 md:grid-cols-[2fr,1fr]">
-          <div className="flex flex-col gap-2">
-            <input
-              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
-              placeholder="Naziv sobe (npr. Shopping tim)"
-              value={roomName}
-              onChange={(event) => setRoomName(event.target.value)}
-              disabled={loading}
-            />
-            <input
-              className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none"
-              placeholder="PIN (4-8 znamenki)"
-              value={pin}
-              onChange={(event) => setPin(event.target.value)}
-              inputMode="numeric"
-              maxLength={8}
-              disabled={loading}
-            />
-            {error && <p className="text-xs text-rose-300">{error}</p>}
-          </div>
-          <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              className="rounded-lg bg-emerald-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
-              onClick={handleCreate}
-              disabled={loading}
-            >
-              Kreiraj novu sobu
-            </button>
-            <button
-              type="button"
-              className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-50"
-              onClick={handleJoin}
-              disabled={loading}
-            >
-              Pridruži se postojećoj sobi
-            </button>
-          </div>
-        </div>
-      </div>
+      </AnimatePresence>
     </div>
+  )
+}
+
+type FieldProps = {
+  label: string
+  placeholder: string
+  value: string
+  onChange: (value: string) => void
+  type?: HTMLInputTypeAttribute
+  inputProps?: InputHTMLAttributes<HTMLInputElement>
+}
+
+function Field({
+  label,
+  placeholder,
+  value,
+  onChange,
+  type = 'text',
+  inputProps,
+}: FieldProps) {
+  const baseClass =
+    'mt-1 w-full rounded-xl border border-slate-200 bg-white/90 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm transition focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400'
+  const { className, value: _value, onChange: _onChange, type: _type, ...rest } = inputProps ?? {}
+  const mergedClass = className ? `${baseClass} ${className}` : baseClass
+
+  return (
+    <label className="block text-xs">
+      <span className="block text-[10px] uppercase tracking-[0.3em] text-slate-500">{label}</span>
+      <input
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className={mergedClass}
+        {...rest}
+      />
+    </label>
   )
 }

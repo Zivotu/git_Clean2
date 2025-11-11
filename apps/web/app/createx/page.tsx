@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { SANDBOX_SUBDOMAIN_ENABLED } from '@/lib/config';
-import { apiGet, apiAuthedPost } from '@/lib/api';
+import { apiGet, apiAuthedPost, ApiError } from '@/lib/api';
+import { useTerms } from '@/components/terms/TermsProvider';
+import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
+import { TERMS_POLICY } from '@thesara/policies/terms';
 
 const steps = [
   'Analiza',
@@ -25,6 +28,11 @@ const stepMap: Record<string, number> = {
 };
 
 export default function CreateXPage() {
+  const { status: termsStatus, accept: acceptTerms, refresh: refreshTerms } = useTerms();
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const needsTermsConsent = Boolean(termsStatus && termsStatus.accepted === false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [code, setCode] = useState('');
@@ -42,6 +50,20 @@ export default function CreateXPage() {
   const progress = (currentStep / (steps.length - 1)) * 100;
 
   const publish = async () => {
+    if (needsTermsConsent) {
+      if (!termsChecked) {
+        setTermsError('Prije pokretanja potvrdi da prihvacas uvjete.');
+        return;
+      }
+      try {
+        await acceptTerms('createx-publish');
+        setTermsError(null);
+      } catch (err) {
+        console.error('createx_terms_accept_failed', err);
+        setTermsError('Spremanje prihvacanja nije uspjelo. Pokusaj ponovno.');
+        return;
+      }
+    }
     const forceWizard = true;
     setBusy(true);
     setPreviewUrl(null);
@@ -61,7 +83,13 @@ export default function CreateXPage() {
       setNeedsConfirm(forceWizard || qs.length > 0 || json.confidence < 1);
       setJobId(json.id || null);
     } catch (e) {
-      setLogs({ error: String(e) });
+      if (e instanceof ApiError && e.code === 'terms_not_accepted') {
+        setTermsError('Prije objave prihvati uvjete korištenja.');
+        setShowTermsModal(true);
+        void refreshTerms();
+      } else {
+        setLogs({ error: String(e) });
+      }
     } finally {
       setBusy(false);
     }
@@ -95,7 +123,13 @@ export default function CreateXPage() {
         setLogs((prev) => ({ ...prev, preview: String(e) }));
       }
     } catch (e) {
-      setLogs((prev) => ({ ...prev, error: String(e) }));
+      if (e instanceof ApiError && e.code === 'terms_not_accepted') {
+        setTermsError('Prije potvrde prihvati uvjete korištenja.');
+        setShowTermsModal(true);
+        void refreshTerms();
+      } else {
+        setLogs((prev) => ({ ...prev, error: String(e) }));
+      }
     } finally {
       setBusy(false);
     }
@@ -116,9 +150,17 @@ export default function CreateXPage() {
     return () => clearInterval(t);
   }, [jobId]);
 
+  useEffect(() => {
+    if (!needsTermsConsent) {
+      setTermsChecked(false);
+      setTermsError(null);
+    }
+  }, [needsTermsConsent]);
+
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-4">
-      <h1 className="text-2xl font-bold">CreateX Publish</h1>
+    <>
+      <div className="max-w-3xl mx-auto p-4 space-y-4">
+        <h1 className="text-2xl font-bold">CreateX Publish</h1>
 
       <div className="space-y-2">
         <div className="h-2 bg-gray-200 rounded">
@@ -146,14 +188,49 @@ export default function CreateXPage() {
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Opis"
       />
-      <textarea
-        className="w-full border rounded p-2 font-mono text-sm"
-        rows={8}
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        placeholder="// Paste your TSX code here"
-      />
-      <button
+  <textarea
+    className="w-full border rounded p-2 font-mono text-sm"
+    rows={8}
+    value={code}
+    onChange={(e) => setCode(e.target.value)}
+    placeholder="// Paste your TSX code here"
+  />
+  {needsTermsConsent && (
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
+      <p className="font-semibold">
+        Potvrdi da prihvacas {TERMS_POLICY.shortLabel} prije pokretanja CreateX objave.
+      </p>
+      <label className="mt-2 flex items-start gap-3 text-gray-800">
+        <input
+          type="checkbox"
+          checked={termsChecked}
+          onChange={(event) => {
+            setTermsChecked(event.target.checked);
+            if (event.target.checked) setTermsError(null);
+          }}
+          className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
+        />
+        <span>
+          Potvrdujem da sam procitao/la uvjete i prihvacam ih za sve naredne objave stvorene s
+          CreateX alatom.
+        </span>
+      </label>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setShowTermsModal(true)}
+          className="text-sm font-semibold text-emerald-700 underline underline-offset-2"
+        >
+          Otvori uvjete
+        </button>
+        <span className="text-xs text-amber-800">
+          Obavezno prilikom prve objave ili nakon promjene verzije ({TERMS_POLICY.version}).
+        </span>
+      </div>
+      {termsError && <p className="mt-2 text-xs text-red-600">{termsError}</p>}
+    </div>
+  )}
+  <button
         className="px-4 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
         onClick={publish}
         disabled={busy}
@@ -233,5 +310,11 @@ export default function CreateXPage() {
         </pre>
       </div>
     </div>
+      <TermsPreviewModal
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title={TERMS_POLICY.shortLabel}
+      />
+    </>
   );
 }

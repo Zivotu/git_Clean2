@@ -67,11 +67,20 @@
     "purchased": "Gekauft",
     "recommended": "Empfohlen",
     "loading": "Laden…",
-    "subscribed": "Abonniert",
+    "subscribed": "Aktiv",
     "selectPackage": "Paket auswählen",
     "noPackagesTitle": "Keine Pakete verfügbar",
     "noPackagesText": "Pakete sind bald verfügbar",
-    "loadError": "Pakete konnten nicht geladen werden. Bitte erneut versuchen."
+    "loadError": "Pakete konnten nicht geladen werden. Bitte erneut versuchen.",
+    "perMonth": "pro Monat",
+    "goldDescription": "Schalte höhere Limits, mehr Speicher und priorisierten Publish-Support frei.",
+    "goldFeatureApps": "Bis zu {goldLimit} aktive Apps (Free umfasst {freeLimit})",
+    "goldFeatureStorage": "Größeres Upload- und Storage-Kontingent für Bundles und Assets",
+    "goldFeatureAds": "Entfernt CreateX-Werbung in der Oberfläche und deinen Apps",
+    "goldFeatureSupport": "Priorisierter Review deiner Veröffentlichungen & direkter Support",
+    "noAdsDescription": "Entfernt sämtliche CreateX-Werbeflächen im Dashboard und in veröffentlichten Experiences.",
+    "noAdsFeatureRemoval": "Keine Anzeigen mehr im Editor, Dashboard oder deinen Apps",
+    "noAdsFeatureFocus": "Mehr Fokus für Nutzer – keine Banner oder Interstitials"
   }
   ,
   "Login": {
@@ -150,5 +159,27 @@
     "previewSelectFileFirst": "Bitte zuerst ein Bild auswählen.",
     "saveGraphic": "Grafik speichern",
     "savingGraphic": "Speichern…"
+  },
+  "Rooms": {
+    "headerActiveLabel": "Aktiver Raum",
+    "panelLabel": "Raum-Panel",
+    "defaultRoomName": "Öffentlicher Demo-Raum (PIN 1111)",
+    "descriptionDemoCompact": "Der Demo-Raum ist öffentlich und zum Testen gedacht. Alle Nutzer teilen dieselben Daten.",
+    "descriptionPrivateCompact": "Dieser Raum hat einen privaten Speicher, den nur Mitglieder mit demselben PIN teilen.",
+    "descriptionDemoFull": "Dieser Demo-Raum ist öffentlich und zeigt die App. Erstelle deinen eigenen Raum und PIN für privaten Speicher.",
+    "descriptionPrivateFull": "Der von dir gewählte Raum verfügt über privaten Speicher, der für alle zugänglich ist, die Raumname und PIN kennen.",
+    "roomLabel": "Raumname",
+    "pinLabel": "PIN",
+    "roomPlaceholder": "Raumname (z. B. Küche)",
+    "pinPlaceholder": "PIN (4-8 Ziffern)",
+    "modeHint": "Für dauerhaften privaten Speicher erstelle deinen eigenen Raum und PIN.",
+    "toggleLabel": "Raum-Panel umschalten",
+    "createButton": "Neuen Raum erstellen",
+    "joinButton": "Bestehenden Raum betreten",
+    "demoButton": "Zum Demo-Raum zurückkehren (PIN 1111)",
+    "errors": {
+      "missingCredentials": "Gib einen Raumnamen und PIN an.",
+      "generic": "Die Arbeit mit Räumen ist derzeit nicht möglich."
+    }
   }
 }

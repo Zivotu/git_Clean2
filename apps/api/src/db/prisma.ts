@@ -2,14 +2,12 @@ import { PrismaClient } from '@prisma/client';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
+const repoRootEnv = path.resolve(process.cwd(), '.env');
+const apiEnv = path.resolve(process.cwd(), 'apps', 'api', '.env');
 
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Load .env file from the current package (apps/api) and the repository root.
-dotenv.config({ path: path.resolve(process.cwd(), 'apps', 'api', '.env') });
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+// Load repo-level env (fallback) first, then allow apps/api/.env to override.
+dotenv.config({ path: repoRootEnv, override: false });
+dotenv.config({ path: apiEnv, override: true });
 
 
 type GlobalWithPrisma = typeof globalThis & {

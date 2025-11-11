@@ -11,6 +11,7 @@ import { enqueueBundleBuild } from '../workers/bundleBuildWorker.js';
 import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile, pickRandomPreviewPreset } from '../lib/preview.js';
 import { ensureListingTranslations } from '../lib/translate.js';
+import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
 
 async function ensureListingRecord(opts: {
   listingId: string | number;
@@ -85,6 +86,20 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     const uid = req.authUser?.uid;
     if (!uid) {
       return reply.code(401).send({ ok: false, error: 'unauthorized' });
+    }
+    try {
+      await ensureTermsAccepted(uid);
+    } catch (err) {
+      if (err instanceof TermsNotAcceptedError) {
+        return reply.code(428).send({
+          ok: false,
+          error: 'terms_not_accepted',
+          code: 'terms_not_accepted',
+          requiredVersion: err.status.requiredVersion,
+          acceptedVersion: err.status.acceptedVersion,
+        });
+      }
+      throw err;
     }
 
     // 1. Handle multipart upload

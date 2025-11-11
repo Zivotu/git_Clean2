@@ -6,6 +6,9 @@ import { useRouteParam } from '@/hooks/useRouteParam';
 import { useRouter } from 'next/navigation';
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
+import { useTerms } from '@/components/terms/TermsProvider';
+import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
+import { TERMS_POLICY } from '@thesara/policies/terms';
 
 export default function CheckoutPage() {
   return (
@@ -30,6 +33,11 @@ function CheckoutClient() {
   const idempotencyKeyRef = useRef<string | null>(null);
   const router = useRouter();
   const { user } = useAuth();
+  const { status: termsStatus, accept: acceptTerms, refresh: refreshTerms } = useTerms();
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [termsError, setTermsError] = useState<string | null>(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const needsTermsConsent = Boolean(user && termsStatus && termsStatus.accepted === false);
 
   const [customerEmail, setCustomerEmail] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -67,6 +75,12 @@ function CheckoutClient() {
       }
     })();
   }, [appId]);
+  useEffect(() => {
+    if (!needsTermsConsent) {
+      setTermsChecked(false);
+      setTermsError(null);
+    }
+  }, [needsTermsConsent]);
 
   const price =
     priceAmount != null
@@ -77,8 +91,22 @@ function CheckoutClient() {
       : null;
 
   async function startCheckout() {
-    setBusy(true);
     setError(null);
+    if (needsTermsConsent) {
+      if (!termsChecked) {
+        setTermsError('Prije kupovine potvrdi da prihvacas uvjete.');
+        return;
+      }
+      try {
+        await acceptTerms('checkout-flow');
+        setTermsError(null);
+      } catch (err) {
+        console.error('checkout_terms_accept_failed', err);
+        setTermsError('Spremanje prihvacanja nije uspjelo. Pokusaj ponovno.');
+        return;
+      }
+    }
+    setBusy(true);
     try {
       if (!idempotencyKeyRef.current) {
         idempotencyKeyRef.current = crypto.randomUUID();
@@ -111,6 +139,13 @@ function CheckoutClient() {
         body: JSON.stringify(body),
         credentials: 'include',
       });
+      if (res.status === 428) {
+        setTermsError('Za nastavak prihvati uvjete korištenja.');
+        setShowTermsModal(true);
+        void refreshTerms();
+        setBusy(false);
+        return;
+      }
       if (!res.ok) throw new Error('bad_response');
       const json = await res.json();
       if (json?.url) {
@@ -171,6 +206,41 @@ function CheckoutClient() {
                 prije nastavka.
               </p>
             </section>
+            {needsTermsConsent && (
+              <section className="bg-white rounded-lg shadow p-4 space-y-2 text-sm text-gray-800">
+                <p className="text-amber-900">
+                  Prije plaćanja potvrdi da prihvacaš {TERMS_POLICY.shortLabel}.
+                </p>
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={termsChecked}
+                    onChange={(event) => {
+                      setTermsChecked(event.target.checked);
+                      if (event.target.checked) setTermsError(null);
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>
+                    Potvrdujem da sam procitao/la uvjete i da prihvacam obveze tijekom kupovine i
+                    kasnijeg koristenja paketa.
+                  </span>
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-sm font-semibold text-emerald-700 underline underline-offset-2"
+                  >
+                    Otvori uvjete
+                  </button>
+                  <span className="text-xs text-amber-700">
+                    Obavezno samo pri prvoj kupnji ili kad se uvjeti promijene ({TERMS_POLICY.version}).
+                  </span>
+                </div>
+                {termsError && <p className="text-xs text-red-600">{termsError}</p>}
+              </section>
+            )}
 
             <button
               onClick={startCheckout}
@@ -189,6 +259,11 @@ function CheckoutClient() {
           </>
         )}
       </div>
+      <TermsPreviewModal
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title={TERMS_POLICY.shortLabel}
+      />
     </main>
   );
 }

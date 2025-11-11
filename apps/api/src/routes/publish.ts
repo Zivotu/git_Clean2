@@ -17,6 +17,7 @@ import { ensureListingTranslations } from '../lib/translate.js';
 import { initBuild } from '../models/Build.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import type { RoomsMode } from '../types.js';
+import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
 
 function slugify(input: string): string {
   return input
@@ -165,6 +166,20 @@ export default async function publishRoutes(app: FastifyInstance) {
     const uid = req.authUser?.uid;
     if (!uid) {
       return reply.code(401).send({ ok: false, error: 'unauthorized' });
+    }
+    try {
+      await ensureTermsAccepted(uid);
+    } catch (err) {
+      if (err instanceof TermsNotAcceptedError) {
+        return reply.code(428).send({
+          ok: false,
+          error: 'terms_not_accepted',
+          code: 'terms_not_accepted',
+          requiredVersion: err.status.requiredVersion,
+          acceptedVersion: err.status.acceptedVersion,
+        });
+      }
+      throw err;
     }
 
     const body = req.body as PublishPayload | undefined;

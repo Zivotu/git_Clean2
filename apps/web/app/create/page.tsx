@@ -21,6 +21,9 @@ import {
 } from '@/lib/previewClient';
 import type { RoomsMode } from '@/lib/types';
 import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
+import { useTerms } from '@/components/terms/TermsProvider';
+import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
+import { TERMS_POLICY } from '@thesara/policies/terms';
 
 type Mode = 'html' | 'react';
 type SubmissionType = 'code' | 'bundle';
@@ -123,6 +126,7 @@ export default function CreatePage() {
 
   const { user } = useAuth();
   const router = useRouter();
+  const { status: termsStatus, accept: acceptLatestTerms, refresh: refreshTermsStatus } = useTerms();
 
   const [showProgress, setShowProgress] = useState(false);
   const [buildStep, setBuildStep] = useState('');
@@ -130,6 +134,13 @@ export default function CreatePage() {
   const [currentBuildId, setCurrentBuildId] = useState<string | null>(null);
   const [localJobLog, setLocalJobLog] = useState('');
   const [localPreviewUrl, setLocalPreviewUrl] = useState<string | null>(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [publishTermsChecked, setPublishTermsChecked] = useState(false);
+  const [publishTermsError, setPublishTermsError] = useState<string | null>(null);
+  const needsTermsConsent = useMemo(
+    () => Boolean(user && termsStatus && termsStatus.accepted === false),
+    [user, termsStatus],
+  );
 
 
   const { status: buildStatus, reason: buildError, listingId } = useBuildEvents(currentBuildId);
@@ -179,6 +190,13 @@ export default function CreatePage() {
       permissions: { ...prev.permissions, ...permissions },
     }));
   }, [code]);
+
+  useEffect(() => {
+    if (termsStatus?.accepted) {
+      setPublishTermsChecked(false);
+      setPublishTermsError(null);
+    }
+  }, [termsStatus?.accepted]);
 
   const handleSubmissionTypeChange = (value: SubmissionType) => {
     setSubmissionType(value);
@@ -281,6 +299,21 @@ export default function CreatePage() {
     setCurrentBuildId(null);
 
     try {
+      if (needsTermsConsent) {
+        if (!publishTermsChecked) {
+          setPublishTermsError('Potvrdi da prihvaćaš uvjete korištenja prije prve objave.');
+          return;
+        }
+        try {
+          await acceptLatestTerms('publish-flow');
+          setPublishTermsError(null);
+        } catch (err) {
+          console.error('terms_accept_publish_failed', err);
+          setPublishTermsError('Spremanje prihvaćanja nije uspjelo. Pokušaj ponovno.');
+          return;
+        }
+      }
+
       if (!user) {
         setAuthError('Za objavu se prvo prijavi.');
         return;
@@ -343,6 +376,10 @@ export default function CreatePage() {
           if (err instanceof ApiError) {
             if (err.status === 401) {
               setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokusaj ponovno.');
+            } else if (err.code === 'terms_not_accepted') {
+              setPublishTermsError('Prije slanja bundla potvrdi i prihvati uvjete korištenja.');
+              setShowTermsModal(true);
+              void refreshTermsStatus();
             } else {
               setPublishError(err.message || 'Upload nije uspio.');
             }
@@ -433,6 +470,10 @@ export default function CreatePage() {
       if (err instanceof ApiError) {
         if (err.status === 401) {
           setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokušaj ponovno.');
+        } else if (err.code === 'terms_not_accepted') {
+          setPublishTermsError('Prije objave potvrdi i prihvati uvjete korištenja.');
+          setShowTermsModal(true);
+          void refreshTermsStatus();
         } else {
           const code = err.code as string | undefined;
           const friendly = (code && friendlyByCode[code]) || err.message || code || 'Greška pri objavi.';
@@ -955,12 +996,48 @@ export default function CreatePage() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
                 </div>
-
-                <div className="flex justify-between pt-4">
-                  <button
-                    onClick={handleBack}
+              </div>
+              {needsTermsConsent && (
+                <div className="mt-6 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
+                  <p className="font-semibold">
+                    Prije prve objave potvrdi da prihvacas {TERMS_POLICY.shortLabel}.
+                  </p>
+                  <label className="flex items-start gap-3 text-gray-800">
+                    <input
+                      type="checkbox"
+                      checked={publishTermsChecked}
+                      onChange={(event) => {
+                        setPublishTermsChecked(event.target.checked);
+                        if (event.target.checked) setPublishTermsError(null);
+                      }}
+                      className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>
+                      Potvrdujem da sam procitao/la uvjete i da ih prihvacam te cu ih postivati za sve
+                      buduce objave.
+                    </span>
+                  </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-sm font-semibold text-emerald-700 underline underline-offset-2"
+                    >
+                      Otvori uvjete
+                    </button>
+                    <span className="text-xs text-amber-800">
+                      Obavezno je samo prvi put ili nakon promjene verzije ({TERMS_POLICY.version}).
+                    </span>
+                  </div>
+                  {publishTermsError && (
+                    <p className="text-xs text-red-600">{publishTermsError}</p>
+                  )}
+                </div>
+              )}
+              <div className="flex justify-between pt-4">
+                <button
+                  onClick={handleBack}
                     className="rounded-lg border px-4 py-2 transition hover:bg-gray-50"
                   >
                     ← Nazad
@@ -1064,6 +1141,11 @@ export default function CreatePage() {
         </div>
       </div>
       <UpgradeModal />
+      <TermsPreviewModal
+        open={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        title={TERMS_POLICY.shortLabel}
+      />
     </main>
   );
 }

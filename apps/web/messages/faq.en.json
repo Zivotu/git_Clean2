@@ -1,5 +1,89 @@
 [
   {
+    "id": "basic",
+    "title": "Basic",
+    "items": [
+      {
+        "q": "What is Thesara?",
+        "a": "Thesara is a platform for quickly and easily publishing apps in a few clicks. The focus is on making your app available to users worldwide and giving your creativity a place to park."
+      },
+      {
+        "q": "What kinds of apps can I publish?",
+        "a": "Any app that stays within a respectful boundary — no hate, scams, theft or lies. Technically, apps you build with LLMs (like ChatGPT and similar systems) will work here as well."
+      }
+    ]
+  },
+  {
+    "id": "publishing",
+    "title": "Publishing",
+    "items": [
+      {
+        "q": "How do I publish an app?",
+        "a": "Click the green 'Publish App' button, paste the code you copied from ChatGPT or another LLM, or upload the bundle you downloaded. Add a title, description, choose an image and publish. Then wait for our review and approval — that's it!"
+      },
+      {
+        "q": "How long does publishing take?",
+        "a": "Publishing can take from a few minutes to a few hours. We're working to speed things up — still young, still improving — so it will get faster over time!"
+      },
+      {
+        "q": "What if publishing fails?",
+        "a": "Publishing fails only if we reject the app — you'll get a notification. If the app is published but doesn't behave as expected, use the 'Report Problem' button in the app details to describe the issue and we'll investigate."
+      }
+    ]
+  },
+  {
+    "id": "storage",
+    "title": "Storage & upload",
+    "items": [
+      {
+        "q": "Where are my builds and uploads stored?",
+        "a": "Builds are stored in the Thesara system, but keep your originals — we don't take responsibility for backups or permanent storage of your apps."
+      },
+      {
+        "q": "What if an upload fails?",
+        "a": "If an upload fails, please email reports@thesara.space and we'll check what happened. Uploads should normally succeed."
+      }
+    ]
+  },
+  {
+    "id": "usage",
+    "title": "Using apps",
+    "items": [
+      {
+        "q": "How can I use my app?",
+        "a": "You can keep an app private or make it available to everyone. You can offer it for free or set a monthly price — for individual apps or your whole repository. Other users can access everything you publish for one price. We take a 30% commission; see Terms in the footer for details."
+      },
+      {
+        "q": "When can I withdraw earnings?",
+        "a": "You can request a payout once you have at least $50 in your account. Transaction fees depend on the payout service and will be shown during the payout process."
+      }
+    ]
+  },
+  {
+    "id": "support",
+    "title": "Suggestions & support",
+    "items": [
+      {
+        "q": "How can I send a suggestion?",
+        "a": "Use the 'Your suggestions' link on the homepage — click and send whatever comes to mind. We love ideas, especially those that help Thesara improve!"
+      },
+      {
+        "q": "Where can I find more guidance?",
+        "a": "Find more info in this FAQ or contact us directly at support@thesara.space."
+      }
+    ]
+  },
+  {
+    "id": "ambassador",
+    "title": "Ambassador program",
+    "items": [
+      {
+        "q": "What is the Ambassador program?",
+        "a": "A short program for enthusiasts who want to promote Thesara. Sign up via the form in the UI and join the team building the future of creativity!"
+      }
+    ]
+  },
+  {
     "id": "general",
     "title": "General",
     "items": [

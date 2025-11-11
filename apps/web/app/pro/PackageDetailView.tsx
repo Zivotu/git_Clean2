@@ -4,17 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PackageCard from '@/components/PackageCard';
 import { apiFetch } from '@/lib/api';
-
-interface BillingPackage {
-  id: string;
-  name: string;
-  description?: string;
-  features?: string[];
-  tier?: string;
-  priceId: string;
-  price?: number;
-  currency?: string;
-}
+import type { BillingPackage } from '@/types/billing';
+import { useI18n } from '@/lib/i18n-provider';
+import { applyPackageCopy } from './packageCopy';
 
 interface PackageDetailViewProps {
   packageId: string;
@@ -22,6 +14,7 @@ interface PackageDetailViewProps {
 
 export default function PackageDetailView({ packageId }: PackageDetailViewProps) {
   const router = useRouter();
+  const { locale, messages } = useI18n();
   const [packages, setPackages] = useState<BillingPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +34,10 @@ export default function PackageDetailView({ packageId }: PackageDetailViewProps)
       try {
         const data = await apiFetch<BillingPackage[]>(`/billing/packages`);
         if (!cancelled) {
-          setPackages(Array.isArray(data) ? data : []);
+          const prepared = (Array.isArray(data) ? data : []).map((pkg) =>
+            applyPackageCopy(pkg, messages, locale),
+          );
+          setPackages(prepared);
         }
       } catch (err) {
         if (!cancelled) {
@@ -59,7 +55,7 @@ export default function PackageDetailView({ packageId }: PackageDetailViewProps)
     return () => {
       cancelled = true;
     };
-  }, [packageId]);
+  }, [packageId, locale, messages]);
 
   const current = useMemo(
     () => packages.find((pkg) => pkg.id === packageId),
@@ -100,6 +96,13 @@ export default function PackageDetailView({ packageId }: PackageDetailViewProps)
     );
   }
 
+  const perMonthLabel = messages['Pro.perMonth'] || 'mjesečno';
+  const buildPriceSuffix = (pkg: BillingPackage) =>
+    pkg.billingPeriod && pkg.billingPeriod !== 'month'
+      ? `/${pkg.billingPeriod}`
+      : perMonthLabel;
+  const priceSuffix = buildPriceSuffix(current);
+
   return (
     <main className="p-4 space-y-8 md:p-8 lg:p-12">
       <h1 className="text-3xl font-bold text-center md:text-4xl">{current.name}</h1>
@@ -114,8 +117,9 @@ export default function PackageDetailView({ packageId }: PackageDetailViewProps)
           features={current.features}
           price={current.price}
           currency={current.currency}
+          priceSuffix={priceSuffix}
           cta="Odaberi"
-          href={`/pro/checkout?priceId=${encodeURIComponent(current.id)}`}
+          href={`/pro/checkout?priceId=${encodeURIComponent(current.priceId || current.id)}`}
         />
       </div>
       {others.length > 0 && (
@@ -130,6 +134,7 @@ export default function PackageDetailView({ packageId }: PackageDetailViewProps)
                 features={pkg.features}
                 price={pkg.price}
                 currency={pkg.currency}
+                priceSuffix={buildPriceSuffix(pkg)}
                 cta="Vidi paket"
                 href={`/pro?id=${encodeURIComponent(pkg.id)}`}
               />

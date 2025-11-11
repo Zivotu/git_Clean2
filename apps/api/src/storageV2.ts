@@ -51,12 +51,13 @@ class GcsBackend implements IStorageBackend {
     const [exists] = await file.exists();
     if (!exists) return { etag: '0', json: {} };
 
-    const [[metadata], content] = await Promise.all([
+    const [[metadata], [content]] = await Promise.all([
       file.getMetadata(),
       file.download(),
     ]);
     const etag = String(metadata.generation);
-    const json = JSON.parse(content.toString('utf-8'));
+    const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+    const json = JSON.parse(buffer.toString('utf-8'));
     return { json, etag };
   }
 
@@ -71,13 +72,14 @@ class GcsBackend implements IStorageBackend {
       const { json: currentJson } = await this.read(ns);
       const newJson = applyPatch(currentJson, ops);
 
-      const [newFile] = await file.save(JSON.stringify(newJson), {
+      await file.save(JSON.stringify(newJson), {
         contentType: 'application/json',
         resumable: false,
         validation: false,
         preconditionOpts: { ifGenerationMatch: generation },
       });
-      const newEtag = String(newFile.metadata.generation);
+      const [savedMeta] = await file.getMetadata();
+      const newEtag = String(savedMeta.generation);
       return { etag: newEtag, json: newJson };
     } catch (e: any) {
       if (e.code === 412) {

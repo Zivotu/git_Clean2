@@ -73,8 +73,10 @@ export async function translateListing(
   if (!res.ok) {
     throw new Error(`LLM http_${res.status}`);
   }
-  const j = await res.json();
-  const content: string = j.choices?.[0]?.message?.content || '{}';
+  const j = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const content: string = j?.choices?.[0]?.message?.content || '{}';
   // Try to extract JSON from common formats (fenced blocks or inline)
   const blockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
   const candidate = (blockMatch ? blockMatch[1] : content).trim();
@@ -99,12 +101,26 @@ export async function translateListing(
       throw new Error('LLM_INVALID_JSON');
     }
   }
-  const tr = parsed?.translations || {};
-  const out: ListingTranslations = {} as any;
+  const tr = (parsed?.translations || {}) as Record<
+    string,
+    { title?: string; description?: string }
+  >;
+  const out: ListingTranslations = {};
   for (const l of locales) {
     const it = tr[l] || tr[l.toLowerCase()];
     if (it) {
-      out[l] = { title: item.title, description: String(it.description || "") } as any;
+      const normalizedTitle =
+        typeof it.title === 'string' && it.title.trim().length > 0
+          ? it.title.trim()
+          : item.title;
+      const normalizedDescription =
+        typeof it.description === 'string' && it.description.trim().length > 0
+          ? it.description.trim()
+          : item.description || '';
+      out[l] = {
+        title: normalizedTitle,
+        description: normalizedDescription,
+      };
     }
   }
   return out;
@@ -114,7 +130,7 @@ export async function ensureListingTranslations(
   app: AppRecord,
   locales: string[],
 ): Promise<ListingTranslations | null> {
-  const current = app.translations || {};
+  const current: ListingTranslations = (app.translations ?? {}) as ListingTranslations;
   const hasExisting = Object.keys(current).length > 0;
   if (!translationsFeatureEnabled()) {
     return hasExisting ? current : null;
@@ -142,8 +158,10 @@ export async function ensureListingTranslations(
   if (!Object.keys(tr).length) return null;
   const db = getFirestore();
   const ref = db.collection('apps').doc(app.id);
-  const merged = { ...current } as ListingTranslations;
-  for (const [k, v] of Object.entries(tr)) merged[k] = v as any;
+  const merged: ListingTranslations = { ...current };
+  for (const [k, v] of Object.entries(tr)) {
+    merged[k] = v;
+  }
   await ref.set({ translations: merged }, { merge: true });
   return merged;
 }

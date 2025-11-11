@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 import {
   createOrReuseAccount,
@@ -30,6 +30,7 @@ import {
   getStripeCustomerIdForUser,
 } from '../db.js';
 import { ForbiddenError } from '../lib/errors.js';
+import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
 
 /** Register billing and Stripe routes. */
 const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
@@ -37,6 +38,29 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     const pkgs = await listPackages();
     reply.send(pkgs);
   });
+
+  const guardTerms = async (req: FastifyRequest, reply: FastifyReply): Promise<boolean> => {
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      reply.code(401).send({ error: 'unauthorized' });
+      return false;
+    }
+    try {
+      await ensureTermsAccepted(uid);
+      return true;
+    } catch (err) {
+      if (err instanceof TermsNotAcceptedError) {
+        reply.code(428).send({
+          error: 'terms_not_accepted',
+          code: 'terms_not_accepted',
+          requiredVersion: err.status.requiredVersion,
+          acceptedVersion: err.status.acceptedVersion,
+        });
+        return false;
+      }
+      throw err;
+    }
+  };
 
   /** Creator onboarding to Stripe Connect */
   app.post(
@@ -131,6 +155,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
+    if (!(await guardTerms(req, reply))) return;
     try {
       const { idempotencyKey, ...data } = parsed.data;
       const session = await createCheckoutSession(
@@ -153,6 +178,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
+    if (!(await guardTerms(req, reply))) return;
     try {
       const { priceId, customerEmail, idempotencyKey } = parsed.data;
       const session = await createSubscriptionByPriceId(
@@ -183,6 +209,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     const schema = z.object({ customerEmail: z.string().email().optional() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
+    if (!(await guardTerms(req, reply))) return;
     try {
       if (!GOLD_PRICE_ID) {
         return reply.code(500).send({ error: 'missing_gold_price_id' });
@@ -204,6 +231,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     const schema = z.object({ customerEmail: z.string().email().optional() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
+    if (!(await guardTerms(req, reply))) return;
     try {
       if (!NOADS_PRICE_ID) {
         return reply.code(500).send({ error: 'missing_noads_price_id' });
@@ -235,6 +263,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
       }
       return reply.code(400).send({ error: 'invalid_input' });
     }
+    if (!(await guardTerms(req, reply))) return;
     try {
       const { appId, customerEmail, idempotencyKey } = parsed.data;
       const session = await createAppSubscription(
@@ -262,6 +291,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
+    if (!(await guardTerms(req, reply))) return;
     try {
       const { creatorId, customerEmail } = parsed.data;
       const session = await createCreatorAllAccessSubscription(

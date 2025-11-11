@@ -5,6 +5,7 @@ import type { Entitlement } from '../entitlements/service.js'
 import type { AppRecord } from '../types.js'
 import { sendTemplateToUser } from '../notifier.js'
 import { getConfig } from '../config.js'
+import { readTermsStatus, recordTermsAcceptance } from '../lib/terms.js'
 
 type EntitlementSummary = {
   entitlements: Entitlement[]
@@ -328,6 +329,63 @@ export default async function meRoutes(app: FastifyInstance) {
 
   for (const prefix of ['', '/api']) {
     secureGet(`${prefix}/me/subscribed-apps`, subscribedHandler)
+  }
+
+  const termsGetHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' })
+    }
+    try {
+      const status = await readTermsStatus(uid)
+      return reply.send(status)
+    } catch (err) {
+      req.log.error({ err, uid }, 'me_terms_status_failed')
+      return reply.code(500).send({ error: 'terms_status_failed' })
+    }
+  }
+
+  const termsAcceptHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' })
+    }
+    const body = ((req.body as any) || {}) as Record<string, unknown>
+    const source =
+      typeof body.source === 'string' && body.source.trim()
+        ? body.source.trim()
+        : 'client'
+    const metadataCandidate = body.metadata
+    const metadata =
+      metadataCandidate && typeof metadataCandidate === 'object' && !Array.isArray(metadataCandidate)
+        ? (metadataCandidate as Record<string, unknown>)
+        : undefined
+    try {
+      const status = await recordTermsAcceptance(uid, {
+        source,
+        metadata,
+        ip: req.ip ?? null,
+        userAgent: req.headers['user-agent'] as string | undefined,
+      })
+      return reply.send({ ok: true, status })
+    } catch (err) {
+      req.log.error({ err, uid }, 'me_terms_accept_failed')
+      return reply.code(500).send({ ok: false, error: 'terms_accept_failed' })
+    }
+  }
+
+  for (const prefix of ['', '/api']) {
+    app.get(
+      `${prefix}/me/terms`,
+      { preHandler: requireRole('user') },
+      termsGetHandler,
+    )
+
+    app.post(
+      `${prefix}/me/terms/accept`,
+      { preHandler: requireRole('user') },
+      termsAcceptHandler,
+    )
   }
 
   app.post(
