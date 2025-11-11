@@ -180,13 +180,17 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const GLOBAL_ROOMS_ENABLED = process.env.NEXT_PUBLIC_ROOMS_ENABLED !== 'false'
   const rawRoomsMode = app.capabilities?.storage?.roomsMode as RoomsMode | undefined
   const inferredMode: RoomsMode =
-    rawRoomsMode === 'optional' || rawRoomsMode === 'required'
+    rawRoomsMode === 'off' || rawRoomsMode === 'optional' || rawRoomsMode === 'required'
       ? rawRoomsMode
       : GLOBAL_ROOMS_ENABLED
         ? 'optional'
         : 'off'
   const roomsMode: RoomsMode =
-    inferredMode === 'optional' || inferredMode === 'required' ? inferredMode : 'off'
+    inferredMode === 'optional' || inferredMode === 'required'
+      ? inferredMode
+      : inferredMode === 'off'
+        ? 'off'
+        : 'optional'
   const roomsEnabled = roomsMode !== 'off'
   const baseNamespace = useMemo(() => makeNamespace(appId), [appId])
   const activeNamespace = roomSession?.namespace ?? baseNamespace

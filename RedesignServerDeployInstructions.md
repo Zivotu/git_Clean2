@@ -66,8 +66,14 @@ If you are using a different deploy account, substitute that user/group. To repa
 permissions later, rerun `sudo chown -R <user>:<group> /srv/thesara/storage /srv/thesara/app`.
 
 4. **SSL certificates**
-- Use Let’s Encrypt (certbot) to issue `thesara.space` certificates.
-- Place them under `/etc/letsencrypt/live/thesara.space/`.
+- Issue Let’s Encrypt certs for **both** `thesara.space` (public web) and
+  `api.thesara.space` (API + uploads host):
+  ```bash
+  sudo certbot certonly --nginx -d thesara.space -d www.thesara.space
+  sudo certbot certonly --nginx -d api.thesara.space
+  ```
+- Certs live under `/etc/letsencrypt/live/<hostname>/`. Keep the nginx configs for
+  each host pointing at their respective `fullchain.pem`/`privkey.pem` files.
 
 5. **SSL auto-renewal**
 Set up automated renewal so certbot refreshes certificates without manual steps.
@@ -121,6 +127,7 @@ NODE_ENV=production
 PORT=8788
 BUNDLE_STORAGE_PATH=/srv/thesara/storage/bundles
 PREVIEW_STORAGE_PATH=/srv/thesara/storage/previews
+LOCAL_STORAGE_DIR=/srv/thesara/storage/uploads
 STORAGE_DRIVER=local
 STORAGE_BACKEND=local
 ALLOW_REVIEW_PREVIEW=true
@@ -137,8 +144,10 @@ THESARA_PUBLIC_BASE=https://thesara.space
 ```
 
 Other values (Stripe, Firestore, etc.) carry over from the existing production file.
-`DOTENV_CONFIG_PATH` points to this file inside the PM2 config so the build worker
-and API share the same environment.
+The PM2 process launches Node with `-r dotenv/config` and `DOTENV_CONFIG_PATH=/srv/thesara/app/apps/api/.env`,
+so **changing `.env` is mandatory** for production. Keep `.env.production` aligned for reference,
+but remember that only `.env` is actually loaded at runtime. After edits, run
+`pm2 restart thesara-api --update-env` and verify with `pm2 env thesara-api | grep LOCAL_STORAGE_DIR`.
 
 ### 3.2 Web (`/srv/thesara/app/apps/web/.env.production`)
 
@@ -181,8 +190,15 @@ inter-service calls use the loopback port.
 
 ## 4. Nginx Configuration
 
-Install config at `/etc/nginx/sites-available/thesara` (symlink to `sites-enabled`).
-Key sections:
+Install two configs (both symlinked to `sites-enabled`):
+
+- `/etc/nginx/sites-available/thesara.space` – terminates TLS for the public web
+  UI and proxies to the Next.js server.
+- `/etc/nginx/sites-available/api.thesara.space` – terminates TLS for the API host,
+  proxies `/api/*`, `/builds/*`, etc. to Fastify on `127.0.0.1:8788`, and serves
+  `/uploads/` + `/previews/` directly via filesystem aliases.
+
+Key sections in the **web** vhost:
 
 - Redirect `http` → `https`.
 - Proxy `/api/` to `http://localhost:8788/api/` with upgrade headers for websockets/SSE.
@@ -191,9 +207,19 @@ Key sections:
 - Serve `/uploads/` via `alias /srv/thesara/storage/uploads/`.
 - Proxy `/` (everything else) to `http://localhost:3000`.
 
-An example configuration lives in `deploy/nginx/thesara.space.example`. Copy it to the
-server and adjust `server_name`, certificate paths, and upstream hostnames if the
-infrastructure changes.
+Key sections in the **api** vhost:
+
+- `server_name api.thesara.space;` with the Let’s Encrypt cert from
+  `/etc/letsencrypt/live/api.thesara.space/`.
+- `location ^~ /uploads/ { alias /srv/thesara/storage/uploads/; ... }`
+  so browser requests for preview images never touch Fastify.
+- `location ^~ /previews/ { alias /srv/thesara/storage/previews/; ... }`
+  for legacy review artifacts.
+- `location ^~ /api/ { proxy_pass http://127.0.0.1:8788/; ... }` plus a catch‑all
+  `location / { proxy_pass http://127.0.0.1:8788; ... }`.
+
+Example configurations live in `deploy/nginx/thesara.space.example`. Copy/adjust them
+for both hosts, ensure the symlinks exist, then reload nginx.
 
 Reload nginx after changes:
 ```bash
@@ -277,6 +303,12 @@ sudo systemctl reload nginx
   - Verify JWT secrets and env flags in `.env`.
   - Confirm Next.js env exposes `NEXT_PUBLIC_APPS_HOST` pointing to the public origin.
   - Podrazumijevano su submitovi dopušteni; dodaj `data-thesara-prevent-submit="true"` na `<form>` ako želiš da ih shim blokira.
+- For `ERR_CERT_COMMON_NAME_INVALID` on `https://api.thesara.space/uploads/...`:
+  - Ensure `/etc/nginx/sites-enabled/api.thesara.space` exists and points to the config
+    with `server_name api.thesara.space`.
+  - Confirm `ssl_certificate`/`ssl_certificate_key` reference
+    `/etc/letsencrypt/live/api.thesara.space/…`.
+  - Reload nginx and re-run `curl -I https://api.thesara.space` to verify the SAN list.
 
 ---
 
