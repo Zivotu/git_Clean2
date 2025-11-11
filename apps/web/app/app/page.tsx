@@ -34,6 +34,7 @@ import {
 import { resolvePreviewUrl } from '@/lib/preview';
 import { playHref, appDetailsHref } from '@/lib/urls';
 import { getPlayUrl } from '@/lib/play';
+import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
 
 // ------------------------------------------------------------------
 // Types
@@ -387,15 +388,6 @@ function AppDetailClient() {
   const [previewDisplayFailed, setPreviewDisplayFailed] = useState(false);
   const relativeCreated = useRelativeTime(item?.createdAt ?? null, timeSince);
 
-  const readFileAsDataUrl = useCallback(async (file: File) => {
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onerror = () => reject(new Error('read_error'));
-      reader.onload = () => resolve(String(reader.result || ''));
-      reader.readAsDataURL(file);
-    });
-  }, []);
-
   const handlePresetSelect = useCallback((preset: PreviewPresetPath) => {
     setPreviewChoice('preset');
     setSelectedPreset(preset);
@@ -432,7 +424,7 @@ function AppDetailClient() {
         if (previewInputRef.current) previewInputRef.current.value = '';
       }
     },
-    [maxPreviewMb, readFileAsDataUrl, tApp]
+    [maxPreviewMb, tApp]
   );
 
   const resetCustomPreview = useCallback(() => {

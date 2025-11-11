@@ -20,6 +20,7 @@ import {
   createPresetPreviewFile,
 } from '@/lib/previewClient';
 import type { RoomsMode } from '@/lib/types';
+import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
 
 type Mode = 'html' | 'react';
 type SubmissionType = 'code' | 'bundle';
@@ -52,14 +53,6 @@ const friendlyByCode: Record<string, string> = {
 
 const detectMode = (value: string): Mode =>
   value.trim().startsWith('<') ? 'html' : 'react';
-
-const readFileAsDataUrl = async (file: File) =>
-  await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('read_error'));
-    reader.onload = () => resolve(String(reader.result || ''));
-    reader.readAsDataURL(file);
-  });
 
 const deriveAppId = (name: string): string => {
   const fallback = `app-${Date.now()}`;

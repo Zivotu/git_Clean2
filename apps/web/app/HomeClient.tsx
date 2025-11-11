@@ -626,7 +626,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
               <div>
                 <h4 className="font-medium mb-3 text-gray-900">Platform</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/marketplace" className="hover:text-emerald-600 transition">Browse Apps</Link></li>
+                  <li><Link href="/marketplace" prefetch={false} className="hover:text-emerald-600 transition">Browse Apps</Link></li>
                   <li><Link href="/create" className="hover:text-emerald-600 transition">Publish App</Link></li>
                   <li><Link href="/my" className="hover:text-emerald-600 transition">My Projects</Link></li>
                 </ul>
@@ -635,9 +635,9 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
                 <h4 className="font-medium mb-3 text-gray-900">Resources</h4>
                 <ul className="space-y-2">
                   <li><Link href="/faq" className="hover:text-emerald-600 transition">FAQ</Link></li>
-                  <li><Link href="/docs" className="hover:text-emerald-600 transition">Documentation</Link></li>
-                  <li><Link href="/tutorials" className="hover:text-emerald-600 transition">Tutorials</Link></li>
-                  <li><Link href="/api" className="hover:text-emerald-600 transition">API Reference</Link></li>
+                  <li><Link href="/docs" prefetch={false} className="hover:text-emerald-600 transition">Documentation</Link></li>
+                  <li><Link href="/tutorials" prefetch={false} className="hover:text-emerald-600 transition">Tutorials</Link></li>
+                  <li><Link href="/api" prefetch={false} className="hover:text-emerald-600 transition">API Reference</Link></li>
                   {process.env.NODE_ENV !== 'production' && (
                     <li><Link href="/doctor" className="hover:text-emerald-600 transition">Doctor</Link></li>
                   )}
@@ -646,9 +646,9 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
               <div>
                 <h4 className="font-medium mb-3 text-gray-900">Company</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/about" className="hover:text-emerald-600 transition">About Us</Link></li>
-                  <li><Link href="/terms" className="hover:text-emerald-600 transition">Terms</Link></li>
-                  <li><Link href="/privacy" className="hover:text-emerald-600 transition">Privacy</Link></li>
+                  <li><Link href="/about" prefetch={false} className="hover:text-emerald-600 transition">About Us</Link></li>
+                  <li><Link href="/terms" prefetch={false} className="hover:text-emerald-600 transition">Terms</Link></li>
+                  <li><Link href="/privacy" prefetch={false} className="hover:text-emerald-600 transition">Privacy</Link></li>
                 </ul>
               </div>
             </div>
