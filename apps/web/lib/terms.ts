@@ -1,5 +1,5 @@
 import type { TermsPolicy } from '@thesara/policies/terms';
-import { TERMS_POLICY } from '@thesara/policies/terms';
+import { TERMS_POLICY as POLICY_DEF } from '@thesara/policies/terms';
 import { apiAuthedPost, apiGet } from './api';
 
 export interface TermsStatus {
@@ -27,4 +27,4 @@ export async function acceptTerms(payload: AcceptTermsPayload = {}): Promise<Ter
   return res.status;
 }
 
-export { TERMS_POLICY };
+export const TERMS_POLICY = POLICY_DEF;

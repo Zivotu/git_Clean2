@@ -1,59 +1,76 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, UserCredential, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { ensureUserDoc } from '@/lib/ensureUserDoc';
-import { useTerms } from '@/components/terms/TermsProvider';
-import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
-import { TERMS_POLICY } from '@thesara/policies/terms';
+import { useState, useCallback, ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createUserWithEmailAndPassword,
+  UserCredential,
+  updateProfile,
+} from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { ensureUserDoc } from "@/lib/ensureUserDoc";
+import { useTerms } from "@/components/terms/TermsProvider";
+import TermsPreviewModal from "@/components/terms/TermsPreviewModal";
+import { TERMS_POLICY } from "@thesara/policies/terms";
+import { useI18n } from "@/lib/i18n-provider";
 
 export default function RegisterPage() {
   const router = useRouter();
   const { accept: acceptTerms } = useTerms();
+  const { messages } = useI18n();
+  const t = useCallback(
+    (key: string) => messages[`Register.${key}`] || key,
+    [messages]
+  );
+  const field = useCallback((key: string) => t(`fields.${key}`), [t]);
+  const beforeTerms = t("terms.beforeLink");
+  const afterTerms = t("terms.afterLink");
+
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    username: '',
-    email: '',
-    birthYear: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-    gender: '',
-    bio: '',
+    firstName: "",
+    lastName: "",
+    username: "",
+    email: "",
+    birthYear: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    gender: "",
+    bio: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setTermsError(null);
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t("errors.passwordMismatch"));
       return;
     }
     if (!agreed) {
-      setTermsError('Molimo potvrdi da prihvaćaš uvjete korištenja prije registracije.');
+      setTermsError(t("errors.mustAcceptTerms"));
       return;
     }
-    const collection = 'users';
+
+    const collection = "users";
     let cred: UserCredential | null = null;
     try {
-      if (!auth) throw new Error('Auth not initialized');
+      if (!auth) throw new Error("Auth not initialized");
       cred = await createUserWithEmailAndPassword(auth, form.email, form.password);
       const displayName =
-        `${form.firstName} ${form.lastName}`.trim() || form.email.split('@')[0];
+        `${form.firstName} ${form.lastName}`.trim() || form.email.split("@")[0];
       await updateProfile(cred.user, { displayName });
       await ensureUserDoc({
         uid: cred.user.uid,
@@ -61,7 +78,7 @@ export default function RegisterPage() {
         displayName: cred.user.displayName,
         photoURL: cred.user.photoURL,
       });
-      if (!db) throw new Error('DB not initialized');
+      if (!db) throw new Error("DB not initialized");
       await setDoc(
         doc(db, collection, cred.user.uid),
         {
@@ -78,29 +95,28 @@ export default function RegisterPage() {
       );
       await auth.currentUser?.getIdToken(true);
       try {
-        await acceptTerms('manual-register');
+        await acceptTerms("manual-register");
       } catch (acceptErr) {
-        console.warn('terms_accept_failed', acceptErr);
+        console.warn("terms_accept_failed", acceptErr);
       }
-      router.push('/?welcome=1');
+      router.push("/?welcome=1");
     } catch (err: any) {
       console.error(`Error writing to ${collection} for user ${cred?.user?.uid}`, err);
-      setError(
-        (err.message || 'Registration failed') +
-          ' Molimo provjerite Firestore pravila ili konfiguraciju.'
-      );
+      const fallback = err?.message || t("errors.generic");
+      const hint = t("errors.firestoreHint");
+      setError(hint ? `${fallback} ${hint}` : fallback);
     }
   };
 
   return (
     <main className="max-w-md mx-auto p-6">
-      <h1 className="text-3xl font-bold mt-8">Register</h1>
+      <h1 className="text-3xl font-bold mt-8">{t("title")}</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div className="flex gap-4">
           <input
             required
             name="firstName"
-            placeholder="Ime"
+            placeholder={field("firstName")}
             value={form.firstName}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -108,7 +124,7 @@ export default function RegisterPage() {
           <input
             required
             name="lastName"
-            placeholder="Prezime"
+            placeholder={field("lastName")}
             value={form.lastName}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -117,7 +133,7 @@ export default function RegisterPage() {
         <input
           required
           name="username"
-          placeholder="Korisničko ime"
+          placeholder={field("username")}
           value={form.username}
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -126,7 +142,7 @@ export default function RegisterPage() {
           required
           type="email"
           name="email"
-          placeholder="Email"
+          placeholder={field("email")}
           value={form.email}
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -134,7 +150,7 @@ export default function RegisterPage() {
         <input
           required
           name="birthYear"
-          placeholder="Godište"
+          placeholder={field("birthYear")}
           value={form.birthYear}
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -144,7 +160,7 @@ export default function RegisterPage() {
             required
             type="password"
             name="password"
-            placeholder="Lozinka"
+            placeholder={field("password")}
             value={form.password}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -153,7 +169,7 @@ export default function RegisterPage() {
             required
             type="password"
             name="confirmPassword"
-            placeholder="Potvrdi lozinku"
+            placeholder={field("confirmPassword")}
             value={form.confirmPassword}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -161,7 +177,7 @@ export default function RegisterPage() {
         </div>
         <input
           name="phone"
-          placeholder="Broj mobitela"
+          placeholder={field("phone")}
           value={form.phone}
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -172,14 +188,14 @@ export default function RegisterPage() {
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
         >
-          <option value="">Spol</option>
-          <option value="male">Muško</option>
-          <option value="female">Žensko</option>
-          <option value="other">Drugo</option>
+          <option value="">{field("gender")}</option>
+          <option value="male">{field("genderMale")}</option>
+          <option value="female">{field("genderFemale")}</option>
+          <option value="other">{field("genderOther")}</option>
         </select>
         <textarea
           name="bio"
-          placeholder="Bio"
+          placeholder={field("bio")}
           value={form.bio}
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
@@ -197,15 +213,15 @@ export default function RegisterPage() {
               required
             />
             <span>
-              Prihvaćam{' '}
+              {beforeTerms}
               <button
                 type="button"
                 onClick={() => setShowTerms(true)}
                 className="text-emerald-700 underline underline-offset-2"
               >
                 {TERMS_POLICY.shortLabel}
-              </button>{' '}
-              i slažem se s pravilima korištenja platforme.
+              </button>{" "}
+              {afterTerms}
             </span>
           </label>
           {termsError && <p className="mt-2 text-xs text-red-600">{termsError}</p>}
@@ -215,11 +231,14 @@ export default function RegisterPage() {
           type="submit"
           className="rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 px-4 py-2"
         >
-          Register
+          {t("cta.submit")}
         </button>
       </form>
-      <TermsPreviewModal open={showTerms} onClose={() => setShowTerms(false)} title={TERMS_POLICY.shortLabel} />
+      <TermsPreviewModal
+        open={showTerms}
+        onClose={() => setShowTerms(false)}
+        title={TERMS_POLICY.shortLabel}
+      />
     </main>
   );
 }
-

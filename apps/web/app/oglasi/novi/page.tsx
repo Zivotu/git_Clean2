@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from "react";
 import Image from 'next/image';
 import { PUBLIC_API_URL } from '@/lib/config';
+import { useI18n } from '@/lib/i18n-provider';
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = ['image/jpeg', 'image/png'];
@@ -14,6 +15,11 @@ export default function NoviOglas() {
   const [error, setError] = useState('');
   const [oglasId, setOglasId] = useState<number | null>(null);
   const [status, setStatus] = useState('');
+  const { messages } = useI18n();
+  const t = useCallback(
+    (key: string) => messages[`Classifieds.new.${key}`] || key,
+    [messages]
+  );
 
   function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -24,7 +30,7 @@ export default function NoviOglas() {
         valid.push(f);
         urls.push(URL.createObjectURL(f));
       } else {
-        setError('Dozvoljene su samo JPG/PNG slike do 5MB.');
+        setError(t('errorInvalidFile'));
       }
     }
     setSlike(valid);
@@ -49,25 +55,25 @@ export default function NoviOglas() {
     );
     const data = await res.json();
     if (data?.item?.id) setOglasId(data.item.id);
-    setStatus('Spremljeno.');
+    setStatus(t('statusSaved'));
   }
 
   async function handlePublish() {
     if (!oglasId) return;
     await fetch(`${PUBLIC_API_URL}/oglasi/${oglasId}/publish`, { method: 'POST' });
-    setStatus('Objavljeno.');
+    setStatus(t('statusPublished'));
   }
 
   return (
     <div className="max-w-xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Novi oglas</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
       {error && <p className="text-red-500 mb-2">{error}</p>}
       {status && <p className="text-green-600 mb-2">{status}</p>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <textarea
           value={opis}
           onChange={(e) => setOpis(e.target.value)}
-          placeholder="Opis"
+          placeholder={t('descriptionPlaceholder')}
           className="w-full border p-2 rounded"
         />
         <input
@@ -78,12 +84,12 @@ export default function NoviOglas() {
         />
         <div className="flex gap-2 flex-wrap">
           {preview.map((src, i) => (
-            <Image key={i} src={src} alt="preview" width={96} height={96} className="w-24 h-24 object-cover" />
+            <Image key={i} src={src} alt={t('previewAlt')} width={96} height={96} className="w-24 h-24 object-cover" />
           ))}
         </div>
         <div className="flex gap-2">
           <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-            Spremi
+            {t('actions.save')}
           </button>
           {oglasId && (
             <button
@@ -91,7 +97,7 @@ export default function NoviOglas() {
               onClick={handlePublish}
               className="bg-green-600 text-white px-4 py-2 rounded"
             >
-              Objavi
+              {t('actions.publish')}
             </button>
           )}
         </div>

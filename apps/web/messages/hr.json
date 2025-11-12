@@ -23,6 +23,129 @@
     "language": "Jezik",
     "admin": "Admin"
   },
+  "About": {
+    "title": "O Thesari",
+    "subtitle": "Statički health check builda koji pinga javni API.",
+    "healthTitle": "Zdravlje API-ja",
+    "loading": "Provjera...",
+    "errorDefault": "Neuspjelo dohvaćanje podataka o zdravlju."
+  },
+  "Search": {
+    "title": "Pretraga oglasa",
+    "errorShort": "Ne možemo učitati rezultate pretrage",
+    "errorLong": "Ne možemo učitati rezultate pretrage. Provjeri API URL i status servera.",
+    "filters": {
+      "location": "Lokacija",
+      "minPrice": "Min cijena",
+      "maxPrice": "Max cijena",
+      "category": "Kategorija"
+    },
+    "actions": {
+      "apply": "Filtriraj",
+      "prev": "Prethodna",
+      "next": "Sljedeća"
+    }
+  },
+  "FAQ": {
+    "back": "← Nazad na naslovnicu",
+    "title": "FAQ",
+    "intro": "Najčešća pitanja i odgovori o platformi, objavi i pretplatama."
+  },
+  "Legal": {
+    "Terms": {
+      "fallbackTitle": "Uvjeti korištenja",
+      "fallbackBodyHtml": "Uvjeti trenutno nisu dostupni. Pogledaj <a href=\"/docs/thesara_terms.html\">statičku verziju uvjeta</a>."
+    },
+    "Privacy": {
+      "title": "Politika privatnosti",
+      "body": "Tvoja privatnost nam je važna. Ovdje objašnjavamo kako rukujemo tvojim podacima."
+    },
+    "Refunds": {
+      "title": "Pravila povrata",
+      "body": "Informacije o pravilima povrata bit će prikazane ovdje."
+    },
+    "Rules": {
+      "title": "Pravila korištenja",
+      "body": "Ovdje će biti sadržaj pravila korištenja."
+    },
+    "ContentReport": {
+      "title": "Prijava sadržaja",
+      "body": "Ovdje će biti obrazac za prijavu neprikladnog sadržaja."
+    }
+  },
+  "Classifieds": {
+    "details": {
+      "title": "Oglas {id}",
+      "average": "Prosječna ocjena: {rating}",
+      "scoreLabel": "Ocjena: {rating}",
+      "commentPlaceholder": "Komentar",
+      "submit": "Pošalji recenziju"
+    },
+    "new": {
+      "title": "Novi oglas",
+      "errorInvalidFile": "Dozvoljene su samo JPG/PNG slike do 5 MB.",
+      "statusSaved": "Spremljeno.",
+      "statusPublished": "Objavljeno.",
+      "descriptionPlaceholder": "Opis",
+      "actions": {
+        "save": "Spremi",
+        "publish": "Objavi"
+      },
+      "previewAlt": "Pregled slike"
+    }
+  },
+  "Promo": {
+    "title": "Iskoristi promo kod",
+    "mustBeSignedIn": "Moraš biti prijavljen kako bi iskoristio promo kod.",
+    "label": "Promo kod",
+    "placeholder": "npr. THESARA-JANE24",
+    "submit": "Iskoristi kod",
+    "submitting": "Obrada...",
+    "success": "Kod je uspješno iskorišten. Gold trial je aktiviran.",
+    "error": "Neuspjelo iskorištavanje koda.",
+    "validUntil": "Vrijedi do {date}",
+    "footnote": "Aktivacijom koda dobivaš besplatni Gold trial na ograničeno vrijeme, sukladno pravilima programa."
+  },
+  "LegacyHandle": {
+    "redirecting": "Preusmjeravanje..."
+  },
+  "Register": {
+    "title": "Registracija",
+    "errors": {
+      "passwordMismatch": "Lozinke se ne podudaraju.",
+      "mustAcceptTerms": "Potvrdi da prihvaćaš uvjete korištenja prije registracije.",
+      "generic": "Registracija nije uspjela.",
+      "firestoreHint": "Molimo provjeri Firestore pravila ili konfiguraciju."
+    },
+    "fields": {
+      "firstName": "Ime",
+      "lastName": "Prezime",
+      "username": "Korisničko ime",
+      "email": "Email",
+      "birthYear": "Godište",
+      "password": "Lozinka",
+      "confirmPassword": "Potvrdi lozinku",
+      "phone": "Broj mobitela",
+      "gender": "Spol",
+      "genderMale": "Muško",
+      "genderFemale": "Žensko",
+      "genderOther": "Drugo",
+      "bio": "Bio"
+    },
+    "terms": {
+      "beforeLink": "Prihvaćam ",
+      "afterLink": " i slažem se s pravilima korištenja platforme."
+    },
+    "cta": {
+      "submit": "Registriraj se"
+    }
+  },
+  "Setup": {
+    "title": "Firebase nije konfiguriran",
+    "missingIntro": "Nedostaju sljedeće varijable okruženja:",
+    "addPrefix": "Dodaj ih u datoteku",
+    "addSuffix": ":"
+  },
   "Home": {
     "headline": {
       "one": "Otkrij fantastične",

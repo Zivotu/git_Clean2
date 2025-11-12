@@ -23,6 +23,129 @@
     "language": "Sprache",
     "admin": "Admin"
   },
+  "About": {
+    "title": "Über Thesara",
+    "subtitle": "Statischer Build-Gesundheitscheck, der die öffentliche API pingt.",
+    "healthTitle": "API-Status",
+    "loading": "Wird geprüft...",
+    "errorDefault": "Abrufen der Health-Daten fehlgeschlagen."
+  },
+  "Search": {
+    "title": "Kleinanzeigen-Suche",
+    "errorShort": "Suchergebnisse konnten nicht geladen werden",
+    "errorLong": "Suchergebnisse konnten nicht geladen werden. Bitte API-URL und Serverstatus prüfen.",
+    "filters": {
+      "location": "Ort",
+      "minPrice": "Mindestpreis",
+      "maxPrice": "Höchstpreis",
+      "category": "Kategorie"
+    },
+    "actions": {
+      "apply": "Filtern",
+      "prev": "Zurück",
+      "next": "Weiter"
+    }
+  },
+  "FAQ": {
+    "back": "? Zurück zur Startseite",
+    "title": "FAQ",
+    "intro": "Häufige Fragen und Antworten zur Plattform, Veröffentlichung und Abos."
+  },
+  "Legal": {
+    "Terms": {
+      "fallbackTitle": "Nutzungsbedingungen",
+      "fallbackBodyHtml": "Die Bedingungen sind derzeit nicht verfügbar. Sieh dir <a href=\"/docs/thesara_terms.html\">die statische Seite</a> an."
+    },
+    "Privacy": {
+      "title": "Datenschutzerklärung",
+      "body": "Deine Privatsphäre ist uns wichtig. Diese Seite erklärt, wie wir mit deinen Daten umgehen."
+    },
+    "Refunds": {
+      "title": "Rückerstattungsrichtlinie",
+      "body": "Informationen zu unserer Rückerstattungsrichtlinie erscheinen hier."
+    },
+    "Rules": {
+      "title": "Nutzungsbedingungen",
+      "body": "Hier erscheint der Inhalt für die Nutzungsbedingungen."
+    },
+    "ContentReport": {
+      "title": "Inhalt melden",
+      "body": "Hier erscheint ein Formular zum Melden unangemessener Inhalte."
+    }
+  },
+  "Classifieds": {
+    "details": {
+      "title": "Inserat {id}",
+      "average": "Durchschnittliche Bewertung: {rating}",
+      "scoreLabel": "Bewertung: {rating}",
+      "commentPlaceholder": "Kommentar",
+      "submit": "Bewertung senden"
+    },
+    "new": {
+      "title": "Neues Inserat",
+      "errorInvalidFile": "Nur JPG/PNG-Bilder bis 5 MB sind erlaubt.",
+      "statusSaved": "Gespeichert.",
+      "statusPublished": "Veröffentlicht.",
+      "descriptionPlaceholder": "Beschreibung",
+      "actions": {
+        "save": "Speichern",
+        "publish": "Veröffentlichen"
+      },
+      "previewAlt": "Vorschau"
+    }
+  },
+  "Promo": {
+    "title": "Promo-Code einlösen",
+    "mustBeSignedIn": "Du musst angemeldet sein, um einen Promo-Code einzulösen.",
+    "label": "Promo-Code",
+    "placeholder": "z. B. THESARA-JANE24",
+    "submit": "Code einlösen",
+    "submitting": "Wird verarbeitet...",
+    "success": "Code wurde erfolgreich eingelöst. Gold-Testphase ist aktiv.",
+    "error": "Code konnte nicht eingelöst werden.",
+    "validUntil": "Gültig bis {date}",
+    "footnote": "Durch das Aktivieren eines Codes erhältst du für begrenzte Zeit eine kostenlose Gold-Testphase gemäß den Programmregeln."
+  },
+  "LegacyHandle": {
+    "redirecting": "Weiterleitung..."
+  },
+  "Register": {
+    "title": "Registrieren",
+    "errors": {
+      "passwordMismatch": "Passwörter stimmen nicht überein.",
+      "mustAcceptTerms": "Bitte bestätige, dass du die Nutzungsbedingungen akzeptierst, bevor du dich registrierst.",
+      "generic": "Registrierung fehlgeschlagen.",
+      "firestoreHint": "Bitte überprüfe deine Firestore-Regeln oder Konfiguration."
+    },
+    "fields": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "username": "Benutzername",
+      "email": "E-Mail",
+      "birthYear": "Geburtsjahr",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "phone": "Telefonnummer",
+      "gender": "Geschlecht",
+      "genderMale": "Männlich",
+      "genderFemale": "Weiblich",
+      "genderOther": "Divers",
+      "bio": "Kurzprofil"
+    },
+    "terms": {
+      "beforeLink": "Ich akzeptiere ",
+      "afterLink": " und stimme den Nutzungsbedingungen der Plattform zu."
+    },
+    "cta": {
+      "submit": "Registrieren"
+    }
+  },
+  "Setup": {
+    "title": "Firebase ist nicht konfiguriert",
+    "missingIntro": "Folgende Umgebungsvariablen fehlen:",
+    "addPrefix": "Füge sie in deine",
+    "addSuffix": "Datei ein:"
+  },
   "Home": {
     "headline": {
       "one": "Entdecke groÃŸartige",

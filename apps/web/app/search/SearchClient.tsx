@@ -1,8 +1,9 @@
-'use client';
-import { useEffect, useState, Suspense as _Suspense } from 'react';
+"use client";
+import { useEffect, useState, useCallback } from "react";
 import { PUBLIC_API_URL } from '@/lib/config';
 import { handleFetchError } from '@/lib/handleFetchError';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
+import { useI18n } from '@/lib/i18n-provider';
 
 type Oglas = {
   id: number;
@@ -16,6 +17,11 @@ type Oglas = {
 
 export default function SearchClient() {
   const params = useSafeSearchParams();
+  const { messages } = useI18n();
+  const t = useCallback(
+    (key: string) => messages[`Search.${key}`] || key,
+    [messages]
+  );
   const [items, setItems] = useState<Oglas[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -38,11 +44,11 @@ export default function SearchClient() {
         setItems(d.items || []);
       })
       .catch((err) => {
-        handleFetchError(err, 'Failed to load search results');
-        setError('Failed to load search results. Please check the API URL and server status.');
+        handleFetchError(err, t('errorShort'));
+        setError(t('errorLong'));
         setItems([]);
       });
-  }, [page, lokacija, cijenaMin, cijenaMax, kategorija]);
+  }, [page, lokacija, cijenaMin, cijenaMax, kategorija, t]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,37 +57,37 @@ export default function SearchClient() {
 
   return (
     <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Pretraga oglasa</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
       {error && <p className="text-red-600 mb-2">{error}</p>}
       <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 mb-4">
         <input
           value={lokacija}
           onChange={(e) => setLokacija(e.target.value)}
-          placeholder="Lokacija"
+          placeholder={t('filters.location')}
           className="border p-2 rounded"
         />
         <input
           value={cijenaMin}
           onChange={(e) => setCijenaMin(e.target.value)}
-          placeholder="Min cijena"
+          placeholder={t('filters.minPrice')}
           type="number"
           className="border p-2 rounded w-24"
         />
         <input
           value={cijenaMax}
           onChange={(e) => setCijenaMax(e.target.value)}
-          placeholder="Max cijena"
+          placeholder={t('filters.maxPrice')}
           type="number"
           className="border p-2 rounded w-24"
         />
         <input
           value={kategorija}
           onChange={(e) => setKategorija(e.target.value)}
-          placeholder="Kategorija"
+          placeholder={t('filters.category')}
           className="border p-2 rounded"
         />
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-          Filtriraj
+          {t('actions.apply')}
         </button>
       </form>
       <ul className="space-y-2">
@@ -100,11 +106,11 @@ export default function SearchClient() {
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           className="px-3 py-1 border rounded disabled:opacity-50"
         >
-          Prev
+          {t('actions.prev')}
         </button>
         <span className="px-3 py-1">{page}</span>
         <button onClick={() => setPage((p) => p + 1)} className="px-3 py-1 border rounded">
-          Next
+          {t('actions.next')}
         </button>
       </div>
     </div>

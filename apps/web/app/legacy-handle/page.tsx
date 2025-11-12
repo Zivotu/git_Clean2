@@ -4,6 +4,7 @@ import { Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import { useRouteParam } from '@/hooks/useRouteParam';
+import { useI18n } from '@/lib/i18n-provider';
 
 export default function LegacyHandlePage() {
   return (
@@ -15,6 +16,7 @@ export default function LegacyHandlePage() {
 
 function LegacyHandleClient() {
   const router = useRouter();
+  const { messages } = useI18n();
   const handle = useRouteParam('handle', (segments) => {
     if (segments.length === 1 && segments[0] !== 'legacy-handle') {
       return segments[0];
@@ -37,7 +39,7 @@ function LegacyHandleClient() {
 
   return (
     <div className="p-4 text-gray-500">
-      Redirecting...
+      {messages['LegacyHandle.redirecting'] || 'Redirecting...'}
     </div>
   );
 }

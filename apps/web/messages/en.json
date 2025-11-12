@@ -23,6 +23,129 @@
     "language": "Language",
     "admin": "Admin"
   },
+  "About": {
+    "title": "About Thesara",
+    "subtitle": "Static build health check that pings the public API.",
+    "healthTitle": "API Health",
+    "loading": "Checking...",
+    "errorDefault": "Failed to fetch health data."
+  },
+  "Search": {
+    "title": "Classifieds Search",
+    "errorShort": "Failed to load search results",
+    "errorLong": "Failed to load search results. Please check the API URL and server status.",
+    "filters": {
+      "location": "Location",
+      "minPrice": "Min price",
+      "maxPrice": "Max price",
+      "category": "Category"
+    },
+    "actions": {
+      "apply": "Filter",
+      "prev": "Prev",
+      "next": "Next"
+    }
+  },
+  "FAQ": {
+    "back": "← Back to Home",
+    "title": "FAQ",
+    "intro": "Common questions about the platform, publishing, and subscriptions."
+  },
+  "Legal": {
+    "Terms": {
+      "fallbackTitle": "Terms of Service",
+      "fallbackBodyHtml": "Terms are currently unavailable. Please check <a href=\"/docs/thesara_terms.html\">the static Terms page</a>."
+    },
+    "Privacy": {
+      "title": "Privacy Policy",
+      "body": "Your privacy is important to us. This page outlines how we handle your data."
+    },
+    "Refunds": {
+      "title": "Refund Policy",
+      "body": "Information about our refund policy will appear here."
+    },
+    "Rules": {
+      "title": "Terms of Use",
+      "body": "Content for the terms of use page will appear here."
+    },
+    "ContentReport": {
+      "title": "Report Content",
+      "body": "A form for reporting inappropriate content will appear here."
+    }
+  },
+  "Classifieds": {
+    "details": {
+      "title": "Listing {id}",
+      "average": "Average rating: {rating}",
+      "scoreLabel": "Rating: {rating}",
+      "commentPlaceholder": "Comment",
+      "submit": "Submit review"
+    },
+    "new": {
+      "title": "New listing",
+      "errorInvalidFile": "Only JPG/PNG images up to 5MB are allowed.",
+      "statusSaved": "Saved.",
+      "statusPublished": "Published.",
+      "descriptionPlaceholder": "Description",
+      "actions": {
+        "save": "Save",
+        "publish": "Publish"
+      },
+      "previewAlt": "Uploaded preview"
+    }
+  },
+  "Promo": {
+    "title": "Redeem promo code",
+    "mustBeSignedIn": "You must be signed in to redeem a promo code.",
+    "label": "Promo code",
+    "placeholder": "e.g. THESARA-JANE24",
+    "submit": "Redeem code",
+    "submitting": "Processing...",
+    "success": "The code was redeemed successfully. Gold trial is active.",
+    "error": "Unable to redeem the code.",
+    "validUntil": "Valid until {date}",
+    "footnote": "Activating a code grants you a free Gold trial for a limited time, according to the program rules."
+  },
+  "LegacyHandle": {
+    "redirecting": "Redirecting..."
+  },
+  "Register": {
+    "title": "Register",
+    "errors": {
+      "passwordMismatch": "Passwords do not match.",
+      "mustAcceptTerms": "Please confirm you accept the terms before registering.",
+      "generic": "Registration failed.",
+      "firestoreHint": "Please check your Firestore rules or configuration."
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "username": "Username",
+      "email": "Email",
+      "birthYear": "Birth year",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "phone": "Phone number",
+      "gender": "Gender",
+      "genderMale": "Male",
+      "genderFemale": "Female",
+      "genderOther": "Other",
+      "bio": "Bio"
+    },
+    "terms": {
+      "beforeLink": "I accept ",
+      "afterLink": " and agree to the platform terms of use."
+    },
+    "cta": {
+      "submit": "Register"
+    }
+  },
+  "Setup": {
+    "title": "Firebase not configured",
+    "missingIntro": "The following environment variables are missing:",
+    "addPrefix": "Add them to your",
+    "addSuffix": "file:"
+  },
   "Home": {
     "headline": {
       "one": "Discover Amazing",
