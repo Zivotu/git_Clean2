@@ -67,6 +67,7 @@ const LISTING_LOCK_ROOT = path.join(BUNDLE_ROOT, 'listing-locks');
 const COMMAND_OUTPUT_TAIL_BYTES = Number(process.env.BUNDLE_BUILD_LOG_TAIL_BYTES ?? 8000);
 const INSTALL_TIMEOUT_MS = Number(process.env.BUNDLE_BUILD_INSTALL_TIMEOUT_MS ?? 4 * 60 * 1000);
 const BUILD_TIMEOUT_MS = Number(process.env.BUNDLE_BUILD_BUILD_TIMEOUT_MS ?? 4 * 60 * 1000);
+const SKIP_CLEANUP_AFTER_BUILD = process.env.BUNDLE_WORKER_SKIP_CLEANUP === '1';
 
 export type BundleBuildWorkerHandle = { close: () => Promise<void> };
 
@@ -577,11 +578,15 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
       // This might not be a fatal error if the app doesn't need storage.
     }
   } finally {
-    // 3. Cleanup temporary zip file and per-build npm cache
-    await fs.rm(zipPath, { force: true });
-    await fs.rm(npmCacheDir, { recursive: true, force: true });
-    await fs.rm(workspaceDir, { recursive: true, force: true });
-    console.log(`[bundle-worker] Cleaned up temporary zip file and workspace.`);
+    if (SKIP_CLEANUP_AFTER_BUILD) {
+      console.log('[bundle-worker] Skipping cleanup (BUNDLE_WORKER_SKIP_CLEANUP=1).');
+    } else {
+      // 3. Cleanup temporary zip file and per-build npm cache
+      await fs.rm(zipPath, { force: true });
+      await fs.rm(npmCacheDir, { recursive: true, force: true });
+      await fs.rm(workspaceDir, { recursive: true, force: true });
+      console.log('[bundle-worker] Cleaned up temporary zip file and workspace.');
+    }
   }
 }
 
