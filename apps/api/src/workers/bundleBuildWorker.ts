@@ -180,8 +180,21 @@ type InstallPlan = {
   installArgs: string[];
   buildCommand: string;
   buildArgs: string[];
-  env?: NodeJS.ProcessEnv;
+  installEnv?: NodeJS.ProcessEnv;
+  buildEnv?: NodeJS.ProcessEnv;
   cleanup?: () => Promise<void>;
+};
+
+const INSTALL_ENV_OVERRIDES: NodeJS.ProcessEnv = {
+  NODE_ENV: 'development',
+  npm_config_production: 'false',
+  YARN_PRODUCTION: 'false',
+  pnpm_config_prod: 'false',
+  BUN_INSTALL_DEV_DEPENDENCIES: '1',
+};
+
+const BUILD_ENV_OVERRIDES: NodeJS.ProcessEnv = {
+  NODE_ENV: 'production',
 };
 
 function getPackageManagerForLock(lockFile: string): PackageManager {
@@ -224,7 +237,13 @@ async function prepareInstallPlan(
       installArgs: ['ci'],
       buildCommand: 'npm',
       buildArgs: ['run', 'build'],
-      env: {
+      installEnv: {
+        ...INSTALL_ENV_OVERRIDES,
+        npm_config_cache: npmCacheDir,
+        npm_config_userconfig: npmrcPath,
+      },
+      buildEnv: {
+        ...BUILD_ENV_OVERRIDES,
         npm_config_cache: npmCacheDir,
         npm_config_userconfig: npmrcPath,
       },
@@ -241,6 +260,8 @@ async function prepareInstallPlan(
       installArgs: ['install', '--frozen-lockfile'],
       buildCommand: 'pnpm',
       buildArgs: ['run', 'build'],
+      installEnv: INSTALL_ENV_OVERRIDES,
+      buildEnv: BUILD_ENV_OVERRIDES,
     };
   }
 
@@ -251,6 +272,8 @@ async function prepareInstallPlan(
       installArgs: ['install', '--frozen-lockfile'],
       buildCommand: 'yarn',
       buildArgs: ['run', 'build'],
+      installEnv: INSTALL_ENV_OVERRIDES,
+      buildEnv: BUILD_ENV_OVERRIDES,
     };
   }
 
@@ -260,6 +283,8 @@ async function prepareInstallPlan(
     installArgs: ['install', '--frozen-lockfile'],
     buildCommand: 'bun',
     buildArgs: ['run', 'build'],
+    installEnv: INSTALL_ENV_OVERRIDES,
+    buildEnv: BUILD_ENV_OVERRIDES,
   };
 }
 
@@ -427,9 +452,13 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
       }
       console.log(`[bundle-worker] Using ${lockFile} for deterministic install.`);
       const installPlan = await prepareInstallPlan(lockFile, projectDir, workspaceDir, npmCacheDir);
-      const mergedEnv = {
+      const installEnv = {
         npm_config_cache: npmCacheDir,
-        ...(installPlan.env ?? {}),
+        ...(installPlan.installEnv ?? {}),
+      };
+      const buildEnv = {
+        npm_config_cache: npmCacheDir,
+        ...(installPlan.buildEnv ?? {}),
       };
 
       try {
@@ -437,14 +466,14 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
           cwd: projectDir,
           timeoutMs: INSTALL_TIMEOUT_MS,
           logPrefix: `[bundle-worker][${installPlan.manager} install]`,
-          env: mergedEnv,
+          env: installEnv,
         });
 
         await runCommand(installPlan.buildCommand, installPlan.buildArgs, {
           cwd: projectDir,
           timeoutMs: BUILD_TIMEOUT_MS,
           logPrefix: `[bundle-worker][${installPlan.manager} build]`,
-          env: mergedEnv,
+          env: buildEnv,
         });
         console.log(`[bundle-worker] ${installPlan.manager} build finished.`);
       } finally {
