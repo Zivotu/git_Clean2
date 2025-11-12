@@ -97,9 +97,11 @@ async function runCommand(command: string, args: string[], options: RunCommandOp
   const useShell = process.platform === 'win32';
   const resolvedCommand = useShell ? command : command;
   return new Promise<RunCommandResult>((resolve, reject) => {
+    const env = { ...process.env, ...options.env };
+    delete env.NODE_OPTIONS;
     const child = spawn(resolvedCommand, args, {
       cwd: options.cwd,
-      env: { ...process.env, ...options.env },
+      env,
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: useShell,
     });

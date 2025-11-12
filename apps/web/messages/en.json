@@ -502,9 +502,9 @@
     "goldDescription": "Unlock higher limits, premium storage and priority publish support.",
     "goldFeatureApps": "Up to {goldLimit} active apps (Free includes {freeLimit})",
     "goldFeatureStorage": "Larger upload & storage quota for bundles and assets",
-    "goldFeatureAds": "Removes CreateX ads for you and your published apps",
+    "goldFeatureAds": "Removes THESARA.SPACE ads for you and your published apps",
     "goldFeatureSupport": "Priority publish review and dedicated support channel",
-    "noAdsDescription": "Remove CreateX ad slots from dashboards and every published experience.",
+    "noAdsDescription": "Remove THESARA.SPACE ad slots from dashboards and every published experience.",
     "noAdsFeatureRemoval": "Zero ads in the editor, dashboard and your apps",
     "noAdsFeatureFocus": "Keeps players focused on your content (no banners or interstitials)"
   }

@@ -82,7 +82,7 @@ export function getConfig(): WebConfig | null {
       SAFE_PUBLISH_ENABLED: process.env.SAFE_PUBLISH_ENABLED === 'true',
       SANDBOX_SUBDOMAIN_ENABLED: process.env.SANDBOX_SUBDOMAIN_ENABLED !== 'false',
       ROOMS_ENABLED: process.env.ROOMS_ENABLED === 'true',
-      SITE_NAME: process.env.NEXT_PUBLIC_SITE_NAME || 'CreateX',
+      SITE_NAME: process.env.NEXT_PUBLIC_SITE_NAME || 'THESARA.SPACE',
       MAX_APPS_PER_USER: Number(process.env.NEXT_PUBLIC_MAX_APPS_PER_USER || '2'),
       GOLD_MAX_APPS_PER_USER: Number(
         process.env.NEXT_PUBLIC_GOLD_MAX_APPS_PER_USER || '10',
@@ -117,7 +117,7 @@ let API_URL = '';
 let SAFE_PUBLISH_ENABLED = false;
 let SANDBOX_SUBDOMAIN_ENABLED = true;
 let ROOMS_ENABLED = false;
-let SITE_NAME = 'CreateX';
+let SITE_NAME = 'THESARA.SPACE';
 let MAX_APPS_PER_USER = 2;
 let GOLD_MAX_APPS_PER_USER = 10;
 let MAX_ROOMS_PER_APP = 10;

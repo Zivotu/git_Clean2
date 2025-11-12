@@ -1,4 +1,4 @@
-{
+﻿{
   "Nav": {
     "publishApp": "App ver├╢ffentlichen",
     "myProjects": "Meine Projekte",
@@ -473,7 +473,7 @@
     "plays": "{count} Aufrufe"
   },
   "Toasts": {
-    "welcome": "Willkommen bei CreateX!",
+    "welcome": "Willkommen bei THESARA.SPACE!",
     "loginToLike": "Melde dich an, um Apps zu liken",
     "slowDown": "Langsam ≡ƒÖé",
     "likeError": "App konnte nicht geliked werden. Bitte API-URL und Serverstatus pr├╝fen.",
@@ -503,9 +503,9 @@
     "goldDescription": "Schalte h├╢here Limits, mehr Speicher und priorisierten Publish-Support frei.",
     "goldFeatureApps": "Bis zu {goldLimit} aktive Apps (Free umfasst {freeLimit})",
     "goldFeatureStorage": "Gr├╢├ƒeres Upload- und Storage-Kontingent f├╝r Bundles und Assets",
-    "goldFeatureAds": "Entfernt CreateX-Werbung in der Oberfl├ñche und deinen Apps",
+    "goldFeatureAds": "Entfernt THESARA.SPACE-Werbung in der Oberfl├ñche und deinen Apps",
     "goldFeatureSupport": "Priorisierter Review deiner Ver├╢ffentlichungen & direkter Support",
-    "noAdsDescription": "Entfernt s├ñmtliche CreateX-Werbefl├ñchen im Dashboard und in ver├╢ffentlichten Experiences.",
+    "noAdsDescription": "Entfernt s├ñmtliche THESARA.SPACE-Werbefl├ñchen im Dashboard und in ver├╢ffentlichten Experiences.",
     "noAdsFeatureRemoval": "Keine Anzeigen mehr im Editor, Dashboard oder deinen Apps",
     "noAdsFeatureFocus": "Mehr Fokus f├╝r Nutzer ΓÇô keine Banner oder Interstitials"
   },

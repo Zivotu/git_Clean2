@@ -473,7 +473,7 @@
     "plays": "{count} igranja"
   },
   "Toasts": {
-    "welcome": "Dobrodošli na CreateX!",
+    "welcome": "Dobrodošli na THESARA.SPACE!",
     "loginToLike": "Prijavi se da lajkiraš aplikacije",
     "slowDown": "Polako 🙂",
     "likeError": "Ne možemo lajkati aplikaciju. Provjeri API URL i status servera.",
@@ -503,9 +503,9 @@
     "goldDescription": "Otključajte veće limite, više prostora i prioritetnu podršku pri objavi.",
     "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Free uključuje {freeLimit})",
     "goldFeatureStorage": "Veći upload i storage za bundlove te assete",
-    "goldFeatureAds": "Uklanja CreateX oglase iz sučelja i objavljenih aplikacija",
+    "goldFeatureAds": "Uklanja THESARA.SPACE oglase iz sučelja i objavljenih aplikacija",
     "goldFeatureSupport": "Prioritetna obrada objava i brži pristup podršci",
-    "noAdsDescription": "Plan koji uklanja sve CreateX oglase iz sučelja i iskustava.",
+    "noAdsDescription": "Plan koji uklanja sve THESARA.SPACE oglase iz sučelja i iskustava.",
     "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vašim aplikacijama",
     "noAdsFeatureFocus": "Publika ostaje fokusirana na sadržaj (bez bannera i pop-upova)"
   },
