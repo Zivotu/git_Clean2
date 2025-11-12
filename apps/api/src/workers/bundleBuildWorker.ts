@@ -188,6 +188,7 @@ type InstallPlan = {
 const INSTALL_ENV_OVERRIDES: NodeJS.ProcessEnv = {
   NODE_ENV: 'development',
   npm_config_production: 'false',
+  npm_config_include: 'dev',
   YARN_PRODUCTION: 'false',
   pnpm_config_prod: 'false',
   BUN_INSTALL_DEV_DEPENDENCIES: '1',
@@ -212,6 +213,23 @@ function getPackageManagerForLock(lockFile: string): PackageManager {
   }
 }
 
+const BUILD_TOOL_MARKERS = ['vite', 'tsup', 'webpack', 'rollup', 'parcel', 'gulp', 'esbuild'];
+
+function isMissingBuildToolError(err: any): boolean {
+  const text = [
+    err?.stderr,
+    err?.stdout,
+    err?.message,
+  ]
+    .filter(Boolean)
+    .join('\n')
+    .toLowerCase();
+  if (!text.includes('not found') && !text.includes('command not found')) {
+    return false;
+  }
+  return BUILD_TOOL_MARKERS.some((tool) => text.includes(tool));
+}
+
 function detectPackageManagerFromPackageJson(pkgJson: any): PackageManager {
   const field = typeof pkgJson?.packageManager === 'string' ? pkgJson.packageManager : '';
   if (field.startsWith('pnpm')) return 'pnpm';
@@ -234,7 +252,7 @@ async function prepareInstallPlan(
     return {
       manager,
       installCommand: 'npm',
-      installArgs: ['ci'],
+      installArgs: ['ci', '--include=dev'],
       buildCommand: 'npm',
       buildArgs: ['run', 'build'],
       installEnv: {
@@ -318,11 +336,12 @@ async function synthesizeNpmLock(
   const npmrcPath = path.join(workspaceDir, '.npmrc.synth');
   await fs.writeFile(npmrcPath, `registry=${DEFAULT_NPM_REGISTRY}\n`, 'utf8');
   try {
-    await runCommand('npm', ['install', '--package-lock-only', '--ignore-scripts'], {
+    await runCommand('npm', ['install', '--package-lock-only', '--ignore-scripts', '--include=dev'], {
       cwd: projectDir,
       timeoutMs,
       logPrefix: '[bundle-worker][npm lock synth]',
       env: {
+        ...INSTALL_ENV_OVERRIDES,
         npm_config_cache: npmCacheDir,
         npm_config_userconfig: npmrcPath,
         npm_config_save_exact: 'true',
@@ -461,6 +480,7 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
         ...(installPlan.buildEnv ?? {}),
       };
 
+      let didDevRetry = false;
       try {
         await runCommand(installPlan.installCommand, installPlan.installArgs, {
           cwd: projectDir,
@@ -469,12 +489,37 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
           env: installEnv,
         });
 
-        await runCommand(installPlan.buildCommand, installPlan.buildArgs, {
-          cwd: projectDir,
-          timeoutMs: BUILD_TIMEOUT_MS,
-          logPrefix: `[bundle-worker][${installPlan.manager} build]`,
-          env: buildEnv,
-        });
+        const runBuild = () =>
+          runCommand(installPlan.buildCommand, installPlan.buildArgs, {
+            cwd: projectDir,
+            timeoutMs: BUILD_TIMEOUT_MS,
+            logPrefix: `[bundle-worker][${installPlan.manager} build]`,
+            env: buildEnv,
+          });
+
+        try {
+          await runBuild();
+        } catch (err) {
+          if (
+            !didDevRetry &&
+            installPlan.manager === 'npm' &&
+            isMissingBuildToolError(err)
+          ) {
+            didDevRetry = true;
+            console.warn(
+              `[bundle-worker] Build tool missing after install; retrying npm install with --include=dev.`,
+            );
+            await runCommand('npm', ['install', '--include=dev'], {
+              cwd: projectDir,
+              timeoutMs: INSTALL_TIMEOUT_MS,
+              logPrefix: `[bundle-worker][npm install --include=dev]`,
+              env: installEnv,
+            });
+            await runBuild();
+          } else {
+            throw err;
+          }
+        }
         console.log(`[bundle-worker] ${installPlan.manager} build finished.`);
       } finally {
         await installPlan.cleanup?.();
