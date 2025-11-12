@@ -13,7 +13,7 @@ import { messages as ALL_MESSAGES, type Locale, defaultLocale } from '@/i18n/con
 import { getServerLocale } from '@/lib/locale';
 
 export const metadata = {
-  title: 'CreateX',
+  title: 'Thesara',
   description: 'Discover, play and publish mini-apps.',
 };
 

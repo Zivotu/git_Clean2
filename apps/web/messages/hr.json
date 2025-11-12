@@ -109,6 +109,308 @@
   "LegacyHandle": {
     "redirecting": "Preusmjeravanje..."
   },
+  "Checkout": {
+    "pageTitle": "Pregled narudžbe",
+    "loading": "Učitavanje…",
+    "subscriptionLabel": "Pretplata",
+    "priceLabel": "Cijena",
+    "emailLabel": "Email za račun",
+    "promoPrefix": "Imate promo kod od ambasadora?",
+    "promoLink": "Iskoristite ga ovdje",
+    "promoSuffix": "prije nastavka.",
+    "termsPrompt": "Prije plaćanja potvrdi da prihvaćaš {termsLabel}.",
+    "termsCheckbox": "Potvrđujem da sam pročitao/la uvjete i da prihvaćam obveze tijekom kupovine i kasnijeg korištenja paketa.",
+    "termsButton": "Otvori uvjete",
+    "termsNote": "Obavezno samo pri prvoj kupnji ili kad se uvjeti promijene ({version}).",
+    "termsMissing": "Prije kupovine potvrdi da prihvaćaš uvjete.",
+    "termsSaveError": "Spremanje prihvaćanja nije uspjelo. Pokušaj ponovno.",
+    "buttonSubmitting": "Slanje…",
+    "buttonSubmit": "Nastavi",
+    "backLink": "← Natrag",
+    "missingAppId": "Nedostaje ID aplikacije.",
+    "loadErrorGeneric": "Greška pri učitavanju podataka.",
+    "errorInvalidResponse": "Neispravan odgovor poslužitelja.",
+    "errorNetwork": "Greška pri komunikaciji s API-jem."
+  },
+  "DiagEnv": {
+    "title": "Dijagnostika okruženja",
+    "missingHeading": "Nedostajuće varijable",
+    "none": "Nema"
+  },
+  "Admin": {
+    "title": "Admin nadzorna ploča",
+    "errors": {
+      "accessDenied": "Pristup odbijen — prijavi se kao admin ili traži whitelisting.",
+      "llmMissingApiKey": "Nedostaje LLM API ključ.",
+      "llmInvalidJson": "AI servis je vratio neispravan JSON.",
+      "llmUnreachable": "AI servis trenutno nije dostupan.",
+      "missingArtifact": "Nedostaju artefakti — pokreni cijeli build (pnpm run createx:build).",
+      "llmReviewFailed": "LLM provjera nije uspjela."
+    },
+    "buttons": {
+      "logout": "Odjava",
+      "login": "Prijava",
+      "edit": "Uredi",
+      "close": "Zatvori"
+    },
+    "tabs": {
+      "apps": "Aplikacije",
+      "users": "Korisnici",
+      "ambassadorProgram": "Ambasador program",
+      "admins": "Admini",
+      "emailTemplates": "Email predlošci"
+    },
+    "filters": {
+      "searchPlaceholder": "Pretraži",
+      "clear": "Očisti",
+      "refresh": "Osvježi",
+      "status": {
+        "all": "Sve",
+        "pending": "Na čekanju",
+        "approved": "Odobreno",
+        "rejected": "Odbijeno",
+        "deleted": "Obrisano"
+      }
+    },
+    "stats": {
+      "foundApps": "Pronađeno {count} aplikacija"
+    },
+    "alerts": {
+      "llmDisabled": "AI provjera je privremeno isključena. Objave čekaju ručni pregled.",
+      "bundleNotReady": "Bundle jo�? nije spreman.",
+      "artifactsPending": "Artefakti nisu spremni. Pri�?ekaj zavr�etak builda ili ga ponovno pokreni pa poku�aj opet.",
+      "downloadFailed": "Preuzimanje nije uspjelo. Poku�aj kasnije.",
+      "noBuildApprove": "Nema aktivnog builda za odobravanje.",
+      "approveSuccess": "Unos je odobren.",
+      "noBuildReject": "Nema aktivnog builda za odbijanje.",
+      "rejectSuccess": "Unos je odbijen.",
+      "deleteSuccess": "Unos je premje�ten u obrisane.",
+      "deleteFailed": "Brisanje nije uspjelo.",
+      "forceDeleteSuccess": "Unos je trajno obrisan.",
+      "forceDeleteFailed": "Trajno brisanje nije uspjelo.",
+      "restoreSuccess": "Unos vra�en.",
+      "restoreFailed": "Vra�anje nije uspjelo.",
+      "buildQueued": "Build je zakazan. Osvje�avam…",
+      "buildQueueFailed": "Zakazivanje builda nije uspjelo.",
+      "policySaveFailed": "Spremanje dozvola nije uspjelo.",
+      "noSelection": "Najprije odaberi unos.",
+      "saveSuccess": "Spremljeno.",
+      "saveFailed": "Spremanje nije uspjelo.",
+      "createSuccess": "Kreirano.",
+      "createFailed": "Kreiranje nije uspjelo."
+    },
+    "table": {
+      "appId": "App ID",
+      "preview": "Pregled",
+      "name": "Naziv",
+      "ownerEmail": "Email vlasnika",
+      "submitted": "Predano",
+      "network": "Mreža",
+      "llm": "LLM",
+      "actions": "Radnje"
+    },
+    "preview": {
+      "none": "Bez"
+    },
+    "network": {
+      "fetchDomain": "fetch prema {domain}"
+    },
+    "llm": {
+      "disabledLabel": "LLM isključen",
+      "recommendation": "AI preporuka: {value}"
+    },
+    "llmDetails": {
+      "attempts": "LLM pokušaji: {count}",
+      "noReport": "Izvještaj još nije dostupan.",
+      "regenerating": "Analiza…",
+      "run": "Pokreni LLM analizu",
+      "disabledButton": "LLM isključen",
+      "enableHint": "Uključi AI provjeru u konfiguraciji kako bi izvještaj bio dostupan.",
+      "providerLabel": "Pružatelj",
+      "showJson": "Prikaži JSON",
+      "hideJson": "Sakrij JSON",
+      "runAgain": "Pokreni ponovno"
+    },
+    "llmStatus": {
+      "failed": "LLM greška",
+      "waiting": "LLM čeka",
+      "disabledToast": "LLM analiza je trenutno isključena."
+    },
+    "pagination": {
+      "loadMore": "Učitaj još"
+    },
+    "adminSettings": {
+      "heading": "Postavke admin sučelja",
+      "description": "Upravlja popisom računa koji smiju otključati skriveni admin pristup.",
+      "refresh": "Osvježi",
+      "loading": "Učitavanje…",
+      "empty": "Nema dopuštenih e-mail adresa.",
+      "remove": "Ukloni",
+      "addPlaceholder": "admin@example.com",
+      "addButton": "Dodaj",
+      "loadError": "Ne mogu učitati popis dopuštenih admin korisnika.",
+      "refreshError": "Osvježavanje popisa nije uspjelo.",
+      "addEmpty": "Unesi e-mail adresu.",
+      "addInvalid": "E-mail adresa nije valjana.",
+      "addDuplicate": "E-mail je već na popisu.",
+      "addFailed": "Dodavanje nije uspjelo.",
+      "removeFailed": "Uklanjanje nije uspjelo.",
+      "removeConfirm": "Ukloniti {email} s popisa?"
+    },
+    "users": {
+      "heading": "Upravljanje korisnicima",
+      "loading": "Učitavam korisnike…",
+      "loadFailed": "Ne mogu učitati korisnike.",
+      "updateFailed": "Ne mogu ažurirati pogodnosti korisnika.",
+      "filterLabel": "Filtriraj po pogodnosti:",
+      "filterAll": "Sve",
+      "searchLabel": "Pretraži:",
+      "searchPlaceholder": "Traži po e-mailu, imenu ili UID-u",
+      "table": {
+        "email": "Email",
+        "displayName": "Ime i prezime",
+        "entitlements": "Pogodnosti",
+        "actions": "Radnje"
+      },
+      "badges": {
+        "ambassador": "Ambasador",
+        "free": "Besplatno"
+      },
+      "editTitle": "Uredi korisnika: {email}",
+      "entitlements": {
+        "isGold": "Gold",
+        "noAds": "Bez oglasa",
+        "Ambasador": "Ambasador",
+        "Partner": "Partner"
+      }
+    },
+    "emailTemplates": {
+      "heading": "Predlošci e-mailova",
+      "description": "Uredi sadržaj e-mailova koje sustav može slati. Koristi {{placeholders}} za dinamičke vrijednosti (npr. {{displayName}}, {{appTitle}}).",
+      "refresh": "Osvježi",
+      "loadFailed": "Ne mogu učitati predloške.",
+      "scenarioLabel": "Scenario",
+      "scenarioPlaceholder": "-- odaberi scenario --",
+      "scenarios": {
+        "welcome": "welcome (novi korisnik)",
+        "reviewApproval": "review:approval_notification (odobrenje)",
+        "reviewReject": "review:reject_notification (odbijanje)",
+        "publishPending": "publish:pending_notification (na �ekanju)"
+      },
+      "load": "Učitaj",
+      "save": "Spremi",
+      "restoreFallback": "Vrati fallback",
+      "subjectLabel": "Predmet",
+      "bodyLabel": "Tijelo poruke",
+      "loading": "Učitavanje…",
+      "empty": "Nema definiranih predložaka.",
+      "createTitle": "Kreiraj novi predložak",
+      "createDescription": "Unesi jedinstveni ID (npr. welcome, review:approval_notification).",
+      "placeholderId": "ID predloška",
+      "placeholderSubject": "predmet",
+      "placeholderBody": "tijelo",
+      "createButton": "Kreiraj",
+      "scenarioDropdownHint": "Odaberi scenario iz padajućeg izbornika.",
+      "scenarioRequired": "Najprije odaberi scenario.",
+      "scenarioLoadFailed": "Ne mogu učitati predložak ili fallback tekst za ovaj scenario.",
+      "restoreInfo": "Fallback je vraćen lokalno — ne zaboravi Spremi da bi ostao.",
+      "restoreFailed": "Vraćanje fallbacka nije uspjelo.",
+      "templateIdRequired": "Unesi ID predloška."
+    },
+    "ambassador": {
+      "title": "Ambasador administracija",
+      "subtitle": "Pregledaj prijave, upravljaj kodovima i obradi isplate.",
+      "emptyValue": "—",
+      "kpis": {
+        "approved": "Aktivni ambasadori",
+        "pendingApplications": "Prijave na �ekanju",
+        "pendingPayouts": "Isplate na �ekanju",
+        "outstandingBalance": "Neispla�eni balans (€)"
+      },
+      "posts": {
+        "heading": "Objave ambasadora (na �ekanju)",
+        "refresh": "Osvje�i",
+        "loading": "U�itavanje objava…",
+        "empty": "Nema objava na �ekanju.",
+        "table": {
+          "link": "Link",
+          "ambassador": "Ambasador",
+          "month": "Mjesec",
+          "actions": "Radnje"
+        },
+        "verify": "Verificiraj",
+        "reject": "Odbij"
+      },
+      "applicationTabs": {
+        "pending": "Nove prijave",
+        "approved": "Odobreni",
+        "rejected": "Odbijeni"
+      },
+      "payoutTabs": {
+        "pending": "Za obradu",
+        "processing": "U obradi",
+        "paid": "Pla�eni",
+        "rejected": "Odbijeni",
+        "all": "Svi"
+      },
+      "prompts": {
+        "rejectReason": "Razlog odbijanja (opcionalno):",
+        "paypalTransaction": "PayPal transakcija (opcionalno):"
+      },
+      "messages": {
+        "approveSuccess": "Prijava je odobrena. Kod: {code}",
+        "rejectSuccess": "Prijava je odbijena.",
+        "payoutPaid": "Isplata ozna�ena kao pla�ena.",
+        "payoutRejected": "Isplata je odbijena."
+      },
+      "errors": {
+        "adminOnly": "Pristup dopu�ten samo administratorima.",
+        "loadApplications": "Neuspje�no u�itavanje prijava.",
+        "loadPayouts": "Neuspje�no u�itavanje isplata.",
+        "loadPosts": "Neuspje�no u�itavanje objava.",
+        "approveFailed": "Odobravanje nije uspjelo.",
+        "rejectFailed": "Odbijanje nije uspjelo.",
+        "payoutActionFailed": "Akcija na isplati nije uspjela."
+      },
+      "applications": {
+        "loading": "U�itavanje prijava…",
+        "empty": "Nema prijava za odabrani status.",
+        "table": {
+          "user": "Korisnik",
+          "email": "Email",
+          "status": "Status",
+          "details": "Detalji prijave",
+          "balance": "Balans",
+          "actions": "Radnje"
+        },
+        "appliedAt": "Prijavljeno: {date}",
+        "platform": "Platforma: {value}",
+        "audience": "Publika: {value}",
+        "motivation": "Motivacija",
+        "balanceValue": "€{amount}",
+        "approve": "Odobri",
+        "reject": "Odbij",
+        "promoCode": "Kod: {code}"
+      },
+      "payouts": {
+        "loading": "U�itavanje isplata…",
+        "empty": "Nema isplata za odabrani filter.",
+        "table": {
+          "id": "Payout ID",
+          "ambassador": "Ambasador",
+          "amount": "Iznos",
+          "status": "Status",
+          "paypal": "PayPal",
+          "actions": "Radnje"
+        },
+        "requestedAt": "Zatra�eno: {date}",
+        "amountValue": "€{amount}",
+        "markPaid": "Ozna�i pla�eno",
+        "reject": "Odbij",
+        "transaction": "Txn: {id}"
+      }
+    }
+  },
   "Register": {
     "title": "Registracija",
     "errors": {
@@ -154,7 +456,9 @@
     "tagline": "Kurirani marketplace za iskustva u pregledniku. Gradi, dijeli i istražuj.",
     "trending": "U trendu",
     "appsCount": "{count} aplikacija",
-    "search": { "placeholder": "Pretraži aplikacije, igre ili oznake..." },
+    "search": {
+      "placeholder": "Pretraži aplikacije, igre ili oznake..."
+    },
     "appsFound": "Pronađeno {count} aplikacija",
     "sort": {
       "new": "Najnovije",
@@ -179,8 +483,7 @@
   "Footer": {
     "slogan": "Marketplace za aplikacije i igre u pregledniku.",
     "allRights": "Sva prava pridržana."
-  }
-  ,
+  },
   "Pro": {
     "choosePlan": "Odaberite paket",
     "subtitle": "Proširite mogućnosti svoje aplikacije s našim naprednim paketima",
@@ -205,8 +508,7 @@
     "noAdsDescription": "Plan koji uklanja sve CreateX oglase iz sučelja i iskustava.",
     "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vašim aplikacijama",
     "noAdsFeatureFocus": "Publika ostaje fokusirana na sadržaj (bez bannera i pop-upova)"
-  }
-  ,
+  },
   "Login": {
     "backToHome": "Nazad na naslovnicu",
     "welcomeTitle": "Dobrodošli na {site}",
@@ -227,15 +529,25 @@
     "signInWithEmail": "Prijava e‑mailom",
     "noAccount": "Nemaš račun?",
     "register": "Registracija"
-  }
-  ,
+  },
   "Create": {
+    "source": "Izvor",
+    "pageTitle": "Objavi novu aplikaciju",
     "pasteCode": "Zalijepi kod",
     "placeholderHtml": "<!-- HTML kod ovdje -->\n<div>\n  <h1>Pozdrav</h1>\n</div>",
     "placeholderReact": "// React kod ovdje\nexport default function App(){\n  return <h1>Pozdrav</h1>;\n}",
     "basics": "Osnove",
     "name": "Naziv",
     "description": "Opis",
+    "sourceSection": "Izvor aplikacije",
+    "optionPasteCode": "Zalijepi kod",
+    "optionUploadBundle": "Upload paketa (.zip)",
+    "bundleHintPart1": "ZIP paket mora sadržavati build izlaz zajedno s datotekama",
+    "bundleHintPart2": "i",
+    "bundleHintPart3": "Worker će ga lokalno instalirati i pokrenuti",
+    "chooseZip": "Odaberi ZIP",
+    "placeholderHtmlLong": "HTML snipet ili cijela stranica...",
+    "placeholderReactLong": "React komponenta...",
     "previewGraphic": "Odaberi grafiku aplikacije",
     "previewGraphicHint": "Odaberi jednu od predložaka ili učitaj vlastitu sliku (najviše 1 MB).",
     "previewOverlayPlaceholder": "Naslov aplikacije",
@@ -256,8 +568,7 @@
     "publish": "Objavi",
     "mustSignIn": "Za objavu se prvo prijavi.",
     "login": "Prijava"
-  }
-  ,
+  },
   "App": {
     "notFound": "Aplikacija nije pronađena",
     "backToMarketplace": "Nazad na naslovnicu",

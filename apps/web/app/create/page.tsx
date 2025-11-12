@@ -24,6 +24,7 @@ import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
 import { useTerms } from '@/components/terms/TermsProvider';
 import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
+import { useI18n } from '@/lib/i18n-provider';
 
 type Mode = 'html' | 'react';
 type SubmissionType = 'code' | 'bundle';
@@ -40,7 +41,8 @@ interface ManifestDraft {
 }
 
 const overlayMaxChars = 22;
-const stepsList = ['Izvor', 'Osnove'] as const;
+const stepsList = ['source', 'basics'] as const;
+type StepKey = typeof stepsList[number];
 
 const friendlyByCode: Record<string, string> = {
   NET_OPEN_NEEDS_DOMAINS: 'Dodaj barem jednu domenu (npr. api.example.com).',
@@ -88,6 +90,24 @@ export default function CreatePage() {
   const bundleInputRef = useRef<HTMLInputElement | null>(null);
   const [bundleFile, setBundleFile] = useState<File | null>(null);
   const [bundleError, setBundleError] = useState('');
+
+  const { messages } = useI18n();
+  const tCreate = useCallback(
+    (key: string, params?: Record<string, string | number>) => {
+      let value = messages[`Create.${key}`] || key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          value = value.replaceAll(`{${k}}`, String(v));
+        }
+      }
+      return value;
+    },
+    [messages]
+  );
+  const getStepLabel = useCallback(
+    (key: StepKey) => (key === 'basics' ? tCreate('basics') : tCreate('source')),
+    [tCreate]
+  );
 
   const [manifest, setManifest] = useState<ManifestDraft>({
     name: '',
@@ -336,7 +356,7 @@ export default function CreatePage() {
 
       if (submissionType === 'bundle') {
         if (!bundleFile) {
-          setBundleError('Odaberi ZIP datoteku.');
+          setBundleError('{tCreate('chooseZip')} datoteku.');
           return;
         }
         setShowProgress(true);
@@ -594,7 +614,7 @@ export default function CreatePage() {
 
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold text-emerald-700">Objavi novu aplikaciju</h1>
+          <h1 className="text-2xl font-bold text-emerald-700">{tCreate('pageTitle')}</h1>
           <div className="flex min-w-[260px] items-center gap-3">
             <div className="h-2 w-full overflow-hidden rounded-full bg-white/60 ring-1 ring-emerald-200">
               <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progressPct}%` }} />
@@ -604,16 +624,20 @@ export default function CreatePage() {
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-2 text-sm">
-          {stepsList.map((label, index) => (
-            <StepButton key={label} index={index} label={label} />
+          {stepsList.map((stepKey, index) => (
+            <StepButton
+              key={stepKey}
+              index={index}
+              label={getStepLabel(stepKey)}
+            />
           ))}
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            {stepsList[step] === 'Izvor' && (
+            {stepsList[step] === 'source' && (
               <section className="space-y-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-6">
-                <h2 className="text-lg font-semibold">Izvor aplikacije</h2>
+                <h2 className="text-lg font-semibold">{tCreate('sourceSection')}</h2>
 
                 <div className="flex flex-wrap items-center gap-4 text-sm">
                   <label className="inline-flex items-center gap-2">
@@ -624,7 +648,7 @@ export default function CreatePage() {
                       checked={submissionType === 'code'}
                       onChange={() => handleSubmissionTypeChange('code')}
                     />
-                    <span>Zalijepi kod</span>
+                    <span>{tCreate('optionPasteCode')}</span>
                   </label>
                   <label className="inline-flex items-center gap-2">
                     <input
@@ -634,7 +658,7 @@ export default function CreatePage() {
                       checked={submissionType === 'bundle'}
                       onChange={() => handleSubmissionTypeChange('bundle')}
                     />
-                    <span>Upload paketa (.zip)</span>
+                    <span>{tCreate('optionUploadBundle')}</span>
                   </label>
                 </div>
 
@@ -645,16 +669,16 @@ export default function CreatePage() {
                     className="min-h-[280px] w-full rounded-xl border p-3 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
                     placeholder={
                       mode === 'html'
-                        ? 'HTML snipet ili cijela stranica…'
-                        : 'React komponenta…'
+                        ? tCreate('placeholderHtmlLong')
+                        : tCreate('placeholderReactLong')
                     }
                   />
                 ) : (
                   <div className="space-y-3">
                     <p className="text-sm text-gray-600">
-                      ZIP paket mora sadržavati build izlaz zajedno s datotekama{' '}
-                      <code>package.json</code> i <code>pnpm-lock.yaml</code>. Worker će ga lokalno instalirati i pokrenuti{' '}
-                      <code>pnpm run build</code>.
+                      {tCreate('bundleHintPart1')} <code>package.json</code>{' '}
+                      {tCreate('bundleHintPart2')} <code>pnpm-lock.yaml</code>.{' '}
+                      {tCreate('bundleHintPart3')} <code>pnpm run build</code>.
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
                       <button
@@ -662,7 +686,7 @@ export default function CreatePage() {
                         onClick={() => bundleInputRef.current?.click()}
                         className="rounded-lg border border-emerald-500 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
                       >
-                        Odaberi ZIP
+                        {tCreate('chooseZip')}
                       </button>
                       <input
                         ref={bundleInputRef}
@@ -702,7 +726,7 @@ export default function CreatePage() {
               </section>
             )}
 
-            {stepsList[step] === 'Osnove' && (
+            {stepsList[step] === 'basics' && (
               <section className="space-y-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-6">
                 <h2 className="text-lg font-semibold">Osnovne informacije</h2>
                 <div className="grid gap-4 md:grid-cols-2">

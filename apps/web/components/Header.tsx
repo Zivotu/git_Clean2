@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'firebase/auth';
@@ -56,7 +57,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-screen-2xl mx-auto px-4 py-3">
+      <div className="relative max-w-screen-2xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <Logo />
           <nav className="hidden md:flex items-center gap-3">
@@ -306,6 +307,14 @@ export default function Header() {
         )}
         {/* Feedback modal rendered at top-level of header so it's part of header component tree */}
         <FeedbackModal open={showFeedback} onClose={() => setShowFeedback(false)} />
+      </div>
+      {/* Decorative Bugs graphic positioned just under the header (looks like it's hanging from the header). Placed as child of header so left:0 is viewport-left. */}
+      <div
+        className="hidden md:block"
+        style={{ position: 'absolute', left: 0, top: '100%', transform: 'translateY(1px)', zIndex: 40, pointerEvents: 'none' }}
+      >
+        {/* Increased by 20% from 112 -> 135 */}
+        <Image src="/assets/Bugs.png" alt="Bugs" width={135} height={135} />
       </div>
     </header>
   );

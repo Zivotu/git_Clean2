@@ -49,3 +49,13 @@
 }
 
 /* Desktop sizing restored to full width (100%) */
+
+/* Small tweak for very narrow screens */
+@media (max-width: 420px) {
+  .splashImageWrapper {
+    max-width: 92%;
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+/* Desktop sizing restored to full width (100%) */

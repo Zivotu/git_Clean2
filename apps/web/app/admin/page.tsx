@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import UserManagement from '@/components/UserManagement';
 import Tabs from '@/components/Tabs';
 import AmbassadorProgram from '@/components/AmbassadorProgram';
 import { fetchAllowedAdminEmails, saveAllowedAdminEmails } from '@/lib/adminAccess';
+import { useI18n } from '@/lib/i18n-provider';
 
 async function buildHeaders(withJson: boolean): Promise<Record<string, string>> {
   const headers: Record<string, string> = withJson
@@ -100,13 +101,12 @@ type TimelineEntry = { state: BuildState; at: number };
 
 type ConfirmActionType = 'approve' | 'delete' | 'force-delete' | 'restore';
 type PendingConfirmAction = { type: ConfirmActionType; item: ReviewItem };
+type AdminTabKey = 'apps' | 'users' | 'ambassador' | 'admins' | 'emailTemplates';
+const reviewStatuses = ['all', 'pending', 'approved', 'rejected', 'deleted'] as const;
+type ReviewStatus = (typeof reviewStatuses)[number];
 
-const friendlyErrorByCode: Record<string, string> = {
-  LLM_MISSING_API_KEY: 'Nedostaje LLM API ključ.',
-  LLM_INVALID_JSON: 'LLM je vratio neispravan JSON.',
-  LLM_UNREACHABLE: 'AI servis nije dostupan.',
-  MISSING_ARTIFACT: 'Nedostaju artefakti – pokrenite cijeli build (pnpm run createx:build).',
-};
+const ACCESS_DENIED_ERROR = 'access_denied';
+
 
 function timelineClass(state: BuildState): string {
   if (state === 'llm_waiting') return 'timeline-step timeline-step-waiting';
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
   const [currentBuildId, setCurrentBuildId] = useState<string | null>(null);
   const [currentIdentifier, setCurrentIdentifier] = useState<string | null>(null);
   const [currentItem, setCurrentItem] = useState<ReviewItem | null>(null);
-  const [tab, setTab] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'deleted'>('all');
+  const [tab, setTab] = useState<ReviewStatus>('all');
   const [search, setSearch] = useState('');
   const [showRaw, setShowRaw] = useState(false);
   const [confirmAction, setConfirmAction] = useState<PendingConfirmAction | null>(null);
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
   const [adminSettingsSaving, setAdminSettingsSaving] = useState(false);
   const [adminSettingsError, setAdminSettingsError] = useState<string | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [adminTab, setAdminTab] = useState('Aplikacije');
+  const [adminTab, setAdminTab] = useState<AdminTabKey>('apps');
   // Email templates editor state
   const [templates, setTemplates] = useState<Array<{ id: string; subject?: string; body?: string; description?: string }>>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -176,6 +176,67 @@ export default function AdminDashboard() {
   const [newTemplateId, setNewTemplateId] = useState('');
   const [newTemplateSubject, setNewTemplateSubject] = useState('');
   const [newTemplateBody, setNewTemplateBody] = useState('');
+
+  const { messages } = useI18n();
+  const tAdmin = useCallback(
+    (key: string, params?: Record<string, string | number>) => {
+      let value = messages[`Admin.${key}`] || key;
+      if (params) {
+        for (const [paramKey, paramValue] of Object.entries(params)) {
+          value = value.replaceAll(`{${paramKey}}`, String(paramValue));
+        }
+      }
+      return value;
+    },
+    [messages],
+  );
+
+  const showAdminAlert = useCallback(
+    (key: string, params?: Record<string, string | number>) => {
+      alert(tAdmin(key, params));
+    },
+    [tAdmin],
+  );
+
+  const adminTabs = useMemo(
+    () => [
+      { id: 'apps', label: tAdmin('tabs.apps') },
+      { id: 'users', label: tAdmin('tabs.users') },
+      { id: 'ambassador', label: tAdmin('tabs.ambassadorProgram') },
+      { id: 'admins', label: tAdmin('tabs.admins') },
+      { id: 'emailTemplates', label: tAdmin('tabs.emailTemplates') },
+    ],
+    [tAdmin],
+  );
+
+  const statusFilters = useMemo<Record<ReviewStatus, string>>(
+    () => ({
+      all: tAdmin('filters.status.all'),
+      pending: tAdmin('filters.status.pending'),
+      approved: tAdmin('filters.status.approved'),
+      rejected: tAdmin('filters.status.rejected'),
+      deleted: tAdmin('filters.status.deleted'),
+    }),
+    [tAdmin],
+  );
+
+  const getFriendlyError = useCallback(
+    (code?: string | null) => {
+      switch (code) {
+        case 'LLM_MISSING_API_KEY':
+          return tAdmin('errors.llmMissingApiKey');
+        case 'LLM_INVALID_JSON':
+          return tAdmin('errors.llmInvalidJson');
+        case 'LLM_UNREACHABLE':
+          return tAdmin('errors.llmUnreachable');
+        case 'MISSING_ARTIFACT':
+          return tAdmin('errors.missingArtifact');
+        default:
+          return null;
+      }
+    },
+    [tAdmin],
+  );
 
   const resolveItemTarget = (item: ReviewItem | null | undefined): string | null => {
     if (!item) return null; // Prioritize pending build, then current build, then ID as fallback
@@ -306,20 +367,20 @@ export default function AdminDashboard() {
   async function downloadCode(id?: string) {
     const target = id || currentBuildId;
     if (!target) {
-      alert('Bundle nije spreman.');
+      showAdminAlert('alerts.bundleNotReady');
       return;
     }
     try {
       const basePath = `/review/code/${target}`;
       let res = await apiGetRaw(`${basePath}?format=zip`, { auth: true });
       if (res.status === 404) {
-        alert('Artefakti ove aplikacije još nisu spremni. Pričekaj dovršetak builda ili ponovno pokreni build pa pokušaj opet.');
+        showAdminAlert('alerts.artifactsPending');
         return;
       }
       if (!res.ok) {
         res = await apiGetRaw(basePath, { auth: true });
         if (res.status === 404) {
-          alert('Artefakti ove aplikacije još nisu spremni. Pričekaj dovršetak builda ili ponovno pokreni build pa pokušaj opet.');
+          showAdminAlert('alerts.artifactsPending');
           return;
         }
         if (!res.ok) throw new Error(`download_failed_${res.status}`);
@@ -338,13 +399,13 @@ export default function AdminDashboard() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert('Preuzimanje nije uspjelo. Pokušaj ponovno kasnije.');
+      showAdminAlert('alerts.downloadFailed');
     }
   }
 
   const triggerLlm = async (id: string) => {
     if (llmEnabled === false) {
-      alert('LLM analiza je trenutno isključena.');
+      alert(tAdmin('llmStatus.disabledToast'));
       return;
     }
     setRegeneratingId(id);
@@ -382,7 +443,7 @@ export default function AdminDashboard() {
           return 401;
         }
         if (e.status === 403) {
-          setError('Access denied – sign in as admin or ask to be whitelisted.');
+          setError(ACCESS_DENIED_ERROR);
           return 403;
         }
         setError('Failed to load');
@@ -407,7 +468,7 @@ export default function AdminDashboard() {
         const adminClaim = ensureAdminClaim(token.claims);
         setIsAdmin(adminClaim);
         if (!adminClaim) {
-          setError('Access denied – sign in as admin or ask to be whitelisted.');
+          setError(ACCESS_DENIED_ERROR);
           setLlmEnabled(null);
           return;
         }
@@ -426,13 +487,13 @@ export default function AdminDashboard() {
           } catch {}
           status = await load();
           if (status === 401) {
-            setError('Access denied – sign in as admin or ask to be whitelisted.');
+            setError(ACCESS_DENIED_ERROR);
           }
         }
       } catch {
         setIsAdmin(false);
         setLlmEnabled(null);
-        setError('Access denied – sign in as admin or ask to be whitelisted.');
+        setError(ACCESS_DENIED_ERROR);
       }
     });
     return () => unsubscribe();
@@ -460,7 +521,7 @@ export default function AdminDashboard() {
         if (!cancelled) setAllowedEmails(emails);
       } catch (err) {
         console.error('Failed to load allowed admin emails', err);
-        if (!cancelled) setAdminSettingsError('Ne mogu učitati popis dopuštenih admin korisnika.');
+        if (!cancelled) setAdminSettingsError(tAdmin('adminSettings.loadError'));
       } finally {
         if (!cancelled) setAdminSettingsLoading(false);
       }
@@ -480,7 +541,7 @@ export default function AdminDashboard() {
       setAllowedEmails(emails);
     } catch (err) {
       console.error('Failed to refresh allowed admin emails', err);
-      setAdminSettingsError('Osvježavanje popisa nije uspjelo.');
+      setAdminSettingsError(tAdmin('adminSettings.refreshError'));
     } finally {
       setAdminSettingsLoading(false);
     }
@@ -492,15 +553,15 @@ export default function AdminDashboard() {
       if (!isAdmin) return;
       const email = newAdminEmail.trim().toLowerCase();
       if (!email) {
-        setAdminSettingsError('Unesite e-mail adresu.');
+        setAdminSettingsError(tAdmin('adminSettings.addEmpty'));
         return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setAdminSettingsError('E-mail adresa nije valjana.');
+        setAdminSettingsError(tAdmin('adminSettings.addInvalid'));
         return;
       }
       if (allowedEmails.includes(email)) {
-        setAdminSettingsError('E-mail je već na popisu.');
+        setAdminSettingsError(tAdmin('adminSettings.addDuplicate'));
         return;
       }
       setAdminSettingsSaving(true);
@@ -512,18 +573,18 @@ export default function AdminDashboard() {
         setNewAdminEmail('');
       } catch (err) {
         console.error('Failed to add admin email', err);
-        setAdminSettingsError('Dodavanje nije uspjelo.');
+        setAdminSettingsError(tAdmin('adminSettings.addFailed'));
       } finally {
         setAdminSettingsSaving(false);
       }
     },
-    [allowedEmails, isAdmin, newAdminEmail],
+    [allowedEmails, isAdmin, newAdminEmail, tAdmin],
   );
 
   const handleRemoveAdminEmail = useCallback(
     async (email: string) => {
       if (!isAdmin) return;
-      const confirmed = window.confirm(`Ukloniti ${email} iz popisa?`);
+      const confirmed = window.confirm(tAdmin('adminSettings.removeConfirm', { email }));
       if (!confirmed) return;
       setAdminSettingsSaving(true);
       setAdminSettingsError(null);
@@ -533,23 +594,23 @@ export default function AdminDashboard() {
         setAllowedEmails(updated);
       } catch (err) {
         console.error('Failed to remove admin email', err);
-        setAdminSettingsError('Uklanjanje nije uspjelo.');
+        setAdminSettingsError(tAdmin('adminSettings.removeFailed'));
       } finally {
         setAdminSettingsSaving(false);
       }
     },
-    [allowedEmails, isAdmin],
+    [allowedEmails, isAdmin, tAdmin],
   );
 
   const approve = async (item: ReviewItem) => {
     const target = resolveItemTarget(item);
     if (!target) {
-      alert('Nema aktivnog builda za odobriti.');
+      showAdminAlert('alerts.noBuildApprove');
       return;
     }
     await apiPost(`/review/approve/${target}`, {}, { auth: true });
     setItems((prev) => prev.filter((it) => it.id !== item.id));
-    alert('Approved');
+    showAdminAlert('alerts.approveSuccess');
     setTab('approved');
     if (items.length === 1 && nextCursor) {
       await load(nextCursor);
@@ -559,11 +620,11 @@ export default function AdminDashboard() {
   const reject = async (item: ReviewItem, reason: string) => {
     const target = resolveItemTarget(item);
     if (!target) {
-      alert('Nema aktivnog builda za odbijanje.');
+      showAdminAlert('alerts.noBuildReject');
       return;
     }
     await apiPost(`/review/reject/${target}`, { reason }, { auth: true });
-    alert('Rejected');
+    showAdminAlert('alerts.rejectSuccess');
     await load();
   };
 
@@ -573,9 +634,9 @@ export default function AdminDashboard() {
     try {
       await apiPost(`/review/builds/${target}/delete`, {}, { auth: true });
       setItems((prev) => prev.filter((x) => x.id !== item.id));
-      alert('Deleted');
+      showAdminAlert('alerts.deleteSuccess');
     } catch (e) {
-      alert('Failed to delete');
+      showAdminAlert('alerts.deleteFailed');
     }
   };
 
@@ -584,9 +645,9 @@ export default function AdminDashboard() {
     try {
       await apiPost(`/review/builds/${target}/force-delete`, {}, { auth: true });
       setItems((prev) => prev.filter((x) => x.id !== item.id));
-      alert('Deleted permanently');
+      showAdminAlert('alerts.forceDeleteSuccess');
     } catch (e) {
-      alert('Failed to delete permanently');
+      showAdminAlert('alerts.forceDeleteFailed');
     }
   };
 
@@ -596,9 +657,9 @@ export default function AdminDashboard() {
     try {
       await apiPost(`/review/builds/${target}/restore`, {}, { auth: true });
       setItems((prev) => prev.filter((x) => x.id !== item.id));
-      alert('Restored');
+      showAdminAlert('alerts.restoreSuccess');
     } catch (e) {
-      alert('Failed to restore');
+      showAdminAlert('alerts.restoreFailed');
     }
   };
 
@@ -701,19 +762,14 @@ const confirmDialog = confirmAction
     })()
   : null;
 
-if (error)
-  return (
-    <div className="p-4 space-y-4">
-      <div>{error}</div>
-      {error ===
-        'Access denied – sign in as admin or ask to be whitelisted.' &&
-        isAdmin === false && (
+  if (error)
+    return (
+      <div className="p-4 space-y-4">
+        <div>{error === ACCESS_DENIED_ERROR ? tAdmin('errors.accessDenied') : error}</div>
+        {error === ACCESS_DENIED_ERROR && isAdmin === false && (
           <div className="flex gap-2">
-            <button
-              onClick={() => auth?.signOut()}
-              className="px-2 py-1 border rounded"
-            >
-              Logout
+            <button onClick={() => auth?.signOut()} className="px-2 py-1 border rounded">
+              {tAdmin('buttons.logout')}
             </button>
             <button
               onClick={() => {
@@ -721,63 +777,63 @@ if (error)
               }}
               className="px-2 py-1 border rounded"
             >
-              Login
+              {tAdmin('buttons.login')}
             </button>
           </div>
         )}
-    </div>
-  );
+      </div>
+    );
 
   return (
     <>
       <div className="p-4 space-y-4">
-        <h1 className="text-xl font-bold">Admin Dashboard</h1>
-  <Tabs tabs={['Aplikacije', 'Users', 'AmbasadorProgram', 'Admins', 'EmailTemplates']} activeTab={adminTab} onTabChange={setAdminTab}>
-          {adminTab === 'Aplikacije' && (
+        <h1 className="text-xl font-bold">{tAdmin('title')}</h1>
+        <Tabs tabs={adminTabs} activeTab={adminTab} onTabChange={(tab) => setAdminTab(tab as AdminTabKey)}>
+          {adminTab === 'apps' && (
             <>
               {/* Ambassador program quick access removed — separate tab exists */}
               <div className="flex gap-4">
-                {(['all', 'pending', 'approved', 'rejected', 'deleted'] as const).map((t) => (
+                {reviewStatuses.map((t) => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
                     className={`px-3 py-1 rounded ${tab === t ? 'bg-emerald-600 text-white' : 'bg-gray-200'}`}
                   >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                    {statusFilters[t]}
                   </button>
                 ))}
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search"
+                  placeholder={tAdmin('filters.searchPlaceholder')}
                   className="ml-auto border px-2 py-1 rounded"
                 />
                 {search && (
                   <button onClick={() => setSearch('')} className="px-2 py-1 border rounded">
-                    Clear
+                    {tAdmin('filters.clear')}
                   </button>
                 )}
                 <button onClick={() => load()} className="px-2 py-1 border rounded">
-                  Refresh
+                  {tAdmin('filters.refresh')}
                 </button>
               </div>
-              <div className="text-xs text-gray-500">Pronađeno {filtered.length} aplikacija</div>
+              <div className="text-xs text-gray-500">{tAdmin('stats.foundApps', { count: filtered.length })}</div>
               {llmEnabled === false && (
                 <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  AI provjera je privremeno isključena. Objave čekaju ručni pregled.
+                  {tAdmin('alerts.llmDisabled')}
                 </div>
               )}
               <table className="min-w-full text-sm">
                 <thead>
                   <tr>
-                    <th className="text-left p-2">App ID</th>
-                    <th className="text-left p-2">Preview</th>
-                    <th className="text-left p-2">Name</th>
-                    <th className="text-left p-2">Owner Email</th>
-                    <th className="text-left p-2">Submitted</th>
-                    <th className="text-left p-2">Network</th>
-                    <th className="text-left p-2">LLM</th>
-                    <th className="p-2">Actions</th>
+                    <th className="text-left p-2">{tAdmin('table.appId')}</th>
+                    <th className="text-left p-2">{tAdmin('table.preview')}</th>
+                    <th className="text-left p-2">{tAdmin('table.name')}</th>
+                    <th className="text-left p-2">{tAdmin('table.ownerEmail')}</th>
+                    <th className="text-left p-2">{tAdmin('table.submitted')}</th>
+                    <th className="text-left p-2">{tAdmin('table.network')}</th>
+                    <th className="text-left p-2">{tAdmin('table.llm')}</th>
+                    <th className="p-2">{tAdmin('table.actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -803,7 +859,7 @@ if (error)
                             />
                           ) : (
                             <div className="w-10 h-10 rounded bg-slate-100 text-slate-500 text-[10px] font-medium grid place-items-center">
-                              Bez
+                              {tAdmin('preview.none')}
                             </div>
                           )}
                         </td>
@@ -823,14 +879,14 @@ if (error)
                           {it.networkDomains && it.networkDomains.length > 0 && (
                             <div className="text-xs text-gray-600">
                               {it.networkDomains
-                                .map((d) => `fetch prema ${d}`)
+                                .map((d) => tAdmin('network.fetchDomain', { domain: d }))
                                 .join(', ')}
                             </div>
                           )}
                         </td>
                         <td className="p-2">
                           {llmEnabled === false ? (
-                            <span className="text-xs text-gray-500">LLM disabled</span>
+                            <span className="text-xs text-gray-500">{tAdmin('llm.disabledLabel')}</span>
                           ) : it.llm?.status === 'complete' ? (
                             <>
                               {it.llm.data?.publishRecommendation && (
@@ -869,7 +925,7 @@ if (error)
                           ) : it.state === 'llm_failed' ? (
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-red-600">
-                                LLM failed
+                                {tAdmin('llmStatus.failed')}
                               </span>
                               {actionTarget && (
                                 <button
@@ -883,7 +939,7 @@ if (error)
                           ) : (
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-gray-600">
-                                LLM waiting{it.llmAttempts ? ` (${it.llmAttempts})` : ''}
+                                {tAdmin('llmStatus.waiting')}{it.llmAttempts ? ` (${it.llmAttempts})` : ''}
                               </span>
                               {actionTarget && (
                                 <button
@@ -976,21 +1032,21 @@ if (error)
                     onClick={() => load(nextCursor)}
                     className="px-2 py-1 border rounded"
                   >
-                    Load more
+                    {tAdmin('pagination.loadMore')}
                   </button>
                 </div>
               )}
             </>
           )}
-          {adminTab === 'Users' && <UserManagement />}
-          {adminTab === 'AmbasadorProgram' && <AmbassadorProgram />}
-          {adminTab === 'Admins' && (
+                  {adminTab === 'users' && <UserManagement />}
+                  {adminTab === 'ambassador' && <AmbassadorProgram />}
+                  {adminTab === 'admins' && (
             <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">Postavke admin sučelja</h2>
+                  <h2 className="text-lg font-semibold">{tAdmin('adminSettings.heading')}</h2>
                   <p className="text-sm text-gray-500">
-                    Upravlja popisom računa koji smiju otključati skriveni admin pristup.
+                    {tAdmin('adminSettings.description')}
                   </p>
                 </div>
                 <button
@@ -999,7 +1055,7 @@ if (error)
                   disabled={adminSettingsLoading}
                   className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
                 >
-                  Osvježi
+                  {tAdmin('adminSettings.refresh')}
                 </button>
               </div>
               {adminSettingsError && (
@@ -1009,9 +1065,9 @@ if (error)
               )}
               <div className="mt-3">
                 {adminSettingsLoading ? (
-                  <div className="text-sm text-gray-500">Učitavanje…</div>
+                  <div className="text-sm text-gray-500">{tAdmin('adminSettings.loading')}</div>
                 ) : allowedEmails.length === 0 ? (
-                  <div className="text-sm text-gray-500">Nema dopuštenih e-mail adresa.</div>
+                  <div className="text-sm text-gray-500">{tAdmin('adminSettings.empty')}</div>
                 ) : (
                   <ul className="space-y-2">
                     {allowedEmails.map((email) => (
@@ -1026,7 +1082,7 @@ if (error)
                           disabled={adminSettingsSaving}
                           className="text-rose-600 transition hover:text-rose-700 disabled:opacity-40"
                         >
-                          Ukloni
+                          {tAdmin('adminSettings.remove')}
                         </button>
                       </li>
                     ))}
@@ -1041,7 +1097,7 @@ if (error)
                     setNewAdminEmail(event.target.value);
                     if (adminSettingsError) setAdminSettingsError(null);
                   }}
-                  placeholder="admin@example.com"
+                  placeholder={tAdmin('adminSettings.addPlaceholder')}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-300"
                 />
                 <button
@@ -1049,17 +1105,17 @@ if (error)
                   disabled={adminSettingsSaving || adminSettingsLoading}
                   className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
                 >
-                  Dodaj
+                  {tAdmin('adminSettings.addButton')}
                 </button>
               </form>
             </section>
           )}
-          {adminTab === 'EmailTemplates' && (
+                  {adminTab === 'emailTemplates' && (
             <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">Email templates</h2>
-                  <p className="text-sm text-gray-500">Uredi sadržaj e‑mailova koje sustav može slati. Koristi {'{{placeholders}}'} za dinamičke vrijednosti (npr. {'{{displayName}}'}, {'{{appTitle}}'}).</p>
+                  <h2 className="text-lg font-semibold">{tAdmin('emailTemplates.heading')}</h2>
+                  <p className="text-sm text-gray-500">{tAdmin('emailTemplates.description')}</p>
                 </div>
                 <div>
                   <button
@@ -1071,38 +1127,36 @@ if (error)
                         setTemplates(resp.items || []);
                       } catch (err) {
                         console.error('Failed to load templates', err);
-                        setTemplatesError('Ne mogu učitati predloške');
+                        setTemplatesError(tAdmin('emailTemplates.loadFailed'));
                       } finally {
                         setTemplatesLoading(false);
                       }
                     }}
                     className="px-3 py-1 border rounded bg-emerald-50 text-emerald-700"
                   >
-                    Refresh
+                    {tAdmin('emailTemplates.refresh')}
                   </button>
                 </div>
               </div>
 
-              {/* Scenario quick-edit panel */}
               <div className="mt-4 p-3 border rounded bg-gray-50">
                 <div className="flex items-start gap-4">
                   <div className="w-64">
-                    <label className="text-xs font-medium">Scenario</label>
+                    <label className="text-xs font-medium">{tAdmin('emailTemplates.scenarioLabel')}</label>
                     <select
                       className="w-full border rounded px-2 py-1 text-sm mt-1"
                       value={newTemplateId}
                       onChange={(e) => {
                         setNewTemplateId(e.target.value);
-                        // clear subject/body when switching
                         setNewTemplateSubject('');
                         setNewTemplateBody('');
                       }}
                     >
-                      <option value="">-- odaberi scenario --</option>
-                      <option value="welcome">welcome (new user)</option>
-                      <option value="review:approval_notification">review:approval_notification (approval)</option>
-                      <option value="review:reject_notification">review:reject_notification (rejection)</option>
-                      <option value="publish:pending_notification">publish:pending_notification (pending)</option>
+                      <option value="">{tAdmin('emailTemplates.scenarioPlaceholder')}</option>
+                      <option value="welcome">{tAdmin('emailTemplates.scenarios.welcome')}</option>
+                      <option value="review:approval_notification">{tAdmin('emailTemplates.scenarios.reviewApproval')}</option>
+                      <option value="review:reject_notification">{tAdmin('emailTemplates.scenarios.reviewReject')}</option>
+                      <option value="publish:pending_notification">{tAdmin('emailTemplates.scenarios.publishPending')}</option>
                     </select>
                   </div>
                   <div className="flex gap-2 items-end">
@@ -1110,26 +1164,24 @@ if (error)
                       onClick={async () => {
                         const id = (newTemplateId || '').trim();
                         if (!id) {
-                          alert('Odaberi scenario iz padajućeg izbornika.');
+                          showAdminAlert('emailTemplates.scenarioDropdownHint');
                           return;
                         }
                         setTemplatesError(null);
                         setTemplatesLoading(true);
                         try {
-                          // Try to fetch stored template first
                           try {
                             const stored = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}`, { auth: true });
                             setNewTemplateSubject(stored.subject || '');
                             setNewTemplateBody(stored.body || '');
                           } catch (err: any) {
-                            // If not found, fetch fallback
                             try {
                               const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
                               setNewTemplateSubject(fb.subject || '');
                               setNewTemplateBody(fb.body || '');
                             } catch (fbErr) {
                               console.error('Failed to load fallback', fbErr);
-                              alert('Ne mogu učitati predložak ili rezervni tekst za ovaj scenario.');
+                              showAdminAlert('emailTemplates.scenarioLoadFailed');
                             }
                           }
                         } finally {
@@ -1138,49 +1190,69 @@ if (error)
                       }}
                       className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
                     >
-                      Load
+                      {tAdmin('emailTemplates.load')}
                     </button>
                     <button
                       onClick={async () => {
                         const id = (newTemplateId || '').trim();
-                        if (!id) { alert('Odaberi scenario'); return; }
+                        if (!id) {
+                          showAdminAlert('emailTemplates.scenarioRequired');
+                          return;
+                        }
                         try {
                           await apiPost(`/admin/email-templates/${encodeURIComponent(id)}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
-                          alert('Saved');
-                          // refresh list
+                          showAdminAlert('alerts.saveSuccess');
                           const resp = await apiGet<any>('/admin/email-templates', { auth: true });
                           setTemplates(resp.items || []);
-                        } catch (err) { console.error(err); alert('Save failed'); }
+                        } catch (err) {
+                          console.error(err);
+                          showAdminAlert('alerts.saveFailed');
+                        }
                       }}
                       className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
                     >
-                      Save
+                      {tAdmin('emailTemplates.save')}
                     </button>
                     <button
                       onClick={async () => {
                         const id = (newTemplateId || '').trim();
-                        if (!id) { alert('Odaberi scenario'); return; }
+                        if (!id) {
+                          showAdminAlert('emailTemplates.scenarioRequired');
+                          return;
+                        }
                         try {
                           const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
                           setNewTemplateSubject(fb.subject || '');
                           setNewTemplateBody(fb.body || '');
-                          alert('Fallback restored locally — remember to Save to persist');
-                        } catch (err) { console.error(err); alert('Restore fallback failed'); }
+                          showAdminAlert('emailTemplates.restoreInfo');
+                        } catch (err) {
+                          console.error(err);
+                          showAdminAlert('emailTemplates.restoreFailed');
+                        }
                       }}
                       className="px-3 py-1 border rounded text-sm"
                     >
-                      Restore fallback
+                      {tAdmin('emailTemplates.restoreFallback')}
                     </button>
                   </div>
                 </div>
 
                 <div className="mt-3">
-                  <label className="text-xs block mb-1">Subject</label>
-                  <input className="w-full border rounded px-2 py-1 text-sm" value={newTemplateSubject} onChange={(e) => setNewTemplateSubject(e.target.value)} />
+                  <label className="text-xs block mb-1">{tAdmin('emailTemplates.subjectLabel')}</label>
+                  <input
+                    className="w-full border rounded px-2 py-1 text-sm"
+                    value={newTemplateSubject}
+                    onChange={(e) => setNewTemplateSubject(e.target.value)}
+                  />
                 </div>
                 <div className="mt-3">
-                  <label className="text-xs block mb-1">Body</label>
-                  <textarea rows={6} className="w-full border rounded px-2 py-1 text-sm" value={newTemplateBody} onChange={(e) => setNewTemplateBody(e.target.value)} />
+                  <label className="text-xs block mb-1">{tAdmin('emailTemplates.bodyLabel')}</label>
+                  <textarea
+                    rows={6}
+                    className="w-full border rounded px-2 py-1 text-sm"
+                    value={newTemplateBody}
+                    onChange={(e) => setNewTemplateBody(e.target.value)}
+                  />
                 </div>
               </div>
 
@@ -1190,31 +1262,39 @@ if (error)
 
               <div className="mt-4 space-y-3">
                 {templatesLoading ? (
-                  <div className="text-sm text-gray-500">Učitavanje…</div>
+                  <div className="text-sm text-gray-500">{tAdmin('emailTemplates.loading')}</div>
                 ) : templates.length === 0 ? (
-                  <div className="text-sm text-gray-500">Nema definiranih predložaka.</div>
+                  <div className="text-sm text-gray-500">{tAdmin('emailTemplates.empty')}</div>
                 ) : (
                   templates.map((t) => (
-                    <div key={t.id} className="border rounded p-3">
-                      <div className="flex items-center gap-2 mb-2">
+                    <div key={t.id} className="border rounded p-3 space-y-2">
+                      <div className="flex items-center gap-2">
                         <div className="font-mono text-xs text-gray-600">{t.id}</div>
                         <div className="text-xs text-gray-500">{t.description || ''}</div>
                       </div>
-                      <div className="mb-2">
-                        <label className="text-xs block mb-1">Subject</label>
+                      <div>
+                        <label className="text-xs block mb-1">{tAdmin('emailTemplates.subjectLabel')}</label>
                         <input
                           className="w-full border rounded px-2 py-1 text-sm"
                           value={t.subject || ''}
-                          onChange={(e) => setTemplates((prev) => prev.map((x) => (x.id === t.id ? { ...x, subject: e.target.value } : x)))}
+                          onChange={(e) =>
+                            setTemplates((prev) =>
+                              prev.map((x) => (x.id === t.id ? { ...x, subject: e.target.value } : x)),
+                            )
+                          }
                         />
                       </div>
-                      <div className="mb-2">
-                        <label className="text-xs block mb-1">Body</label>
+                      <div>
+                        <label className="text-xs block mb-1">{tAdmin('emailTemplates.bodyLabel')}</label>
                         <textarea
                           rows={6}
                           className="w-full border rounded px-2 py-1 text-sm"
                           value={t.body || ''}
-                          onChange={(e) => setTemplates((prev) => prev.map((x) => (x.id === t.id ? { ...x, body: e.target.value } : x)))}
+                          onChange={(e) =>
+                            setTemplates((prev) =>
+                              prev.map((x) => (x.id === t.id ? { ...x, body: e.target.value } : x)),
+                            )
+                          }
                         />
                       </div>
                       <div className="flex gap-2">
@@ -1222,15 +1302,15 @@ if (error)
                           onClick={async () => {
                             try {
                               await apiPost(`/admin/email-templates/${t.id}`, { subject: t.subject || '', body: t.body || '' }, { auth: true });
-                              alert('Saved');
+                              showAdminAlert('alerts.saveSuccess');
                             } catch (err) {
                               console.error(err);
-                              alert('Save failed');
+                              showAdminAlert('alerts.saveFailed');
                             }
                           }}
                           className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
                         >
-                          Save
+                          {tAdmin('emailTemplates.save')}
                         </button>
                       </div>
                     </div>
@@ -1239,23 +1319,23 @@ if (error)
               </div>
 
               <div className="mt-6 border-t pt-4">
-                <h3 className="text-sm font-medium">Create new template</h3>
-                <p className="text-xs text-gray-500">Unesi jedinstveni ID (npr. welcome, review:approval_notification)</p>
+                <h3 className="text-sm font-medium">{tAdmin('emailTemplates.createTitle')}</h3>
+                <p className="text-xs text-gray-500">{tAdmin('emailTemplates.createDescription')}</p>
                 <div className="mt-2 grid grid-cols-1 gap-2">
                   <input
-                    placeholder="template id"
+                    placeholder={tAdmin('emailTemplates.placeholderId')}
                     className="border rounded px-2 py-1 text-sm"
                     value={newTemplateId}
                     onChange={(e) => setNewTemplateId(e.target.value)}
                   />
                   <input
-                    placeholder="subject"
+                    placeholder={tAdmin('emailTemplates.placeholderSubject')}
                     className="border rounded px-2 py-1 text-sm"
                     value={newTemplateSubject}
                     onChange={(e) => setNewTemplateSubject(e.target.value)}
                   />
                   <textarea
-                    placeholder="body"
+                    placeholder={tAdmin('emailTemplates.placeholderBody')}
                     rows={6}
                     className="border rounded px-2 py-1 text-sm"
                     value={newTemplateBody}
@@ -1266,26 +1346,25 @@ if (error)
                       onClick={async () => {
                         const id = (newTemplateId || '').trim();
                         if (!id) {
-                          alert('Provide template id');
+                          showAdminAlert('emailTemplates.templateIdRequired');
                           return;
                         }
                         try {
                           await apiPost(`/admin/email-templates/${id}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
-                          // reload
                           const resp = await apiGet<any>('/admin/email-templates', { auth: true });
                           setTemplates(resp.items || []);
                           setNewTemplateId('');
                           setNewTemplateSubject('');
                           setNewTemplateBody('');
-                          alert('Created');
+                          showAdminAlert('alerts.createSuccess');
                         } catch (err) {
                           console.error(err);
-                          alert('Create failed');
+                          showAdminAlert('alerts.createFailed');
                         }
                       }}
                       className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
                     >
-                      Create
+                      {tAdmin('emailTemplates.createButton')}
                     </button>
                   </div>
                 </div>
@@ -1447,10 +1526,10 @@ if (error)
                       onClick={async () => {
                         try {
                           await apiPost(`/review/builds/${currentIdentifier}/rebuild`, {}, { auth: true });
-                          alert('Build queued. Refreshing…');
+                          showAdminAlert('alerts.buildQueued');
                           await viewReport(currentIdentifier);
                         } catch {
-                          alert('Failed to queue build');
+                          showAdminAlert('alerts.buildQueueFailed');
                         }
                       }}
                       className="px-2 py-1 border rounded"
@@ -1540,20 +1619,20 @@ if (error)
                     onClick={async () => {
                       if (!currentBuildId || !policy) return;
                       setPolicySaving(true);
-                      try {
-                        await fetch(`${PUBLIC_API_URL}/review/builds/${currentBuildId}/policy`, {
-                          method: 'POST',
-                          credentials: 'include',
-                          headers: await buildHeaders(true),
-                          body: JSON.stringify(policy),
-                        });
-                      } catch (e) {
-                        console.error(e);
-                        alert('Spremanje nije uspjelo');
-                      } finally {
-                        setPolicySaving(false);
-                      }
-                    }}
+                    try {
+                      await fetch(`${PUBLIC_API_URL}/review/builds/${currentBuildId}/policy`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: await buildHeaders(true),
+                        body: JSON.stringify(policy),
+                      });
+                    } catch (e) {
+                      console.error(e);
+                      showAdminAlert('alerts.policySaveFailed');
+                    } finally {
+                      setPolicySaving(false);
+                    }
+                  }}
                     className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
                     disabled={policySaving}
                   >
@@ -1612,7 +1691,7 @@ if (error)
                     <button
                       onClick={async () => {
                         if (!currentIdentifier && !currentItem) {
-                          alert('Nema odabranog unosa');
+                          showAdminAlert('alerts.noSelection');
                           return;
                         }
                         const target = currentIdentifier || currentItem?.id || currentItem?.slug || '';
@@ -1628,10 +1707,10 @@ if (error)
                           // refresh view
                           await viewReport(target);
                           await load();
-                          alert('Saved');
+                          showAdminAlert('alerts.saveSuccess');
                         } catch (err) {
                           console.error(err);
-                          alert('Save failed');
+                          showAdminAlert('alerts.saveFailed');
                         } finally {
                           setAdminSaving(false);
                         }
@@ -1646,35 +1725,35 @@ if (error)
               </div>
             )}
             {currentItem?.llmAttempts !== undefined && (
-              <div className="text-sm mb-2">LLM attempts: {currentItem.llmAttempts}</div>
+              <div className="text-sm mb-2">{tAdmin('llmDetails.attempts', { count: currentItem.llmAttempts })}</div>
             )}
             {report?.status === 'not_ready' && currentBuildId && (
               <div className="space-y-2">
-                <p className="text-sm">No report available.</p>
+                <p className="text-sm">{tAdmin('llmDetails.noReport')}</p>
                 <button
                   onClick={regenerate}
                   className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
                   disabled={regeneratingId === currentBuildId || llmEnabled === false}
                 >
                   {regeneratingId === currentBuildId
-                    ? 'Analiza…'
+                    ? tAdmin('llmDetails.regenerating')
                     : llmEnabled === false
-                    ? 'LLM isključen'
+                    ? tAdmin('llmDetails.disabledButton')
                     : 'Pokreni LLM analizu'}
                 </button>
                 {llmEnabled === false && (
-                  <p className="text-xs text-gray-500">Uključi AI provjeru u konfiguraciji kako bi izvještaj bio dostupan.</p>
+                  <p className="text-xs text-gray-500">{tAdmin('llmDetails.enableHint')}</p>
                 )}
               </div>
             )}
             {report?.status === 'complete' && (
               <>
                   <p className="text-sm text-gray-600">
-                    Provider: {report.provider} / {report.model}
+                    {tAdmin('llmDetails.providerLabel')}: {report.provider} / {report.model}
                   </p>
                   {report.data?.publishRecommendation && (
                     <div className="text-sm font-semibold mt-1">
-                      AI preporuka: {report.data.publishRecommendation}
+                      {tAdmin('llm.recommendation', { value: report.data.publishRecommendation })}
                     </div>
                   )}
                   {report.data?.summary && (
@@ -1706,7 +1785,7 @@ if (error)
                     className="text-xs text-emerald-600 underline mt-2"
                     onClick={() => setShowRaw((s) => !s)}
                   >
-                    {showRaw ? 'Hide JSON' : 'Show JSON'}
+                    {showRaw ? tAdmin('llmDetails.hideJson') : tAdmin('llmDetails.showJson')}
                   </button>
                   {showRaw && (
                     <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
@@ -1718,16 +1797,16 @@ if (error)
             {report?.status === 'error' && (
               <div className="space-y-2">
                 <div className="text-sm text-red-600">
-                  {friendlyErrorByCode[report.error?.code || ''] ||
+                  {getFriendlyError(report.error?.code) ||
                     report.error?.code ||
-                    'LLM review failed'}
+                    tAdmin('errors.llmReviewFailed')}
                 </div>
                 <button
                   onClick={regenerate}
                   className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
                   disabled={regeneratingId === currentBuildId}
                 >
-                  {regeneratingId === currentBuildId ? 'Analiza…' : 'Run again'}
+                  {regeneratingId === currentBuildId ? tAdmin('llmDetails.regenerating') : 'Run again'}
                 </button>
               </div>
             )}

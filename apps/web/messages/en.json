@@ -109,6 +109,308 @@
   "LegacyHandle": {
     "redirecting": "Redirecting..."
   },
+  "Checkout": {
+    "pageTitle": "Order summary",
+    "loading": "Loading…",
+    "subscriptionLabel": "Subscription",
+    "priceLabel": "Price",
+    "emailLabel": "Receipt email",
+    "promoPrefix": "Have an ambassador promo code?",
+    "promoLink": "Redeem it here",
+    "promoSuffix": "before continuing.",
+    "termsPrompt": "Before paying, confirm you accept {termsLabel}.",
+    "termsCheckbox": "I confirm I've read the terms and accept the obligations during the purchase and later use of the package.",
+    "termsButton": "Open terms",
+    "termsNote": "Only required on the first purchase or when the terms change ({version}).",
+    "termsMissing": "Please confirm you accept the terms before purchasing.",
+    "termsSaveError": "Saving your acceptance failed. Please try again.",
+    "buttonSubmitting": "Submitting…",
+    "buttonSubmit": "Continue",
+    "backLink": "← Back",
+    "missingAppId": "App ID is missing.",
+    "loadErrorGeneric": "Failed to load product data.",
+    "errorInvalidResponse": "Invalid server response.",
+    "errorNetwork": "Error communicating with the API."
+  },
+  "DiagEnv": {
+    "title": "Env diagnostics",
+    "missingHeading": "Missing keys",
+    "none": "None"
+  },
+  "Admin": {
+    "title": "Admin Dashboard",
+    "errors": {
+      "accessDenied": "Access denied — sign in as admin or ask to be whitelisted.",
+      "llmMissingApiKey": "Missing LLM API key.",
+      "llmInvalidJson": "The AI service returned invalid JSON.",
+      "llmUnreachable": "AI service is currently unavailable.",
+      "missingArtifact": "Artifacts are missing — run the full build (pnpm run createx:build).",
+      "llmReviewFailed": "LLM review failed."
+    },
+    "buttons": {
+      "logout": "Logout",
+      "login": "Login",
+      "edit": "Edit",
+      "close": "Close"
+    },
+    "tabs": {
+      "apps": "Apps",
+      "users": "Users",
+      "ambassadorProgram": "Ambassador Program",
+      "admins": "Admins",
+      "emailTemplates": "Email templates"
+    },
+    "filters": {
+      "searchPlaceholder": "Search",
+      "clear": "Clear",
+      "refresh": "Refresh",
+      "status": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "deleted": "Deleted"
+      }
+    },
+    "stats": {
+      "foundApps": "{count} apps found"
+    },
+    "alerts": {
+      "llmDisabled": "AI checks are temporarily disabled. Submissions await manual review.",
+      "bundleNotReady": "The bundle is not ready yet.",
+      "artifactsPending": "Artifacts are not ready yet. Wait for the build to finish or rerun the build, then try again.",
+      "downloadFailed": "Download failed. Try again later.",
+      "noBuildApprove": "There is no active build to approve.",
+      "approveSuccess": "Entry approved.",
+      "noBuildReject": "There is no active build to reject.",
+      "rejectSuccess": "Entry rejected.",
+      "deleteSuccess": "Entry moved to deleted.",
+      "deleteFailed": "Deleting entry failed.",
+      "forceDeleteSuccess": "Entry deleted permanently.",
+      "forceDeleteFailed": "Permanent delete failed.",
+      "restoreSuccess": "Entry restored.",
+      "restoreFailed": "Restoring entry failed.",
+      "buildQueued": "Build queued. Refreshing…",
+      "buildQueueFailed": "Failed to queue build.",
+      "policySaveFailed": "Saving permissions failed.",
+      "noSelection": "Select an entry first.",
+      "saveSuccess": "Saved.",
+      "saveFailed": "Save failed.",
+      "createSuccess": "Created.",
+      "createFailed": "Create failed."
+    },
+    "table": {
+      "appId": "App ID",
+      "preview": "Preview",
+      "name": "Name",
+      "ownerEmail": "Owner email",
+      "submitted": "Submitted",
+      "network": "Network",
+      "llm": "LLM",
+      "actions": "Actions"
+    },
+    "preview": {
+      "none": "None"
+    },
+    "network": {
+      "fetchDomain": "fetch to {domain}"
+    },
+    "llm": {
+      "disabledLabel": "LLM disabled",
+      "recommendation": "AI recommendation: {value}"
+    },
+    "llmDetails": {
+      "attempts": "LLM attempts: {count}",
+      "noReport": "No report available.",
+      "regenerating": "Analyzing…",
+      "run": "Run LLM analysis",
+      "disabledButton": "LLM disabled",
+      "enableHint": "Enable AI checks in the configuration to generate this report.",
+      "providerLabel": "Provider",
+      "showJson": "Show JSON",
+      "hideJson": "Hide JSON",
+      "runAgain": "Run again"
+    },
+    "llmStatus": {
+      "failed": "LLM failed",
+      "waiting": "LLM waiting",
+      "disabledToast": "LLM analysis is currently disabled."
+    },
+    "pagination": {
+      "loadMore": "Load more"
+    },
+    "adminSettings": {
+      "heading": "Admin UI settings",
+      "description": "Manages the list of accounts that can unlock the hidden admin access.",
+      "refresh": "Refresh",
+      "loading": "Loading…",
+      "empty": "No allowed email addresses.",
+      "remove": "Remove",
+      "addPlaceholder": "admin@example.com",
+      "addButton": "Add",
+      "loadError": "Unable to load the allowed admin list.",
+      "refreshError": "Refreshing the list failed.",
+      "addEmpty": "Enter an email address.",
+      "addInvalid": "Enter a valid email address.",
+      "addDuplicate": "That email is already allowed.",
+      "addFailed": "Adding the email failed.",
+      "removeFailed": "Removing the email failed.",
+      "removeConfirm": "Remove {email} from the allowed list?"
+    },
+    "users": {
+      "heading": "User management",
+      "loading": "Loading users…",
+      "loadFailed": "Failed to load users.",
+      "updateFailed": "Failed to update user entitlements.",
+      "filterLabel": "Filter by entitlement:",
+      "filterAll": "All",
+      "searchLabel": "Search:",
+      "searchPlaceholder": "Search by email, name, or UID",
+      "table": {
+        "email": "Email",
+        "displayName": "Display name",
+        "entitlements": "Entitlements",
+        "actions": "Actions"
+      },
+      "badges": {
+        "ambassador": "Ambassador",
+        "free": "Free"
+      },
+      "editTitle": "Edit user: {email}",
+      "entitlements": {
+        "isGold": "Gold",
+        "noAds": "No ads",
+        "Ambasador": "Ambassador",
+        "Partner": "Partner"
+      }
+    },
+    "emailTemplates": {
+      "heading": "Email templates",
+      "description": "Edit the content of emails sent by the system. Use {{placeholders}} for dynamic values (e.g. {{displayName}}, {{appTitle}}).",
+      "refresh": "Refresh",
+      "loadFailed": "Unable to load templates.",
+      "scenarioLabel": "Scenario",
+      "scenarioPlaceholder": "-- select scenario --",
+      "scenarios": {
+        "welcome": "welcome (new user)",
+        "reviewApproval": "review:approval_notification (approval)",
+        "reviewReject": "review:reject_notification (rejection)",
+        "publishPending": "publish:pending_notification (pending)"
+      },
+      "load": "Load",
+      "save": "Save",
+      "restoreFallback": "Restore fallback",
+      "subjectLabel": "Subject",
+      "bodyLabel": "Body",
+      "loading": "Loading…",
+      "empty": "No templates defined.",
+      "createTitle": "Create new template",
+      "createDescription": "Enter a unique ID (e.g. welcome, review:approval_notification).",
+      "placeholderId": "template id",
+      "placeholderSubject": "subject",
+      "placeholderBody": "body",
+      "createButton": "Create",
+      "scenarioDropdownHint": "Select a scenario from the dropdown.",
+      "scenarioRequired": "Select a scenario first.",
+      "scenarioLoadFailed": "Unable to load the template or fallback text for this scenario.",
+      "restoreInfo": "Fallback restored locally — remember to Save to persist.",
+      "restoreFailed": "Restoring fallback failed.",
+      "templateIdRequired": "Provide a template id."
+    },
+    "ambassador": {
+      "title": "Ambassador administration",
+      "subtitle": "Review applications, manage promo codes, and process payouts.",
+      "emptyValue": "—",
+      "kpis": {
+        "approved": "Active ambassadors",
+        "pendingApplications": "Pending applications",
+        "pendingPayouts": "Pending payouts",
+        "outstandingBalance": "Outstanding balance (€)"
+      },
+      "posts": {
+        "heading": "Ambassador posts (pending review)",
+        "refresh": "Refresh",
+        "loading": "Loading posts…",
+        "empty": "No pending posts.",
+        "table": {
+          "link": "Link",
+          "ambassador": "Ambassador",
+          "month": "Month",
+          "actions": "Actions"
+        },
+        "verify": "Verify",
+        "reject": "Reject"
+      },
+      "applicationTabs": {
+        "pending": "New applications",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "payoutTabs": {
+        "pending": "To process",
+        "processing": "Processing",
+        "paid": "Paid",
+        "rejected": "Rejected",
+        "all": "All"
+      },
+      "prompts": {
+        "rejectReason": "Rejection reason (optional):",
+        "paypalTransaction": "PayPal transaction (optional):"
+      },
+      "messages": {
+        "approveSuccess": "Application approved. Code: {code}",
+        "rejectSuccess": "Application rejected.",
+        "payoutPaid": "Payout marked as paid.",
+        "payoutRejected": "Payout rejected."
+      },
+      "errors": {
+        "adminOnly": "Access restricted to administrators.",
+        "loadApplications": "Failed to load applications.",
+        "loadPayouts": "Failed to load payouts.",
+        "loadPosts": "Failed to load posts.",
+        "approveFailed": "Approving application failed.",
+        "rejectFailed": "Rejecting application failed.",
+        "payoutActionFailed": "Processing payout action failed."
+      },
+      "applications": {
+        "loading": "Loading applications…",
+        "empty": "No applications for the selected status.",
+        "table": {
+          "user": "User",
+          "email": "Email",
+          "status": "Status",
+          "details": "Application details",
+          "balance": "Balance",
+          "actions": "Actions"
+        },
+        "appliedAt": "Applied: {date}",
+        "platform": "Platform: {value}",
+        "audience": "Audience: {value}",
+        "motivation": "Motivation",
+        "balanceValue": "€{amount}",
+        "approve": "Approve",
+        "reject": "Reject",
+        "promoCode": "Code: {code}"
+      },
+      "payouts": {
+        "loading": "Loading payouts…",
+        "empty": "No payouts for the selected filter.",
+        "table": {
+          "id": "Payout ID",
+          "ambassador": "Ambassador",
+          "amount": "Amount",
+          "status": "Status",
+          "paypal": "PayPal",
+          "actions": "Actions"
+        },
+        "requestedAt": "Requested: {date}",
+        "amountValue": "€{amount}",
+        "markPaid": "Mark paid",
+        "reject": "Reject",
+        "transaction": "Txn: {id}"
+      }
+    }
+  },
   "Register": {
     "title": "Register",
     "errors": {
@@ -169,7 +471,7 @@
     "plays": "{count} plays"
   },
   "Toasts": {
-    "welcome": "Welcome to CreateX!",
+    "welcome": "Welcome to Thesara!",
     "loginToLike": "Sign in to like apps",
     "slowDown": "Easy there 🙂",
     "likeError": "Unable to like the app. Please check the API URL and server status.",
@@ -230,12 +532,23 @@
   }
   ,
   "Create": {
+    "source": "Source",
+    "pageTitle": "Publish new app",
     "pasteCode": "Paste code",
     "placeholderHtml": "<!-- HTML code here -->\n<div>\n  <h1>Hello</h1>\n</div>",
     "placeholderReact": "// React code here\nexport default function App(){\n  return <h1>Hello</h1>;\n}",
     "basics": "Basics",
     "name": "Name",
     "description": "Description",
+    "sourceSection": "App source",
+    "optionPasteCode": "Paste code",
+    "optionUploadBundle": "Upload bundle (.zip)",
+    "bundleHintPart1": "The ZIP bundle must include the build output together with",
+    "bundleHintPart2": "and",
+    "bundleHintPart3": "The worker installs it locally and runs",
+    "chooseZip": "Choose ZIP",
+    "placeholderHtmlLong": "HTML snippet or entire page...",
+    "placeholderReactLong": "React component...",
     "previewGraphic": "Choose your app graphic",
     "previewGraphicHint": "Pick one of our presets or upload your own image (max 1MB).",
     "previewOverlayPlaceholder": "Your app title",

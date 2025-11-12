@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { motion, type TargetAndTransition } from 'framer-motion';
 import { PUBLIC_API_URL, SITE_NAME } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
@@ -67,6 +68,175 @@ function toCardListing(item: ApiListing): Listing {
 function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
+
+type Point = { x: number; y: number };
+type SpiderPath = {
+  start: Point;
+  end: Point;
+  duration: number;
+  angle: number;
+  id: string;
+};
+
+const SPIDER_MIN_DELAY = 18000;
+const SPIDER_MAX_DELAY = 42000;
+
+function rand(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+function choice<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function angleDeg(from: Point, to: Point) {
+  return (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI;
+}
+
+function getPathBounds() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pad = 80;
+  return { w, h, pad };
+}
+
+function makeSpiderPath(): SpiderPath {
+  const { w, h, pad } = getPathBounds();
+  const edge = choice(['left', 'right', 'top', 'bottom'] as const);
+  let start: Point = { x: 0, y: 0 };
+  let end: Point = { x: 0, y: 0 };
+
+  if (edge === 'left') {
+    start = { x: -pad, y: rand(0, h) };
+    end = { x: w + pad, y: rand(0, h) };
+  } else if (edge === 'right') {
+    start = { x: w + pad, y: rand(0, h) };
+    end = { x: -pad, y: rand(0, h) };
+  } else if (edge === 'top') {
+    start = { x: rand(0, w), y: -pad };
+    end = { x: rand(0, w), y: h + pad };
+  } else {
+    start = { x: rand(0, w), y: h + pad };
+    end = { x: rand(0, w), y: -pad };
+  }
+
+  const distance = Math.hypot(end.x - start.x, end.y - start.y);
+  const duration = distance / rand(60, 80);
+  const angle = angleDeg(start, end);
+  const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  return { start, end, duration, angle, id };
+}
+
+function BugSprite({ size = 21, angle = 0 }: { size?: number; angle?: number }) {
+  return (
+    <div
+      className="leading-none select-none"
+      style={{ transform: `rotate(${angle}deg)` }}
+      title="I&apos;m playing hide and seek with the developers 🙂"
+      aria-hidden
+    >
+      <span style={{ fontSize: size, display: 'inline-block' }}>🕷️</span>
+    </div>
+  );
+}
+
+function WalkingBug({
+  path,
+  onDone,
+}: {
+  path: SpiderPath;
+  onDone: () => void;
+}) {
+  const [showTip, setShowTip] = useState(false);
+  const wiggle: TargetAndTransition = {
+    y: [0, -1.5, 0, 1.5, 0],
+    transition: { repeat: Infinity, duration: 0.35, ease: 'easeInOut' },
+  };
+
+  return (
+    <motion.div
+      initial={{ x: path.start.x, y: path.start.y }}
+      animate={{ x: path.end.x, y: path.end.y }}
+      transition={{ duration: path.duration, ease: 'linear' }}
+      onAnimationComplete={onDone}
+      className="absolute z-[9999] pointer-events-auto"
+      onMouseEnter={() => setShowTip(true)}
+      onMouseLeave={() => setShowTip(false)}
+      aria-hidden
+      style={{ cursor: 'pointer' }}
+    >
+      <div className="relative">
+        {showTip && (
+          <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] bg-black/80 text-white rounded px-2 py-1 shadow whitespace-nowrap pointer-events-none">
+            I&apos;m playing hide and seek with the developers <span>🙂</span>
+          </div>
+        )}
+        <motion.div animate={wiggle}>
+          <BugSprite angle={path.angle} />
+        </motion.div>
+      </div>
+    </motion.div>
+  );
+}
+
+function SpiderOverlay() {
+  const [bugs, setBugs] = useState<SpiderPath[]>([]);
+  const timerRef = useRef<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const planNext = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    clearTimer();
+    const nextInMs = rand(SPIDER_MIN_DELAY, SPIDER_MAX_DELAY);
+    timerRef.current = window.setTimeout(() => {
+      setBugs((prev) => {
+        if (prev.length === 0) {
+          return [makeSpiderPath()];
+        }
+        planNext();
+        return prev;
+      });
+    }, nextInMs);
+  }, [clearTimer]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    planNext();
+    return () => {
+      clearTimer();
+    };
+  }, [planNext, clearTimer, mounted]);
+
+  if (!mounted || typeof window === 'undefined') return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[9998] overflow-hidden select-none">
+      {bugs.map((bug) => (
+        <WalkingBug
+          key={bug.id}
+          path={bug}
+          onDone={() => {
+            setBugs((prev) => prev.filter((b) => b.id !== bug.id));
+            planNext();
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 function Toast({
   message,
   type = 'success',
@@ -469,7 +639,8 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   return (
     <div className="min-h-screen text-gray-900 bg-white">
       <SplashScreen />
-      <section className="max-w-7xl mx-auto px-4 pt-12 pb-6">
+      <SpiderOverlay />
+      <section className="max-w-7xl mx-auto px-4 pt-12 pb-6 relative">
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
             {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
@@ -662,6 +833,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     </div>
   );
 }
+
 
 
 
