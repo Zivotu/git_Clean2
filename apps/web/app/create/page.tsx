@@ -356,7 +356,7 @@ export default function CreatePage() {
 
       if (submissionType === 'bundle') {
         if (!bundleFile) {
-          setBundleError('{tCreate('chooseZip')} datoteku.');
+          setBundleError(`${tCreate('chooseZip')} datoteku.`);
           return;
         }
         setShowProgress(true);
