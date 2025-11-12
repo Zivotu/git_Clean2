@@ -6,10 +6,13 @@ import { useState } from "react";
 import Logo from "@/components/Logo";
 import AuthLinks from "@/components/AuthLinks";
 import FeedbackModal from "@/components/FeedbackModal";
+import { useI18n } from "@/lib/i18n-provider";
 
 export default function SiteHeader() {
   const router = useRouter();
   const [showFeedback, setShowFeedback] = useState(false);
+  const { messages } = useI18n();
+  const feedbackLabel = messages["Nav.feedback"] ?? "Feedback";
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-lg supports-[backdrop-filter]:bg-white/75 border-b border-gray-200/50 shadow-sm">
@@ -33,9 +36,9 @@ export default function SiteHeader() {
             type="button"
             onClick={() => setShowFeedback(true)}
             className="text-gray-700 hover:text-gray-900 hover:underline px-2 py-1 rounded-md transition font-medium"
-            aria-label="Vaši prijedlozi - otvorite formu za prijedloge"
+            aria-label={feedbackLabel}
           >
-            Vaši prijedlozi
+            {feedbackLabel}
           </button>
 
           <AuthLinks />
@@ -46,4 +49,3 @@ export default function SiteHeader() {
     </header>
   );
 }
-

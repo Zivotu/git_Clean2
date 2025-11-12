@@ -126,6 +126,10 @@ const mailboxes: Record<MailboxKey, Mailbox> = {
       sanitize(process.env.REPORTS_EMAIL_FROM) ??
       sanitize(reportsDefaults.emailFrom) ??
       'reports@thesara.space',
+    to:
+      sanitize(process.env.REPORTS_EMAIL_TO) ??
+      sanitize(reportsDefaults.emailTo) ??
+      'reports@thesara.space',
   },
 };
 
@@ -244,6 +248,23 @@ export async function notifyAdmins(subject: string, body: string): Promise<void>
     await transporter.sendMail({ from: mailbox.from!, to, subject, text: body });
   } catch (err) {
     console.error({ err, to, subject }, 'notify_admins_failed');
+  }
+}
+
+export async function notifyReports(subject: string, body: string): Promise<void> {
+  const prepared = prepareMailbox('reports', 'notifyReports', true);
+  if (!prepared) return;
+  const { mailbox } = prepared;
+  const to = mailbox.to;
+  if (!to) {
+    console.warn({ context: 'notifyReports' }, 'reports_mailbox_missing_recipient');
+    return;
+  }
+  try {
+    const transporter = nodemailer.createTransport(createTransportOptions(mailbox));
+    await transporter.sendMail({ from: mailbox.from!, to, subject, text: body });
+  } catch (err) {
+    console.error({ err, to, subject }, 'notify_reports_failed');
   }
 }
 

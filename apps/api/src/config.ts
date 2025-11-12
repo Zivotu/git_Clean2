@@ -345,6 +345,7 @@ export function getConfig() {
       smtpUser: process.env.REPORTS_SMTP_USER || process.env.SMTP_USER,
       smtpPass: process.env.REPORTS_SMTP_PASS || process.env.SMTP_PASS,
       emailFrom: process.env.REPORTS_EMAIL_FROM || 'reports@thesara.space',
+      emailTo: process.env.REPORTS_EMAIL_TO || 'reports@thesara.space',
     },
     RATE_LIMIT: {
       backend: process.env.RATE_LIMIT_BACKEND || 'firestore',

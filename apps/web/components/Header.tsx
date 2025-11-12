@@ -137,9 +137,9 @@ export default function Header() {
               type="button"
               onClick={() => setShowFeedback(true)}
               className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-              title="Vaši prijedlozi"
+              title={tNav('feedback')}
             >
-              Vaši prijedlozi
+              {tNav('feedback')}
             </button>
             {user ? (
               <div className="flex items-center gap-3 ml-2">
@@ -270,7 +270,7 @@ export default function Header() {
               }}
               className="block px-4 py-2 rounded-lg text-gray-600 text-center"
             >
-              Vaši prijedlozi
+              {tNav('feedback')}
             </button>
             {user ? (
               <>

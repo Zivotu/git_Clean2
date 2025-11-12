@@ -3,7 +3,7 @@ import { requireRole } from '../middleware/auth.js'
 import { db, listEntitlements, readApps } from '../db.js'
 import type { Entitlement } from '../entitlements/service.js'
 import type { AppRecord } from '../types.js'
-import { sendTemplateToUser } from '../notifier.js'
+import { notifyReports, sendTemplateToUser } from '../notifier.js'
 import { getConfig } from '../config.js'
 import { readTermsStatus, recordTermsAcceptance } from '../lib/terms.js'
 
@@ -445,6 +445,20 @@ export default async function meRoutes(app: FastifyInstance) {
           },
           { merge: true },
         )
+
+        const adminLines = [
+          `UID: ${uid}`,
+          `Email: ${explicitEmail ?? data?.email ?? '(nije dostupno)'}`,
+          `Display name: ${displayName ?? data?.displayName ?? '(nije dostupno)'}`,
+          `IP: ${req.ip ?? '(nepoznato)'}`,
+          `User-Agent: ${req.headers['user-agent'] ?? '(nepoznato)'}`,
+          `Zabilježeno: ${new Date(now).toISOString()}`,
+        ]
+        try {
+          await notifyReports('Novi korisnik registriran', adminLines.join('\n'))
+        } catch (notifyErr) {
+          req.log.error({ err: notifyErr, uid }, 'notify_reports_new_user_failed')
+        }
 
         return reply.send({ ok: true, sent: true })
       } catch (err) {
