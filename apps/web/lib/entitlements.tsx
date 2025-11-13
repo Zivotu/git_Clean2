@@ -100,6 +100,7 @@ const labelMap: Record<EntitlementType, string> = {
   isGold: 'Gold plan',
   noAds: 'No ads',
   'app-trial': 'App Trial',
+  purchase: 'One-time purchase',
 };
 
 export type EntitlementDisplay = {
