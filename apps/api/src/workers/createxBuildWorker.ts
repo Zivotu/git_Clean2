@@ -128,15 +128,23 @@ async function runBuildProcess(buildId: string): Promise<void> {
 
   // Install npm dependencies in buildDir
   console.log(`[worker] Installing dependencies in ${buildDir}...`);
+  const installEnv: NodeJS.ProcessEnv = {
+    NODE_ENV: 'development',
+    npm_config_production: 'false',
+    YARN_PRODUCTION: 'false',
+    pnpm_config_prod: 'false',
+    BUN_INSTALL_DEV_DEPENDENCIES: '1',
+  };
+
   await new Promise<void>((resolve, reject) => {
     let output = '';
     let errorOutput = '';
     
-    const npm = spawn('npm', ['install', '--production', '--no-audit', '--loglevel=error'], { 
+    const npm = spawn('npm', ['install', '--no-audit', '--loglevel=error'], { 
       cwd: buildDir, // Install in buildDir where package.json is
       shell: true,
       windowsHide: true,
-      env: createChildEnv(),
+      env: createChildEnv(installEnv),
     });
     
     npm.stdout?.on('data', (data) => {

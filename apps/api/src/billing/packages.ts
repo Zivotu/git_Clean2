@@ -41,7 +41,7 @@ const GOLD_FEATURES = [
 ];
 
 const NO_ADS_FEATURES = [
-  'Removes every CreateX ad slot across web and published apps',
+  'Removes every THESARA.SPACE ad slot across web and published apps',
   'Focus mode for your audience (no banners or interstitials)',
 ];
 
@@ -58,7 +58,7 @@ export const PACKAGES: Package[] = [
   {
     id: 'noads',
     name: 'No Ads',
-    description: 'Remove CreateX ads from dashboards and everyone playing your apps.',
+    description: 'Remove THESARA.SPACE ads from dashboards and everyone playing your apps.',
     features: NO_ADS_FEATURES,
     tier: 'addon',
     priceId: NOADS_PRICE_ID,

@@ -160,7 +160,7 @@ export default function CreateXPage() {
   return (
     <>
       <div className="max-w-3xl mx-auto p-4 space-y-4">
-        <h1 className="text-2xl font-bold">CreateX Publish</h1>
+        <h1 className="text-2xl font-bold">THESARA.SPACE Publish</h1>
 
       <div className="space-y-2">
         <div className="h-2 bg-gray-200 rounded">
@@ -198,7 +198,7 @@ export default function CreateXPage() {
   {needsTermsConsent && (
     <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
       <p className="font-semibold">
-        Potvrdi da prihvacas {TERMS_POLICY.shortLabel} prije pokretanja CreateX objave.
+        Potvrdi da prihvacas {TERMS_POLICY.shortLabel} prije pokretanja THESARA.SPACE objave.
       </p>
       <label className="mt-2 flex items-start gap-3 text-gray-800">
         <input
@@ -212,7 +212,7 @@ export default function CreateXPage() {
         />
         <span>
           Potvrdujem da sam procitao/la uvjete i prihvacam ih za sve naredne objave stvorene s
-          CreateX alatom.
+          THESARA.SPACE alatom.
         </span>
       </label>
       <div className="mt-3 flex flex-wrap items-center gap-3">

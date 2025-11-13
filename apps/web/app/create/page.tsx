@@ -90,6 +90,7 @@ export default function CreatePage() {
   const bundleInputRef = useRef<HTMLInputElement | null>(null);
   const [bundleFile, setBundleFile] = useState<File | null>(null);
   const [bundleError, setBundleError] = useState('');
+  const [llmApiKey, setLlmApiKey] = useState('');
 
   const { messages } = useI18n();
   const tCreate = useCallback(
@@ -371,6 +372,9 @@ export default function CreatePage() {
           form.append('description', manifest.description || '');
           form.append('visibility', 'public');
           form.append('id', appId);
+          if (llmApiKey.trim()) {
+            form.append('llmApiKey', llmApiKey.trim());
+          }
           if (previewAttachment?.dataUrl) {
             form.append('preview', previewAttachment.dataUrl);
           }
@@ -680,6 +684,17 @@ export default function CreatePage() {
                       {tCreate('bundleHintPart2')} <code>pnpm-lock.yaml</code>.{' '}
                       {tCreate('bundleHintPart3')} <code>pnpm run build</code>.
                     </p>
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                      <p className="text-sm font-extrabold uppercase tracking-wide text-red-700">
+                        {tCreate('bundleAiWarning')}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-red-600">
+                        {tCreate('bundleAiWarningDetail')}
+                      </p>
+                      <p className="mt-1 text-xs text-red-500">
+                        {tCreate('bundleAiNoKeyNote')}
+                      </p>
+                    </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="button"
@@ -707,6 +722,21 @@ export default function CreatePage() {
                           Ukloni
                         </button>
                       )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-sm font-semibold text-gray-900" htmlFor="bundle-llm-api">
+                        {tCreate('bundleAiApiLabel')}
+                      </label>
+                      <input
+                        id="bundle-llm-api"
+                        type="text"
+                        autoComplete="off"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                        placeholder={tCreate('bundleAiApiPlaceholder')}
+                        value={llmApiKey}
+                        onChange={(event) => setLlmApiKey(event.target.value)}
+                      />
+                      <p className="text-xs text-gray-500">{tCreate('bundleAiApiHelp')}</p>
                     </div>
                     {bundleError && <p className="text-sm text-red-600">{bundleError}</p>}
                     <p className="text-xs text-gray-500">

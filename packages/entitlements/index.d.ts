@@ -4,4 +4,5 @@ export type EntitlementType =
   | 'free-ads'
   | 'isGold'
   | 'noAds'
-  | 'app-trial';
+  | 'app-trial'
+  | 'purchase';

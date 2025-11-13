@@ -68,7 +68,7 @@ export const dbAccess = {
 };
 
 /** Default descriptor shown on statements */
-const STATEMENT_DESCRIPTOR = 'CreateX';
+const STATEMENT_DESCRIPTOR = 'THESARA.SPACE';
 
 export async function listPackages(): Promise<Package[]> {
   return Promise.all(
@@ -480,7 +480,7 @@ export async function createSubscriptionByPriceId(
   customerEmail?: string,
   customerId?: string,
   idempotencyKey?: string,
-): Promise<{ id: string; url: string } | { alreadySubscribed: true }> {
+): Promise<{ id: string; url: string | null } | { alreadySubscribed: true }> {
   const normalizedPriceId = await resolveStripePriceId(priceId);
   const hasActive = await dbAccess.hasSubscriptionByPriceId(
     userId,
@@ -544,7 +544,7 @@ export async function createAppSubscription(
   customerEmail?: string,
   customerId?: string,
   idempotencyKey?: string,
-): Promise<{ id: string; url: string } | { alreadySubscribed: true }> {
+): Promise<{ id: string; url: string | null } | { alreadySubscribed: true }> {
   const app = await dbAccess.getAppByIdOrSlug(appIdentifier);
   if (!app) throw new Error('app_not_found');
   if (app.status !== 'published' || app.state !== 'active') {
@@ -600,6 +600,7 @@ export async function createAppSubscription(
       throw err;
     }
   }
+  const normalizedPriceId = await resolveStripePriceId(priceId);
   if (customerId) {
     const subs = await stripe.subscriptions.list({
       customer: customerId,
@@ -615,7 +616,7 @@ export async function createAppSubscription(
     }
   }
   const session = await createFixedSubscription(
-    priceId,
+    normalizedPriceId,
     userId,
     customerEmail,
     customerId,
@@ -850,6 +851,10 @@ export interface WebhookResult {
   amountTotal?: number;
 }
 
+type ExtendedStripeEventType =
+  | Stripe.Event.Type
+  | 'entitlements.active_entitlement_summary.updated';
+
 /** Handle incoming Stripe webhook */
 export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult> {
   console.log('[handleWebhook] event received', { id: event.id, type: event.type });
@@ -858,7 +863,8 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
   }
 
   let result: WebhookResult = {};
-  switch (event.type) {
+  const eventType = event.type as ExtendedStripeEventType;
+  switch (eventType) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       const stripeAccount = event.account as string | undefined;

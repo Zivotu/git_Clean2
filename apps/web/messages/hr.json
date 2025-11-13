@@ -473,7 +473,7 @@
     "plays": "{count} igranja"
   },
   "Toasts": {
-    "welcome": "Dobrodošli na CreateX!",
+    "welcome": "Dobrodošli na THESARA.SPACE!",
     "loginToLike": "Prijavi se da lajkiraš aplikacije",
     "slowDown": "Polako 🙂",
     "likeError": "Ne možemo lajkati aplikaciju. Provjeri API URL i status servera.",
@@ -503,9 +503,9 @@
     "goldDescription": "Otključajte veće limite, više prostora i prioritetnu podršku pri objavi.",
     "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Free uključuje {freeLimit})",
     "goldFeatureStorage": "Veći upload i storage za bundlove te assete",
-    "goldFeatureAds": "Uklanja CreateX oglase iz sučelja i objavljenih aplikacija",
+    "goldFeatureAds": "Uklanja THESARA.SPACE oglase iz sučelja i objavljenih aplikacija",
     "goldFeatureSupport": "Prioritetna obrada objava i brži pristup podršci",
-    "noAdsDescription": "Plan koji uklanja sve CreateX oglase iz sučelja i iskustava.",
+    "noAdsDescription": "Plan koji uklanja sve THESARA.SPACE oglase iz sučelja i iskustava.",
     "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vašim aplikacijama",
     "noAdsFeatureFocus": "Publika ostaje fokusirana na sadržaj (bez bannera i pop-upova)"
   },
@@ -545,6 +545,12 @@
     "bundleHintPart1": "ZIP paket mora sadržavati build izlaz zajedno s datotekama",
     "bundleHintPart2": "i",
     "bundleHintPart3": "Worker će ga lokalno instalirati i pokrenuti",
+    "bundleAiWarning": "VAŽNO: Aplikacije koje ovise o Google AI Studiju, Geminiju, Kimiju ili bilo kojem drugom LLM-u moraju imati vlastiti API ključ. Bez njega bundle nakon objave neće raditi.",
+    "bundleAiWarningDetail": "Upiši svoj ključ dolje (mi ga ne osiguravamo). Ostavite polje prazno samo ako tvoja AI aplikacija radi bez privatnog ključa. Uskoro objavljujemo detaljnu dokumentaciju.",
+    "bundleAiNoKeyNote": "I dalje možeš objaviti demo aplikacije koje ne trebaju ključ — sve ovisi kako si ih izgradio.",
+    "bundleAiApiLabel": "AI / LLM API ključ",
+    "bundleAiApiPlaceholder": "Zalijepi ključ dobiven od pružatelja (spremamo ga samo za ovaj build)",
+    "bundleAiApiHelp": "Ključ umetnemo u bundle kako bi se mogao spojiti na tvoj AI servis. Ako aplikacija prestane raditi, provjeri ili regeneriraj ključ.",
     "chooseZip": "Odaberi ZIP",
     "placeholderHtmlLong": "HTML snipet ili cijela stranica...",
     "placeholderReactLong": "React komponenta...",

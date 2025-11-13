@@ -97,9 +97,11 @@ async function runCommand(command: string, args: string[], options: RunCommandOp
   const useShell = process.platform === 'win32';
   const resolvedCommand = useShell ? command : command;
   return new Promise<RunCommandResult>((resolve, reject) => {
+    const env = { ...process.env, ...options.env };
+    delete env.NODE_OPTIONS;
     const child = spawn(resolvedCommand, args, {
       cwd: options.cwd,
-      env: { ...process.env, ...options.env },
+      env,
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: useShell,
     });
@@ -178,8 +180,22 @@ type InstallPlan = {
   installArgs: string[];
   buildCommand: string;
   buildArgs: string[];
-  env?: NodeJS.ProcessEnv;
+  installEnv?: NodeJS.ProcessEnv;
+  buildEnv?: NodeJS.ProcessEnv;
   cleanup?: () => Promise<void>;
+};
+
+const INSTALL_ENV_OVERRIDES: NodeJS.ProcessEnv = {
+  NODE_ENV: 'development',
+  npm_config_production: 'false',
+  npm_config_include: 'dev',
+  YARN_PRODUCTION: 'false',
+  pnpm_config_prod: 'false',
+  BUN_INSTALL_DEV_DEPENDENCIES: '1',
+};
+
+const BUILD_ENV_OVERRIDES: NodeJS.ProcessEnv = {
+  NODE_ENV: 'production',
 };
 
 function getPackageManagerForLock(lockFile: string): PackageManager {
@@ -195,6 +211,23 @@ function getPackageManagerForLock(lockFile: string): PackageManager {
     default:
       throw new Error(`Nepoznata lock datoteka: ${lockFile}`);
   }
+}
+
+const BUILD_TOOL_MARKERS = ['vite', 'tsup', 'webpack', 'rollup', 'parcel', 'gulp', 'esbuild'];
+
+function isMissingBuildToolError(err: any): boolean {
+  const text = [
+    err?.stderr,
+    err?.stdout,
+    err?.message,
+  ]
+    .filter(Boolean)
+    .join('\n')
+    .toLowerCase();
+  if (!text.includes('not found') && !text.includes('command not found')) {
+    return false;
+  }
+  return BUILD_TOOL_MARKERS.some((tool) => text.includes(tool));
 }
 
 function detectPackageManagerFromPackageJson(pkgJson: any): PackageManager {
@@ -219,10 +252,16 @@ async function prepareInstallPlan(
     return {
       manager,
       installCommand: 'npm',
-      installArgs: ['ci'],
+      installArgs: ['ci', '--include=dev'],
       buildCommand: 'npm',
       buildArgs: ['run', 'build'],
-      env: {
+      installEnv: {
+        ...INSTALL_ENV_OVERRIDES,
+        npm_config_cache: npmCacheDir,
+        npm_config_userconfig: npmrcPath,
+      },
+      buildEnv: {
+        ...BUILD_ENV_OVERRIDES,
         npm_config_cache: npmCacheDir,
         npm_config_userconfig: npmrcPath,
       },
@@ -239,6 +278,8 @@ async function prepareInstallPlan(
       installArgs: ['install', '--frozen-lockfile'],
       buildCommand: 'pnpm',
       buildArgs: ['run', 'build'],
+      installEnv: INSTALL_ENV_OVERRIDES,
+      buildEnv: BUILD_ENV_OVERRIDES,
     };
   }
 
@@ -249,6 +290,8 @@ async function prepareInstallPlan(
       installArgs: ['install', '--frozen-lockfile'],
       buildCommand: 'yarn',
       buildArgs: ['run', 'build'],
+      installEnv: INSTALL_ENV_OVERRIDES,
+      buildEnv: BUILD_ENV_OVERRIDES,
     };
   }
 
@@ -258,6 +301,8 @@ async function prepareInstallPlan(
     installArgs: ['install', '--frozen-lockfile'],
     buildCommand: 'bun',
     buildArgs: ['run', 'build'],
+    installEnv: INSTALL_ENV_OVERRIDES,
+    buildEnv: BUILD_ENV_OVERRIDES,
   };
 }
 
@@ -291,11 +336,12 @@ async function synthesizeNpmLock(
   const npmrcPath = path.join(workspaceDir, '.npmrc.synth');
   await fs.writeFile(npmrcPath, `registry=${DEFAULT_NPM_REGISTRY}\n`, 'utf8');
   try {
-    await runCommand('npm', ['install', '--package-lock-only', '--ignore-scripts'], {
+    await runCommand('npm', ['install', '--package-lock-only', '--ignore-scripts', '--include=dev'], {
       cwd: projectDir,
       timeoutMs,
       logPrefix: '[bundle-worker][npm lock synth]',
       env: {
+        ...INSTALL_ENV_OVERRIDES,
         npm_config_cache: npmCacheDir,
         npm_config_userconfig: npmrcPath,
         npm_config_save_exact: 'true',
@@ -335,7 +381,11 @@ async function ensureQueue(): Promise<Queue | null> {
   return bundleBuildQueue;
 }
 
-export async function enqueueBundleBuild(buildId: string, zipPath: string): Promise<string> {
+export async function enqueueBundleBuild(
+  buildId: string,
+  zipPath: string,
+  opts?: { llmApiKey?: string },
+): Promise<string> {
   if (process.env.CREATEX_WORKER_ENABLED !== 'true') {
     // Assuming same env var controls this worker
     throw new Error('Build queue is disabled');
@@ -344,11 +394,20 @@ export async function enqueueBundleBuild(buildId: string, zipPath: string): Prom
   if (!queue) {
     throw new Error('Build queue is disabled');
   }
-  await queue.add('build-bundle', { buildId, zipPath }, { removeOnComplete: true, removeOnFail: 1000 });
+  await queue.add(
+    'build-bundle',
+    { buildId, zipPath, llmApiKey: opts?.llmApiKey },
+    { removeOnComplete: true, removeOnFail: 1000 },
+  );
   return buildId;
 }
 
-async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<void> {
+async function runBundleBuildProcess(
+  buildId: string,
+  zipPath: string,
+  options?: { llmApiKey?: string },
+): Promise<void> {
+  const llmApiKey = options?.llmApiKey?.trim() ? options.llmApiKey.trim() : undefined;
   const baseDir = getBuildDir(buildId);
   const workspaceDir = path.join(baseDir, 'workspace');
   const buildDir = path.join(baseDir, 'build');
@@ -425,25 +484,55 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
       }
       console.log(`[bundle-worker] Using ${lockFile} for deterministic install.`);
       const installPlan = await prepareInstallPlan(lockFile, projectDir, workspaceDir, npmCacheDir);
-      const mergedEnv = {
+      const installEnv = {
         npm_config_cache: npmCacheDir,
-        ...(installPlan.env ?? {}),
+        ...(installPlan.installEnv ?? {}),
+      };
+      const buildEnv = {
+        npm_config_cache: npmCacheDir,
+        ...(installPlan.buildEnv ?? {}),
       };
 
+      let didDevRetry = false;
       try {
         await runCommand(installPlan.installCommand, installPlan.installArgs, {
           cwd: projectDir,
           timeoutMs: INSTALL_TIMEOUT_MS,
           logPrefix: `[bundle-worker][${installPlan.manager} install]`,
-          env: mergedEnv,
+          env: installEnv,
         });
 
-        await runCommand(installPlan.buildCommand, installPlan.buildArgs, {
-          cwd: projectDir,
-          timeoutMs: BUILD_TIMEOUT_MS,
-          logPrefix: `[bundle-worker][${installPlan.manager} build]`,
-          env: mergedEnv,
-        });
+        const runBuild = () =>
+          runCommand(installPlan.buildCommand, installPlan.buildArgs, {
+            cwd: projectDir,
+            timeoutMs: BUILD_TIMEOUT_MS,
+            logPrefix: `[bundle-worker][${installPlan.manager} build]`,
+            env: buildEnv,
+          });
+
+        try {
+          await runBuild();
+        } catch (err) {
+          if (
+            !didDevRetry &&
+            installPlan.manager === 'npm' &&
+            isMissingBuildToolError(err)
+          ) {
+            didDevRetry = true;
+            console.warn(
+              `[bundle-worker] Build tool missing after install; retrying npm install with --include=dev.`,
+            );
+            await runCommand('npm', ['install', '--include=dev'], {
+              cwd: projectDir,
+              timeoutMs: INSTALL_TIMEOUT_MS,
+              logPrefix: `[bundle-worker][npm install --include=dev]`,
+              env: installEnv,
+            });
+            await runBuild();
+          } else {
+            throw err;
+          }
+        }
         console.log(`[bundle-worker] ${installPlan.manager} build finished.`);
       } finally {
         await installPlan.cleanup?.();
@@ -475,12 +564,23 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
     try {
       let html = await fs.readFile(indexPath, 'utf8');
       const listingId = (await getBuildData(buildId))?.listingId;
+      const aiSnippet = llmApiKey
+        ? `
+          window.__THESARA_AI_API_KEY__ = ${JSON.stringify(llmApiKey)};
+          window.thesara.ai = Object.assign({}, window.thesara.ai, {
+            apiKey: ${JSON.stringify(llmApiKey)},
+            provider: 'user',
+            updatedAt: new Date().toISOString(),
+          });
+        `
+        : '';
       const shimScript = `
         <script>
           window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};
           window.__THESARA_APP_ID__ = ${JSON.stringify(String(listingId))};
           window.thesara = window.thesara || {};
           window.thesara.app = Object.assign({}, window.thesara.app, { id: ${JSON.stringify(String(listingId))} });
+          ${aiSnippet}
         </script>
         <script type="module" src="/shims/rooms.js"></script>
         <script type="module" src="/shims/storage.js"></script>
@@ -501,11 +601,15 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
       // This might not be a fatal error if the app doesn't need storage.
     }
   } finally {
-    // 3. Cleanup temporary zip file and per-build npm cache
-    await fs.rm(zipPath, { force: true });
-    await fs.rm(npmCacheDir, { recursive: true, force: true });
-    await fs.rm(workspaceDir, { recursive: true, force: true });
-    console.log(`[bundle-worker] Cleaned up temporary zip file and workspace.`);
+    if (process.env.BUNDLE_WORKER_SKIP_CLEANUP === '1') {
+      console.log('[bundle-worker] Skipping cleanup (BUNDLE_WORKER_SKIP_CLEANUP=1).');
+    } else {
+      // 3. Cleanup temporary zip file and per-build npm cache
+      await fs.rm(zipPath, { force: true });
+      await fs.rm(npmCacheDir, { recursive: true, force: true });
+      await fs.rm(workspaceDir, { recursive: true, force: true });
+      console.log('[bundle-worker] Cleaned up temporary zip file and workspace.');
+    }
   }
 }
 
@@ -526,13 +630,17 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
     const worker = new Worker(
       BUNDLE_BUILD_QUEUE_NAME,
       async (job) => {
-        const { buildId, zipPath } = job.data as { buildId: string; zipPath: string };
+        const { buildId, zipPath, llmApiKey } = job.data as {
+          buildId: string;
+          zipPath: string;
+          llmApiKey?: string;
+        };
         console.log(`[bundle-worker] Processing job: ${buildId}`);
         try {
           sseEmitter.emit(buildId, 'status', { status: 'bundling' });
           await updateBuild(buildId, { state: 'build', progress: 20, error: undefined });
 
-          await runBundleBuildProcess(buildId, zipPath);
+          await runBundleBuildProcess(buildId, zipPath, { llmApiKey });
 
           await updateBuild(buildId, { state: 'pending_review', progress: 100 });
           

@@ -66,7 +66,7 @@ export const dbAccess = {
 };
 
 /** Default descriptor shown on statements */
-const STATEMENT_DESCRIPTOR = 'CreateX';
+const STATEMENT_DESCRIPTOR = 'THESARA.SPACE';
 
 export async function listPackages(): Promise<Package[]> {
   return Promise.all(

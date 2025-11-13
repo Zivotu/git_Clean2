@@ -149,7 +149,7 @@ test('createCheckoutSession configures tax, descriptors and receipts', async (t)
       }
       assert.equal(
         params.payment_intent_data?.statement_descriptor,
-        'CreateX',
+        'THESARA.SPACE',
       );
       assert.equal(
         params.payment_intent_data?.receipt_email,
