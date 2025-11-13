@@ -811,6 +811,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
     return { ok: true };
   };
   route('POST', '/review/approve/:id', admin, approveHandler)(app);
+  route('POST', '/review/refresh/:id', admin, approveHandler)(app);
 
   const rejectHandler = async (req: any, reply: FastifyReply) => {
     const { id } = req.params as { id: string };

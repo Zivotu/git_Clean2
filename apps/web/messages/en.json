@@ -182,6 +182,7 @@
       "downloadFailed": "Download failed. Try again later.",
       "noBuildApprove": "There is no active build to approve.",
       "approveSuccess": "Entry approved.",
+      "refreshSuccess": "Entry refreshed.",
       "noBuildReject": "There is no active build to reject.",
       "rejectSuccess": "Entry rejected.",
       "deleteSuccess": "Entry moved to deleted.",

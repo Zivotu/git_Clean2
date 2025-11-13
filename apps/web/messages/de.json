@@ -182,6 +182,7 @@
       "downloadFailed": "Download fehlgeschlagen. Bitte später erneut versuchen.",
       "noBuildApprove": "Kein aktiver Build zum Freigeben.",
       "approveSuccess": "Eintrag freigegeben.",
+      "refreshSuccess": "Eintrag aktualisiert.",
       "noBuildReject": "Kein aktiver Build zum Ablehnen.",
       "rejectSuccess": "Eintrag abgelehnt.",
       "deleteSuccess": "Eintrag wurde in „Gelöscht“ verschoben.",

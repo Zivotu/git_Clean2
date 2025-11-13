@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth, getDisplayName } from '@/lib/auth';
@@ -11,7 +11,6 @@ import Avatar from '@/components/Avatar';
 import Logo from '@/components/Logo';
 import { triggerConfetti } from '@/components/Confetti';
 import FeedbackModal from '@/components/FeedbackModal';
-import { getListingCount } from '@/lib/listings';
 import { useI18n } from '@/lib/i18n-provider';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
 
@@ -22,33 +21,8 @@ export default function Header() {
   const pathname = usePathname() ?? '';
   const { user } = useAuth();
   const name = getDisplayName(user);
-  const [hasApps, setHasApps] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-
-  useEffect(() => {
-    if (!user?.uid) {
-      setHasApps(false);
-      return;
-    }
-    let active = true;
-    const refresh = async () => {
-      try {
-        const count = await getListingCount(user.uid);
-        if (active) setHasApps(count > 0);
-      } catch (e) {
-        console.error('Failed to fetch listing count', e);
-      }
-    };
-    refresh();
-    const events = ['app-created', 'app-deleted', 'listing-created', 'listing-deleted'];
-    const handler = () => refresh();
-    events.forEach((ev) => window.addEventListener(ev, handler));
-    return () => {
-      active = false;
-      events.forEach((ev) => window.removeEventListener(ev, handler));
-    };
-  }, [user]);
 
   const handlePublishClick = useCallback(() => {
     triggerConfetti();
@@ -110,18 +84,17 @@ export default function Header() {
                   {tNav('proApps')}
                 </Link>
               ))}
-            {hasApps &&
-              (pathname === '/pro' ? (
-                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('goPro')}</span>
-              ) : (
-                <Link
-                  href="/pro"
-                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                  title="Go Pro"
-                >
-                  {tNav('goPro')}
-                </Link>
-              ))}
+            {pathname === '/pro' ? (
+              <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('goPro')}</span>
+            ) : (
+              <Link
+                href="/pro"
+                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                title="Go Pro"
+              >
+                {tNav('goPro')}
+              </Link>
+            )}
             {pathname === '/faq' ? (
               <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('faq')}</span>
             ) : (
@@ -248,14 +221,13 @@ export default function Header() {
                     {tNav('proApps')}
                   </Link>
                 ))}
-            {hasApps &&
-              (pathname === '/pro' ? (
-                <span className="block px-4 py-2 rounded-lg text-gray-900 text-center bg-gray-200">{tNav('goPro')}</span>
-              ) : (
-                <Link href="/pro" className="block px-4 py-2 rounded-lg text-gray-600 text-center" title="Go Pro">
-                  {tNav('goPro')}
-                </Link>
-              ))}
+            {pathname === '/pro' ? (
+              <span className="block px-4 py-2 rounded-lg text-gray-900 text-center bg-gray-200">{tNav('goPro')}</span>
+            ) : (
+              <Link href="/pro" className="block px-4 py-2 rounded-lg text-gray-600 text-center" title="Go Pro">
+                {tNav('goPro')}
+              </Link>
+            )}
             {pathname === '/faq' ? (
               <span className="block px-4 py-2 rounded-lg text-gray-900 text-center bg-gray-200">{tNav('faq')}</span>
             ) : (

@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getConfig } from '../config.js';
 import { getBuildDir } from '../paths.js';
-import { readApps, writeApps, listEntitlements, updateApp } from '../db.js';
+import { readApps, writeApps, listEntitlements, updateApp, db } from '../db.js';
 import { initBuild } from '../models/Build.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import { enqueueBundleBuild } from '../workers/bundleBuildWorker.js';
@@ -78,6 +78,51 @@ function slugify(input: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
+}
+
+async function resolveAuthorMetadata(opts: {
+  uid: string;
+  existing?: Record<string, any> | null;
+  req: FastifyRequest;
+}): Promise<{ uid: string; name?: string; photo?: string; handle?: string }> {
+  const { uid, existing, req } = opts;
+  const author: Record<string, any> = { ...(existing || {}) };
+  author.uid = uid;
+
+  const assign = (key: 'name' | 'photo' | 'handle', value?: unknown) => {
+    if (author[key]) return;
+    if (typeof value === 'string' && value.trim()) {
+      author[key] = value.trim();
+    }
+  };
+
+  const claims: any = (req as any).authUser?.claims || {};
+  assign('name', claims.displayName || claims.name);
+  assign('photo', claims.picture || claims.photoURL || claims.photoUrl);
+  assign('handle', claims.handle || claims.username);
+
+  if (!author.name || !author.photo || !author.handle) {
+    try {
+      const snap = await db.collection('users').doc(uid).get();
+      if (snap.exists) {
+        const data = snap.data() || {};
+        assign('name', data.displayName || data.name || data.fullName);
+        assign('photo', data.photo || data.photoUrl || data.photoURL || data.avatarUrl);
+        assign('handle', data.handle || data.username || data.slug);
+      }
+    } catch (err) {
+      req.log?.warn?.({ err, uid }, 'publish_bundle_author_lookup_failed');
+    }
+  }
+
+  // Remove empty strings to avoid writing noise
+  for (const key of ['name', 'photo', 'handle'] as const) {
+    if (typeof author[key] === 'string' && !author[key].trim()) {
+      delete author[key];
+    }
+  }
+
+  return author;
 }
 
 export default async function publishBundleRoutes(app: FastifyInstance) {
@@ -231,7 +276,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       
       const description = (data.fields.description as any)?.value || '';
       const visibility = (data.fields.visibility as any)?.value || 'public';
-      const author = { uid }; // Simplified author
+      const author = await resolveAuthorMetadata({ uid, existing: existing?.author, req });
 
       if (existing) {
         const base: any = { // Type as any to allow for flexible property assignment

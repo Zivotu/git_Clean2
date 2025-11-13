@@ -99,7 +99,7 @@ type BuildState =
 
 type TimelineEntry = { state: BuildState; at: number };
 
-type ConfirmActionType = 'approve' | 'delete' | 'force-delete' | 'restore';
+type ConfirmActionType = 'approve' | 'delete' | 'force-delete' | 'restore' | 'refresh';
 type PendingConfirmAction = { type: ConfirmActionType; item: ReviewItem };
 type AdminTabKey = 'apps' | 'users' | 'ambassador' | 'admins' | 'emailTemplates';
 const reviewStatuses = ['all', 'pending', 'approved', 'rejected', 'deleted'] as const;
@@ -617,6 +617,17 @@ export default function AdminDashboard() {
     }
   };
 
+  const refreshListing = async (item: ReviewItem) => {
+    const target = resolveItemTarget(item);
+    if (!target) {
+      showAdminAlert('alerts.noBuildApprove');
+      return;
+    }
+    await apiPost(`/review/refresh/${target}`, {}, { auth: true });
+    showAdminAlert('alerts.refreshSuccess');
+    await load();
+  };
+
   const reject = async (item: ReviewItem, reason: string) => {
     const target = resolveItemTarget(item);
     if (!target) {
@@ -669,6 +680,8 @@ export default function AdminDashboard() {
     try {
       if (type === 'approve') {
         await approve(item);
+      } else if (type === 'refresh') {
+        await refreshListing(item);
       } else if (type === 'delete') {
         await deleteApp(item);
       } else if (type === 'force-delete') {
@@ -712,6 +725,19 @@ const confirmDialog = confirmAction
               </div>
             ),
             confirmLabel: 'Approve',
+            confirmTone: 'default' as const,
+          };
+        case 'refresh':
+          return {
+            title: 'Refresh listing',
+            message: (
+              <div className="space-y-2 text-sm">
+                <p>
+                  Refresh <strong>{name}</strong>? This re-runs publish steps and syncs metadata.
+                </p>
+              </div>
+            ),
+            confirmLabel: 'Refresh',
             confirmTone: 'default' as const,
           };
         case 'delete':
@@ -972,13 +998,23 @@ const confirmDialog = confirmAction
                             </>
                           ) : (
                             <>
-                              <button
-                                onClick={() => setConfirmAction({ type: 'approve', item: it })}
-                                className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                                disabled={!actionTarget}
-                              >
-                                Approve
-                              </button>
+                              {tab === 'approved' ? (
+                                <button
+                                  onClick={() => setConfirmAction({ type: 'refresh', item: it })}
+                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                                  disabled={!actionTarget}
+                                >
+                                  Refresh
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmAction({ type: 'approve', item: it })}
+                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
+                                  disabled={!actionTarget}
+                                >
+                                  Approve
+                                </button>
+                              )}
                               <button
                                 onClick={() => actionTarget && setRejectState({ item: it, reason: '' })}
                                 className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50"

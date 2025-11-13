@@ -182,6 +182,7 @@
       "downloadFailed": "Preuzimanje nije uspjelo. Poku�aj kasnije.",
       "noBuildApprove": "Nema aktivnog builda za odobravanje.",
       "approveSuccess": "Unos je odobren.",
+      "refreshSuccess": "Unos je osvje\u017een.",
       "noBuildReject": "Nema aktivnog builda za odbijanje.",
       "rejectSuccess": "Unos je odbijen.",
       "deleteSuccess": "Unos je premje�ten u obrisane.",
