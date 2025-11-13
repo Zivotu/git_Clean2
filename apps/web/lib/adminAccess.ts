@@ -1,41 +1,41 @@
 'use client';
 
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { apiGet, apiPost } from '@/lib/api';
 
-const DOC_PATH = ['adminSettings', 'accessControl'] as const;
 const CACHE_MS = 60_000;
 
-type AdminSettingsDoc = {
-  allowedEmails?: string[];
-};
-
 let cachedEmails: { value: string[]; fetchedAt: number } | null = null;
+
+type AllowedEmailsResponse = { emails: string[] };
+type UnlockResponse = { ok: boolean; admin: boolean; requiresRefresh?: boolean };
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+export async function requestAdminUnlock(pin: string): Promise<UnlockResponse> {
+  return apiPost<UnlockResponse>('/admin/access/unlock', { pin }, { auth: true });
+}
+
 export async function fetchAllowedAdminEmails(force = false): Promise<string[]> {
-  if (!db) return [];
   const now = Date.now();
   if (!force && cachedEmails && now - cachedEmails.fetchedAt < CACHE_MS) {
     return cachedEmails.value;
   }
-  const ref = doc(db, ...DOC_PATH);
-  const snap = await getDoc(ref);
-  const data = snap.data() as AdminSettingsDoc | undefined;
-  const emails = Array.isArray(data?.allowedEmails)
-    ? data!.allowedEmails.map((entry) => normalizeEmail(String(entry)))
-    : [];
-  cachedEmails = { value: emails, fetchedAt: now };
-  return emails;
+  const { emails } = await apiGet<AllowedEmailsResponse>('/admin/access/allowed', { auth: true });
+  const normalized = emails.map((entry) => normalizeEmail(String(entry)));
+  cachedEmails = { value: normalized, fetchedAt: now };
+  return normalized;
 }
 
-export async function saveAllowedAdminEmails(emails: string[]): Promise<void> {
-  if (!db) throw new Error('Firestore nije inicijaliziran.');
-  const ref = doc(db, ...DOC_PATH);
+export async function saveAllowedAdminEmails(emails: string[]): Promise<string[]> {
   const normalized = emails.map((e) => normalizeEmail(e));
-  await setDoc(ref, { allowedEmails: normalized }, { merge: true });
-  cachedEmails = { value: normalized, fetchedAt: Date.now() };
+  const res = await apiPost<AllowedEmailsResponse>(
+    '/admin/access/allowed',
+    { emails: normalized },
+    { auth: true },
+  );
+  const sorted = res.emails.map((entry) => normalizeEmail(String(entry)));
+  cachedEmails = { value: sorted, fetchedAt: Date.now() };
+  return sorted;
 }

@@ -5,7 +5,8 @@ import type { ComponentType, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Heart, Users2, Home, PartyPopper, BriefcaseBusiness, Plane, Music2, BookOpen } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
-import { fetchAllowedAdminEmails } from '@/lib/adminAccess';
+import { requestAdminUnlock } from '@/lib/adminAccess';
+import { ApiError } from '@/lib/api';
 
 type IconKey = 'health' | 'family' | 'house' | 'fun' | 'work' | 'travel' | 'music' | 'knowledge';
 
@@ -27,7 +28,6 @@ const ICONS: IconButton[] = [
 ];
 
 const UNLOCK_SEQUENCE: IconKey[] = ['health', 'family', 'house', 'fun'];
-const PASSWORD = '2002';
 
 function shuffleIcons(): IconButton[] {
   const list = [...ICONS];
@@ -124,27 +124,46 @@ export default function AdminAccessTrigger({ className = 'fixed bottom-6 right-6
         setError('Prijavite se s dopuštenog računa.');
         return;
       }
-      if (password.trim() !== PASSWORD) {
-        setError('Pogrešna lozinka.');
+      const pin = password.trim();
+      if (!pin) {
+        setError('Unesite PIN.');
         return;
       }
-      const email = user.email.toLowerCase();
       setLoading(true);
       setError(null);
       try {
-        const allowed = await fetchAllowedAdminEmails();
-        if (!allowed.map((em) => em.toLowerCase()).includes(email)) {
-          setError('Nemate dopuštenje za admin sučelje.');
-          setLoading(false);
-          return;
+        const result = await requestAdminUnlock(pin);
+        if (result.requiresRefresh) {
+          try {
+            await user.getIdToken(true);
+          } catch {}
         }
         setOpen(false);
         resetSequence();
         setPassword('');
         router.push('/admin');
       } catch (err) {
-        console.error('Neuspjelo učitavanje postavki admina', err);
-        setError('Postavke admina nisu dostupne.');
+        console.error('Neuspjela provjera admin PIN-a', err);
+        if (err instanceof ApiError) {
+          switch (err.code) {
+            case 'invalid_pin':
+              setError('PIN nije točan.');
+              break;
+            case 'not_allowed':
+              setError('Nemate dopuštenje za admin sučelje.');
+              break;
+            case 'too_many_attempts':
+              setError('Previše pokušaja. Pričekajte prije novog unosa.');
+              break;
+            case 'missing_email':
+              setError('Račun nema potvrđenu e-poštu.');
+              break;
+            default:
+              setError(err.message || 'Neuspjela provjera PIN-a.');
+          }
+        } else {
+          setError('Neuspjela provjera PIN-a.');
+        }
       } finally {
         setLoading(false);
       }

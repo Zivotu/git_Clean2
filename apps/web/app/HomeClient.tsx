@@ -411,7 +411,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const { isSlotEnabled } = useAds();
+  const { isSlotEnabled, showAds } = useAds();
   const openDetails = useCallback((it: Listing) => setDetailsItem(it), []);
   const closeDetails = useCallback(() => setDetailsItem(null), []);
   const welcome = searchParams.get('welcome');
@@ -423,7 +423,21 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const homeRailRightSlot = isSlotEnabled('homeRailRight') ? homeRailRightSlotRaw : '';
   const homeGridInlineSlot = isSlotEnabled('homeGridInline') ? homeGridInlineSlotRaw : '';
   const homeFeedFooterSlot = isSlotEnabled('homeFeedFooter') ? homeFeedFooterSlotRaw : '';
-  const shouldInjectGridAds = viewMode === 'grid' && homeGridInlineSlot.length > 0;
+  const shouldInjectGridAds = showAds && viewMode === 'grid' && homeGridInlineSlot.length > 0;
+  const homeLayoutClass = useMemo(() => {
+    const hasLeft = Boolean(homeRailLeftSlot);
+    const hasRight = Boolean(homeRailRightSlot);
+    if (hasLeft && hasRight) {
+      return 'xl:grid xl:grid-cols-[220px_minmax(0,1fr)_220px] xl:gap-6';
+    }
+    if (hasLeft) {
+      return 'xl:grid xl:grid-cols-[220px_minmax(0,1fr)] xl:gap-6';
+    }
+    if (hasRight) {
+      return 'xl:grid xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-6';
+    }
+    return '';
+  }, [homeRailLeftSlot, homeRailRightSlot]);
 
   // Load subscribed app ids to highlight cards
   useEffect(() => {
@@ -799,10 +813,12 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
         {errorMessage && (<div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm">{errorMessage}</div>)}
       </section>
       <main className="max-w-7xl mx-auto px-4 pb-16">
-        <div className="xl:grid xl:grid-cols-[220px_minmax(0,1fr)_220px] xl:gap-6">
-          <div className="hidden xl:block">
-            <HomeAdsRail slotId={homeRailLeftSlot} slotKey="homeRailLeft" />
-          </div>
+        <div className={homeLayoutClass}>
+          {homeRailLeftSlot && (
+            <div className="hidden xl:block">
+              <HomeAdsRail slotId={homeRailLeftSlot} slotKey="homeRailLeft" />
+            </div>
+          )}
           <div>
             {isLoading ? (
               <div className={cardsLayoutClass}>
@@ -825,15 +841,22 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
                     if (entry.kind === 'ad') {
                       if (!homeGridInlineSlot) return null;
                       return (
-                        <AdSlot
+                        <div
                           key={entry.key}
-                          slotId={homeGridInlineSlot}
-                          slotKey="homeGridInline"
-                          placement="home.grid.inline"
-                          className="flex h-full items-center justify-center rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
-                          adStyle={{ minHeight: '250px' }}
-                          label="Advertisement"
-                        />
+                          className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm"
+                        >
+                          <div className="h-full p-4">
+                            <AdSlot
+                              slotId={homeGridInlineSlot}
+                              slotKey="homeGridInline"
+                              placement="home.grid.inline"
+                              className="h-full w-full"
+                              adStyle={{ minHeight: '100%' }}
+                              label="Advertisement"
+                              closable={false}
+                            />
+                          </div>
+                        </div>
                       );
                     }
                     const item = entry.item;
@@ -881,9 +904,11 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
               </div>
             )}
           </div>
-          <div className="hidden xl:block">
-            <HomeAdsRail slotId={homeRailRightSlot} slotKey="homeRailRight" />
-          </div>
+          {homeRailRightSlot && (
+            <div className="hidden xl:block">
+              <HomeAdsRail slotId={homeRailRightSlot} slotKey="homeRailRight" />
+            </div>
+          )}
         </div>
       </main>
       <footer className="border-t bg-white">

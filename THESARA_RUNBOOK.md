@@ -127,6 +127,13 @@ Sigurnost/CSP:
 - `setStaticHeaders()` postavlja `Content-Security-Policy`, `Cross-Origin-Resource-Policy: cross-origin`, `X-Storage-Backend` i CORS refleksiju za `Origin`.
 
 
+### Admin pristup (PIN + role)
+
+- Admin UI se otključava isključivo na backendu: korisnik mora biti prijavljen, imati email na listi `adminSettings/accessControl.allowedEmails` i unijeti PIN koji odgovara `ADMIN_ACCESS_PIN_HASH`.
+- `POST /admin/access/unlock` provodi PIN provjeru, rate limiting (`ADMIN_ACCESS_WINDOW_MS`, `ADMIN_ACCESS_MAX_ATTEMPTS`) i dodjeljuje custom claim `admin=true` kada je potrebno.
+- Hash se generira npr. `echo -n 'pin+salt' | sha256sum`; vrijednost ide u `ADMIN_ACCESS_PIN_HASH`, opcionalni salt u `ADMIN_ACCESS_PIN_SALT`.
+- Popis dopuštenih emailova se održava preko admin taba (pozivi `GET/POST /admin/access/allowed`); nema više direktnog Firestore pristupa iz browsera.
+
 ## 6) Storage arhitektura i bridge
 
 Iframe (aplikacija) ne koristi `window.localStorage` direktno; umjesto toga, `localstorage.js` stubira API i Å¡alje batch operacije parentu (`postMessage`) â†’ parent zove `/api/storage` GET/PATCH, radi ETag sinkronizaciju i vraÄ‡a snapshot/ACK.

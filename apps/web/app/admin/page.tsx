@@ -567,8 +567,7 @@ export default function AdminDashboard() {
       setAdminSettingsSaving(true);
       setAdminSettingsError(null);
       try {
-        const updated = [...allowedEmails, email].sort();
-        await saveAllowedAdminEmails(updated);
+        const updated = await saveAllowedAdminEmails([...allowedEmails, email]);
         setAllowedEmails(updated);
         setNewAdminEmail('');
       } catch (err) {
@@ -589,8 +588,7 @@ export default function AdminDashboard() {
       setAdminSettingsSaving(true);
       setAdminSettingsError(null);
       try {
-        const updated = allowedEmails.filter((entry) => entry !== email);
-        await saveAllowedAdminEmails(updated);
+        const updated = await saveAllowedAdminEmails(allowedEmails.filter((entry) => entry !== email));
         setAllowedEmails(updated);
       } catch (err) {
         console.error('Failed to remove admin email', err);

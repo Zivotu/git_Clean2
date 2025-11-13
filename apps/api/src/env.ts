@@ -27,6 +27,9 @@ export function validateEnv() {
     }
     console.warn('JWT_SECRET missing; using development fallback secret.');
   }
+  if (process.env.NODE_ENV === 'production' && !process.env.ADMIN_ACCESS_PIN_HASH) {
+    throw new Error('ADMIN_ACCESS_PIN_HASH is required in production to protect admin access.');
+  }
   const argonNumeric = [
     ['ARGON2_MEMORY_COST', 4096],
     ['ARGON2_TIME_COST', 3],
