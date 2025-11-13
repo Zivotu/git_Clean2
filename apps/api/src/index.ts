@@ -45,6 +45,7 @@ import publishBundleRoutes from './routes/publish-bundle.js';
 import reviewRoutes from './routes/review.js';
 import listingsRoutes from './routes/listings.js';
 import accessRoutes from './routes/access.js';
+import donationsRoutes from './routes/donations.js';
 import meRoutes from './routes/me.js';
 import configRoutes from './routes/config.js';
 import publicRoutes from './routes/public.js';
@@ -59,6 +60,7 @@ import proxyRoutes from './routes/proxy.js';
 import ambassadorRoutes from './routes/ambassador.js';
 import adminRoutes from './routes/admin.js';
 import jwtRoutes from './routes/jwt.js';
+import adsRoutes from './routes/ads.js';
 // admin routes
 import buildEventsRoutes from './routes/buildEvents.js';
 import testingRoutes from './routes/testing.js';
@@ -839,7 +841,9 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(buildRoutes);
   await app.register(avatarRoutes);
   await app.register(entitlementsRoutes);
+  await app.register(adsRoutes);
   await app.register(configRoutes);
+  await app.register(donationsRoutes);
   // Mount publicRoutes at root. We already strip '/api' in onRequest so
   // requests to '/api/play/*' will match these root-level routes.
   await app.register(publicRoutes);

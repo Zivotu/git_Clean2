@@ -12,6 +12,7 @@ import { auth } from '@/lib/firebase';
 import Avatar from '@/components/Avatar';
 import { useI18n } from '@/lib/i18n-provider';
 import AdSlot from '@/components/AdSlot';
+import { useAds } from '@/components/AdsProvider';
 import { AD_SLOT_IDS } from '@/config/ads';
 import { checkAccess } from '@/lib/access';
 import type { AccessMode } from '@/lib/types';
@@ -311,6 +312,7 @@ function AppDetailClient() {
   });
   const router = useRouter();
   const { user } = useAuth();
+  const { isSlotEnabled } = useAds();
   const name = getDisplayName(user);
   const { messages } = useI18n();
   const tApp = useCallback((k: string) => messages[`App.${k}`] || k, [messages]);
@@ -1200,6 +1202,10 @@ useEffect(() => {
   const isNew = !!item && Date.now() - (item?.createdAt ?? 0) < 1000 * 60 * 60 * 24 * 7;
   const isHot = likeCount > 100;
   const showStatusNotice = !!item && !isPublished;
+  const appDetailHeaderSlotRaw = (AD_SLOT_IDS.appDetailHeader || '').trim();
+  const appDetailInlineSlotRaw = (AD_SLOT_IDS.appDetailInline || '').trim();
+  const appDetailHeaderSlot = isSlotEnabled('appDetailHeader') ? appDetailHeaderSlotRaw : '';
+  const appDetailInlineSlot = isSlotEnabled('appDetailInline') ? appDetailInlineSlotRaw : '';
 
   // ------------------------------------------------------------------
   // Main UI
@@ -1217,7 +1223,12 @@ useEffect(() => {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto p-4 md:p-8">
-        <AdSlot slotId={AD_SLOT_IDS.appDetailHeader} className="mb-6" />
+        <AdSlot
+          slotId={appDetailHeaderSlot}
+          slotKey="appDetailHeader"
+          placement="app.detail.header"
+          className="mb-6"
+        />
         {showStatusNotice && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             {canViewUnpublished
@@ -1418,6 +1429,16 @@ useEffect(() => {
             </div>
           </div>
         </div>
+        {appDetailInlineSlot && (
+          <AdSlot
+            slotId={appDetailInlineSlot}
+            slotKey="appDetailInline"
+            placement="app.detail.inline"
+            className="mb-10 rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
+            adStyle={{ minHeight: '300px' }}
+            label="Advertisement"
+          />
+        )}
 
         { canEdit && (item.status === 'pending_review' || item.status === 'rejected') && (
           <div

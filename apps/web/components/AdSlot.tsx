@@ -1,11 +1,13 @@
- 'use client';
+'use client';
 
 import { useAds } from './AdsProvider';
-import { ADSENSE_CLIENT_ID, ADSENSE_TEST_MODE } from '@/config/ads';
+import { ADSENSE_CLIENT_ID, ADSENSE_TEST_MODE, type AdSlotKey } from '@/config/ads';
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { logAdsTelemetry } from '@/lib/adsTelemetry';
 
 type AdSlotProps = {
   slotId?: string;
+  slotKey?: AdSlotKey | string;
   className?: string;
   style?: CSSProperties;
   adStyle?: CSSProperties;
@@ -16,6 +18,7 @@ type AdSlotProps = {
   closable?: boolean;
   onClose?: () => void;
   label?: string;
+  placement?: string;
 };
 
 function cx(...values: Array<string | false | null | undefined>) {
@@ -24,6 +27,7 @@ function cx(...values: Array<string | false | null | undefined>) {
 
 export default function AdSlot({
   slotId,
+  slotKey,
   className,
   style,
   adStyle,
@@ -34,12 +38,16 @@ export default function AdSlot({
   closable = true,
   onClose,
   label = "Advertisement",
+  placement,
 }: AdSlotProps) {
   const { showAds } = useAds();
   const [closed, setClosed] = useState(false);
   const insRef = useRef<HTMLModElement | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const effectiveSlotId = slotId?.trim();
+  const renderedLoggedRef = useRef(false);
+  const filledLoggedRef = useRef(false);
+  const resolvedPlacement = placement || slotKey || label || 'unknown';
 
   // Make TypeScript aware of the adsbygoogle property on window without using `any`.
   // window.adsbygoogle is declared globally in apps/web/types/global.d.ts
@@ -72,10 +80,42 @@ export default function AdSlot({
   useEffect(() => {
     if (showAds && !closed) return;
     setScriptReady(false);
+    renderedLoggedRef.current = false;
+    filledLoggedRef.current = false;
   }, [showAds, closed]);
+
+  useEffect(() => {
+    if (!showAds || closed || !effectiveSlotId || renderedLoggedRef.current) return;
+    logAdsTelemetry({
+      type: 'slot_render_attempt',
+      slotKey: slotKey ? String(slotKey) : undefined,
+      slotId: effectiveSlotId,
+      placement: typeof resolvedPlacement === 'string' ? resolvedPlacement : undefined,
+    });
+    renderedLoggedRef.current = true;
+  }, [showAds, closed, effectiveSlotId, slotKey, resolvedPlacement]);
+
+  useEffect(() => {
+    if (!scriptReady || !showAds || closed || !effectiveSlotId || filledLoggedRef.current) return;
+    logAdsTelemetry({
+      type: 'slot_render_filled',
+      slotKey: slotKey ? String(slotKey) : undefined,
+      slotId: effectiveSlotId,
+      placement: typeof resolvedPlacement === 'string' ? resolvedPlacement : undefined,
+    });
+    filledLoggedRef.current = true;
+  }, [scriptReady, showAds, closed, effectiveSlotId, slotKey, resolvedPlacement]);
 
   const handleClose = () => {
     setClosed(true);
+    if (effectiveSlotId) {
+      logAdsTelemetry({
+        type: 'slot_closed',
+        slotKey: slotKey ? String(slotKey) : undefined,
+        slotId: effectiveSlotId,
+        placement: typeof resolvedPlacement === 'string' ? resolvedPlacement : undefined,
+      });
+    }
     onClose?.();
   };
 

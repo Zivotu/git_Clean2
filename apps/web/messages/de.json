@@ -1,4 +1,4 @@
-﻿{
+{
   "Nav": {
     "publishApp": "App ver├╢ffentlichen",
     "myProjects": "Meine Projekte",
@@ -16,6 +16,9 @@
     "terms": "AGB",
     "privacy": "Datenschutz",
     "faq": "FAQ",
+    "goldenBook": "Golden Book",
+    "donate": "Spenden",
+    "donateCountdown": "noch {days} Tage",
     "feedback": "Ihre Vorschl├ñge",
     "docs": "Dokumentation",
     "tutorials": "Tutorials",
@@ -58,7 +61,16 @@
     },
     "Privacy": {
       "title": "DatenschutzerklΣrung",
-      "body": "Deine PrivatsphΣre ist uns wichtig. Diese Seite erklΣrt, wie wir mit deinen Daten umgehen."
+      "intro.title": "Wie wir Daten verwenden",
+      "intro.body": "Wir erfassen nur die Informationen, die fόr dein Thesara-Konto, fόr die Auslieferung deiner Apps und fόr rechtliche Pflichten notwendig sind. Wir verkaufen deine Daten nicht und geben sie nicht an Werbetreibende auίerhalb der unten beschriebenen Integrationen weiter.",
+      "data.title": "Welche Daten wir sammeln",
+      "data.body": "Kontoinformationen (E-Mail, Anzeigename, Avatar) werden gespeichert, damit du dich anmelden und deine Apps verwalten kannst. Nutzungsdiagnosen helfen uns, die Plattform stabil zu halten. Zahlungsdaten werden ausschlieίlich von Stripe verarbeitet und nicht auf unseren Servern gespeichert.",
+      "adsense.title": "Google AdSense & Cookies",
+      "adsense.body": "Anzeigen werden nur Nutzern gezeigt, die kein No-Ads-Paket besitzen. Bevor die AdSense-Skripte geladen werden, fragen wir nach deiner Einwilligung. Wenn du ablehnst, setzen wir die Auslieferung auf non-personalized (npa=1), sodass nur kontextuelle Werbung erscheint. Nutzer mit aktiven No Ads-, Gold-, Partner- oder Ambassador-Rechten laden die Skripte gar nicht.",
+      "choices.title": "Deine Wahlmφglichkeiten",
+      "choices.body": "Du kannst personalisierte Werbung jederzeit Ιber das Consent-Banner erlauben oder ablehnen; die Entscheidung wird lokal gespeichert, damit du sie nicht stΣndig wiederholen musst. Mit dem Kauf des No-Ads-Pakets werden sΣmtliche Werbeslots sofort deaktiviert – sowohl im Web als auch im Play-Modus.",
+      "contact.title": "Kontakt",
+      "contact.body": "Fragen zum Datenschutz oder zur Einwilligung beantwortet unser Team unter privacy@thesara.space."
     },
     "Refunds": {
       "title": "Rⁿckerstattungsrichtlinie",
@@ -239,6 +251,103 @@
     },
     "pagination": {
       "loadMore": "Mehr laden"
+    },
+    "ads": {
+      "heading": "Anzeigensystem",
+      "description": "Steuert, ob Google AdSense global für Nutzer ohne No-Ads-Berechtigung geladen wird.",
+      "refresh": "Status aktualisieren",
+      "statusEnabled": "Anzeigen sind aktiviert",
+      "statusDisabled": "Anzeigen sind global deaktiviert",
+      "enableButton": "Anzeigen aktivieren",
+      "disableButton": "Anzeigen deaktivieren",
+      "loading": "Lade Anzeigeneinstellungen …",
+      "loadFailed": "Anzeigeneinstellungen konnten nicht geladen werden.",
+      "saveFailed": "Änderung der Anzeigeneinstellungen fehlgeschlagen.",
+      "updatedAt": "Aktualisiert am {time}",
+      "updatedBy": "Aktualisiert am {time} von {uid}",
+      "slotsHeading": "Slots verwalten",
+      "slotsDescription": "Aktiviere oder deaktiviere einzelne Platzierungen ohne neuen Deploy. Slots ohne Ad-Unit-ID bleiben leer, auch wenn sie aktiviert sind.",
+      "slotsLoading": "Lade Slot-Konfiguration …",
+      "slotsLoadFailed": "Slot-Konfiguration konnte nicht geladen werden.",
+      "slotsSaveFailed": "Slot-Konfiguration konnte nicht gespeichert werden.",
+      "noId": "Kein Ad-Unit-ID hinterlegt",
+      "slotsTable": {
+        "location": "Platzierung",
+        "envVar": "Env-Variable",
+        "currentId": "Ad-Unit-ID",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "slotsStatus": {
+        "enabled": "Aktiv",
+        "disabled": "Deaktiviert"
+      },
+      "slotsToggle": {
+        "enable": "Slot aktivieren",
+        "disable": "Slot deaktivieren"
+      },
+      "slots": {
+        "playTopLabel": "Play – oberer Banner",
+        "playTopDescription": "Wird oberhalb des Play-Iframes angezeigt.",
+        "playBottomLabel": "Play – unterer Banner",
+        "playBottomDescription": "Wird unterhalb des Play-Iframes angezeigt.",
+        "appDetailHeaderLabel": "App-Detail – Header",
+        "appDetailHeaderDescription": "Großes Placement ganz oben auf der Detailseite.",
+        "appDetailInlineLabel": "App-Detail – Inline",
+        "appDetailInlineDescription": "Sekundärer Slot innerhalb des Seiteninhalts.",
+        "homeRailLeftLabel": "Startseite – linke Spalte",
+        "homeRailLeftDescription": "Sticky-Karte in der linken Sidebar (Desktop).",
+        "homeRailRightLabel": "Startseite – rechte Spalte",
+        "homeRailRightDescription": "Sticky-Karte in der rechten Sidebar (Desktop).",
+        "homeGridInlineLabel": "Startseite – Inline im Grid",
+        "homeGridInlineDescription": "Jede 8. Karte im Grid wird durch einen Slot ersetzt.",
+        "homeFeedFooterLabel": "Startseite – Footer des Feeds",
+        "homeFeedFooterDescription": "Breiter Slot unterhalb der App-Liste.",
+        "marketplaceGridInlineLabel": "Marketplace – Inline im Grid",
+        "marketplaceGridInlineDescription": "Jede 8. Karte in der /apps-Liste wird zum Slot."
+      },
+      "telemetryHeading": "Anzeigen-Telemetrie (letzte {days} Tage)",
+      "telemetryDescription": "Überblick über CMP-Entscheidungen und Slot-Auslieferung, um Probleme früh zu erkennen.",
+      "telemetryRangeLabel": "Zeitraum",
+      "telemetryRangeOption": "{days} Tage",
+      "telemetryRefresh": "Aktualisieren",
+      "telemetryLoading": "Telemetrie wird geladen…",
+      "telemetryLoadFailed": "Telemetrie konnte nicht geladen werden.",
+      "telemetryNoData": "Noch keine Daten für diesen Zeitraum.",
+      "telemetryStats": {
+        "totalEvents": "Ereignisse gesamt",
+        "consentGranted": "Zustimmungen",
+        "consentRejected": "Ablehnungen",
+        "slotFills": "Gefüllte Slots"
+      },
+      "telemetry": {
+        "table": {
+          "headingSlots": "Top-Slots",
+          "headingPlacements": "Top-Placements",
+          "name": "Name",
+          "events": "Ereignisse",
+          "share": "Anteil",
+          "entries": "{count} Einträge",
+          "empty": "Keine Daten"
+        },
+        "eventLabels": {
+          "consent_prompt_shown": "Banner angezeigt",
+          "consent_granted": "Zustimmung erteilt",
+          "consent_rejected": "Zustimmung abgelehnt",
+          "consent_reset": "Zustimmung zurückgesetzt",
+          "slot_render_attempt": "Slot-Render-Versuch",
+          "slot_render_filled": "Slot gefüllt",
+          "slot_closed": "Slot geschlossen"
+        },
+        "dailyHeading": "Tagesübersicht",
+        "dailyEmpty": "Keine Tagesdaten vorhanden."
+      }
+    },
+    "AdsConsent": {
+      "title": "Hilf uns, Anzeigen zu personalisieren",
+      "description": "Wir verwenden Google AdSense, um Thesara zu finanzieren. Du kannst entscheiden, ob wir personalisierte Werbung oder nur einfache, nicht personalisierte Anzeigen zeigen dürfen.",
+      "accept": "Personalisierte Anzeigen erlauben",
+      "reject": "Nur einfache Anzeigen anzeigen"
     },
     "adminSettings": {
       "heading": "Admin-Oberflächen-Einstellungen",
@@ -624,4 +733,44 @@
       "generic": "Die Arbeit mit R├ñumen ist derzeit nicht m├╢glich."
     }
   }
+  ,"GoldenBookPage": {
+    "title": "Golden Book der Unterstützer",
+    "subtitle": "Jede Spende hält Thesara online und unabhängig. Alle Namen bleiben dauerhaft sichtbar.",
+    "activeWindow": "Spenden sind von {start} bis {end} möglich.",
+    "alwaysOpen": "Spenden sind während dieses 90-Tage-Zeitraums geöffnet.",
+    "closedWindow": "Spenden sind derzeit geschlossen, aber das Golden Book bleibt öffentlich.",
+    "listTitle": "Spender",
+    "empty": "Noch keine öffentlichen Spender. Sei der Erste!",
+    "pendingBadge": "Alias ausstehend",
+    "cta": "Jetzt spenden",
+    "ctaClosed": "Spenden geschlossen",
+    "aliasLink": "Schon gespendet? Alias speichern",
+    "permanentNote": "Jeder Eintrag bleibt auch nach Ende der Kampagne sichtbar.",
+    "highlightToast": "Dein Name wurde gerade hinzugefügt!"
+  },
+  "DonateThankYou": {
+    "title": "Danke für deine Unterstützung",
+    "celebrationKicker": "Du machst den Unterschied",
+    "celebrationBody": "Deine Spende hält Thesara unabhängig. Bestimme deinen Eintrag und wir feiern dich im Golden Book.",
+    "stepOne": "Anzeigename eintragen",
+    "stepTwo": "Golden Book anzeigen",
+    "aliasTitle": "Wie sollen wir dich nennen?",
+    "intro": "Bestimme, welcher Name im Golden Book steht. Lass das Feld leer, wenn du anonym bleiben möchtest.",
+    "missingPaymentIntent": "Wir konnten keine Zahlungsreferenz finden. Öffne den Link aus der Stripe-E-Mail oder kontaktiere den Support.",
+    "notFound": "Spende nicht gefunden. Bitte aktualisiere die Seite oder melde dich beim Support.",
+    "aliasLabel": "Anzeigename",
+    "aliasPlaceholder": "z.B. Thesara Fan, Studio Kaktus…",
+    "aliasOptional": "Wenn das Feld leer bleibt, erscheint “Anonymer Spender”.",
+    "submit": "Name speichern",
+    "saving": "Speichere…",
+    "success": "Alias gespeichert! Du bist jetzt im Golden Book.",
+    "alreadySet": "Alias bereits gespeichert. Danke!",
+    "alreadySetHint": "Bereits einen Namen eingetragen? Du kannst ihn jederzeit anpassen und erneut speichern.",
+    "errorGeneric": "Wir konnten den Alias nicht speichern. Bitte versuche es erneut.",
+    "goToGoldenBook": "Golden Book öffnen",
+    "backHome": "Zur Startseite",
+    "redirecting": "Weiterleitung zum Golden Book…"
+  }
+
 }
+

@@ -103,6 +103,13 @@ function parseNumberEnv(name: string, defaultValue: number): number {
   return value;
 }
 
+function parseOptionalMs(value?: string): number | undefined {
+  if (value === undefined || value === '') return undefined;
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return undefined;
+  return num;
+}
+
 export function getConfig() {
   const nodeEnv = process.env.NODE_ENV;
   const PORT = parseNumberEnv('PORT', 8789);
@@ -179,6 +186,25 @@ export function getConfig() {
     );
     return stripeDefaultCancelUrl;
   })();
+  const goldenBookPriceId = (process.env.GOLDEN_BOOK_PRICE_ID || '').trim();
+  const goldenBookProductId = (process.env.GOLDEN_BOOK_PRODUCT_ID || '').trim();
+  const goldenBookPaymentLink = (process.env.GOLDEN_BOOK_PAYMENT_LINK || '').trim();
+  const goldenBookCampaignId =
+    process.env.GOLDEN_BOOK_CAMPAIGN_ID?.trim() || 'goldenbook-default';
+  const goldenBookCampaignStartMs = parseOptionalMs(
+    process.env.GOLDEN_BOOK_CAMPAIGN_START_MS,
+  );
+  const goldenBookCampaignEndMs = parseOptionalMs(
+    process.env.GOLDEN_BOOK_CAMPAIGN_END_MS,
+  );
+  const goldenBookAliasGraceMs = parseNumberEnv(
+    'GOLDEN_BOOK_ALIAS_GRACE_MS',
+    24 * 60 * 60 * 1000,
+  );
+  const goldenBookEnabled =
+    process.env.GOLDEN_BOOK_ENABLED === undefined
+      ? true
+      : process.env.GOLDEN_BOOK_ENABLED !== 'false';
   let IP_SALT = process.env.IP_SALT;
   if (!IP_SALT) {
     console.warn('Missing IP_SALT environment variable; using a temporary random salt.');
@@ -310,6 +336,16 @@ export function getConfig() {
       logoUrl: process.env.STRIPE_LOGO_URL || '',
       primaryColor: process.env.STRIPE_PRIMARY_COLOR || '',
       automaticTax: STRIPE_AUTOMATIC_TAX,
+    },
+    GOLDEN_BOOK: {
+      enabled: goldenBookEnabled && Boolean(goldenBookPriceId || goldenBookProductId),
+      priceId: goldenBookPriceId || undefined,
+      productId: goldenBookProductId || undefined,
+      paymentLinkUrl: goldenBookPaymentLink || undefined,
+      campaignId: goldenBookCampaignId,
+      campaignStartMs: goldenBookCampaignStartMs,
+      campaignEndMs: goldenBookCampaignEndMs,
+      aliasGraceMs: goldenBookAliasGraceMs,
     },
     PRICE_MIN: parseNumberEnv('PRICE_MIN', 0),
     PRICE_MAX: parseNumberEnv('PRICE_MAX', 1000),

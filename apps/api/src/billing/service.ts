@@ -38,11 +38,46 @@ import {
   getAppByIdOrSlug,
   db,
   FieldValue,
+  recordDonationPayment,
 } from '../db.js';
 import { enforceAppLimit } from '../lib/appLimit.js';
 import { ForbiddenError } from '../lib/errors.js';
 import { hasPurchaseAccess } from '../purchaseAccess.js';
 import { app } from '../index.js';
+import { getConfig } from '../config.js';
+
+type AppConfig = ReturnType<typeof getConfig>;
+const GOLDEN_BOOK_CONFIG: AppConfig['GOLDEN_BOOK'] | undefined = getConfig().GOLDEN_BOOK;
+
+function isGoldenBookLineItem(
+  item: Stripe.LineItem,
+  cfg?: AppConfig['GOLDEN_BOOK'],
+): boolean {
+  if (!cfg || !cfg.enabled) return false;
+  const price = item.price as Stripe.Price | null | undefined;
+  if (!price) return false;
+  if (cfg.priceId && price.id === cfg.priceId) {
+    return true;
+  }
+  if (!cfg.productId || !price.product) return false;
+  const product = price.product;
+  if (typeof product === 'string') {
+    return product === cfg.productId;
+  }
+  try {
+    return Boolean((product as Stripe.Product | null)?.id === cfg.productId);
+  } catch {
+    return false;
+  }
+}
+
+function isGoldenBookDonation(
+  items: Stripe.LineItem[],
+  cfg?: AppConfig['GOLDEN_BOOK'],
+): boolean {
+  if (!cfg || !cfg.enabled) return false;
+  return items.some((item) => isGoldenBookLineItem(item, cfg));
+}
 
 export const dbAccess = {
   getStripeAccountId,
@@ -65,6 +100,7 @@ export const dbAccess = {
   hasSubscriptionByPriceId,
   getUserIdByStripeCustomerId,
   setStripeCustomerIdForUser,
+  recordDonationPayment,
 };
 
 /** Default descriptor shown on statements */
@@ -891,6 +927,7 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
 
       const mode = full.mode;
       const items = full.line_items?.data ?? [];
+      const donationMatch = isGoldenBookDonation(items, GOLDEN_BOOK_CONFIG);
       const subId =
         typeof full.subscription === 'string'
           ? full.subscription
@@ -968,7 +1005,7 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
         userId = await dbAccess.getUserIdByStripeCustomerId(stripeCustomerId);
       }
 
-      if (!userId) {
+      if (!userId && !donationMatch) {
         console.warn('checkout.session.completed missing userId', full.id);
         await dbAccess.logBillingEvent({
           eventType: event.type,
@@ -1000,6 +1037,47 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
           destination,
         }),
       );
+
+      if (donationMatch && piId && GOLDEN_BOOK_CONFIG) {
+        const currencyRaw = full.currency || pi?.currency || 'eur';
+        const currency =
+          typeof currencyRaw === 'string' ? currencyRaw.toLowerCase() : 'eur';
+        const sessionEmail =
+          full.customer_details?.email ||
+          full.customer_email ||
+          (typeof full.customer === 'object'
+            ? (full.customer as Stripe.Customer | null)?.email || undefined
+            : undefined) ||
+          (pi?.receipt_email as string | undefined);
+        const donationMetadata: Record<string, any> = {
+          checkoutSessionId: full.id,
+          mode,
+        };
+        if (GOLDEN_BOOK_CONFIG.priceId) {
+          donationMetadata.priceId = GOLDEN_BOOK_CONFIG.priceId;
+        }
+        if (GOLDEN_BOOK_CONFIG.productId) {
+          donationMetadata.productId = GOLDEN_BOOK_CONFIG.productId;
+        }
+        if (GOLDEN_BOOK_CONFIG.paymentLinkUrl) {
+          donationMetadata.paymentLink = GOLDEN_BOOK_CONFIG.paymentLinkUrl;
+        }
+        try {
+          await dbAccess.recordDonationPayment({
+            paymentIntentId: piId,
+            campaignId: GOLDEN_BOOK_CONFIG.campaignId || 'goldenbook-default',
+            amount: amountTotal ?? 0,
+            currency,
+            email: sessionEmail ?? null,
+            metadata: donationMetadata,
+          });
+        } catch (err) {
+          console.error('[handleWebhook] donation_record_failed', {
+            piId,
+            err,
+          });
+        }
+      }
 
       if (userId) {
         await dbAccess.logBillingEvent({

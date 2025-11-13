@@ -8,6 +8,7 @@ import { AuthProvider } from '@/lib/auth';
 import I18nRootProvider from '@/components/I18nRootProvider';
 import { AdsProvider } from '@/components/AdsProvider';
 import AdScriptLoader from '@/components/AdScriptLoader';
+import AdsConsentBanner from '@/components/AdsConsentBanner';
 import { TermsProvider } from '@/components/terms/TermsProvider';
 import { messages as ALL_MESSAGES, type Locale, defaultLocale } from '@/i18n/config';
 import { getServerLocale } from '@/lib/locale';
@@ -44,6 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               <AdsProvider>
                 <I18nRootProvider locale={locale} messages={messages}>
                   <AdScriptLoader />
+                  <AdsConsentBanner />
                   <Header />
                   {children}
                 </I18nRootProvider>

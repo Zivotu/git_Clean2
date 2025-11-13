@@ -97,20 +97,31 @@ const baseConfig = {
                 'https://pagead2.googlesyndication.com',
                 'https://www.googletagservices.com',
               ];
+              const adFrameHosts = [
+                'https://googleads.g.doubleclick.net',
+                'https://tpc.googlesyndication.com',
+              ];
+              const adImgHosts = [
+                'https://pagead2.googlesyndication.com',
+                'https://tpc.googlesyndication.com',
+                'https://googleads.g.doubleclick.net',
+              ];
 
               const devConnect = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
               const devImg = isDev ? ' http://127.0.0.1:8789 http://localhost:8789 http://127.0.0.1:8788 http://localhost:8788' : '';
 
-              const connectSrc = [`'self'`, api, ...firebaseConnect].join(' ');
+              const connectSrc = [`'self'`, api, ...firebaseConnect, ...adScriptHosts, ...adFrameHosts].join(' ');
               const scriptSrc = [`'self'`, "'unsafe-inline'", "'unsafe-eval'", ...adScriptHosts].join(' ');
+              const frameSrc = [apps, 'blob:', ...adFrameHosts].join(' ');
+              const imgSrc = ["'self'", 'data:', 'https:', 'https://lh3.googleusercontent.com', ...adImgHosts].join(' ');
 
               const policies = [
                 "default-src 'self'",
                 `script-src ${scriptSrc}`,
                 "style-src 'self' 'unsafe-inline'",
                 `connect-src ${connectSrc}${devConnect}`,
-                `frame-src ${apps} blob:`,
-                `img-src 'self' data: https: https://lh3.googleusercontent.com${devImg}`,
+                `frame-src ${frameSrc}`,
+                `img-src ${imgSrc}${devImg}`,
                 "frame-ancestors 'none'",
               ];
               return policies.join('; ');

@@ -3,6 +3,9 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useI18n } from '@/lib/i18n-provider';
+import { useAds } from '@/components/AdsProvider';
+import AdSlot from '@/components/AdSlot';
+import { AD_SLOT_IDS } from '@/config/ads';
 
 function BuildBadges({ playUrl }: { playUrl: string }) {
   const [policy, setPolicy] = useState<string | null>(null);
@@ -71,6 +74,8 @@ type Listing = {
   visibility: 'public' | 'unlisted';
 };
 
+type FeedEntry = { kind: 'app'; item: Listing } | { kind: 'ad'; key: string };
+
 export default function AppsPage() {
   const [items, setItems] = useState<Listing[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +83,11 @@ export default function AppsPage() {
   const [query, setQuery] = useState('');
   const { locale } = useI18n();
   const lastLocaleRef = useRef<string | null>(null);
+  const { isSlotEnabled } = useAds();
+  const marketplaceInlineSlotRaw = (AD_SLOT_IDS.marketplaceGridInline || '').trim();
+  const marketplaceInlineSlot = isSlotEnabled('marketplaceGridInline')
+    ? marketplaceInlineSlotRaw
+    : '';
 
   const filtered = useMemo(() => {
     if (!query.trim()) return items;
@@ -88,6 +98,21 @@ export default function AppsPage() {
       (x.tags || []).some((t) => t.toLowerCase().includes(q))
     );
   }, [items, query]);
+
+  const feedEntries = useMemo<FeedEntry[]>(() => {
+    if (!marketplaceInlineSlot) {
+      return filtered.map((item) => ({ kind: 'app', item }));
+    }
+    const next: FeedEntry[] = [];
+    filtered.forEach((item, index) => {
+      next.push({ kind: 'app', item });
+      const nextIndex = index + 1;
+      if (nextIndex % 8 === 0 && nextIndex < filtered.length) {
+        next.push({ kind: 'ad', key: `marketplace-ad-${index}` });
+      }
+    });
+    return next;
+  }, [filtered, marketplaceInlineSlot]);
 
   useEffect(() => {
     const load = async () => {
@@ -135,24 +160,42 @@ export default function AppsPage() {
 
       <div className="grid gap-4 mt-6">
         {loading && <div className="text-zinc-400">Loading…</div>}
-        {!loading && filtered.map((x) => (
-          <div key={x.id} className="rounded-2xl bg-white border border-gray-200 p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">{x.title}</h2>
-              <span className="text-xs text-gray-500">{new Date(x.createdAt).toLocaleString()}</span>
-            </div>
-            {x.description && <p className="text-sm text-gray-600 mt-1">{x.description}</p>}
-            {x.tags && x.tags.length > 0 && (
-              <div className="mt-2 text-xs text-gray-500">#{x.tags.join(' #')}</div>
-            )}
-            <BuildBadges playUrl={x.playUrl} />
-            <div className="mt-3">
-              <a className="underline" href={x.playUrl} target="_blank" rel="noreferrer">
-                Play
-              </a>
-            </div>
-          </div>
-        ))}
+        {!loading &&
+          feedEntries.map((entry) => {
+            if (entry.kind === 'ad') {
+              if (!marketplaceInlineSlot) return null;
+              return (
+                <AdSlot
+                  key={entry.key}
+                  slotId={marketplaceInlineSlot}
+                  slotKey="marketplaceGridInline"
+                  placement="marketplace.grid.inline"
+                  className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
+                  adStyle={{ minHeight: '250px' }}
+                  label="Advertisement"
+                />
+              );
+            }
+            const x = entry.item;
+            return (
+              <div key={x.id} className="rounded-2xl bg-white border border-gray-200 p-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900">{x.title}</h2>
+                  <span className="text-xs text-gray-500">{new Date(x.createdAt).toLocaleString()}</span>
+                </div>
+                {x.description && <p className="text-sm text-gray-600 mt-1">{x.description}</p>}
+                {x.tags && x.tags.length > 0 && (
+                  <div className="mt-2 text-xs text-gray-500">#{x.tags.join(' #')}</div>
+                )}
+                <BuildBadges playUrl={x.playUrl} />
+                <div className="mt-3">
+                  <a className="underline" href={x.playUrl} target="_blank" rel="noreferrer">
+                    Play
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         {!loading && filtered.length === 0 && !error && (
           <div className="text-gray-500">
             No apps yet. <a className="underline" href="/create">Publish one</a>.

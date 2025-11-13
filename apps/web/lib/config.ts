@@ -1,6 +1,20 @@
 import { joinUrl } from './url';
 import { getApiBase, INTERNAL_API_URL as RESOLVED_INTERNAL_API_URL } from './apiBase';
 
+export interface GoldenBookConfig {
+  enabled: boolean;
+  paymentLink?: string;
+  campaignId: string;
+  campaignStartMs?: number;
+  campaignEndMs?: number;
+  aliasGraceMs?: number;
+}
+
+export interface GoldenBookCountdown {
+  daysRemaining: number;
+  daysTotal?: number;
+}
+
 export interface WebConfig {
   API_URL: string;
   SAFE_PUBLISH_ENABLED: boolean;
@@ -19,6 +33,7 @@ export interface WebConfig {
     storageBucket: string;
     messagingSenderId: string;
   };
+  goldenBook: GoldenBookConfig;
 }
 
 function must(value: string | undefined, key: string): string {
@@ -40,6 +55,12 @@ function resolveApiUrl(apiUrlStr?: string): string {
 function normalizePublicApiUrl(raw: string): string {
   const resolved = resolveApiUrl(raw);
   return resolved === '/' ? resolved : resolved.replace(/\/$/, '');
+}
+
+function parseOptionalNumber(value?: string): number | undefined {
+  if (value === undefined || value === '') return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 const PUBLIC_API_BASE =
@@ -77,6 +98,14 @@ export function getConfig(): WebConfig | null {
     const rawApiUrl =
       typeof window === 'undefined' ? RESOLVED_INTERNAL_API_URL : getApiBase();
     const API_URL = resolveApiUrl(rawApiUrl).replace(/\/$/, '');
+    const goldenBookConfig: GoldenBookConfig = {
+      enabled: process.env.NEXT_PUBLIC_GOLDEN_BOOK_ENABLED !== 'false',
+      paymentLink: (process.env.NEXT_PUBLIC_GOLDEN_BOOK_PAYMENT_LINK || '').trim() || undefined,
+      campaignId: process.env.NEXT_PUBLIC_GOLDEN_BOOK_CAMPAIGN_ID?.trim() || 'goldenbook-default',
+      campaignStartMs: parseOptionalNumber(process.env.NEXT_PUBLIC_GOLDEN_BOOK_CAMPAIGN_START_MS),
+      campaignEndMs: parseOptionalNumber(process.env.NEXT_PUBLIC_GOLDEN_BOOK_CAMPAIGN_END_MS),
+      aliasGraceMs: parseOptionalNumber(process.env.NEXT_PUBLIC_GOLDEN_BOOK_ALIAS_GRACE_MS),
+    };
     return {
       API_URL,
       SAFE_PUBLISH_ENABLED: process.env.SAFE_PUBLISH_ENABLED === 'true',
@@ -103,6 +132,7 @@ export function getConfig(): WebConfig | null {
           'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
         ),
       },
+      goldenBook: goldenBookConfig,
     };
   } catch (err) {
     if (typeof window === 'undefined') {
@@ -122,6 +152,10 @@ let MAX_APPS_PER_USER = 2;
 let GOLD_MAX_APPS_PER_USER = 10;
 let MAX_ROOMS_PER_APP = 10;
 let MAX_PLAYERS_PER_ROOM = 100;
+let GOLDEN_BOOK: GoldenBookConfig = {
+  enabled: false,
+  campaignId: 'goldenbook-default',
+};
 
 try {
   const cfg = getConfig();
@@ -138,6 +172,7 @@ try {
     GOLD_MAX_APPS_PER_USER,
     MAX_ROOMS_PER_APP,
     MAX_PLAYERS_PER_ROOM,
+    goldenBook: GOLDEN_BOOK,
   } = cfg);
 } catch (err) {
   if (typeof window === 'undefined') {
@@ -159,9 +194,38 @@ export {
   GOLD_MAX_APPS_PER_USER,
   MAX_ROOMS_PER_APP,
   MAX_PLAYERS_PER_ROOM,
+  GOLDEN_BOOK,
   PUBLIC_API_URL,
   PUBLIC_APPS_HOST,
 };
+
+export function getGoldenBookCountdown(now: number = Date.now()): GoldenBookCountdown | null {
+  if (!GOLDEN_BOOK.enabled || !GOLDEN_BOOK.campaignEndMs) {
+    return null;
+  }
+  const end = GOLDEN_BOOK.campaignEndMs;
+  if (end <= now) {
+    return null;
+  }
+  const remainingMs = end - now;
+  const daysRemaining = Math.max(0, Math.ceil(remainingMs / (24 * 60 * 60 * 1000)));
+  const start = GOLDEN_BOOK.campaignStartMs;
+  const daysTotal =
+    start && start < end ? Math.ceil((end - start) / (24 * 60 * 60 * 1000)) : undefined;
+  return { daysRemaining, daysTotal };
+}
+
+export function isGoldenBookCampaignActive(now: number = Date.now()): boolean {
+  if (!GOLDEN_BOOK.enabled) return false;
+  const { campaignStartMs, campaignEndMs } = GOLDEN_BOOK;
+  if (campaignStartMs && now < campaignStartMs) {
+    return false;
+  }
+  if (campaignEndMs && now > campaignEndMs) {
+    return false;
+  }
+  return true;
+}
 
 export async function checkApiUrlReachability(baseUrl: string = API_URL): Promise<boolean> {
   if (typeof window === 'undefined') return true;

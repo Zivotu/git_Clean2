@@ -13,6 +13,7 @@ import { triggerConfetti } from '@/components/Confetti';
 import FeedbackModal from '@/components/FeedbackModal';
 import { useI18n } from '@/lib/i18n-provider';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
+import { GOLDEN_BOOK, getGoldenBookCountdown, isGoldenBookCampaignActive } from '@/lib/config';
 
 export default function Header() {
   const { messages } = useI18n();
@@ -23,6 +24,17 @@ export default function Header() {
   const name = getDisplayName(user);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const donateLink = GOLDEN_BOOK.paymentLink;
+  const donateEnabled = GOLDEN_BOOK.enabled && Boolean(donateLink);
+  const donateActive = donateEnabled && isGoldenBookCampaignActive();
+  const countdown = getGoldenBookCountdown();
+  const donateCountdownLabel =
+    countdown && countdown.daysRemaining > 0
+      ? (messages['Nav.donateCountdown'] || '{days} days left').replace(
+          '{days}',
+          String(countdown.daysRemaining),
+        )
+      : null;
 
   const handlePublishClick = useCallback(() => {
     triggerConfetti();
@@ -105,6 +117,36 @@ export default function Header() {
               >
                 {tNav('faq')}
               </Link>
+            )}
+            <Link
+              href="/golden-book"
+              className={`px-4 py-2 rounded-lg text-gray-600 transition font-medium ${
+                pathname === '/golden-book' ? 'bg-gray-200 text-gray-900' : 'hover:bg-gray-100'
+              }`}
+              title="Golden Book"
+            >
+              {tNav('goldenBook')}
+            </Link>
+            {donateEnabled && (
+              donateActive ? (
+                <a
+                  href={donateLink as string}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 rounded-lg bg-amber-500 text-white font-medium transition hover:bg-amber-600 flex items-center gap-2"
+                >
+                  {tNav('donate')}
+                  {donateCountdownLabel && (
+                    <span className="text-xs bg-white/25 rounded-full px-2 py-0.5 font-semibold">
+                      {donateCountdownLabel}
+                    </span>
+                  )}
+                </a>
+              ) : (
+                <span className="px-4 py-2 rounded-lg bg-gray-100 text-gray-400 font-medium">
+                  {tNav('donate')}
+                </span>
+              )
             )}
             {/* Feedback button (text only) */}
             <button
@@ -234,6 +276,34 @@ export default function Header() {
               <Link href="/faq" className="block px-4 py-2 rounded-lg text-gray-600 text-center" title="FAQ">
                 {tNav('faq')}
               </Link>
+            )}
+            <Link
+              href="/golden-book"
+              className={`block px-4 py-2 rounded-lg text-center ${pathname === '/golden-book' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+              title="Golden Book"
+            >
+              {tNav('goldenBook')}
+            </Link>
+            {donateEnabled && (
+              donateActive ? (
+                <a
+                  href={donateLink as string}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white text-center font-medium"
+                >
+                  {tNav('donate')}
+                  {donateCountdownLabel && (
+                    <span className="text-xs bg-white/25 rounded-full px-2 py-0.5 font-semibold">
+                      {donateCountdownLabel}
+                    </span>
+                  )}
+                </a>
+              ) : (
+                <span className="block px-4 py-2 rounded-lg bg-gray-100 text-gray-400 text-center">
+                  {tNav('donate')}
+                </span>
+              )
             )}
             <button
               type="button"

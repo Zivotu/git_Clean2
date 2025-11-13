@@ -2,9 +2,14 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getAuth } from 'firebase-admin/auth';
 import type { DocumentSnapshot } from 'firebase-admin/firestore';
-import { db } from '../db.js';
+import { db, listEntitlements } from '../db.js';
 import { z } from 'zod';
 import { requireRole } from '../middleware/auth.js';
+import {
+  create as createEntitlement,
+  update as updateEntitlement,
+  remove as removeEntitlement,
+} from '../entitlements/service.js';
 
 export default async function adminRoutes(app: FastifyInstance) {
   // Handler reused for both `/admin/users` and `/api/admin/users` to ensure
@@ -87,6 +92,70 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   app.post('/admin/users/:uid/claims', { preHandler: [requireRole('admin')] }, setClaimsHandler);
   app.post('/api/admin/users/:uid/claims', { preHandler: [requireRole('admin')] }, setClaimsHandler);
+
+  const setNoAdsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const paramsSchema = z.object({ uid: z.string().min(1) });
+    const bodySchema = z.object({
+      enabled: z.boolean(),
+      expiresAt: z.string().optional(),
+    });
+
+    const paramsParsed = paramsSchema.safeParse(req.params);
+    if (!paramsParsed.success) {
+      return reply.code(400).send({ error: 'invalid_params', details: paramsParsed.error.issues });
+    }
+    const bodyParsed = bodySchema.safeParse(req.body);
+    if (!bodyParsed.success) {
+      return reply.code(400).send({ error: 'invalid_body', details: bodyParsed.error.issues });
+    }
+
+    const { uid } = paramsParsed.data;
+    const { enabled, expiresAt } = bodyParsed.data;
+    let expiresAtValue: string | undefined;
+    if (expiresAt) {
+      const ms = Date.parse(expiresAt);
+      if (Number.isNaN(ms)) {
+        return reply.code(400).send({ error: 'invalid_expires_at' });
+      }
+      expiresAtValue = new Date(ms).toISOString();
+    }
+
+    try {
+      const entitlements = await listEntitlements(uid);
+      const existing = entitlements.find((ent) => ent.feature === 'noAds');
+      if (enabled) {
+        if (existing?.id) {
+          await updateEntitlement(uid, existing.id, {
+            feature: 'noAds',
+            active: true,
+            data: expiresAtValue ? { ...(existing.data || {}), expiresAt: expiresAtValue } : existing.data,
+          });
+        } else {
+          await createEntitlement(uid, {
+            feature: 'noAds',
+            data: expiresAtValue ? { expiresAt: expiresAtValue } : undefined,
+          });
+        }
+      } else if (existing?.id) {
+        await removeEntitlement(uid, existing.id);
+      }
+      return reply.send({ ok: true });
+    } catch (error) {
+      req.log.error({ error, uid }, 'admin_set_noads_failed');
+      return reply.code(500).send({ error: 'internal_server_error' });
+    }
+  };
+
+  app.post(
+    '/admin/users/:uid/no-ads',
+    { preHandler: [requireRole('admin')] },
+    setNoAdsHandler,
+  );
+  app.post(
+    '/api/admin/users/:uid/no-ads',
+    { preHandler: [requireRole('admin')] },
+    setNoAdsHandler,
+  );
 
   // Email templates management (Firestore-backed)
   const listEmailTemplatesHandler = async (req: FastifyRequest, reply: FastifyReply) => {

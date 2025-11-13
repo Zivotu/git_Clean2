@@ -191,10 +191,12 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }, [app.slug, app.id])
 
   const { id: appId, buildId, securityPolicy } = app;
-  const { showAds } = useAds()
+  const { showAds, isSlotEnabled } = useAds()
   const { messages } = useI18n()
-  const topAdSlot = (AD_SLOT_IDS.playTop || '').trim()
-  const bottomAdSlot = (AD_SLOT_IDS.playBottom || '').trim()
+  const topAdSlotRaw = (AD_SLOT_IDS.playTop || '').trim()
+  const bottomAdSlotRaw = (AD_SLOT_IDS.playBottom || '').trim()
+  const topAdSlot = isSlotEnabled('playTop') ? topAdSlotRaw : ''
+  const bottomAdSlot = isSlotEnabled('playBottom') ? bottomAdSlotRaw : ''
   const showTopAd = showAds && topAdSlot.length > 0
   const showBottomAd = showAds && bottomAdSlot.length > 0
 
@@ -683,17 +685,37 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-screen flex-col gap-4 px-4 pb-6">
       {roomsControl}
-      <iframe
-        ref={iframeRef}
-        src={iframeUrl}
-        title="Thesara App"
-        name={iframeBootstrapName}
-        referrerPolicy="no-referrer"
-        sandbox={sandboxFlags}
-        style={{ border: 'none', width: '100%', height: '100vh', display: 'block' }}
-      />
+      {showTopAd && (
+        <AdSlot
+          slotId={topAdSlot}
+          slotKey="playTop"
+          placement="play.top"
+          className="rounded-2xl border border-slate-200 bg-white/80 shadow-sm"
+        />
+      )}
+      <div className="flex flex-1">
+        <iframe
+          ref={iframeRef}
+          src={iframeUrl}
+          title="Thesara App"
+          name={iframeBootstrapName}
+          referrerPolicy="no-referrer"
+          allow="geolocation"
+          sandbox={sandboxFlags}
+          className="h-full w-full flex-1 rounded-3xl bg-white"
+          style={{ border: 'none', minHeight: '70vh', display: 'block' }}
+        />
+      </div>
+      {showBottomAd && (
+        <AdSlot
+          slotId={bottomAdSlot}
+          slotKey="playBottom"
+          placement="play.bottom"
+          className="rounded-2xl border border-slate-200 bg-white/80 shadow-sm"
+        />
+      )}
     </div>
   )
 }

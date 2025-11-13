@@ -7,6 +7,29 @@ const isDev = process.env.NODE_ENV !== 'production';
 const API_BASE = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8788/api').replace(/\/api$/, '');
 // API_URL with /api suffix for standard API routes
 const API_URL = API_BASE + '/api';
+const APPS_HOST = (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '');
+
+const buildGeolocationPermissionsPolicy = () => {
+  const sources = new Set(['self']);
+  const addOrigin = (value) => {
+    if (!value) return;
+    try {
+      const origin = new URL(value).origin;
+      sources.add(`"${origin}"`);
+    } catch {
+      sources.add(`"${value}"`);
+    }
+  };
+
+  addOrigin(APPS_HOST);
+  if (isDev) {
+    addOrigin('https://localhost:3000');
+  }
+
+  return `camera=(), microphone=(), geolocation=(${Array.from(sources).join(' ')})`;
+};
+
+const PERMISSIONS_POLICY_VALUE = buildGeolocationPermissionsPolicy();
 
 /** @type {import('next').NextConfig} */
 const baseConfig = {
@@ -75,7 +98,7 @@ const baseConfig = {
         headers: [
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Permissions-Policy', value: PERMISSIONS_POLICY_VALUE },
           {
             key: 'Content-Security-Policy',
             value: (() => {
@@ -86,7 +109,7 @@ const baseConfig = {
               } catch {
                 apiOrigin = apiBase;
               }
-              const appsHost = (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '');
+              const appsHost = APPS_HOST;
               const devApiOrigins = isDev ? ['http://127.0.0.1:8789', 'http://localhost:8789'] : [];
               const firebaseOrigins = [
                 'https://firestore.googleapis.com',
@@ -97,15 +120,31 @@ const baseConfig = {
                 firebaseOrigins.push('https://www.googleapis.com');
               }
 
-              const scriptSrc = ["'self'", "'unsafe-inline'"];
+              const adScriptHosts = [
+                'https://pagead2.googlesyndication.com',
+                'https://www.googletagservices.com',
+              ];
+              const adFrameHosts = [
+                'https://googleads.g.doubleclick.net',
+                'https://tpc.googlesyndication.com',
+              ];
+              const adImgHosts = [
+                'https://pagead2.googlesyndication.com',
+                'https://tpc.googlesyndication.com',
+                'https://googleads.g.doubleclick.net',
+              ];
+
+              const scriptSrc = ["'self'", "'unsafe-inline'", ...adScriptHosts];
               if (isDev) {
                 // unsafe-eval is needed for dev mode's sourcemaps.
                 scriptSrc.push("'unsafe-eval'", ...devApiOrigins);
               }
 
               const connectSrc = new Set(["'self'", apiOrigin, ...devApiOrigins, ...firebaseOrigins]);
-              const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins, 'blob:']);
-              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com']);
+              adScriptHosts.forEach((origin) => connectSrc.add(origin));
+              const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins, 'blob:', ...adFrameHosts]);
+              adFrameHosts.forEach((origin) => connectSrc.add(origin));
+              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', ...adImgHosts]);
               if (isDev) {
                 imgSrc.add('http://127.0.0.1:8788');
                 imgSrc.add('http://localhost:8788');

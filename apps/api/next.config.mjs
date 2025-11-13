@@ -1,3 +1,27 @@
+const APPS_HOST = (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '');
+
+const buildGeolocationPermissionsPolicy = () => {
+  const sources = new Set(['self']);
+  const addOrigin = (value) => {
+    if (!value) return;
+    try {
+      const origin = new URL(value).origin;
+      sources.add(`"${origin}"`);
+    } catch {
+      sources.add(`"${value}"`);
+    }
+  };
+
+  addOrigin(APPS_HOST);
+  if (process.env.NODE_ENV !== 'production') {
+    addOrigin('https://localhost:3000');
+  }
+
+  return `camera=(), microphone=(), geolocation=(${Array.from(sources).join(' ')})`;
+};
+
+const PERMISSIONS_POLICY_VALUE = buildGeolocationPermissionsPolicy();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
@@ -7,7 +31,7 @@ const nextConfig = {
         headers: [
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Permissions-Policy', value: PERMISSIONS_POLICY_VALUE },
           {
             key: 'Content-Security-Policy',
             // This policy locks down the Play page.

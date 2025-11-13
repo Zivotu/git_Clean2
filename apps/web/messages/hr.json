@@ -16,24 +16,27 @@
     "terms": "Uvjeti",
     "privacy": "Privatnost",
     "faq": "Pitanja i odgovori",
-    "feedback": "Vaši prijedlozi",
+    "goldenBook": "Zlatna knjiga",
+    "donate": "Doniraj",
+    "donateCountdown": "još {days} dana",
+    "feedback": "VaÅ¡i prijedlozi",
     "docs": "Dokumentacija",
-    "tutorials": "Vodiči",
+    "tutorials": "VodiÄi",
     "api": "API referenca",
     "language": "Jezik",
     "admin": "Admin"
   },
   "About": {
     "title": "O Thesari",
-    "subtitle": "Statički health check builda koji pinga javni API.",
+    "subtitle": "StatiÄki health check builda koji pinga javni API.",
     "healthTitle": "Zdravlje API-ja",
     "loading": "Provjera...",
-    "errorDefault": "Neuspjelo dohvaćanje podataka o zdravlju."
+    "errorDefault": "Neuspjelo dohvaÄ‡anje podataka o zdravlju."
   },
   "Search": {
     "title": "Pretraga oglasa",
-    "errorShort": "Ne možemo učitati rezultate pretrage",
-    "errorLong": "Ne možemo učitati rezultate pretrage. Provjeri API URL i status servera.",
+    "errorShort": "Ne moÅ¾emo uÄitati rezultate pretrage",
+    "errorLong": "Ne moÅ¾emo uÄitati rezultate pretrage. Provjeri API URL i status servera.",
     "filters": {
       "location": "Lokacija",
       "minPrice": "Min cijena",
@@ -43,43 +46,52 @@
     "actions": {
       "apply": "Filtriraj",
       "prev": "Prethodna",
-      "next": "Sljedeća"
+      "next": "SljedeÄ‡a"
     }
   },
   "FAQ": {
-    "back": "← Nazad na naslovnicu",
+    "back": "â† Nazad na naslovnicu",
     "title": "FAQ",
-    "intro": "Najčešća pitanja i odgovori o platformi, objavi i pretplatama."
+    "intro": "NajÄeÅ¡Ä‡a pitanja i odgovori o platformi, objavi i pretplatama."
   },
   "Legal": {
     "Terms": {
-      "fallbackTitle": "Uvjeti korištenja",
-      "fallbackBodyHtml": "Uvjeti trenutno nisu dostupni. Pogledaj <a href=\"/docs/thesara_terms.html\">statičku verziju uvjeta</a>."
+      "fallbackTitle": "Uvjeti koriÅ¡tenja",
+      "fallbackBodyHtml": "Uvjeti trenutno nisu dostupni. Pogledaj <a href=\"/docs/thesara_terms.html\">statiÄku verziju uvjeta</a>."
     },
     "Privacy": {
       "title": "Politika privatnosti",
-      "body": "Tvoja privatnost nam je važna. Ovdje objašnjavamo kako rukujemo tvojim podacima."
+      "intro.title": "Kako koristimo tvoje podatke",
+      "intro.body": "Prikupljamo samo podatke koji su nam nuÅ¾ni za otvaranje i odrÅ¾avanje tvog Thesara raÄuna, isporuku aplikacija i poÅ¡tivanje zakonskih obveza. Nikada ne prodajemo osobne podatke i ne dijelimo ih s oglaÅ¡ivaÄima izvan integracija navedenih u nastavku.",
+      "data.title": "Koje podatke prikupljamo",
+      "data.body": "Spremamo identifikatore raÄuna (e-mail, prikazno ime, avatar) kako bi se mogao prijaviti i upravljati aplikacijama. Dijagnostika koriÅ¡tenja pomaÅ¾e nam odrÅ¾ati platformu stabilnom. Podatke o plaÄanju obraÄuje Stripe i ne pohranjujemo ih na naÅ¡im posluÅ¾iteljima.",
+      "adsense.title": "Google AdSense i kolaÄiÄi",
+      "adsense.body": "Oglase prikazujemo samo korisnicima koji nisu kupili No Ads dodatak. Prije uÄitavanja AdSense skripte pitamo za tvoj pristanak. Ako ga odbijeÅ¡, oglasi se prikazuju u nepersonaliziranom modu (npa=1) i temelje se iskljuÄivo na sadrÅ¾aju stranice. Korisnici s aktivnim No Ads, Gold, Partner ili Ambassador statusom uopÄe ne uÄitavaju skriptu.",
+      "choices.title": "Tvoj izbor",
+      "choices.body": "U svakom trenutku moÅ¾eÅ¡ prihvatiti ili odbiti personalizirane oglase putem bannera za privolu; izbor se Äuva u tvom pregledniku kako ga ne bi morao ponavljati. Kupnjom No Ads paketa svi ad slotovi se gase odmah na webu i u Play naÄinu.",
+      "contact.title": "Kontakt",
+      "contact.body": "Za sva pitanja vezana uz privatnost ili privolu javi nam se na privacy@thesara.space i odgovorit Äemo u najkraÄem roku."
     },
     "Refunds": {
       "title": "Pravila povrata",
-      "body": "Informacije o pravilima povrata bit će prikazane ovdje."
+      "body": "Informacije o pravilima povrata bit Ä‡e prikazane ovdje."
     },
     "Rules": {
-      "title": "Pravila korištenja",
-      "body": "Ovdje će biti sadržaj pravila korištenja."
+      "title": "Pravila koriÅ¡tenja",
+      "body": "Ovdje Ä‡e biti sadrÅ¾aj pravila koriÅ¡tenja."
     },
     "ContentReport": {
-      "title": "Prijava sadržaja",
-      "body": "Ovdje će biti obrazac za prijavu neprikladnog sadržaja."
+      "title": "Prijava sadrÅ¾aja",
+      "body": "Ovdje Ä‡e biti obrazac za prijavu neprikladnog sadrÅ¾aja."
     }
   },
   "Classifieds": {
     "details": {
       "title": "Oglas {id}",
-      "average": "Prosječna ocjena: {rating}",
+      "average": "ProsjeÄna ocjena: {rating}",
       "scoreLabel": "Ocjena: {rating}",
       "commentPlaceholder": "Komentar",
-      "submit": "Pošalji recenziju"
+      "submit": "PoÅ¡alji recenziju"
     },
     "new": {
       "title": "Novi oglas",
@@ -96,55 +108,55 @@
   },
   "Promo": {
     "title": "Iskoristi promo kod",
-    "mustBeSignedIn": "Moraš biti prijavljen kako bi iskoristio promo kod.",
+    "mustBeSignedIn": "MoraÅ¡ biti prijavljen kako bi iskoristio promo kod.",
     "label": "Promo kod",
     "placeholder": "npr. THESARA-JANE24",
     "submit": "Iskoristi kod",
     "submitting": "Obrada...",
-    "success": "Kod je uspješno iskorišten. Gold trial je aktiviran.",
-    "error": "Neuspjelo iskorištavanje koda.",
+    "success": "Kod je uspjeÅ¡no iskoriÅ¡ten. Gold trial je aktiviran.",
+    "error": "Neuspjelo iskoriÅ¡tavanje koda.",
     "validUntil": "Vrijedi do {date}",
-    "footnote": "Aktivacijom koda dobivaš besplatni Gold trial na ograničeno vrijeme, sukladno pravilima programa."
+    "footnote": "Aktivacijom koda dobivaÅ¡ besplatni Gold trial na ograniÄeno vrijeme, sukladno pravilima programa."
   },
   "LegacyHandle": {
     "redirecting": "Preusmjeravanje..."
   },
   "Checkout": {
-    "pageTitle": "Pregled narudžbe",
-    "loading": "Učitavanje…",
+    "pageTitle": "Pregled narudÅ¾be",
+    "loading": "UÄitavanjeâ€¦",
     "subscriptionLabel": "Pretplata",
     "priceLabel": "Cijena",
-    "emailLabel": "Email za račun",
+    "emailLabel": "Email za raÄun",
     "promoPrefix": "Imate promo kod od ambasadora?",
     "promoLink": "Iskoristite ga ovdje",
     "promoSuffix": "prije nastavka.",
-    "termsPrompt": "Prije plaćanja potvrdi da prihvaćaš {termsLabel}.",
-    "termsCheckbox": "Potvrđujem da sam pročitao/la uvjete i da prihvaćam obveze tijekom kupovine i kasnijeg korištenja paketa.",
+    "termsPrompt": "Prije plaÄ‡anja potvrdi da prihvaÄ‡aÅ¡ {termsLabel}.",
+    "termsCheckbox": "PotvrÄ‘ujem da sam proÄitao/la uvjete i da prihvaÄ‡am obveze tijekom kupovine i kasnijeg koriÅ¡tenja paketa.",
     "termsButton": "Otvori uvjete",
     "termsNote": "Obavezno samo pri prvoj kupnji ili kad se uvjeti promijene ({version}).",
-    "termsMissing": "Prije kupovine potvrdi da prihvaćaš uvjete.",
-    "termsSaveError": "Spremanje prihvaćanja nije uspjelo. Pokušaj ponovno.",
-    "buttonSubmitting": "Slanje…",
+    "termsMissing": "Prije kupovine potvrdi da prihvaÄ‡aÅ¡ uvjete.",
+    "termsSaveError": "Spremanje prihvaÄ‡anja nije uspjelo. PokuÅ¡aj ponovno.",
+    "buttonSubmitting": "Slanjeâ€¦",
     "buttonSubmit": "Nastavi",
-    "backLink": "← Natrag",
+    "backLink": "â† Natrag",
     "missingAppId": "Nedostaje ID aplikacije.",
-    "loadErrorGeneric": "Greška pri učitavanju podataka.",
-    "errorInvalidResponse": "Neispravan odgovor poslužitelja.",
-    "errorNetwork": "Greška pri komunikaciji s API-jem."
+    "loadErrorGeneric": "GreÅ¡ka pri uÄitavanju podataka.",
+    "errorInvalidResponse": "Neispravan odgovor posluÅ¾itelja.",
+    "errorNetwork": "GreÅ¡ka pri komunikaciji s API-jem."
   },
   "DiagEnv": {
-    "title": "Dijagnostika okruženja",
-    "missingHeading": "Nedostajuće varijable",
+    "title": "Dijagnostika okruÅ¾enja",
+    "missingHeading": "NedostajuÄ‡e varijable",
     "none": "Nema"
   },
   "Admin": {
-    "title": "Admin nadzorna ploča",
+    "title": "Admin nadzorna ploÄa",
     "errors": {
-      "accessDenied": "Pristup odbijen — prijavi se kao admin ili traži whitelisting.",
-      "llmMissingApiKey": "Nedostaje LLM API ključ.",
+      "accessDenied": "Pristup odbijen â€” prijavi se kao admin ili traÅ¾i whitelisting.",
+      "llmMissingApiKey": "Nedostaje LLM API kljuÄ.",
       "llmInvalidJson": "AI servis je vratio neispravan JSON.",
       "llmUnreachable": "AI servis trenutno nije dostupan.",
-      "missingArtifact": "Nedostaju artefakti — pokreni cijeli build (pnpm run createx:build).",
+      "missingArtifact": "Nedostaju artefakti â€” pokreni cijeli build (pnpm run createx:build).",
       "llmReviewFailed": "LLM provjera nije uspjela."
     },
     "buttons": {
@@ -158,40 +170,40 @@
       "users": "Korisnici",
       "ambassadorProgram": "Ambasador program",
       "admins": "Admini",
-      "emailTemplates": "Email predlošci"
+      "emailTemplates": "Email predloÅ¡ci"
     },
     "filters": {
-      "searchPlaceholder": "Pretraži",
-      "clear": "Očisti",
-      "refresh": "Osvježi",
+      "searchPlaceholder": "PretraÅ¾i",
+      "clear": "OÄisti",
+      "refresh": "OsvjeÅ¾i",
       "status": {
         "all": "Sve",
-        "pending": "Na čekanju",
+        "pending": "Na Äekanju",
         "approved": "Odobreno",
         "rejected": "Odbijeno",
         "deleted": "Obrisano"
       }
     },
     "stats": {
-      "foundApps": "Pronađeno {count} aplikacija"
+      "foundApps": "PronaÄ‘eno {count} aplikacija"
     },
     "alerts": {
-      "llmDisabled": "AI provjera je privremeno isključena. Objave čekaju ručni pregled.",
-      "bundleNotReady": "Bundle jo�? nije spreman.",
-      "artifactsPending": "Artefakti nisu spremni. Pri�?ekaj zavr�etak builda ili ga ponovno pokreni pa poku�aj opet.",
-      "downloadFailed": "Preuzimanje nije uspjelo. Poku�aj kasnije.",
+      "llmDisabled": "AI provjera je privremeno iskljuÄena. Objave Äekaju ruÄni pregled.",
+      "bundleNotReady": "Bundle joï¿½? nije spreman.",
+      "artifactsPending": "Artefakti nisu spremni. Priï¿½?ekaj zavrï¿½etak builda ili ga ponovno pokreni pa pokuï¿½aj opet.",
+      "downloadFailed": "Preuzimanje nije uspjelo. Pokuï¿½aj kasnije.",
       "noBuildApprove": "Nema aktivnog builda za odobravanje.",
       "approveSuccess": "Unos je odobren.",
       "refreshSuccess": "Unos je osvje\u017een.",
       "noBuildReject": "Nema aktivnog builda za odbijanje.",
       "rejectSuccess": "Unos je odbijen.",
-      "deleteSuccess": "Unos je premje�ten u obrisane.",
+      "deleteSuccess": "Unos je premjeï¿½ten u obrisane.",
       "deleteFailed": "Brisanje nije uspjelo.",
       "forceDeleteSuccess": "Unos je trajno obrisan.",
       "forceDeleteFailed": "Trajno brisanje nije uspjelo.",
-      "restoreSuccess": "Unos vra�en.",
-      "restoreFailed": "Vra�anje nije uspjelo.",
-      "buildQueued": "Build je zakazan. Osvje�avam…",
+      "restoreSuccess": "Unos vraï¿½en.",
+      "restoreFailed": "Vraï¿½anje nije uspjelo.",
+      "buildQueued": "Build je zakazan. Osvjeï¿½avamâ€¦",
       "buildQueueFailed": "Zakazivanje builda nije uspjelo.",
       "policySaveFailed": "Spremanje dozvola nije uspjelo.",
       "noSelection": "Najprije odaberi unos.",
@@ -206,7 +218,7 @@
       "name": "Naziv",
       "ownerEmail": "Email vlasnika",
       "submitted": "Predano",
-      "network": "Mreža",
+      "network": "MreÅ¾a",
       "llm": "LLM",
       "actions": "Radnje"
     },
@@ -217,56 +229,153 @@
       "fetchDomain": "fetch prema {domain}"
     },
     "llm": {
-      "disabledLabel": "LLM isključen",
+      "disabledLabel": "LLM iskljuÄen",
       "recommendation": "AI preporuka: {value}"
     },
     "llmDetails": {
-      "attempts": "LLM pokušaji: {count}",
-      "noReport": "Izvještaj još nije dostupan.",
-      "regenerating": "Analiza…",
+      "attempts": "LLM pokuÅ¡aji: {count}",
+      "noReport": "IzvjeÅ¡taj joÅ¡ nije dostupan.",
+      "regenerating": "Analizaâ€¦",
       "run": "Pokreni LLM analizu",
-      "disabledButton": "LLM isključen",
-      "enableHint": "Uključi AI provjeru u konfiguraciji kako bi izvještaj bio dostupan.",
-      "providerLabel": "Pružatelj",
-      "showJson": "Prikaži JSON",
+      "disabledButton": "LLM iskljuÄen",
+      "enableHint": "UkljuÄi AI provjeru u konfiguraciji kako bi izvjeÅ¡taj bio dostupan.",
+      "providerLabel": "PruÅ¾atelj",
+      "showJson": "PrikaÅ¾i JSON",
       "hideJson": "Sakrij JSON",
       "runAgain": "Pokreni ponovno"
     },
     "llmStatus": {
-      "failed": "LLM greška",
-      "waiting": "LLM čeka",
-      "disabledToast": "LLM analiza je trenutno isključena."
+      "failed": "LLM greÅ¡ka",
+      "waiting": "LLM Äeka",
+      "disabledToast": "LLM analiza je trenutno iskljuÄena."
     },
     "pagination": {
-      "loadMore": "Učitaj još"
+      "loadMore": "UÄitaj joÅ¡"
+    },
+    "ads": {
+      "heading": "Sustav oglasa",
+      "description": "Uključi ili isključi Google AdSense globalno za sve korisnike koji nemaju NoAds pravo.",
+      "refresh": "Osvježi status",
+      "statusEnabled": "Oglasi su aktivni",
+      "statusDisabled": "Oglasi su globalno isključeni",
+      "enableButton": "Uključi oglase",
+      "disableButton": "Isključi oglase",
+      "loading": "Učitavam konfiguraciju oglasa…",
+      "loadFailed": "Ne mogu učitati konfiguraciju oglasa.",
+      "saveFailed": "Ne mogu spremiti promjenu konfiguracije oglasa.",
+      "updatedAt": "Ažurirano {time}",
+      "updatedBy": "Ažurirao/la {uid} u {time}",
+      "slotsHeading": "Vidljivost slotova",
+      "slotsDescription": "Brzo uključi/isključi pojedine pozicije bez ponovnog deploya. Slot bez ad unit ID-a ostaje prazan i kada je uključen.",
+      "slotsLoading": "Učitavam konfiguraciju slotova…",
+      "slotsLoadFailed": "Ne mogu učitati konfiguraciju slotova.",
+      "slotsSaveFailed": "Ne mogu spremiti promjenu slotova.",
+      "noId": "Nije postavljen ad unit ID",
+      "slotsTable": {
+        "location": "Pozicija",
+        "envVar": "Env varijabla",
+        "currentId": "Ad unit ID",
+        "status": "Status",
+        "actions": "Akcije"
+      },
+      "slotsStatus": {
+        "enabled": "Uključeno",
+        "disabled": "Isključeno"
+      },
+      "slotsToggle": {
+        "enable": "Uključi slot",
+        "disable": "Isključi slot"
+      },
+      "slots": {
+        "playTopLabel": "Play – gornji banner",
+        "playTopDescription": "Prikazuje se iznad Play iframea.",
+        "playBottomLabel": "Play – donji banner",
+        "playBottomDescription": "Prikazuje se ispod Play iframea.",
+        "appDetailHeaderLabel": "Detalj aplikacije – header",
+        "appDetailHeaderDescription": "Veliki placement na vrhu stranice detalja.",
+        "appDetailInlineLabel": "Detalj aplikacije – inline",
+        "appDetailInlineDescription": "Sekundarni slot unutar sadržaja.",
+        "homeRailLeftLabel": "Naslovnica – lijevi stupac",
+        "homeRailLeftDescription": "Sticky kartica u lijevom sidebaru (desktop).",
+        "homeRailRightLabel": "Naslovnica – desni stupac",
+        "homeRailRightDescription": "Sticky kartica u desnom sidebaru (desktop).",
+        "homeGridInlineLabel": "Naslovnica – inline mreža",
+        "homeGridInlineDescription": "Svaka 8. kartica u mreži zamjenjuje se oglasom.",
+        "homeFeedFooterLabel": "Naslovnica – dno feeda",
+        "homeFeedFooterDescription": "Široki slot ispod liste aplikacija.",
+        "marketplaceGridInlineLabel": "Marketplace – inline mreža",
+        "marketplaceGridInlineDescription": "Svaka 8. stavka u /apps listi postaje oglas."
+      },
+      "telemetryHeading": "Telemetrija oglasa (zadnjih {days} dana)",
+      "telemetryDescription": "Praćenje privola i popunjenosti slotova kako bismo brzo uočili probleme.",
+      "telemetryRangeLabel": "Period",
+      "telemetryRangeOption": "{days} dana",
+      "telemetryRefresh": "Osvježi podatke",
+      "telemetryLoading": "Učitavanje telemetrije…",
+      "telemetryLoadFailed": "Neuspjelo učitavanje telemetrije.",
+      "telemetryNoData": "Još nemamo podatke za ovaj period.",
+      "telemetryStats": {
+        "totalEvents": "Ukupno događaja",
+        "consentGranted": "Prihvaćene privole",
+        "consentRejected": "Odbijene privole",
+        "slotFills": "Popunjeni slotovi"
+      },
+      "telemetry": {
+        "table": {
+          "headingSlots": "Najaktivniji slotovi",
+          "headingPlacements": "Najaktivnije pozicije",
+          "name": "Naziv",
+          "events": "Događaji",
+          "share": "Udio",
+          "entries": "{count} unosa",
+          "empty": "Nema podataka"
+        },
+        "eventLabels": {
+          "consent_prompt_shown": "Banner prikazan",
+          "consent_granted": "Privola prihvaćena",
+          "consent_rejected": "Privola odbijena",
+          "consent_reset": "Privola resetirana",
+          "slot_render_attempt": "Pokušaj prikaza slota",
+          "slot_render_filled": "Slot popunjen",
+          "slot_closed": "Slot zatvoren"
+        },
+        "dailyHeading": "Dnevni pregled",
+        "dailyEmpty": "Nema dnevnih podataka."
+      }
+    },
+    "AdsConsent": {
+      "title": "Dopusti nam prikaz personaliziranih oglasa",
+      "description": "Koristimo Google AdSense kako bismo financirali Thesaru. Možeš birati želiš li personalizirane oglase ili samo osnovne, nepersonalizirane.",
+      "accept": "Dopusti personalizirane oglase",
+      "reject": "Samo osnovni oglasi"
     },
     "adminSettings": {
-      "heading": "Postavke admin sučelja",
-      "description": "Upravlja popisom računa koji smiju otključati skriveni admin pristup.",
-      "refresh": "Osvježi",
-      "loading": "Učitavanje…",
-      "empty": "Nema dopuštenih e-mail adresa.",
+      "heading": "Postavke admin suÄelja",
+      "description": "Upravlja popisom raÄuna koji smiju otkljuÄati skriveni admin pristup.",
+      "refresh": "OsvjeÅ¾i",
+      "loading": "UÄitavanjeâ€¦",
+      "empty": "Nema dopuÅ¡tenih e-mail adresa.",
       "remove": "Ukloni",
       "addPlaceholder": "admin@example.com",
       "addButton": "Dodaj",
-      "loadError": "Ne mogu učitati popis dopuštenih admin korisnika.",
-      "refreshError": "Osvježavanje popisa nije uspjelo.",
+      "loadError": "Ne mogu uÄitati popis dopuÅ¡tenih admin korisnika.",
+      "refreshError": "OsvjeÅ¾avanje popisa nije uspjelo.",
       "addEmpty": "Unesi e-mail adresu.",
       "addInvalid": "E-mail adresa nije valjana.",
-      "addDuplicate": "E-mail je već na popisu.",
+      "addDuplicate": "E-mail je veÄ‡ na popisu.",
       "addFailed": "Dodavanje nije uspjelo.",
       "removeFailed": "Uklanjanje nije uspjelo.",
       "removeConfirm": "Ukloniti {email} s popisa?"
     },
     "users": {
       "heading": "Upravljanje korisnicima",
-      "loading": "Učitavam korisnike…",
-      "loadFailed": "Ne mogu učitati korisnike.",
-      "updateFailed": "Ne mogu ažurirati pogodnosti korisnika.",
+      "loading": "UÄitavam korisnikeâ€¦",
+      "loadFailed": "Ne mogu uÄitati korisnike.",
+      "updateFailed": "Ne mogu aÅ¾urirati pogodnosti korisnika.",
       "filterLabel": "Filtriraj po pogodnosti:",
       "filterAll": "Sve",
-      "searchLabel": "Pretraži:",
-      "searchPlaceholder": "Traži po e-mailu, imenu ili UID-u",
+      "searchLabel": "PretraÅ¾i:",
+      "searchPlaceholder": "TraÅ¾i po e-mailu, imenu ili UID-u",
       "table": {
         "email": "Email",
         "displayName": "Ime i prezime",
@@ -286,53 +395,53 @@
       }
     },
     "emailTemplates": {
-      "heading": "Predlošci e-mailova",
-      "description": "Uredi sadržaj e-mailova koje sustav može slati. Koristi {{placeholders}} za dinamičke vrijednosti (npr. {{displayName}}, {{appTitle}}).",
-      "refresh": "Osvježi",
-      "loadFailed": "Ne mogu učitati predloške.",
+      "heading": "PredloÅ¡ci e-mailova",
+      "description": "Uredi sadrÅ¾aj e-mailova koje sustav moÅ¾e slati. Koristi {{placeholders}} za dinamiÄke vrijednosti (npr. {{displayName}}, {{appTitle}}).",
+      "refresh": "OsvjeÅ¾i",
+      "loadFailed": "Ne mogu uÄitati predloÅ¡ke.",
       "scenarioLabel": "Scenario",
       "scenarioPlaceholder": "-- odaberi scenario --",
       "scenarios": {
         "welcome": "welcome (novi korisnik)",
         "reviewApproval": "review:approval_notification (odobrenje)",
         "reviewReject": "review:reject_notification (odbijanje)",
-        "publishPending": "publish:pending_notification (na �ekanju)"
+        "publishPending": "publish:pending_notification (na ï¿½ekanju)"
       },
-      "load": "Učitaj",
+      "load": "UÄitaj",
       "save": "Spremi",
       "restoreFallback": "Vrati fallback",
       "subjectLabel": "Predmet",
       "bodyLabel": "Tijelo poruke",
-      "loading": "Učitavanje…",
-      "empty": "Nema definiranih predložaka.",
-      "createTitle": "Kreiraj novi predložak",
+      "loading": "UÄitavanjeâ€¦",
+      "empty": "Nema definiranih predloÅ¾aka.",
+      "createTitle": "Kreiraj novi predloÅ¾ak",
       "createDescription": "Unesi jedinstveni ID (npr. welcome, review:approval_notification).",
-      "placeholderId": "ID predloška",
+      "placeholderId": "ID predloÅ¡ka",
       "placeholderSubject": "predmet",
       "placeholderBody": "tijelo",
       "createButton": "Kreiraj",
-      "scenarioDropdownHint": "Odaberi scenario iz padajućeg izbornika.",
+      "scenarioDropdownHint": "Odaberi scenario iz padajuÄ‡eg izbornika.",
       "scenarioRequired": "Najprije odaberi scenario.",
-      "scenarioLoadFailed": "Ne mogu učitati predložak ili fallback tekst za ovaj scenario.",
-      "restoreInfo": "Fallback je vraćen lokalno — ne zaboravi Spremi da bi ostao.",
-      "restoreFailed": "Vraćanje fallbacka nije uspjelo.",
-      "templateIdRequired": "Unesi ID predloška."
+      "scenarioLoadFailed": "Ne mogu uÄitati predloÅ¾ak ili fallback tekst za ovaj scenario.",
+      "restoreInfo": "Fallback je vraÄ‡en lokalno â€” ne zaboravi Spremi da bi ostao.",
+      "restoreFailed": "VraÄ‡anje fallbacka nije uspjelo.",
+      "templateIdRequired": "Unesi ID predloÅ¡ka."
     },
     "ambassador": {
       "title": "Ambasador administracija",
       "subtitle": "Pregledaj prijave, upravljaj kodovima i obradi isplate.",
-      "emptyValue": "—",
+      "emptyValue": "â€”",
       "kpis": {
         "approved": "Aktivni ambasadori",
-        "pendingApplications": "Prijave na �ekanju",
-        "pendingPayouts": "Isplate na �ekanju",
-        "outstandingBalance": "Neispla�eni balans (€)"
+        "pendingApplications": "Prijave na ï¿½ekanju",
+        "pendingPayouts": "Isplate na ï¿½ekanju",
+        "outstandingBalance": "Neisplaï¿½eni balans (â‚¬)"
       },
       "posts": {
-        "heading": "Objave ambasadora (na �ekanju)",
-        "refresh": "Osvje�i",
-        "loading": "U�itavanje objava…",
-        "empty": "Nema objava na �ekanju.",
+        "heading": "Objave ambasadora (na ï¿½ekanju)",
+        "refresh": "Osvjeï¿½i",
+        "loading": "Uï¿½itavanje objavaâ€¦",
+        "empty": "Nema objava na ï¿½ekanju.",
         "table": {
           "link": "Link",
           "ambassador": "Ambasador",
@@ -350,7 +459,7 @@
       "payoutTabs": {
         "pending": "Za obradu",
         "processing": "U obradi",
-        "paid": "Pla�eni",
+        "paid": "Plaï¿½eni",
         "rejected": "Odbijeni",
         "all": "Svi"
       },
@@ -361,20 +470,20 @@
       "messages": {
         "approveSuccess": "Prijava je odobrena. Kod: {code}",
         "rejectSuccess": "Prijava je odbijena.",
-        "payoutPaid": "Isplata ozna�ena kao pla�ena.",
+        "payoutPaid": "Isplata oznaï¿½ena kao plaï¿½ena.",
         "payoutRejected": "Isplata je odbijena."
       },
       "errors": {
-        "adminOnly": "Pristup dopu�ten samo administratorima.",
-        "loadApplications": "Neuspje�no u�itavanje prijava.",
-        "loadPayouts": "Neuspje�no u�itavanje isplata.",
-        "loadPosts": "Neuspje�no u�itavanje objava.",
+        "adminOnly": "Pristup dopuï¿½ten samo administratorima.",
+        "loadApplications": "Neuspjeï¿½no uï¿½itavanje prijava.",
+        "loadPayouts": "Neuspjeï¿½no uï¿½itavanje isplata.",
+        "loadPosts": "Neuspjeï¿½no uï¿½itavanje objava.",
         "approveFailed": "Odobravanje nije uspjelo.",
         "rejectFailed": "Odbijanje nije uspjelo.",
         "payoutActionFailed": "Akcija na isplati nije uspjela."
       },
       "applications": {
-        "loading": "U�itavanje prijava…",
+        "loading": "Uï¿½itavanje prijavaâ€¦",
         "empty": "Nema prijava za odabrani status.",
         "table": {
           "user": "Korisnik",
@@ -388,13 +497,13 @@
         "platform": "Platforma: {value}",
         "audience": "Publika: {value}",
         "motivation": "Motivacija",
-        "balanceValue": "€{amount}",
+        "balanceValue": "â‚¬{amount}",
         "approve": "Odobri",
         "reject": "Odbij",
         "promoCode": "Kod: {code}"
       },
       "payouts": {
-        "loading": "U�itavanje isplata…",
+        "loading": "Uï¿½itavanje isplataâ€¦",
         "empty": "Nema isplata za odabrani filter.",
         "table": {
           "id": "Payout ID",
@@ -404,9 +513,9 @@
           "paypal": "PayPal",
           "actions": "Radnje"
         },
-        "requestedAt": "Zatra�eno: {date}",
-        "amountValue": "€{amount}",
-        "markPaid": "Ozna�i pla�eno",
+        "requestedAt": "Zatraï¿½eno: {date}",
+        "amountValue": "â‚¬{amount}",
+        "markPaid": "Oznaï¿½i plaï¿½eno",
         "reject": "Odbij",
         "transaction": "Txn: {id}"
       }
@@ -416,28 +525,28 @@
     "title": "Registracija",
     "errors": {
       "passwordMismatch": "Lozinke se ne podudaraju.",
-      "mustAcceptTerms": "Potvrdi da prihvaćaš uvjete korištenja prije registracije.",
+      "mustAcceptTerms": "Potvrdi da prihvaÄ‡aÅ¡ uvjete koriÅ¡tenja prije registracije.",
       "generic": "Registracija nije uspjela.",
       "firestoreHint": "Molimo provjeri Firestore pravila ili konfiguraciju."
     },
     "fields": {
       "firstName": "Ime",
       "lastName": "Prezime",
-      "username": "Korisničko ime",
+      "username": "KorisniÄko ime",
       "email": "Email",
-      "birthYear": "Godište",
+      "birthYear": "GodiÅ¡te",
       "password": "Lozinka",
       "confirmPassword": "Potvrdi lozinku",
       "phone": "Broj mobitela",
       "gender": "Spol",
-      "genderMale": "Muško",
-      "genderFemale": "Žensko",
+      "genderMale": "MuÅ¡ko",
+      "genderFemale": "Å½ensko",
       "genderOther": "Drugo",
       "bio": "Bio"
     },
     "terms": {
-      "beforeLink": "Prihvaćam ",
-      "afterLink": " i slažem se s pravilima korištenja platforme."
+      "beforeLink": "PrihvaÄ‡am ",
+      "afterLink": " i slaÅ¾em se s pravilima koriÅ¡tenja platforme."
     },
     "cta": {
       "submit": "Registriraj se"
@@ -445,90 +554,90 @@
   },
   "Setup": {
     "title": "Firebase nije konfiguriran",
-    "missingIntro": "Nedostaju sljedeće varijable okruženja:",
+    "missingIntro": "Nedostaju sljedeÄ‡e varijable okruÅ¾enja:",
     "addPrefix": "Dodaj ih u datoteku",
     "addSuffix": ":"
   },
   "Home": {
     "headline": {
-      "one": "Otkrij fantastične",
+      "one": "Otkrij fantastiÄne",
       "two": "mini-aplikacije i igre"
     },
-    "tagline": "Kurirani marketplace za iskustva u pregledniku. Gradi, dijeli i istražuj.",
+    "tagline": "Kurirani marketplace za iskustva u pregledniku. Gradi, dijeli i istraÅ¾uj.",
     "trending": "U trendu",
     "appsCount": "{count} aplikacija",
     "search": {
-      "placeholder": "Pretraži aplikacije, igre ili oznake..."
+      "placeholder": "PretraÅ¾i aplikacije, igre ili oznake..."
     },
-    "appsFound": "Pronađeno {count} aplikacija",
+    "appsFound": "PronaÄ‘eno {count} aplikacija",
     "sort": {
       "new": "Najnovije",
       "popular": "Popularno",
       "title": "Abecedno"
     },
-    "clear": "Očisti",
-    "noApps": "Nema pronađenih aplikacija",
-    "tryAdjust": "Pokušaj prilagoditi pretragu ili filtre.",
-    "beFirst": "Budi prvi koji će objaviti aplikaciju!",
+    "clear": "OÄisti",
+    "noApps": "Nema pronaÄ‘enih aplikacija",
+    "tryAdjust": "PokuÅ¡aj prilagoditi pretragu ili filtre.",
+    "beFirst": "Budi prvi koji Ä‡e objaviti aplikaciju!",
     "publish": "Objavi aplikaciju",
     "plays": "{count} igranja"
   },
   "Toasts": {
-    "welcome": "Dobrodošli na THESARA.SPACE!",
-    "loginToLike": "Prijavi se da lajkiraš aplikacije",
-    "slowDown": "Polako 🙂",
-    "likeError": "Ne možemo lajkati aplikaciju. Provjeri API URL i status servera.",
-    "loadError": "Ne možemo učitati aplikacije. Provjeri API URL i status servera.",
-    "retry": "Pokušaj ponovno"
+    "welcome": "DobrodoÅ¡li na THESARA.SPACE!",
+    "loginToLike": "Prijavi se da lajkiraÅ¡ aplikacije",
+    "slowDown": "Polako ðŸ™‚",
+    "likeError": "Ne moÅ¾emo lajkati aplikaciju. Provjeri API URL i status servera.",
+    "loadError": "Ne moÅ¾emo uÄitati aplikacije. Provjeri API URL i status servera.",
+    "retry": "PokuÅ¡aj ponovno"
   },
   "Footer": {
     "slogan": "Marketplace za aplikacije i igre u pregledniku.",
-    "allRights": "Sva prava pridržana."
+    "allRights": "Sva prava pridrÅ¾ana."
   },
   "Pro": {
     "choosePlan": "Odaberite paket",
-    "subtitle": "Proširite mogućnosti svoje aplikacije s našim naprednim paketima",
-    "usageTitle": "Vaše trenutno korištenje",
+    "subtitle": "ProÅ¡irite moguÄ‡nosti svoje aplikacije s naÅ¡im naprednim paketima",
+    "usageTitle": "VaÅ¡e trenutno koriÅ¡tenje",
     "currentPlan": "Trenutni plan",
     "apps": "Aplikacije",
-    "storage": "Spremište",
+    "storage": "SpremiÅ¡te",
     "purchased": "Kupljeno",
-    "recommended": "Preporučeno",
-    "loading": "Učitava…",
-    "subscribed": "Pretplaćeni",
+    "recommended": "PreporuÄeno",
+    "loading": "UÄitavaâ€¦",
+    "subscribed": "PretplaÄ‡eni",
     "selectPackage": "Odaberi paket",
     "noPackagesTitle": "Nema dostupnih paketa",
-    "noPackagesText": "Paketi će uskoro biti dostupni",
-    "loadError": "Došlo je do greške prilikom učitavanja paketa. Molimo pokušajte ponovno.",
-    "perMonth": "mjesečno",
-    "goldDescription": "Otključajte veće limite, više prostora i prioritetnu podršku pri objavi.",
-    "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Free uključuje {freeLimit})",
-    "goldFeatureStorage": "Veći upload i storage za bundlove te assete",
-    "goldFeatureAds": "Uklanja THESARA.SPACE oglase iz sučelja i objavljenih aplikacija",
-    "goldFeatureSupport": "Prioritetna obrada objava i brži pristup podršci",
-    "noAdsDescription": "Plan koji uklanja sve THESARA.SPACE oglase iz sučelja i iskustava.",
-    "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vašim aplikacijama",
-    "noAdsFeatureFocus": "Publika ostaje fokusirana na sadržaj (bez bannera i pop-upova)"
+    "noPackagesText": "Paketi Ä‡e uskoro biti dostupni",
+    "loadError": "DoÅ¡lo je do greÅ¡ke prilikom uÄitavanja paketa. Molimo pokuÅ¡ajte ponovno.",
+    "perMonth": "mjeseÄno",
+    "goldDescription": "OtkljuÄajte veÄ‡e limite, viÅ¡e prostora i prioritetnu podrÅ¡ku pri objavi.",
+    "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Free ukljuÄuje {freeLimit})",
+    "goldFeatureStorage": "VeÄ‡i upload i storage za bundlove te assete",
+    "goldFeatureAds": "Uklanja THESARA.SPACE oglase iz suÄelja i objavljenih aplikacija",
+    "goldFeatureSupport": "Prioritetna obrada objava i brÅ¾i pristup podrÅ¡ci",
+    "noAdsDescription": "Plan koji uklanja sve THESARA.SPACE oglase iz suÄelja i iskustava.",
+    "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vaÅ¡im aplikacijama",
+    "noAdsFeatureFocus": "Publika ostaje fokusirana na sadrÅ¾aj (bez bannera i pop-upova)"
   },
   "Login": {
     "backToHome": "Nazad na naslovnicu",
-    "welcomeTitle": "Dobrodošli na {site}",
-    "welcomeBody": "Otkrij, igraj i objavi mini‑aplikacije. Prijavi se za lajkove, objavu vlastitih i sinkronizaciju napretka.",
+    "welcomeTitle": "DobrodoÅ¡li na {site}",
+    "welcomeBody": "Otkrij, igraj i objavi miniâ€‘aplikacije. Prijavi se za lajkove, objavu vlastitih i sinkronizaciju napretka.",
     "bulletOne": "Prijava Googleom u jednom kliku",
-    "bulletTwo": "Uključeni alati za kreatore",
+    "bulletTwo": "UkljuÄeni alati za kreatore",
     "bulletThree": "Sigurno po defaultu",
     "title": "Prijava",
-    "subtitle": "Koristi Google ili e‑mail račun.",
-    "checking": "Provjera sesije…",
+    "subtitle": "Koristi Google ili eâ€‘mail raÄun.",
+    "checking": "Provjera sesijeâ€¦",
     "signedInAs": "Prijavljen kao",
     "goToCreate": "Idi na Create",
     "signOut": "Odjava",
     "continueWithGoogle": "Nastavi s Googleom",
     "or": "ili",
-    "email": "E‑mail",
+    "email": "Eâ€‘mail",
     "password": "Lozinka",
-    "signInWithEmail": "Prijava e‑mailom",
-    "noAccount": "Nemaš račun?",
+    "signInWithEmail": "Prijava eâ€‘mailom",
+    "noAccount": "NemaÅ¡ raÄun?",
     "register": "Registracija"
   },
   "Create": {
@@ -543,33 +652,33 @@
     "sourceSection": "Izvor aplikacije",
     "optionPasteCode": "Zalijepi kod",
     "optionUploadBundle": "Upload paketa (.zip)",
-    "bundleHintPart1": "ZIP paket mora sadržavati build izlaz zajedno s datotekama",
+    "bundleHintPart1": "ZIP paket mora sadrÅ¾avati build izlaz zajedno s datotekama",
     "bundleHintPart2": "i",
-    "bundleHintPart3": "Worker će ga lokalno instalirati i pokrenuti",
-    "bundleAiWarning": "VAŽNO: Aplikacije koje ovise o Google AI Studiju, Geminiju, Kimiju ili bilo kojem drugom LLM-u moraju imati vlastiti API ključ. Bez njega bundle nakon objave neće raditi.",
-    "bundleAiWarningDetail": "Upiši svoj ključ dolje (mi ga ne osiguravamo). Ostavite polje prazno samo ako tvoja AI aplikacija radi bez privatnog ključa. Uskoro objavljujemo detaljnu dokumentaciju.",
-    "bundleAiNoKeyNote": "I dalje možeš objaviti demo aplikacije koje ne trebaju ključ — sve ovisi kako si ih izgradio.",
-    "bundleAiApiLabel": "AI / LLM API ključ",
-    "bundleAiApiPlaceholder": "Zalijepi ključ dobiven od pružatelja (spremamo ga samo za ovaj build)",
-    "bundleAiApiHelp": "Ključ umetnemo u bundle kako bi se mogao spojiti na tvoj AI servis. Ako aplikacija prestane raditi, provjeri ili regeneriraj ključ.",
+    "bundleHintPart3": "Worker Ä‡e ga lokalno instalirati i pokrenuti",
+    "bundleAiWarning": "VAÅ½NO: Aplikacije koje ovise o Google AI Studiju, Geminiju, Kimiju ili bilo kojem drugom LLM-u moraju imati vlastiti API kljuÄ. Bez njega bundle nakon objave neÄ‡e raditi.",
+    "bundleAiWarningDetail": "UpiÅ¡i svoj kljuÄ dolje (mi ga ne osiguravamo). Ostavite polje prazno samo ako tvoja AI aplikacija radi bez privatnog kljuÄa. Uskoro objavljujemo detaljnu dokumentaciju.",
+    "bundleAiNoKeyNote": "I dalje moÅ¾eÅ¡ objaviti demo aplikacije koje ne trebaju kljuÄ â€” sve ovisi kako si ih izgradio.",
+    "bundleAiApiLabel": "AI / LLM API kljuÄ",
+    "bundleAiApiPlaceholder": "Zalijepi kljuÄ dobiven od pruÅ¾atelja (spremamo ga samo za ovaj build)",
+    "bundleAiApiHelp": "KljuÄ umetnemo u bundle kako bi se mogao spojiti na tvoj AI servis. Ako aplikacija prestane raditi, provjeri ili regeneriraj kljuÄ.",
     "chooseZip": "Odaberi ZIP",
     "placeholderHtmlLong": "HTML snipet ili cijela stranica...",
     "placeholderReactLong": "React komponenta...",
     "previewGraphic": "Odaberi grafiku aplikacije",
-    "previewGraphicHint": "Odaberi jednu od predložaka ili učitaj vlastitu sliku (najviše 1 MB).",
+    "previewGraphicHint": "Odaberi jednu od predloÅ¾aka ili uÄitaj vlastitu sliku (najviÅ¡e 1 MB).",
     "previewOverlayPlaceholder": "Naslov aplikacije",
     "previewTitleLabel": "Naslov na grafici",
     "characters": "znakova",
-    "previewTitlePlaceholder": "Upiši naslov za prikaz",
+    "previewTitlePlaceholder": "UpiÅ¡i naslov za prikaz",
     "previewTitleHint": "Prikazuje se na polutransparentnoj traci preko odabrane grafike.",
     "chooseCustomGraphic": "Odaberi svoju grafiku aplikacije",
-    "removeCustomGraphic": "Vrati se na predložak",
+    "removeCustomGraphic": "Vrati se na predloÅ¾ak",
     "customGraphicHint": "PNG ili JPG do",
-    "previewUploading": "Spremamo grafiku…",
+    "previewUploading": "Spremamo grafikuâ€¦",
     "previewUploadSuccess": "Grafika je spremljena.",
     "previewFileTooLarge": "Slika mora biti manja od",
-    "previewFileReadFailed": "Ne možemo pročitati odabranu sliku.",
-    "previewUploadFailed": "Spremanje grafike nije uspjelo. Pokušaj ponovno.",
+    "previewFileReadFailed": "Ne moÅ¾emo proÄitati odabranu sliku.",
+    "previewUploadFailed": "Spremanje grafike nije uspjelo. PokuÅ¡aj ponovno.",
     "back": "Nazad",
     "next": "Dalje",
     "publish": "Objavi",
@@ -577,38 +686,38 @@
     "login": "Prijava"
   },
   "App": {
-    "notFound": "Aplikacija nije pronađena",
+    "notFound": "Aplikacija nije pronaÄ‘ena",
     "backToMarketplace": "Nazad na naslovnicu",
     "playNow": "Pokreni",
     "playInNewTab": "Pokreni u novom tabu",
     "about": "O aplikaciji",
     "noDescription": "Opis nije dodan.",
     "previewGraphic": "Grafika aplikacije",
-    "previewGraphicHint": "Odaberi predložak ili učitaj vlastitu sliku (najviše 1 MB).",
+    "previewGraphicHint": "Odaberi predloÅ¾ak ili uÄitaj vlastitu sliku (najviÅ¡e 1 MB).",
     "previewOverlayPlaceholder": "Naslov aplikacije",
     "previewTitleLabel": "Naslov na grafici",
     "characters": "znakova",
-    "previewTitlePlaceholder": "Upiši naslov za prikaz",
+    "previewTitlePlaceholder": "UpiÅ¡i naslov za prikaz",
     "previewTitleHint": "Prikazuje se na polutransparentnoj traci preko odabrane grafike.",
     "chooseCustomGraphic": "Odaberi svoju grafiku aplikacije",
-    "removeCustomGraphic": "Vrati se na predložak",
+    "removeCustomGraphic": "Vrati se na predloÅ¾ak",
     "customGraphicHint": "PNG ili JPG do",
-    "previewUploading": "Spremamo grafiku…",
+    "previewUploading": "Spremamo grafikuâ€¦",
     "previewUploadSuccess": "Grafika je spremljena.",
-    "previewUploadFailed": "Spremanje grafike nije uspjelo. Pokušaj ponovno.",
+    "previewUploadFailed": "Spremanje grafike nije uspjelo. PokuÅ¡aj ponovno.",
     "previewFileTooLarge": "Slika mora biti manja od",
-    "previewFileReadFailed": "Ne možemo pročitati odabranu sliku.",
+    "previewFileReadFailed": "Ne moÅ¾emo proÄitati odabranu sliku.",
     "previewSelectFileFirst": "Najprije odaberi sliku.",
     "saveGraphic": "Spremi grafiku",
-    "savingGraphic": "Spremamo…"
+    "savingGraphic": "Spremamoâ€¦"
   },
   "Rooms": {
     "headerActiveLabel": "Aktivna soba",
     "panelLabel": "Panel soba",
     "defaultRoomName": "Javna demo soba (PIN 1111)",
-    "descriptionDemoCompact": "Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.",
-    "descriptionPrivateCompact": "Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.",
-    "descriptionDemoFull": "Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.",
+    "descriptionDemoCompact": "Demo soba je javna i sluÅ¾i testiranju. Svi korisnici dijele iste podatke.",
+    "descriptionPrivateCompact": "Ova soba ima vlastitu pohranu koju dijele samo Älanovi s istim PIN-om.",
+    "descriptionDemoFull": "Ova demo soba je javna i sluÅ¾i upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.",
     "descriptionPrivateFull": "Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.",
     "roomLabel": "Naziv sobe",
     "pinLabel": "PIN",
@@ -617,11 +726,52 @@
     "modeHint": "Za trajnu i privatnu pohranu kreiraj svoju sobu s PIN-om.",
     "toggleLabel": "Preklopi panel soba",
     "createButton": "Kreiraj novu sobu",
-    "joinButton": "Pridruži se postojećoj sobi",
+    "joinButton": "PridruÅ¾i se postojeÄ‡oj sobi",
     "demoButton": "Vrati se u demo (PIN 1111)",
     "errors": {
       "missingCredentials": "Unesi naziv sobe i PIN.",
-      "generic": "Rad sa sobama je trenutno onemogućen."
+      "generic": "Rad sa sobama je trenutno onemoguÄ‡en."
     }
   }
+
+  ,"GoldenBookPage": {
+    "title": "Zlatna knjiga podržavatelja",
+    "subtitle": "Svaka donacija pomaže da Thesara ostane online i neovisna. Imena ostaju zauvijek u knjizi.",
+    "activeWindow": "Donacije su otvorene od {start} do {end}.",
+    "alwaysOpen": "Donacije su otvorene tijekom ovih 90 dana.",
+    "closedWindow": "Donacije su trenutno zatvorene, ali knjiga je javno dostupna.",
+    "listTitle": "Donatori",
+    "empty": "Još nema javnih donatora. Budi prvi!",
+    "pendingBadge": "Čeka alias",
+    "cta": "Doniraj sada",
+    "ctaClosed": "Donacije zatvorene",
+    "aliasLink": "Već si donirao? Spremi alias",
+    "permanentNote": "Svaki unos ostaje vidljiv i nakon završetka kampanje.",
+    "highlightToast": "Upravo smo te upisali!"
+  },
+  "DonateThankYou": {
+    "title": "Hvala ti na podršci",
+    "celebrationKicker": "Ti pokrećeš Thesaru",
+    "celebrationBody": "Tvoja donacija nas održava neovisnima. Odaberi kako želiš da te upišemo i ostat ćeš zauvijek u Zlatnoj knjizi.",
+    "stepOne": "Upiši ime za prikaz",
+    "stepTwo": "Pogledaj Zlatnu knjigu",
+    "aliasTitle": "Kako da te potpišemo?",
+    "intro": "Odaberi koji naziv želiš prikazati u Zlatnoj knjizi. Ostavi prazno za anonimni unos.",
+    "missingPaymentIntent": "Ne možemo pronaći referencu uplate. Otvori link iz Stripe e-maila ili nas kontaktiraj.",
+    "notFound": "Donaciju nismo pronašli. Osvježi stranicu ili kontaktiraj podršku.",
+    "aliasLabel": "Ime za prikaz",
+    "aliasPlaceholder": "npr. Thesara Fan, Studio Kaktus…",
+    "aliasOptional": "Ako polje ostane prazno, prikazat ćemo “Anonimni donator”.",
+    "submit": "Spremi ime",
+    "saving": "Spremamo…",
+    "success": "Alias je spremljen! Sada si u Zlatnoj knjizi.",
+    "alreadySet": "Alias je već spremljen. Hvala!",
+    "alreadySetHint": "Već imaš ime? Slobodno ga promijeni i ponovno spremi.",
+    "errorGeneric": "Ne možemo spremiti alias. Pokušaj ponovno.",
+    "goToGoldenBook": "Otvori Zlatnu knjigu",
+    "backHome": "Natrag na početnu",
+    "redirecting": "Preusmjeravamo te u Zlatnu knjigu…"
+  }
+
 }
+

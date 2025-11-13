@@ -195,6 +195,7 @@ const DEFAULT_COLLECTIONS = [
   'payments',
   'users',
   'creators',
+  'donations',
 ];
 
 let dbInitialization: Promise<void> | undefined;
@@ -665,6 +666,230 @@ export async function writeEntitlements(items: Entitlement[]): Promise<void> {
   await batch.commit();
 }
 
+export type AdsSettings = {
+  disabled: boolean;
+  updatedAt?: number;
+  updatedBy?: string | null;
+};
+
+const ADS_SETTINGS_DOC = 'ads';
+
+function resolveDefaultAdsDisabled(): boolean {
+  if (process.env.ADS_DISABLED_DEFAULT === 'true') return true;
+  if (process.env.NEXT_PUBLIC_ADS_DISABLED === 'true') return true;
+  return false;
+}
+
+export async function readAdsSettings(): Promise<AdsSettings> {
+  const doc = await db.collection('settings').doc(ADS_SETTINGS_DOC).get();
+  if (!doc.exists) {
+    return { disabled: resolveDefaultAdsDisabled() };
+  }
+  const data = doc.data() as Record<string, any>;
+  const updatedByRaw = data?.updatedBy;
+  return {
+    disabled: Boolean(data?.disabled),
+    updatedAt: typeof data?.updatedAt === 'number' ? data.updatedAt : undefined,
+    updatedBy:
+      typeof updatedByRaw === 'string' && updatedByRaw.trim()
+        ? updatedByRaw.trim()
+        : updatedByRaw ?? null,
+  };
+}
+
+export async function writeAdsSettings(
+  update: { disabled: boolean; updatedBy?: string | null },
+): Promise<AdsSettings> {
+  const next: AdsSettings = {
+    disabled: Boolean(update.disabled),
+    updatedAt: Date.now(),
+    updatedBy: update.updatedBy ?? null,
+  };
+  await db.collection('settings').doc(ADS_SETTINGS_DOC).set(next, { merge: true });
+  return next;
+}
+
+export type AdsSlotEntry = {
+  enabled: boolean;
+  updatedAt?: number;
+  updatedBy?: string | null;
+};
+
+const ADS_SLOTS_DOC = 'adsSlots';
+
+function normalizeSlotRecord(value: any): AdsSlotEntry {
+  return {
+    enabled: Boolean(value?.enabled),
+    updatedAt: typeof value?.updatedAt === 'number' ? value.updatedAt : undefined,
+    updatedBy:
+      typeof value?.updatedBy === 'string' && value.updatedBy.trim()
+        ? value.updatedBy.trim()
+        : value?.updatedBy ?? null,
+  };
+}
+
+export async function readAdsSlotConfig(): Promise<Record<string, AdsSlotEntry>> {
+  const doc = await db.collection('settings').doc(ADS_SLOTS_DOC).get();
+  if (!doc.exists) return {};
+  const rawSlots = (doc.data() as any)?.slots;
+  if (!rawSlots || typeof rawSlots !== 'object') return {};
+  const normalized: Record<string, AdsSlotEntry> = {};
+  for (const [key, value] of Object.entries(rawSlots)) {
+    if (!key) continue;
+    normalized[key] = normalizeSlotRecord(value);
+  }
+  return normalized;
+}
+
+export async function writeAdsSlotConfig(
+  updates: Record<string, { enabled: boolean; updatedBy?: string | null }>,
+): Promise<Record<string, AdsSlotEntry>> {
+  const docRef = db.collection('settings').doc(ADS_SLOTS_DOC);
+  const nextSlots = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(docRef);
+    const currentSlots =
+      (snap.exists && (snap.data() as any)?.slots && typeof (snap.data() as any).slots === 'object'
+        ? (snap.data() as any).slots
+        : {}) ?? {};
+    const merged: Record<string, AdsSlotEntry> = {};
+    for (const [key, value] of Object.entries(currentSlots)) {
+      merged[key] = normalizeSlotRecord(value);
+    }
+    const timestamp = Date.now();
+    for (const [key, update] of Object.entries(updates)) {
+      if (!key) continue;
+      merged[key] = {
+        enabled: Boolean(update.enabled),
+        updatedAt: timestamp,
+        updatedBy: update.updatedBy ?? null,
+      };
+    }
+    tx.set(docRef, { slots: merged }, { merge: true });
+    return merged;
+  });
+  return nextSlots;
+}
+
+type AdsTelemetryEventInput = {
+  type: string;
+  slotKey?: string | null;
+  placement?: string | null;
+  surface?: string | null;
+};
+
+function sanitizeTelemetryKey(value?: string | null): string | null {
+  if (!value) return null;
+  const normalized = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80);
+  return normalized || null;
+}
+
+export async function recordAdsTelemetryEvents(
+  events: AdsTelemetryEventInput[],
+): Promise<void> {
+  if (!Array.isArray(events) || events.length === 0) return;
+  const valid = events.filter((evt) => evt && typeof evt.type === 'string');
+  if (!valid.length) return;
+  const now = Date.now();
+  const dateId = new Date(now).toISOString().slice(0, 10);
+  const docRef = db.collection('telemetry').doc('ads').collection('daily').doc(dateId);
+
+  const counters = new Map<string, number>();
+  const bump = (field: string, value = 1) => {
+    if (!field) return;
+    counters.set(field, (counters.get(field) ?? 0) + value);
+  };
+
+  bump('totalEvents', valid.length);
+
+  for (const event of valid) {
+    const typeKey = sanitizeTelemetryKey(event.type) ?? 'unknown';
+    bump(`events.${typeKey}`);
+    const slotKey = sanitizeTelemetryKey(event.slotKey);
+    if (slotKey) {
+      bump(`slots.${slotKey}.total`);
+      bump(`slots.${slotKey}.${typeKey}`);
+    }
+    const placementKey = sanitizeTelemetryKey(event.placement || event.surface);
+    if (placementKey) {
+      bump(`placements.${placementKey}.total`);
+      bump(`placements.${placementKey}.${typeKey}`);
+    }
+  }
+
+  await db.runTransaction(async (tx) => {
+    const update: Record<string, any> = { updatedAt: now, dateId };
+    for (const [field, value] of counters.entries()) {
+      update[field] = FieldValue.increment(value);
+    }
+    tx.set(docRef, update, { merge: true });
+  });
+}
+
+export type AdsTelemetryCounts = Record<string, number>;
+
+export type AdsTelemetryPerKey = Record<string, AdsTelemetryCounts & { total?: number }>;
+
+export type AdsTelemetryDailyDoc = {
+  dateId: string;
+  totalEvents: number;
+  events: AdsTelemetryCounts;
+  slots: AdsTelemetryPerKey;
+  placements: AdsTelemetryPerKey;
+};
+
+function sanitizeCounts(value: any): AdsTelemetryCounts {
+  if (!value || typeof value !== 'object') return {};
+  const out: AdsTelemetryCounts = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+      out[key] = raw;
+    }
+  }
+  return out;
+}
+
+function sanitizePerKey(value: any): AdsTelemetryPerKey {
+  if (!value || typeof value !== 'object') return {};
+  const out: AdsTelemetryPerKey = {};
+  for (const [key, bucket] of Object.entries(value)) {
+    if (!bucket || typeof bucket !== 'object') continue;
+    out[key] = sanitizeCounts(bucket);
+  }
+  return out;
+}
+
+export async function readAdsTelemetryDays(limit = 7): Promise<AdsTelemetryDailyDoc[]> {
+  const safeLimit = Math.min(Math.max(limit, 1), 30);
+  const snap = await db
+    .collection('telemetry')
+    .doc('ads')
+    .collection('daily')
+    .orderBy('dateId', 'desc')
+    .limit(safeLimit)
+    .get();
+  const days: AdsTelemetryDailyDoc[] = [];
+  for (const doc of snap.docs) {
+    const data = (doc.data() as Record<string, any>) ?? {};
+    const dateId =
+      typeof data.dateId === 'string' && data.dateId.trim().length > 0
+        ? data.dateId.trim()
+        : doc.id;
+    days.push({
+      dateId,
+      totalEvents: typeof data.totalEvents === 'number' ? data.totalEvents : 0,
+      events: sanitizeCounts(data.events),
+      slots: sanitizePerKey(data.slots),
+      placements: sanitizePerKey(data.placements),
+    });
+  }
+  return days;
+}
+
 export async function incrementAppPlay(appId: string): Promise<void> {
   const ref = (await getExistingCollection('metrics')).doc(appId);
   await ref.set({ plays: FieldValue.increment(1) }, { merge: true });
@@ -789,6 +1014,140 @@ export type PaymentRecord = {
 
 export async function addPaymentRecord(data: PaymentRecord): Promise<void> {
   await (await getExistingCollection('payments')).doc(data.id).set(data, { merge: true });
+}
+
+export type DonationAliasStatus = 'pending' | 'confirmed' | 'anonymous';
+
+export type DonationRecord = {
+  id: string;
+  campaignId: string;
+  amount: number;
+  currency: string;
+  email?: string | null;
+  alias?: string | null;
+  aliasStatus: DonationAliasStatus;
+  aliasSetAt?: number;
+  createdAt: number;
+  updatedAt: number;
+  metadata?: Record<string, any>;
+};
+
+type DonationPaymentInput = {
+  paymentIntentId: string;
+  campaignId: string;
+  amount: number;
+  currency: string;
+  email?: string | null;
+  metadata?: Record<string, any>;
+};
+
+export async function recordDonationPayment(
+  data: DonationPaymentInput,
+): Promise<DonationRecord> {
+  const col = await getExistingCollection('donations');
+  const ref = col.doc(data.paymentIntentId);
+  let record: DonationRecord | undefined;
+  await db.runTransaction(async (t: any) => {
+    const snap = await t.get(ref);
+    const now = Date.now();
+    if (!snap.exists) {
+      const fresh: DonationRecord = {
+        id: data.paymentIntentId,
+        campaignId: data.campaignId,
+        amount: data.amount,
+        currency: data.currency,
+        email: data.email ?? null,
+        alias: null,
+        aliasStatus: 'pending',
+        createdAt: now,
+        updatedAt: now,
+        metadata: data.metadata,
+      };
+      t.set(ref, fresh);
+      record = fresh;
+      return;
+    }
+    const existing = snap.data() as DonationRecord;
+    const patch: Record<string, any> = {
+      campaignId: data.campaignId,
+      amount: data.amount,
+      currency: data.currency,
+      updatedAt: now,
+    };
+    if (data.email !== undefined) {
+      patch.email = data.email;
+    }
+    if (data.metadata) {
+      patch.metadata = data.metadata;
+    }
+    if (!existing.createdAt) {
+      patch.createdAt = now;
+    }
+    if (!existing.id) {
+      patch.id = data.paymentIntentId;
+    }
+    t.set(ref, patch, { merge: true });
+    record = {
+      ...existing,
+      ...patch,
+      id: existing.id || data.paymentIntentId,
+      createdAt: existing.createdAt || now,
+    };
+  });
+  if (!record) {
+    throw new Error('donation_record_failed');
+  }
+  return record;
+}
+
+export async function updateDonationAlias(
+  paymentIntentId: string,
+  aliasValue: string | null,
+  status: DonationAliasStatus,
+): Promise<DonationRecord> {
+  const ref = (await getExistingCollection('donations')).doc(paymentIntentId);
+  let record: DonationRecord | undefined;
+  await db.runTransaction(async (t: any) => {
+    const snap = await t.get(ref);
+    if (!snap.exists) {
+      throw new Error('donation_not_found');
+    }
+    const now = Date.now();
+    const existing = snap.data() as DonationRecord;
+    const patch: Record<string, any> = {
+      alias: aliasValue,
+      aliasStatus: status,
+      aliasSetAt: now,
+      updatedAt: now,
+    };
+    t.update(ref, patch);
+    record = { ...existing, ...patch };
+  });
+  if (!record) {
+    throw new Error('donation_alias_update_failed');
+  }
+  return record;
+}
+
+export async function getDonationByPaymentIntent(
+  paymentIntentId: string,
+): Promise<DonationRecord | undefined> {
+  const doc = await (await getExistingCollection('donations')).doc(paymentIntentId).get();
+  if (!doc.exists) return undefined;
+  return { id: doc.id, ...(doc.data() as DonationRecord) };
+}
+
+export async function listDonations(
+  options: { limit?: number; campaignId?: string } = {},
+): Promise<DonationRecord[]> {
+  const { limit = 500, campaignId } = options;
+  const col = await getExistingCollection('donations');
+  let query: any = col.orderBy('createdAt', 'desc');
+  if (campaignId) {
+    query = query.where('campaignId', '==', campaignId);
+  }
+  const snap = await query.limit(limit).get();
+  return snap.docs.map((doc: any) => ({ id: doc.id, ...(doc.data() as DonationRecord) }));
 }
 
 export type BillingEvent = {

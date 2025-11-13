@@ -83,6 +83,15 @@ export default function UserManagement() {
   });
 
   const handleClaimChange = async (user: User, claim: string, value: boolean) => {
+    if (claim === 'noAds') {
+      try {
+        await apiPost(`/admin/users/${user.uid}/no-ads`, { enabled: value }, { auth: true });
+      } catch (err) {
+        setError(tAdmin('users.updateFailed'));
+        console.error(err);
+        return;
+      }
+    }
     const newClaims = { ...user.customClaims };
     if (value) {
       newClaims[claim] = true;

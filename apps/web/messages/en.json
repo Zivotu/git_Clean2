@@ -16,6 +16,9 @@
     "terms": "Terms",
     "privacy": "Privacy",
     "faq": "FAQ",
+    "goldenBook": "Golden Book",
+    "donate": "Donate",
+    "donateCountdown": "{days} days left",
     "feedback": "Feedback",
     "docs": "Documentation",
     "tutorials": "Tutorials",
@@ -58,7 +61,16 @@
     },
     "Privacy": {
       "title": "Privacy Policy",
-      "body": "Your privacy is important to us. This page outlines how we handle your data."
+      "intro.title": "How we use your data",
+      "intro.body": "We collect only the information we need to run your Thesara account, deliver apps you create or play, and comply with applicable laws. We never sell personal data or share it with advertisers outside the integrations described below.",
+      "data.title": "What we collect",
+      "data.body": "Account identifiers (email, display name, profile photo) are stored so you can sign in and manage your creations. Usage diagnostics help us keep the platform reliable. Payment data is handled by Stripe and never stored on our servers.",
+      "adsense.title": "Google AdSense & cookies",
+      "adsense.body": "We show Google AdSense placements to users who have not purchased the No Ads add-on. Before we load the AdSense script we ask for your consent. If you decline, the script runs in non-personalised mode (npa=1) and only contextual ads are served. Users with active No Ads, Gold, Partner or Ambassador entitlements never load the script.",
+      "choices.title": "Your choices",
+      "choices.body": "You can accept or reject personalised ads via the consent banner at any time; we remember the choice in your browser so you do not have to repeat it. Paying for the No Ads add-on disables all ad slots across web and Play immediately.",
+      "contact.title": "Contact",
+      "contact.body": "Questions about privacy or consent can be sent to privacy@thesara.space. We will respond as soon as possible."
     },
     "Refunds": {
       "title": "Refund Policy",
@@ -239,6 +251,103 @@
     },
     "pagination": {
       "loadMore": "Load more"
+    },
+    "ads": {
+      "heading": "Ads system",
+      "description": "Toggle Google AdSense globally for anyone who does not own a No Ads entitlement.",
+      "refresh": "Refresh status",
+      "statusEnabled": "Ads enabled",
+      "statusDisabled": "Ads disabled globally",
+      "enableButton": "Enable ads",
+      "disableButton": "Disable ads",
+      "loading": "Loading ads configuration…",
+      "loadFailed": "Failed to load ads configuration.",
+      "saveFailed": "Failed to update ads configuration.",
+      "updatedAt": "Updated {time}",
+      "updatedBy": "Updated {time} by {uid}",
+      "slotsHeading": "Slot visibility",
+      "slotsDescription": "Enable or disable specific placements without redeploying. Slots with no ad unit ID will stay empty even if enabled.",
+      "slotsLoading": "Loading slot configuration…",
+      "slotsLoadFailed": "Failed to load slot configuration.",
+      "slotsSaveFailed": "Failed to update slot configuration.",
+      "noId": "No ad unit configured",
+      "slotsTable": {
+        "location": "Placement",
+        "envVar": "Env var",
+        "currentId": "Ad unit ID",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "slotsStatus": {
+        "enabled": "Enabled",
+        "disabled": "Disabled"
+      },
+      "slotsToggle": {
+        "enable": "Enable slot",
+        "disable": "Disable slot"
+      },
+      "slots": {
+        "playTopLabel": "Play top banner",
+        "playTopDescription": "Appears above the Play iframe shell.",
+        "playBottomLabel": "Play bottom banner",
+        "playBottomDescription": "Appears below the Play iframe shell.",
+        "appDetailHeaderLabel": "App detail header",
+        "appDetailHeaderDescription": "Large placement at the top of the app detail page.",
+        "appDetailInlineLabel": "App detail inline",
+        "appDetailInlineDescription": "Secondary slot within the detail body.",
+        "homeRailLeftLabel": "Home rail – left",
+        "homeRailLeftDescription": "Sticky card on the left sidebar (desktop only).",
+        "homeRailRightLabel": "Home rail – right",
+        "homeRailRightDescription": "Sticky card on the right sidebar (desktop only).",
+        "homeGridInlineLabel": "Home grid inline",
+        "homeGridInlineDescription": "Injects a card every 8 apps in the home grid.",
+        "homeFeedFooterLabel": "Home feed footer",
+        "homeFeedFooterDescription": "Full-width placement below the marketplace feed.",
+        "marketplaceGridInlineLabel": "Marketplace inline",
+        "marketplaceGridInlineDescription": "Injects a card every 8 apps in the /apps listing."
+      },
+      "telemetryHeading": "Ad telemetry (last {days} days)",
+      "telemetryDescription": "Rolling view of CMP decisions and slot delivery so we can react to regressions quickly.",
+      "telemetryRangeLabel": "Range",
+      "telemetryRangeOption": "{days} days",
+      "telemetryRefresh": "Refresh data",
+      "telemetryLoading": "Loading telemetry…",
+      "telemetryLoadFailed": "Failed to load telemetry data.",
+      "telemetryNoData": "No telemetry captured yet.",
+      "telemetryStats": {
+        "totalEvents": "Events total",
+        "consentGranted": "Consents granted",
+        "consentRejected": "Consents rejected",
+        "slotFills": "Slots filled"
+      },
+      "telemetry": {
+        "table": {
+          "headingSlots": "Top slots",
+          "headingPlacements": "Top placements",
+          "name": "Name",
+          "events": "Events",
+          "share": "Share",
+          "entries": "{count} entries",
+          "empty": "No data"
+        },
+        "eventLabels": {
+          "consent_prompt_shown": "Banner shown",
+          "consent_granted": "Consent granted",
+          "consent_rejected": "Consent rejected",
+          "consent_reset": "Consent reset",
+          "slot_render_attempt": "Slot render attempt",
+          "slot_render_filled": "Slot filled",
+          "slot_closed": "Slot closed"
+        },
+        "dailyHeading": "Daily breakdown",
+        "dailyEmpty": "No daily data yet"
+      }
+    },
+    "AdsConsent": {
+      "title": "Help us personalize your experience",
+      "description": "We use Google AdSense to keep Thesara sustainable. Choose whether we can show personalized ads or only basic, non-personalized ones.",
+      "accept": "Allow personalized ads",
+      "reject": "Show basic ads"
     },
     "adminSettings": {
       "heading": "Admin UI settings",
@@ -625,5 +734,44 @@
       "missingCredentials": "Enter a room name and PIN.",
       "generic": "Working with rooms is temporarily unavailable."
     }
+  },
+  "GoldenBookPage": {
+    "title": "Golden Book of Supporters",
+    "subtitle": "Every contribution keeps Thesara online and independent. Names stay in the book forever.",
+    "activeWindow": "Donations are open from {start} to {end}.",
+    "alwaysOpen": "Donations are open throughout this 90-day sprint.",
+    "closedWindow": "Donations are currently closed, but the Golden Book remains public.",
+    "listTitle": "Donors",
+    "empty": "No public donors yet. Be the first hero!",
+    "pendingBadge": "Awaiting alias",
+    "cta": "Donate now",
+    "ctaClosed": "Donations closed",
+    "aliasLink": "Already donated? Save your alias",
+    "permanentNote": "Entries stay visible forever, even after the sprint ends.",
+    "highlightToast": "Your name was just added!"
+  },
+  "DonateThankYou": {
+    "title": "Thank you for supporting Thesara",
+    "celebrationKicker": "You made our day",
+    "celebrationBody": "Your donation keeps the platform independent. Pick how your name appears and we will celebrate you in the Golden Book forever.",
+    "stepOne": "Enter your display name",
+    "stepTwo": "Jump to the Golden Book",
+    "aliasTitle": "How should we list you?",
+    "intro": "Choose how your name appears in the Golden Book. Leave it empty to stay anonymous.",
+    "missingPaymentIntent": "We could not detect a payment reference. Open the link from the Stripe email or contact support.",
+    "notFound": "Donation not found. Please refresh or contact support.",
+    "aliasLabel": "Display name",
+    "aliasPlaceholder": "e.g. Thesara Fan, Studio Kaktus…",
+    "aliasOptional": "Leaving the field empty will display “Anonymous donor”.",
+    "submit": "Save name",
+    "saving": "Saving…",
+    "success": "Alias saved! You are now in the Golden Book.",
+    "alreadySet": "Alias already saved. Thank you!",
+    "alreadySetHint": "Already have a name? Update it anytime and save again.",
+    "sessionResolving": "Hang tight—we’re matching your donation details…",
+    "sessionResolveFailed": "We couldn’t find that checkout session. Please open the link from the Stripe email again or contact support.",
+    "errorGeneric": "We could not save your alias. Please try again.",
+    "backHome": "Back to home",
+    "redirecting": "Redirecting you to the Golden Book…"
   }
 }

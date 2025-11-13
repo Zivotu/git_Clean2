@@ -69,6 +69,9 @@ Realizirano:
 - `apps/web/components/AdSlot.tsx` koristi useAds, closable wrapper i fallback kada slot nije konfiguriran te inicijalizira `adsbygoogle` samo jednom po mountu.
 - `apps/web/app/play/[appId]/PlayPageClient.tsx` dodaje gornji i donji slot oko iframea bez izmjena u mini aplikacijama.
 - `apps/web/app/app/page.tsx` prikazuje header slot (AD_SLOT_IDS.appDetailHeader) iznad sadržaja aplikacije.
+- `apps/web/app/HomeClient.tsx` uvodi rail slotove (lijevo/desno), inline grid slot svakih 8 kartica (`NEXT_PUBLIC_ADS_SLOT_HOME_GRID_INLINE`) i footer slot iza feeda – svi se prikazuju samo kada je ID definiran.
+- `apps/web/app/apps/page.tsx` (Marketplace) koristi isti inline pattern svakih 8 rezultata koristeći `NEXT_PUBLIC_ADS_SLOT_MARKETPLACE_GRID_INLINE`.
+- `.env*.example` datoteke dokumentiraju sve slot env varijable (`*_PLAY_*`, `*_APP_*`, `*_HOME_*`, `MARKETPLACE_*`) kako bi konfiguracija po okruženju bila trivijalna.
 
 Plan daljnjeg širenja:
 - Uvesti dodatne inline slotove (npr. unutar opisa, galerije ili preporuka) kada identificiramo sigurne pozicije.
@@ -79,11 +82,32 @@ Plan daljnjeg širenja:
 - Dodati osnovne formate: Responsive Display, po potrebi In‑article za feed/tekstualne dijelove.
 - Omogućiti granularno uključivanje/isključivanje po lokaciji kroz env ili jednostavan admin toggle (bez vlastite revenue statistike).
 
+Status (studeni 2025.): globalni toggle i administrativne kontrole su aktivne.
+
+Realizirano:
+- Firestore `settings/ads` dokument + rute (`GET /ads/config`, `POST /admin/ads/config`) omogućuju globalni kill-switch bez redeploya; API zadržava kompatibilnost s `NEXT_PUBLIC_ADS_DISABLED`.
+- `AdsProvider` dohvaća konfiguraciju i kombinira je s entitlementsima, pa se script/slot nikad ne učitavaju kad je sustav globalno isključen.
+- Admin nadzorna ploča (tab “Admins”) dobila je karticu za upravljanje oglasima s prikazom zadnje izmjene.
+- `UserManagement` koristi novu rutu `/admin/users/:uid/no-ads` koja kreira/uklanja stvarni `noAds` entitlement, pa administratori mogu ručno gasiti oglase pojedincima bez intervencije u Stripeu.
+- Firestore `settings/adsSlots` + `/ads/slots` rute i UI u adminu omogućuju uključivanje/isključivanje svake pojedine pozicije (Home rail, Play top/bottom, Marketplace inline…) bez izmjene koda; `AdsProvider` čita mapu i ne vraća ID kad je slot ugašen.
+
+Otvoreno:
+- Dodati per-slot konfiguracijsku tablicu i UI (enabl/disable) kako bismo mogli testirati pojedine lokacije bez mijenjanja koda.
+- Propagirati promjene konfiguracije u realnom vremenu (SSE ili revalidate na fokusu) ako korisnički feedback to zatraži.
+
 ### Faza 4 – Privatnost, consent i EU zahtjevi
 - Integrirati CMP (IAB TCF 2.2) ili provjeru pristanka.
 - Ako nema pristanka, postaviti non‑personalized ads:
   - `google_ad_personalization` ili `npa=1` parametarski pristup (ovisno o strategiji i odabranom CMP‑u).
 - Transparentno komunicirati korisnicima u politici privatnosti.
+
+Status (11.11.2025.): osnovni consent banner i ne-personalizirani mod implementirani.
+
+- `AdsConsentBanner` traži pristanak prije nego što se AdSense script uopće učita; korisnik može birati personalizirane ili osnovne oglase.
+- Odluka se sprema u `localStorage` i propagira kroz `AdsProvider`; kad je pristanak odbijen, `requestNonPersonalizedAds = 1` se postavlja prije učitavanja skripte.
+- Dok je status `unknown`, oglasi se uopće ne renderiraju.
+- Politika privatnosti (`/politika-privatnosti`) opisuje AdSense i opcije NoAds/privole na tri jezika pa su korisnici informirani prije prihvaćanja.
+- Sljedeći korak: zamjena custom bannera CMP-om kompatibilnim s IAB TCF 2.2 + ažuriranje politike/Terms stranica.
 
 ### Faza 5 – A/B testiranje i optimizacija
 - Postepeno testirati Auto Ads na nekim stranicama/sekcijama (page‑level), usporediti RPM/UX.

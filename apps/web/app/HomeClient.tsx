@@ -14,8 +14,11 @@ import { triggerConfetti, triggerHearts } from '@/components/Confetti';
 import { handleFetchError } from '@/lib/handleFetchError';
 import { apiFetch, apiGet, ApiError } from '@/lib/api';
 import AppCard, { type Listing } from '@/components/AppCard';
+import AdSlot from '@/components/AdSlot';
+import { useAds } from '@/components/AdsProvider';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { useI18n } from '@/lib/i18n-provider';
+import { AD_SLOT_IDS } from '@/config/ads';
 import type { Listing as ApiListing } from '@/lib/types';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { playHref, appDetailsHref } from '@/lib/urls';
@@ -67,6 +70,23 @@ function toCardListing(item: ApiListing): Listing {
 
 function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ');
+}
+
+type FeedEntry = { kind: 'app'; item: Listing } | { kind: 'ad'; key: string };
+
+function HomeAdsRail({ slotId, slotKey }: { slotId?: string; slotKey: string }) {
+  if (!slotId) return null;
+  return (
+    <div className="sticky top-28 space-y-4">
+      <AdSlot
+        slotId={slotId}
+        slotKey={slotKey}
+        placement={`home.${slotKey}`}
+        className="rounded-2xl border border-gray-200 bg-white/90 shadow-sm"
+        label="Advertisement"
+      />
+    </div>
+  );
 }
 
 type Point = { x: number; y: number };
@@ -391,9 +411,19 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const { isSlotEnabled } = useAds();
   const openDetails = useCallback((it: Listing) => setDetailsItem(it), []);
   const closeDetails = useCallback(() => setDetailsItem(null), []);
   const welcome = searchParams.get('welcome');
+  const homeRailLeftSlotRaw = (AD_SLOT_IDS.homeRailLeft || '').trim();
+  const homeRailRightSlotRaw = (AD_SLOT_IDS.homeRailRight || '').trim();
+  const homeGridInlineSlotRaw = (AD_SLOT_IDS.homeGridInline || '').trim();
+  const homeFeedFooterSlotRaw = (AD_SLOT_IDS.homeFeedFooter || '').trim();
+  const homeRailLeftSlot = isSlotEnabled('homeRailLeft') ? homeRailLeftSlotRaw : '';
+  const homeRailRightSlot = isSlotEnabled('homeRailRight') ? homeRailRightSlotRaw : '';
+  const homeGridInlineSlot = isSlotEnabled('homeGridInline') ? homeGridInlineSlotRaw : '';
+  const homeFeedFooterSlot = isSlotEnabled('homeFeedFooter') ? homeFeedFooterSlotRaw : '';
+  const shouldInjectGridAds = viewMode === 'grid' && homeGridInlineSlot.length > 0;
 
   // Load subscribed app ids to highlight cards
   useEffect(() => {
@@ -594,6 +624,21 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     return result;
   }, [items, q, selectedTags, sortBy]);
 
+  const gridEntries = useMemo<FeedEntry[]>(() => {
+    if (!shouldInjectGridAds) {
+      return processed.map((item) => ({ kind: 'app', item }));
+    }
+    const next: FeedEntry[] = [];
+    processed.forEach((item, index) => {
+      next.push({ kind: 'app', item });
+      const nextIndex = index + 1;
+      if (homeGridInlineSlot && nextIndex % 8 === 0 && nextIndex < processed.length) {
+        next.push({ kind: 'ad', key: `home-grid-ad-${index}` });
+      }
+    });
+    return next;
+  }, [processed, shouldInjectGridAds, homeGridInlineSlot]);
+
   const topLiked = useMemo(() => {
     const src = processed.length ? processed : items;
     const sorted = [...src].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
@@ -635,6 +680,16 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   }, [carouselIndex, topLiked.length]);
   const prevCarousel = useCallback(() => { setDisableTransition(false); setCarouselIndex((prev) => (prev > 0 ? prev - 1 : topLiked.length > 0 ? topLiked.length - 1 : 0)); }, [topLiked.length]);
   const nextCarousel = useCallback(() => { setDisableTransition(false); setCarouselIndex((prev) => prev + 1); }, []);
+
+  const cardsLayoutClass = cn(
+    viewMode === 'grid'
+      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'
+      : 'space-y-4',
+  );
+  const entriesToRender: FeedEntry[] =
+    viewMode === 'grid'
+      ? gridEntries
+      : processed.map((item) => ({ kind: 'app', item }));
 
   return (
     <div className="min-h-screen text-gray-900 bg-white">
@@ -744,48 +799,92 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
         {errorMessage && (<div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm">{errorMessage}</div>)}
       </section>
       <main className="max-w-7xl mx-auto px-4 pb-16">
-        {isLoading ? (
-          <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6' : 'space-y-4')}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-2xl overflow-hidden animate-pulse">
-                <div className="aspect-video bg-gray-100" />
-                <div className="p-4">
-                  <div className="h-6 bg-gray-100 rounded w-3/4 mb-2" />
-                  <div className="h-4 bg-gray-100 rounded w-full mb-4" />
-                  <div className="flex gap-2"><div className="h-4 bg-gray-100 rounded w-16" /><div className="h-4 bg-gray-100 rounded w-16" /></div>
+        <div className="xl:grid xl:grid-cols-[220px_minmax(0,1fr)_220px] xl:gap-6">
+          <div className="hidden xl:block">
+            <HomeAdsRail slotId={homeRailLeftSlot} slotKey="homeRailLeft" />
+          </div>
+          <div>
+            {isLoading ? (
+              <div className={cardsLayoutClass}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-2xl overflow-hidden animate-pulse">
+                    <div className="aspect-video bg-gray-100" />
+                    <div className="p-4">
+                      <div className="h-6 bg-gray-100 rounded w-3/4 mb-2" />
+                      <div className="h-4 bg-gray-100 rounded w-full mb-4" />
+                      <div className="flex gap-2"><div className="h-4 bg-gray-100 rounded w-16" /><div className="h-4 bg-gray-100 rounded w-16" /></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : processed.length ? (
+              <div className={cardsLayoutClass}>
+                {(() => {
+                  let renderedAppIndex = 0;
+                  return entriesToRender.map((entry) => {
+                    if (entry.kind === 'ad') {
+                      if (!homeGridInlineSlot) return null;
+                      return (
+                        <AdSlot
+                          key={entry.key}
+                          slotId={homeGridInlineSlot}
+                          slotKey="homeGridInline"
+                          placement="home.grid.inline"
+                          className="flex h-full items-center justify-center rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
+                          adStyle={{ minHeight: '250px' }}
+                          label="Advertisement"
+                        />
+                      );
+                    }
+                    const item = entry.item;
+                    const isFirst = renderedAppIndex === 0;
+                    renderedAppIndex += 1;
+                    return (
+                      <AppCard
+                        key={item.id}
+                        item={{ ...item, isSubscribed: subscribed.has(item.id) }}
+                        toggleLike={toggleLike}
+                        busy={busy}
+                        viewMode={viewMode}
+                        onDetails={openDetails}
+                        priority={isFirst}
+                      />
+                    );
+                  });
+                })()}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <h3 className="text-2xl font-bold text-gray-900">{tHome('noApps')}</h3>
+                <p className="mt-2 text-gray-500">{q || selectedTags.length ? tHome('tryAdjust') : tHome('beFirst')}</p>
+                <div className="mt-6">
+                  <Link href="/create" onClick={handlePublishClick} className="px-5 py-2.5 rounded-lg bg-emerald-500 text-white font-medium transition hover:bg-emerald-600" title="Publish your first app">{tHome('publish')}</Link>
                 </div>
               </div>
-            ))}
+            )}
+            {errorDetails && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-red-700">{errorDetails}</p>
+                <button onClick={() => load()} className="mt-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600">{tToast('retry')}</button>
+              </div>
+            )}
+            {homeFeedFooterSlot && (
+              <div className="mt-10">
+                <AdSlot
+                  slotId={homeFeedFooterSlot}
+                  slotKey="homeFeedFooter"
+                  placement="home.feed.footer"
+                  className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
+                  adStyle={{ minHeight: '300px' }}
+                  label="Advertisement"
+                />
+              </div>
+            )}
           </div>
-        ) : processed.length ? (
-          <div className={cn(viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6' : 'space-y-4')}>
-            {processed.map((item, i) => (
-              <AppCard
-                key={item.id}
-                item={{ ...item, isSubscribed: subscribed.has(item.id) }}
-                toggleLike={toggleLike}
-                busy={busy}
-                viewMode={viewMode}
-                onDetails={openDetails}
-                priority={i === 0}
-              />
-            ))}
+          <div className="hidden xl:block">
+            <HomeAdsRail slotId={homeRailRightSlot} slotKey="homeRailRight" />
           </div>
-        ) : (
-          <div className="text-center py-20">
-            <h3 className="text-2xl font-bold text-gray-900">{tHome('noApps')}</h3>
-            <p className="mt-2 text-gray-500">{q || selectedTags.length ? tHome('tryAdjust') : tHome('beFirst')}</p>
-            <div className="mt-6">
-              <Link href="/create" onClick={handlePublishClick} className="px-5 py-2.5 rounded-lg bg-emerald-500 text-white font-medium transition hover:bg-emerald-600" title="Publish your first app">{tHome('publish')}</Link>
-            </div>
-          </div>
-        )}
-        {errorDetails && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-red-700">{errorDetails}</p>
-            <button onClick={() => load()} className="mt-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600">{tToast('retry')}</button>
-          </div>
-        )}
+        </div>
       </main>
       <footer className="border-t bg-white">
         <div className="relative max-w-7xl mx-auto px-4 py-12 text-sm text-gray-500">

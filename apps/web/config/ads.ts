@@ -5,6 +5,11 @@ export const AD_SLOT_IDS = {
   playBottom: process.env.NEXT_PUBLIC_ADS_SLOT_PLAY_BOTTOM ?? '',
   appDetailHeader: process.env.NEXT_PUBLIC_ADS_SLOT_APP_HEADER ?? '',
   appDetailInline: process.env.NEXT_PUBLIC_ADS_SLOT_APP_INLINE ?? '',
+  homeRailLeft: process.env.NEXT_PUBLIC_ADS_SLOT_HOME_RAIL_LEFT ?? '',
+  homeRailRight: process.env.NEXT_PUBLIC_ADS_SLOT_HOME_RAIL_RIGHT ?? '',
+  homeGridInline: process.env.NEXT_PUBLIC_ADS_SLOT_HOME_GRID_INLINE ?? '',
+  homeFeedFooter: process.env.NEXT_PUBLIC_ADS_SLOT_HOME_FEED_FOOTER ?? '',
+  marketplaceGridInline: process.env.NEXT_PUBLIC_ADS_SLOT_MARKETPLACE_GRID_INLINE ?? '',
 } as const;
 
 export type AdSlotKey = keyof typeof AD_SLOT_IDS;
