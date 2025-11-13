@@ -37,7 +37,7 @@ type NormalizedEvent = Required<Pick<AdsTelemetryEvent, 'type'>> &
 const BATCH_SIZE = 12;
 const FLUSH_INTERVAL_MS = 3000;
 let queue: NormalizedEvent[] = [];
-let timer: ReturnType<typeof setTimeout> | null = null;
+let timer: number | null = null;
 let listenersAttached = false;
 let flushing = false;
 
@@ -135,8 +135,8 @@ async function sendBatch(batch: NormalizedEvent[], reason: 'timer' | 'batch' | '
 
 export async function flushAdsTelemetryQueue(reason: 'timer' | 'batch' | 'unload' = 'timer') {
   if (!queue.length) return;
-  if (timer) {
-    clearTimeout(timer);
+  if (timer && typeof window !== 'undefined') {
+    window.clearTimeout(timer);
     timer = null;
   }
   const batch = queue.splice(0, queue.length);
@@ -160,4 +160,3 @@ export function logAdsTelemetry(event: AdsTelemetryEvent) {
   }
   scheduleFlush();
 }
-

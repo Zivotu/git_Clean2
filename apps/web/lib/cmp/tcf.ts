@@ -14,14 +14,27 @@ type TcfData = {
 
 type TcfCallback = (tcData: TcfData, success: boolean) => void;
 
+type WindowTcfApi = {
+  (command: 'addEventListener', version: number, callback: TcfCallback): number;
+  (
+    command: 'removeEventListener',
+    version: number,
+    callback: (success: boolean, result: boolean) => void,
+    parameter: number | { listenerId?: number },
+  ): void;
+  (command: 'getTCData', version: number, callback: TcfCallback): void;
+  (command: 'ping', version: number, callback: (tcData: any, success: boolean) => void): void;
+  (
+    command: string,
+    version: number,
+    callback: (tcData: any, success: boolean) => void,
+    parameter?: any,
+  ): number | void;
+};
+
 declare global {
   interface Window {
-    __tcfapi?: (
-      command: string,
-      version: number,
-      callback: (tcData: any, success: boolean) => void,
-      parameter?: any,
-    ) => void;
+    __tcfapi?: WindowTcfApi;
   }
 }
 
@@ -135,7 +148,7 @@ function registerGlobalApi() {
 
   if (typeof window === 'undefined') return;
 
-  window.__tcfapi = (command, _version, callback, parameter) => {
+  const tcfApi = ((command: string, _version: number, callback: any, parameter?: any) => {
     switch (command) {
       case 'addEventListener': {
         const id = ++listenerSeq;
@@ -173,7 +186,9 @@ function registerGlobalApi() {
         callback(null, false);
       }
     }
-  };
+  }) as WindowTcfApi;
+
+  window.__tcfapi = tcfApi;
 }
 
 export function ensureTcfApi() {

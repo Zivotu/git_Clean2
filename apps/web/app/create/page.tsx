@@ -9,6 +9,7 @@ import {
   ChangeEvent,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { apiAuthedPost, ApiError, apiPost } from '@/lib/api';
 import { useAuth, getDisplayName } from '@/lib/auth';
@@ -886,8 +887,14 @@ export default function CreatePage() {
                               : 'border-gray-200'
                           }`}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={preset} alt="preset" className="aspect-video w-full object-cover" />
+                          <Image
+                            src={preset}
+                            alt="preset"
+                            width={1280}
+                            height={720}
+                            className="aspect-video w-full object-cover"
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          />
                           {!!overlayTitle.trim() && (
                             <div className="absolute inset-x-0 bottom-0 break-words bg-slate-900/80 px-3 py-1.5 text-center text-xs font-semibold text-white leading-snug">
                               {overlayTitle.trim().slice(0, overlayMaxChars)}
@@ -900,11 +907,12 @@ export default function CreatePage() {
 
                   <div className="overflow-hidden rounded-xl border border-gray-200">
                     <div className="relative aspect-video bg-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={previewDisplayUrl}
                         alt="App preview"
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover"
                       />
                       {!!overlayTitle.trim() && (
                         <div className="absolute inset-x-0 bottom-0 break-words bg-slate-900/80 px-4 py-2 text-center text-sm font-semibold text-white leading-snug">
@@ -1167,8 +1175,14 @@ export default function CreatePage() {
             <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-5">
               <h3 className="mb-3 font-semibold">Preview</h3>
               <div className="overflow-hidden rounded-lg border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={previewDisplayUrl} alt="preview" className="aspect-video w-full object-cover" />
+                <Image
+                  src={previewDisplayUrl}
+                  alt="preview"
+                  width={1280}
+                  height={720}
+                  className="aspect-video w-full object-cover"
+                  sizes="(max-width: 768px) 100vw, 400px"
+                />
               </div>
             </section>
 

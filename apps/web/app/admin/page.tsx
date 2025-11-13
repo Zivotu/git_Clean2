@@ -530,7 +530,7 @@ export default function AdminDashboard() {
     return () => {
       cancelled = true;
     };
-  }, [isAdmin]);
+  }, [isAdmin, tAdmin]);
 
   const handleRefreshAllowed = useCallback(async () => {
     if (!isAdmin) return;
@@ -545,7 +545,7 @@ export default function AdminDashboard() {
     } finally {
       setAdminSettingsLoading(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, tAdmin]);
 
   const handleAddAdminEmail = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {

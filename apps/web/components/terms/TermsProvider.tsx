@@ -32,6 +32,7 @@ const TermsContext = createContext<TermsContextValue>({
 
 export function TermsProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
+  const userId = user?.uid ?? null;
   const [status, setStatus] = useState<TermsStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [enforceError, setEnforceError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export function TermsProvider({ children }: { children: ReactNode }) {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!user) {
+    if (!userId) {
       setStatus(null);
       return;
     }
@@ -53,25 +54,25 @@ export function TermsProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user?.uid]);
+  }, [userId]);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setStatus(null);
       return;
     }
     void refresh();
-  }, [user?.uid, refresh]);
+  }, [userId, refresh]);
 
   const accept = useCallback(
     async (source?: string) => {
-      if (!user) {
+      if (!userId) {
         throw new Error('auth_required');
       }
       await acceptTerms({ source });
       await refresh();
     },
-    [user?.uid, refresh],
+    [userId, refresh],
   );
 
   const shouldEnforce =
