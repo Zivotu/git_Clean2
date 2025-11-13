@@ -381,7 +381,11 @@ async function ensureQueue(): Promise<Queue | null> {
   return bundleBuildQueue;
 }
 
-export async function enqueueBundleBuild(buildId: string, zipPath: string): Promise<string> {
+export async function enqueueBundleBuild(
+  buildId: string,
+  zipPath: string,
+  opts?: { llmApiKey?: string },
+): Promise<string> {
   if (process.env.CREATEX_WORKER_ENABLED !== 'true') {
     // Assuming same env var controls this worker
     throw new Error('Build queue is disabled');
@@ -390,11 +394,20 @@ export async function enqueueBundleBuild(buildId: string, zipPath: string): Prom
   if (!queue) {
     throw new Error('Build queue is disabled');
   }
-  await queue.add('build-bundle', { buildId, zipPath }, { removeOnComplete: true, removeOnFail: 1000 });
+  await queue.add(
+    'build-bundle',
+    { buildId, zipPath, llmApiKey: opts?.llmApiKey },
+    { removeOnComplete: true, removeOnFail: 1000 },
+  );
   return buildId;
 }
 
-async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<void> {
+async function runBundleBuildProcess(
+  buildId: string,
+  zipPath: string,
+  options?: { llmApiKey?: string },
+): Promise<void> {
+  const llmApiKey = options?.llmApiKey?.trim() ? options.llmApiKey.trim() : undefined;
   const baseDir = getBuildDir(buildId);
   const workspaceDir = path.join(baseDir, 'workspace');
   const buildDir = path.join(baseDir, 'build');
@@ -551,12 +564,23 @@ async function runBundleBuildProcess(buildId: string, zipPath: string): Promise<
     try {
       let html = await fs.readFile(indexPath, 'utf8');
       const listingId = (await getBuildData(buildId))?.listingId;
+      const aiSnippet = llmApiKey
+        ? `
+          window.__THESARA_AI_API_KEY__ = ${JSON.stringify(llmApiKey)};
+          window.thesara.ai = Object.assign({}, window.thesara.ai, {
+            apiKey: ${JSON.stringify(llmApiKey)},
+            provider: 'user',
+            updatedAt: new Date().toISOString(),
+          });
+        `
+        : '';
       const shimScript = `
         <script>
           window.__THESARA_APP_NS = ${JSON.stringify('app:' + String(listingId))};
           window.__THESARA_APP_ID__ = ${JSON.stringify(String(listingId))};
           window.thesara = window.thesara || {};
           window.thesara.app = Object.assign({}, window.thesara.app, { id: ${JSON.stringify(String(listingId))} });
+          ${aiSnippet}
         </script>
         <script type="module" src="/shims/rooms.js"></script>
         <script type="module" src="/shims/storage.js"></script>
@@ -606,13 +630,17 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
     const worker = new Worker(
       BUNDLE_BUILD_QUEUE_NAME,
       async (job) => {
-        const { buildId, zipPath } = job.data as { buildId: string; zipPath: string };
+        const { buildId, zipPath, llmApiKey } = job.data as {
+          buildId: string;
+          zipPath: string;
+          llmApiKey?: string;
+        };
         console.log(`[bundle-worker] Processing job: ${buildId}`);
         try {
           sseEmitter.emit(buildId, 'status', { status: 'bundling' });
           await updateBuild(buildId, { state: 'build', progress: 20, error: undefined });
 
-          await runBundleBuildProcess(buildId, zipPath);
+          await runBundleBuildProcess(buildId, zipPath, { llmApiKey });
 
           await updateBuild(buildId, { state: 'pending_review', progress: 100 });
           

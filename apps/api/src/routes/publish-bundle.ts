@@ -111,6 +111,8 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     // TODO: Extract metadata from other form fields
     const title = (data.fields.title as any)?.value || 'Untitled Bundle';
     const appId = (data.fields.id as any)?.value;
+    const llmApiKeyRaw = ((data.fields.llmApiKey as any)?.value || '').toString().trim();
+    const llmApiKey = llmApiKeyRaw ? llmApiKeyRaw.slice(0, 400) : undefined;
 
     // 2. Authentication & Authorization (copied from publish.ts)
     const apps = await readApps();
@@ -181,7 +183,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       req.log?.warn?.({ err, buildId }, 'publish-bundle:build_info_write_failed');
     }
 
-    await enqueueBundleBuild(buildId, zipPath);
+    await enqueueBundleBuild(buildId, zipPath, { llmApiKey });
     req.log.info({ buildId }, 'publish-bundle:build_enqueued');
 
     // 7. Create slug, version, and update app record
