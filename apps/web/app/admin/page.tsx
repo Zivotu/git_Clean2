@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from 'react';
@@ -16,8 +16,6 @@ import Tabs from '@/components/Tabs';
 import AmbassadorProgram from '@/components/AmbassadorProgram';
 import { fetchAllowedAdminEmails, saveAllowedAdminEmails } from '@/lib/adminAccess';
 import { useI18n } from '@/lib/i18n-provider';
-import { normalizeAdsSettings, type AdsSettings, normalizeAdsSlots, type AdsSlotConfig } from '@/lib/ads';
-import { AD_SLOT_IDS, type AdSlotKey } from '@/config/ads';
 
 async function buildHeaders(withJson: boolean): Promise<Record<string, string>> {
   const headers: Record<string, string> = withJson
@@ -80,32 +78,6 @@ type ReviewItem = {
   };
 };
 
-type AdsTelemetryBucket = {
-  total: number;
-  breakdown: Record<string, number>;
-};
-
-type AdsTelemetryDay = {
-  dateId: string;
-  totalEvents: number;
-  events: Record<string, number>;
-  slots: Record<string, Record<string, number>>;
-  placements: Record<string, Record<string, number>>;
-};
-
-type AdsTelemetryResponse = {
-  rangeDays: number;
-  days: AdsTelemetryDay[];
-  totals: {
-    events: {
-      total: number;
-      breakdown: Record<string, number>;
-    };
-    slots: Record<string, AdsTelemetryBucket>;
-    placements: Record<string, AdsTelemetryBucket>;
-  };
-};
-
 type BuildState =
   | 'queued'
   | 'init'
@@ -133,70 +105,6 @@ type AdminTabKey = 'apps' | 'users' | 'ambassador' | 'admins' | 'emailTemplates'
 const reviewStatuses = ['all', 'pending', 'approved', 'rejected', 'deleted'] as const;
 type ReviewStatus = (typeof reviewStatuses)[number];
 
-type SlotDefinition = {
-  key: AdSlotKey;
-  env: string;
-  labelKey: string;
-  descriptionKey: string;
-};
-
-const SLOT_DEFINITIONS: SlotDefinition[] = [
-  {
-    key: 'playTop',
-    env: 'NEXT_PUBLIC_ADS_SLOT_PLAY_TOP',
-    labelKey: 'playTopLabel',
-    descriptionKey: 'playTopDescription',
-  },
-  {
-    key: 'playBottom',
-    env: 'NEXT_PUBLIC_ADS_SLOT_PLAY_BOTTOM',
-    labelKey: 'playBottomLabel',
-    descriptionKey: 'playBottomDescription',
-  },
-  {
-    key: 'appDetailHeader',
-    env: 'NEXT_PUBLIC_ADS_SLOT_APP_HEADER',
-    labelKey: 'appDetailHeaderLabel',
-    descriptionKey: 'appDetailHeaderDescription',
-  },
-  {
-    key: 'appDetailInline',
-    env: 'NEXT_PUBLIC_ADS_SLOT_APP_INLINE',
-    labelKey: 'appDetailInlineLabel',
-    descriptionKey: 'appDetailInlineDescription',
-  },
-  {
-    key: 'homeRailLeft',
-    env: 'NEXT_PUBLIC_ADS_SLOT_HOME_RAIL_LEFT',
-    labelKey: 'homeRailLeftLabel',
-    descriptionKey: 'homeRailLeftDescription',
-  },
-  {
-    key: 'homeRailRight',
-    env: 'NEXT_PUBLIC_ADS_SLOT_HOME_RAIL_RIGHT',
-    labelKey: 'homeRailRightLabel',
-    descriptionKey: 'homeRailRightDescription',
-  },
-  {
-    key: 'homeGridInline',
-    env: 'NEXT_PUBLIC_ADS_SLOT_HOME_GRID_INLINE',
-    labelKey: 'homeGridInlineLabel',
-    descriptionKey: 'homeGridInlineDescription',
-  },
-  {
-    key: 'homeFeedFooter',
-    env: 'NEXT_PUBLIC_ADS_SLOT_HOME_FEED_FOOTER',
-    labelKey: 'homeFeedFooterLabel',
-    descriptionKey: 'homeFeedFooterDescription',
-  },
-  {
-    key: 'marketplaceGridInline',
-    env: 'NEXT_PUBLIC_ADS_SLOT_MARKETPLACE_GRID_INLINE',
-    labelKey: 'marketplaceGridInlineLabel',
-    descriptionKey: 'marketplaceGridInlineDescription',
-  },
-];
-
 const ACCESS_DENIED_ERROR = 'access_denied';
 
 
@@ -210,7 +118,7 @@ function BuildTimeline({ buildId }: { buildId: string }) {
   const { events, status, error } = useBuildSse(`${API}/review/builds/${buildId}/events`);
   return (
     <div className="mt-3 border rounded p-3">
-      <div className="text-sm opacity-70">SSE: {status}{error ? ` â€” ${error}` : ''}</div>
+      <div className="text-sm opacity-70">SSE: {status}{error ? ` — ${error}` : ''}</div>
       <ol className="mt-2 space-y-1 text-sm">
         {events.map(e => (
           <li key={`${e.at}-${e.type}-${e.payload?.status || ''}`}>
@@ -221,7 +129,7 @@ function BuildTimeline({ buildId }: { buildId: string }) {
             </span>
           </li>
         ))}
-        {events.length === 0 && status === 'streaming' && <li className="text-xs text-gray-500">ÄŒekam na dogaÄ‘aje...</li>}
+        {events.length === 0 && status === 'streaming' && <li className="text-xs text-gray-500">Čekam na događaje...</li>}
         {status === 'connecting' && <li className="text-xs text-gray-500">Povezujem se na SSE...</li>}
       </ol>
     </div>
@@ -261,18 +169,6 @@ export default function AdminDashboard() {
   const [adminSettingsError, setAdminSettingsError] = useState<string | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
   const [adminTab, setAdminTab] = useState<AdminTabKey>('apps');
-  const [slotConfig, setSlotConfig] = useState<AdsSlotConfig>({});
-  const [slotConfigLoading, setSlotConfigLoading] = useState(false);
-  const [slotConfigSavingKey, setSlotConfigSavingKey] = useState<string | null>(null);
-  const [slotConfigError, setSlotConfigError] = useState<string | null>(null);
-  const [adsTelemetryRange, setAdsTelemetryRange] = useState(7);
-  const [adsTelemetry, setAdsTelemetry] = useState<AdsTelemetryResponse | null>(null);
-  const [adsTelemetryLoading, setAdsTelemetryLoading] = useState(false);
-  const [adsTelemetryError, setAdsTelemetryError] = useState<string | null>(null);
-  const [adsSettings, setAdsSettings] = useState<AdsSettings | null>(null);
-  const [adsSettingsLoading, setAdsSettingsLoading] = useState(false);
-  const [adsSettingsSaving, setAdsSettingsSaving] = useState(false);
-  const [adsSettingsError, setAdsSettingsError] = useState<string | null>(null);
   // Email templates editor state
   const [templates, setTemplates] = useState<Array<{ id: string; subject?: string; body?: string; description?: string }>>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
@@ -313,16 +209,6 @@ export default function AdminDashboard() {
     [tAdmin],
   );
 
-  const slotRows = useMemo(
-    () =>
-      SLOT_DEFINITIONS.map((def) => ({
-        ...def,
-        label: tAdmin(`ads.slots.${def.labelKey}`),
-        description: tAdmin(`ads.slots.${def.descriptionKey}`),
-      })),
-    [tAdmin],
-  );
-
   const statusFilters = useMemo<Record<ReviewStatus, string>>(
     () => ({
       all: tAdmin('filters.status.all'),
@@ -333,239 +219,6 @@ export default function AdminDashboard() {
     }),
     [tAdmin],
   );
-
-  const telemetryEventLabels = useMemo(
-    () => ({
-      consent_prompt_shown: tAdmin('ads.telemetry.eventLabels.consent_prompt_shown'),
-      consent_granted: tAdmin('ads.telemetry.eventLabels.consent_granted'),
-      consent_rejected: tAdmin('ads.telemetry.eventLabels.consent_rejected'),
-      consent_reset: tAdmin('ads.telemetry.eventLabels.consent_reset'),
-      slot_render_attempt: tAdmin('ads.telemetry.eventLabels.slot_render_attempt'),
-      slot_render_filled: tAdmin('ads.telemetry.eventLabels.slot_render_filled'),
-      slot_closed: tAdmin('ads.telemetry.eventLabels.slot_closed'),
-    }),
-    [tAdmin],
-  );
-
-  const getTelemetryEventLabel = useCallback(
-    (key: string) => telemetryEventLabels[key] ?? key,
-    [telemetryEventLabels],
-  );
-
-  const telemetryStats = useMemo(() => {
-    const totals = adsTelemetry?.totals;
-    const breakdown = totals?.events.breakdown ?? {};
-    return [
-      {
-        key: 'total',
-        label: tAdmin('ads.telemetry.stats.totalEvents'),
-        value: totals?.events.total ?? 0,
-      },
-      {
-        key: 'granted',
-        label: tAdmin('ads.telemetry.stats.consentGranted'),
-        value: breakdown.consent_granted ?? 0,
-      },
-      {
-        key: 'rejected',
-        label: tAdmin('ads.telemetry.stats.consentRejected'),
-        value: breakdown.consent_rejected ?? 0,
-      },
-      {
-        key: 'filled',
-        label: tAdmin('ads.telemetry.stats.slotFills'),
-        value: breakdown.slot_render_filled ?? 0,
-      },
-    ];
-  }, [adsTelemetry, tAdmin]);
-
-  const slotTopEntries = useMemo(() => {
-    if (!adsTelemetry) return [];
-    return Object.entries(adsTelemetry.totals.slots || {})
-      .sort((a, b) => (b[1]?.total ?? 0) - (a[1]?.total ?? 0))
-      .slice(0, 5);
-  }, [adsTelemetry]);
-
-  const placementTopEntries = useMemo(() => {
-    if (!adsTelemetry) return [];
-    return Object.entries(adsTelemetry.totals.placements || {})
-      .sort((a, b) => (b[1]?.total ?? 0) - (a[1]?.total ?? 0))
-      .slice(0, 5);
-  }, [adsTelemetry]);
-
-  const slotTotalsSum = useMemo(() => {
-    if (!adsTelemetry) return 0;
-    return Object.values(adsTelemetry.totals.slots || {}).reduce(
-      (acc, bucket) => acc + (bucket?.total ?? 0),
-      0,
-    );
-  }, [adsTelemetry]);
-
-  const placementTotalsSum = useMemo(() => {
-    if (!adsTelemetry) return 0;
-    return Object.values(adsTelemetry.totals.placements || {}).reduce(
-      (acc, bucket) => acc + (bucket?.total ?? 0),
-      0,
-    );
-  }, [adsTelemetry]);
-
-  const telemetryDays = useMemo(() => {
-    if (!adsTelemetry) return [];
-    return [...adsTelemetry.days];
-  }, [adsTelemetry]);
-
-  const formatShare = useCallback((value: number, total: number) => {
-    if (!total) return '--';
-    return `${((value / total) * 100).toFixed(1)}%`;
-  }, []);
-
-  const formatTelemetryDate = useCallback((dateId: string) => {
-    const ts = Date.parse(`${dateId}T00:00:00Z`);
-    if (Number.isNaN(ts)) return dateId;
-    return new Date(ts).toLocaleDateString();
-  }, []);
-
-  const renderTelemetryTable = useCallback(
-    (title: string, entries: Array<[string, AdsTelemetryBucket]>, totalPool: number) => (
-      <div className="rounded-lg border border-gray-200 p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-          <span className="text-xs text-gray-500">
-            {tAdmin('ads.telemetry.table.entries', { count: entries.length })}
-          </span>
-        </div>
-        {entries.length === 0 ? (
-          <p className="text-sm text-gray-500">{tAdmin('ads.telemetry.table.empty')}</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="py-1 pr-2">{tAdmin('ads.telemetry.table.name')}</th>
-                <th className="py-1 pr-2">{tAdmin('ads.telemetry.table.events')}</th>
-                <th className="py-1 text-right">{tAdmin('ads.telemetry.table.share')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {entries.map(([key, bucket]) => (
-                <tr key={key} className="border-t border-gray-100 text-gray-900">
-                  <td className="py-1 pr-2 font-medium">{key}</td>
-                  <td className="py-1 pr-2">{(bucket?.total ?? 0).toLocaleString()}</td>
-                  <td className="py-1 text-right text-xs text-gray-500">
-                    {formatShare(bucket?.total ?? 0, totalPool)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    ),
-    [formatShare, tAdmin],
-  );
-
-  const loadSlotConfig = useCallback(async () => {
-    setSlotConfigLoading(true);
-    setSlotConfigError(null);
-    try {
-      const resp = await apiGet('/ads/slots', { auth: true });
-      setSlotConfig(normalizeAdsSlots(resp));
-    } catch (err) {
-      console.error(err);
-      setSlotConfigError(tAdmin('ads.slotsLoadFailed'));
-    }
-    setSlotConfigLoading(false);
-  }, [tAdmin]);
-
-  const handleToggleSlot = useCallback(
-    async (key: string, enabled: boolean) => {
-      setSlotConfigSavingKey(key);
-      setSlotConfigError(null);
-      try {
-        const updated = await apiPost(
-          '/admin/ads/slots',
-          { slots: [{ key, enabled }] },
-          { auth: true },
-        );
-        setSlotConfig(normalizeAdsSlots(updated));
-      } catch (err) {
-        console.error(err);
-        setSlotConfigError(tAdmin('ads.slotsSaveFailed'));
-      }
-      setSlotConfigSavingKey(null);
-    },
-    [tAdmin],
-  );
-
-  const loadAdsSettings = useCallback(async () => {
-    setAdsSettingsLoading(true);
-    setAdsSettingsError(null);
-    try {
-      const json = await apiGet('/ads/config', { auth: true });
-      setAdsSettings(normalizeAdsSettings(json));
-    } catch (err) {
-      console.error(err);
-      setAdsSettingsError(tAdmin('ads.loadFailed'));
-    } finally {
-      setAdsSettingsLoading(false);
-    }
-  }, [tAdmin]);
-
-  const handleToggleAds = useCallback(
-    async (disabled: boolean) => {
-      setAdsSettingsSaving(true);
-      setAdsSettingsError(null);
-      try {
-        const json = await apiPost(
-          '/admin/ads/config',
-          { disabled },
-          { auth: true },
-        );
-        setAdsSettings(normalizeAdsSettings(json));
-      } catch (err) {
-        console.error(err);
-        setAdsSettingsError(tAdmin('ads.saveFailed'));
-      } finally {
-        setAdsSettingsSaving(false);
-      }
-    },
-    [tAdmin],
-  );
-
-  const loadAdsTelemetry = useCallback(
-    async (rangeValue: number) => {
-      if (!isAdmin) {
-        setAdsTelemetry(null);
-        return;
-      }
-      setAdsTelemetryLoading(true);
-      setAdsTelemetryError(null);
-      try {
-        const query = new URLSearchParams({ range: String(rangeValue) }).toString();
-        const data = await apiGet<AdsTelemetryResponse>(`/admin/ads/telemetry?${query}`, {
-          auth: true,
-        });
-        setAdsTelemetry(data);
-      } catch (err) {
-        console.error(err);
-        setAdsTelemetryError(tAdmin('ads.telemetryLoadFailed'));
-      } finally {
-        setAdsTelemetryLoading(false);
-      }
-    },
-    [isAdmin, tAdmin],
-  );
-
-  useEffect(() => {
-    loadAdsSettings().catch(() => {});
-  }, [loadAdsSettings]);
-
-  useEffect(() => {
-    if (!isAdmin) {
-      setAdsTelemetry(null);
-      return;
-    }
-    loadAdsTelemetry(adsTelemetryRange).catch(() => {});
-  }, [adsTelemetryRange, isAdmin, loadAdsTelemetry]);
 
   const getFriendlyError = useCallback(
     (code?: string | null) => {
@@ -879,11 +532,6 @@ export default function AdminDashboard() {
     };
   }, [isAdmin]);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    loadSlotConfig();
-  }, [isAdmin, loadSlotConfig]);
-
   const handleRefreshAllowed = useCallback(async () => {
     if (!isAdmin) return;
     setAdminSettingsLoading(true);
@@ -1169,7 +817,7 @@ const confirmDialog = confirmAction
         <Tabs tabs={adminTabs} activeTab={adminTab} onTabChange={(tab) => setAdminTab(tab as AdminTabKey)}>
           {adminTab === 'apps' && (
             <>
-              {/* Ambassador program quick access removed â€” separate tab exists */}
+              {/* Ambassador program quick access removed — separate tab exists */}
               <div className="flex gap-4">
                 {reviewStatuses.map((t) => (
                   <button
@@ -1428,301 +1076,13 @@ const confirmDialog = confirmAction
           )}
                   {adminTab === 'users' && <UserManagement />}
                   {adminTab === 'ambassador' && <AmbassadorProgram />}
-          {adminTab === 'admins' && (
-            <div className="space-y-6">
-              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">{tAdmin('ads.heading')}</h2>
-                    <p className="text-sm text-gray-500">
-                      {tAdmin('ads.description')}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => loadAdsSettings()}
-                    disabled={adsSettingsLoading || adsSettingsSaving}
-                    className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    {tAdmin('ads.refresh')}
-                  </button>
-                </div>
-                {adsSettingsError && (
-                  <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-                    {adsSettingsError}
-                  </div>
-                )}
-                <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-col gap-1">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                        adsSettings?.disabled
-                          ? 'bg-rose-100 text-rose-700'
-                          : 'bg-emerald-100 text-emerald-700'
-                      }`}
-                    >
-                      {adsSettings?.disabled
-                        ? tAdmin('ads.statusDisabled')
-                        : tAdmin('ads.statusEnabled')}
-                    </span>
-                    {adsSettings?.updatedAt && (
-                      <span className="text-xs text-gray-500">
-                        {adsSettings?.updatedBy
-                          ? tAdmin('ads.updatedBy', {
-                              time: new Date(adsSettings.updatedAt).toLocaleString(),
-                              uid: adsSettings.updatedBy,
-                            })
-                          : tAdmin('ads.updatedAt', {
-                              time: new Date(adsSettings.updatedAt).toLocaleString(),
-                            })}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAds(!adsSettings?.disabled)}
-                    disabled={adsSettingsLoading || adsSettingsSaving || !adsSettings}
-                    className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                  >
-                    {adsSettings?.disabled
-                      ? tAdmin('ads.enableButton')
-                      : tAdmin('ads.disableButton')}
-                  </button>
-                </div>
-                {adsSettingsLoading && (
-                  <p className="mt-2 text-sm text-gray-500">{tAdmin('ads.loading')}</p>
-                )}
-              </section>
-              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">
-                      {tAdmin('ads.telemetryHeading', {
-                        days: adsTelemetry?.rangeDays ?? adsTelemetryRange,
-                      })}
-                    </h2>
-                    <p className="text-sm text-gray-500">{tAdmin('ads.telemetryDescription')}</p>
-                  </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      {tAdmin('ads.telemetryRangeLabel')}
-                      <select
-                        value={adsTelemetryRange}
-                        onChange={(e) => setAdsTelemetryRange(Number(e.target.value))}
-                        className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 focus:border-emerald-500 focus:outline-none sm:mt-0 sm:ml-2 sm:w-32"
-                      >
-                        {[7, 14, 30].map((days) => (
-                          <option key={days} value={days}>
-                            {tAdmin('ads.telemetryRangeOption', { days })}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => loadAdsTelemetry(adsTelemetryRange)}
-                      disabled={adsTelemetryLoading}
-                      className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      {tAdmin('ads.telemetryRefresh')}
-                    </button>
-                  </div>
-                </div>
-                {adsTelemetryError && (
-                  <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-                    {adsTelemetryError}
-                  </div>
-                )}
-                {adsTelemetryLoading ? (
-                  <p className="mt-4 text-sm text-gray-500">{tAdmin('ads.telemetryLoading')}</p>
-                ) : adsTelemetry ? (
-                  <>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      {telemetryStats.map((stat) => (
-                        <div
-                          key={stat.key}
-                          className="rounded-lg border border-gray-100 bg-gray-50/80 px-4 py-3 shadow-inner"
-                        >
-                          <p className="text-xs uppercase tracking-wide text-gray-500">
-                            {stat.label}
-                          </p>
-                          <p className="text-2xl font-semibold text-gray-900">
-                            {stat.value.toLocaleString()}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-6 grid gap-4 md:grid-cols-2">
-                      {renderTelemetryTable(
-                        tAdmin('ads.telemetry.table.headingSlots'),
-                        slotTopEntries,
-                        slotTotalsSum,
-                      )}
-                      {renderTelemetryTable(
-                        tAdmin('ads.telemetry.table.headingPlacements'),
-                        placementTopEntries,
-                        placementTotalsSum,
-                      )}
-                    </div>
-                    <div className="mt-6">
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        {tAdmin('ads.telemetry.dailyHeading')}
-                      </h3>
-                      {telemetryDays.length === 0 ? (
-                        <p className="mt-2 text-sm text-gray-500">
-                          {tAdmin('ads.telemetry.dailyEmpty')}
-                        </p>
-                      ) : (
-                        <ul className="mt-2 divide-y divide-gray-100 text-sm">
-                          {telemetryDays.map((day) => {
-                            const dayEvents = Object.entries(day.events || {})
-                              .filter(([key]) => key !== 'total')
-                              .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
-                              .slice(0, 3);
-                            return (
-                              <li key={day.dateId} className="py-3">
-                                <div className="flex items-center justify-between text-gray-900">
-                                  <span className="font-medium">
-                                    {formatTelemetryDate(day.dateId)}
-                                  </span>
-                                  <span>{(day.totalEvents ?? 0).toLocaleString()}</span>
-                                </div>
-                                {dayEvents.length > 0 && (
-                                  <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
-                                    {dayEvents.map(([eventKey, value]) => (
-                                      <span
-                                        key={eventKey}
-                                        className="rounded-full bg-gray-100 px-2 py-0.5"
-                                      >
-                                    {getTelemetryEventLabel(eventKey)} - {value.toLocaleString()}
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <p className="mt-4 text-sm text-gray-500">{tAdmin('ads.telemetryNoData')}</p>
-                )}
-              </section>
-              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">{tAdmin('ads.slotsHeading')}</h2>
-                    <p className="text-sm text-gray-500">
-                      {tAdmin('ads.slotsDescription')}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => loadSlotConfig()}
-                    disabled={slotConfigLoading || slotConfigSavingKey !== null}
-                    className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    {tAdmin('ads.refresh')}
-                  </button>
-                </div>
-                {slotConfigError && (
-                  <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-                    {slotConfigError}
-                  </div>
-                )}
-                {slotConfigLoading ? (
-                  <p className="mt-4 text-sm text-gray-500">{tAdmin('ads.slotsLoading')}</p>
-                ) : (
-                  <div className="mt-4 overflow-x-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="text-left">
-                          <th className="p-2">{tAdmin('ads.slotsTable.location')}</th>
-                          <th className="p-2">{tAdmin('ads.slotsTable.envVar')}</th>
-                          <th className="p-2">{tAdmin('ads.slotsTable.currentId')}</th>
-                          <th className="p-2">{tAdmin('ads.slotsTable.status')}</th>
-                          <th className="p-2">{tAdmin('ads.slotsTable.actions')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {slotRows.map((row) => {
-                          const entry = slotConfig[row.key];
-                          const enabled = entry ? entry.enabled !== false : true;
-                          const slotId = (AD_SLOT_IDS[row.key] || '').trim();
-                          const saving = slotConfigSavingKey === row.key;
-                          return (
-                            <tr key={row.key} className="border-t">
-                              <td className="p-2 align-top">
-                                <div className="font-medium text-gray-900">{row.label}</div>
-                                <p className="text-xs text-gray-500">{row.description}</p>
-                              </td>
-                              <td className="p-2 align-top">
-                                <code className="text-xs">{row.env}</code>
-                              </td>
-                              <td className="p-2 align-top">
-                                {slotId ? (
-                                  <span className="font-mono text-xs text-gray-900 break-all">{slotId}</span>
-                                ) : (
-                                  <span className="text-xs text-gray-500">{tAdmin('ads.noId')}</span>
-                                )}
-                              </td>
-                              <td className="p-2 align-top">
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
-                                    enabled
-                                      ? 'bg-emerald-100 text-emerald-700'
-                                      : 'bg-rose-100 text-rose-700'
-                                  }`}
-                                >
-                                  {enabled
-                                    ? tAdmin('ads.slotsStatus.enabled')
-                                    : tAdmin('ads.slotsStatus.disabled')}
-                                </span>
-                                {entry?.updatedAt && (
-                                  <div className="mt-1 text-[11px] text-gray-500">
-                                    {entry.updatedBy
-                                      ? tAdmin('ads.updatedBy', {
-                                          time: new Date(entry.updatedAt).toLocaleString(),
-                                          uid: entry.updatedBy,
-                                        })
-                                      : tAdmin('ads.updatedAt', {
-                                          time: new Date(entry.updatedAt).toLocaleString(),
-                                        })}
-                                  </div>
-                                )}
-                              </td>
-                              <td className="p-2 align-top">
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleSlot(row.key, !enabled)}
-                                  disabled={saving}
-                                  className={`inline-flex items-center rounded px-3 py-1 text-xs font-medium transition ${
-                                    enabled
-                                      ? 'bg-rose-100 text-rose-700 hover:bg-rose-200'
-                                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                  } disabled:opacity-50`}
-                                >
-                                  {enabled
-                                    ? tAdmin('ads.slotsToggle.disable')
-                                    : tAdmin('ads.slotsToggle.enable')}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </section>
-              <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold">{tAdmin('adminSettings.heading')}</h2>
-                    <p className="text-sm text-gray-500">
-                      {tAdmin('adminSettings.description')}
+                  {adminTab === 'admins' && (
+            <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">{tAdmin('adminSettings.heading')}</h2>
+                  <p className="text-sm text-gray-500">
+                    {tAdmin('adminSettings.description')}
                   </p>
                 </div>
                 <button
@@ -1784,8 +1144,7 @@ const confirmDialog = confirmAction
                   {tAdmin('adminSettings.addButton')}
                 </button>
               </form>
-              </section>
-            </div>
+            </section>
           )}
                   {adminTab === 'emailTemplates' && (
             <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -2099,7 +1458,7 @@ const confirmDialog = confirmAction
                     <span>Poslano na review: {new Date(currentItem.submittedAt).toLocaleString()}</span>
                   )}
                   {currentItem.updatedAt && (
-                    <span>Zadnje aÅ¾urirano: {new Date(currentItem.updatedAt).toLocaleString()}</span>
+                    <span>Zadnje ažurirano: {new Date(currentItem.updatedAt).toLocaleString()}</span>
                   )}
                   {currentItem.publishedAt && (
                     <span>Objavljeno: {new Date(currentItem.publishedAt).toLocaleString()}</span>
@@ -2125,7 +1484,7 @@ const confirmDialog = confirmAction
                     </span>
                   )}
                   {currentIdentifier && currentIdentifier !== currentBuildId && (
-                    <span>TraÅ¾eni ID: {currentIdentifier}</span>
+                    <span>Traženi ID: {currentIdentifier}</span>
                   )}
                   {currentItem.pendingBuildId && currentItem.pendingBuildId !== currentBuildId && (
                     <span>Pending build: {currentItem.pendingBuildId}</span>
@@ -2134,9 +1493,9 @@ const confirmDialog = confirmAction
                 {currentItem.moderation && (
                   <div className="text-xs text-gray-600 mt-1">
                     Moderacija: {currentItem.moderation.status || 'pending'}
-                    {currentItem.moderation.reason ? ` Â· ${currentItem.moderation.reason}` : ''}
-                    {currentItem.moderation.by ? ` Â· ${currentItem.moderation.by}` : ''}
-                    {currentItem.moderation.at ? ` Â· ${new Date(currentItem.moderation.at).toLocaleString()}` : ''}
+                    {currentItem.moderation.reason ? ` · ${currentItem.moderation.reason}` : ''}
+                    {currentItem.moderation.by ? ` · ${currentItem.moderation.by}` : ''}
+                    {currentItem.moderation.at ? ` · ${new Date(currentItem.moderation.at).toLocaleString()}` : ''}
                   </div>
                 )}
                 {currentItem.playUrl && (
@@ -2194,7 +1553,7 @@ const confirmDialog = confirmAction
                 </div>
                 {!zipReady && (
                   <div className="text-xs text-gray-500">
-                    Bundle se joÅ¡ priprema â€“ ZIP Ä‡e uvijek sadrÅ¾avati metapodatke te eventualno README dok artefakati ne budu spremni.
+                    Bundle se još priprema – ZIP će uvijek sadržavati metapodatke te eventualno README dok artefakati ne budu spremni.
                   </div>
                 )}
                 {!zipReady && currentIdentifier && (
@@ -2228,7 +1587,7 @@ const confirmDialog = confirmAction
                     <span className={timelineClass(t.state)}>{t.state}</span>
                     {idx < timeline.length - 1 && (
                       <span className="timeline-arrow timeline-arrow-active" aria-hidden="true">
-                        â†’
+                        →
                       </span>
                     )}
                   </div>
@@ -2239,7 +1598,7 @@ const confirmDialog = confirmAction
             {currentItem?.networkPolicy && (
               <div className="text-sm mb-2">
                 <div>
-                  Automatska mreÅ¾na politika: {currentItem.networkPolicy}
+                  Automatska mrežna politika: {currentItem.networkPolicy}
                 </div>
                 {currentItem.networkPolicyReason && (
                   <div className="text-xs text-gray-600">
@@ -2313,7 +1672,7 @@ const confirmDialog = confirmAction
                     className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
                     disabled={policySaving}
                   >
-                    {policySaving ? 'Spremamâ€¦' : 'Spremi dozvole'}
+                    {policySaving ? 'Spremam…' : 'Spremi dozvole'}
                   </button>
                 </div>
                 {/* Admin editable controls: visibility, accessMode, status, state */}
@@ -2395,7 +1754,7 @@ const confirmDialog = confirmAction
                       className="px-3 py-1 bg-emerald-600 text-white rounded text-sm disabled:opacity-50"
                       disabled={adminSaving}
                     >
-                      {adminSaving ? 'Spremamâ€¦' : 'Spremi promjene'}
+                      {adminSaving ? 'Spremam…' : 'Spremi promjene'}
                     </button>
                   </div>
                 </div>
@@ -2529,5 +1888,3 @@ const confirmDialog = confirmAction
     </>
   );
 }
-
-
