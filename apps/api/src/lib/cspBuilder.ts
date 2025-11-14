@@ -6,6 +6,12 @@ const GOOGLE_AD_ORIGINS = [
   'https://tpc.googlesyndication.com',
   'https://googleads.g.doubleclick.net',
 ];
+const GOOGLE_TAG_ORIGINS = [
+  'https://www.googletagmanager.com',
+  'https://www.google-analytics.com',
+];
+const GOOGLE_FUNDING_CHOICES_ORIGINS = ['https://fundingchoicesmessages.google.com'];
+const MICROSOFT_CLARITY_ORIGINS = ['https://www.clarity.ms'];
 import { getConfig } from '../config.js';
 import type { AppSecurityPolicy } from '../types.js';
 
@@ -145,6 +151,21 @@ export function buildCsp({
     scriptSrc.add(origin);
     connectSrc.add(origin);
     frameSrc.add(origin);
+    imgSrc.add(origin);
+  });
+  GOOGLE_TAG_ORIGINS.forEach((origin) => {
+    scriptSrc.add(origin);
+    connectSrc.add(origin);
+    imgSrc.add(origin);
+  });
+  GOOGLE_FUNDING_CHOICES_ORIGINS.forEach((origin) => {
+    scriptSrc.add(origin);
+    connectSrc.add(origin);
+    frameSrc.add(origin);
+  });
+  MICROSOFT_CLARITY_ORIGINS.forEach((origin) => {
+    scriptSrc.add(origin);
+    connectSrc.add(origin);
     imgSrc.add(origin);
   });
 
