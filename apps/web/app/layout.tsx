@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import './__name-shim';
 import './globals.css';
 
+import Script from 'next/script';
+
 import Header from '@/components/Header';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/auth';
@@ -37,6 +39,25 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-Q5LEE6M2QB"
+          strategy="afterInteractive"
+        />
+        <Script id="google-gtag" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-Q5LEE6M2QB');`}
+        </Script>
+        <Script id="microsoft-clarity" strategy="afterInteractive">
+          {`(function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "u61xrk1m1g");`}
+        </Script>
+      </head>
       <body className="min-h-screen bg-white text-gray-900">
 
         <ChunkErrorBoundary>

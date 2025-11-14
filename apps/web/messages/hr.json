@@ -577,7 +577,7 @@
   },
   "Home": {
     "headline": {
-      "one": "Otkrij fantastiÄne",
+      "one": "Otkrij fantastične",
       "two": "mini-aplikacije i igre"
     },
     "tagline": "Kurirani marketplace za iskustva u pregledniku. Gradi, dijeli i istražuj.",
@@ -671,7 +671,7 @@
     "sourceSection": "Izvor aplikacije",
     "optionPasteCode": "Zalijepi kod",
     "optionUploadBundle": "Upload paketa (.zip)",
-    "bundleHintPart1": "ZIP paket mora sadrÅ¾avati build izlaz zajedno s datotekama",
+    "bundleHintPart1": "ZIP paket mora sadržavati build izlaz zajedno s datotekama",
     "bundleHintPart2": "i",
     "bundleHintPart3": "Worker će ga lokalno instalirati i pokrenuti",
     "bundleAiWarning": "VAŽNO: Aplikacije koje ovise o Google AI Studiju, Geminiju, Kimiju ili bilo kojem drugom LLM-u moraju imati vlastiti API ključ. Bez njega bundle nakon objave neće raditi.",
