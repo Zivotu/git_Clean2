@@ -20,7 +20,20 @@ export class PreviewUploadError extends Error {
 
 }
 
+export class ScreenshotUploadError extends Error {
+  status: number;
+  code?: string;
+
+  constructor(status: number, message: string, code?: string) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+
 const buildPreviewUrl = (slug: string) => `${API_URL}/listing/${encodeURIComponent(slug)}/preview`;
+const buildScreenshotUrl = (slug: string, slot: number) =>
+  `${API_URL}/listing/${encodeURIComponent(slug)}/screenshot/${slot}`;
 
 async function buildAuthHeaders(forceRefresh = false): Promise<Record<string, string>> {
 
@@ -90,6 +103,61 @@ export async function uploadPreviewFile(slug: string, file: File) {
 
   }
 
+  return json ?? (await res.json().catch(() => ({})));
+
+}
+
+export async function uploadScreenshotFile(slug: string, slot: number, file: File) {
+  if (file.size > MAX_SCREENSHOT_SIZE_BYTES) {
+    const maxMb = Math.round((MAX_SCREENSHOT_SIZE_BYTES / (1024 * 1024)) * 10) / 10;
+    throw new ScreenshotUploadError(
+      400,
+      `Screenshot must be ${maxMb}MB or smaller`,
+      'screenshot_too_large',
+    );
+  }
+
+  const headers = await buildAuthHeaders();
+  const form = new FormData();
+  form.append('image', file, file.name || `screenshot-${slot + 1}.png`);
+
+  const res = await fetch(buildScreenshotUrl(slug, slot), {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: form,
+  });
+  let json: any = null;
+  try {
+    json = await res.clone().json();
+  } catch {
+    // ignore JSON parse issues
+  }
+  if (!res.ok) {
+    const message = json?.message || `Failed to upload screenshot (${res.status})`;
+    throw new ScreenshotUploadError(res.status, message, json?.error);
+  }
+  return json ?? (await res.json().catch(() => ({})));
+
+}
+
+export async function deleteScreenshot(slug: string, slot: number) {
+  const headers = await buildAuthHeaders();
+  const res = await fetch(buildScreenshotUrl(slug, slot), {
+    method: 'DELETE',
+    credentials: 'include',
+    headers,
+  });
+  let json: any = null;
+  try {
+    json = await res.clone().json();
+  } catch {
+    // ignore JSON parse issues
+  }
+  if (!res.ok) {
+    const message = json?.message || `Failed to remove screenshot (${res.status})`;
+    throw new ScreenshotUploadError(res.status, message, json?.error);
+  }
   return json ?? (await res.json().catch(() => ({})));
 
 }
@@ -255,9 +323,18 @@ export const PREVIEW_PRESET_PATHS = [
 
   '/preview-presets/thesara_screenshot_5.png',
 
+  '/preview-presets/thesara_screenshot_6.png',
+
+  '/preview-presets/thesara_screenshot_7.png',
+
+  '/preview-presets/thesara_screenshot_8.png',
+
+  '/preview-presets/thesara_screenshot_9.png',
+
 ] as const;
 
 export const MAX_PREVIEW_SIZE_BYTES = 1 * 1024 * 1024; // 1MB
+export const MAX_SCREENSHOT_SIZE_BYTES = 1 * 1024 * 1024; // 1MB
 
 export type PreviewPresetPath = typeof PREVIEW_PRESET_PATHS[number];
 

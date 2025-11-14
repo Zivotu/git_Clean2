@@ -355,6 +355,46 @@ export async function getCreatorByHandle(handle: string): Promise<Creator | unde
   return creator;
 }
 
+export async function getCreatorById(uid: string): Promise<Creator | undefined> {
+  if (!uid) return undefined;
+  try {
+    const col = await getExistingCollection('creators');
+    const snap = await col.doc(uid).get();
+    if (snap.exists) {
+      return { id: snap.id, ...(snap.data() as Creator) };
+    }
+  } catch {}
+  try {
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) return undefined;
+    const data = userDoc.data() as any;
+    const fullName = [data.firstName, data.lastName]
+      .map((part: any) => (typeof part === 'string' ? part.trim() : ''))
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const creator: Creator = {
+      id: uid,
+      handle: data.handle || data.username || data.slug || uid,
+      displayName: data.displayName || fullName || data.name || data.handle || data.username || uid,
+      photoURL: data.photoURL || data.photo || data.avatarUrl || undefined,
+      bio: data.bio,
+    } as Creator;
+    try {
+      await upsertCreator({
+        id: creator.id,
+        handle: creator.handle,
+        displayName: creator.displayName,
+        photoURL: creator.photoURL,
+        bio: creator.bio,
+      });
+    } catch {}
+    return creator;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function upsertCreator(it: Creator): Promise<void> {
   await (await getExistingCollection('creators')).doc(it.id).set(it);
 }

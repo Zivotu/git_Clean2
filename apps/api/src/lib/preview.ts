@@ -109,6 +109,10 @@ export const PREVIEW_PRESET_PATHS = [
   '/preview-presets/thesara_screenshot_3.png',
   '/preview-presets/thesara_screenshot_4.png',
   '/preview-presets/thesara_screenshot_5.png',
+  '/preview-presets/thesara_screenshot_6.png',
+  '/preview-presets/thesara_screenshot_7.png',
+  '/preview-presets/thesara_screenshot_8.png',
+  '/preview-presets/thesara_screenshot_9.png',
 ] as const;
 
 export function pickRandomPreviewPreset(): string {

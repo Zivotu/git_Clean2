@@ -7,9 +7,10 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import Avatar from '@/components/Avatar';
 // Using global header from layout; no local header
 import { type Listing } from '@/components/AppCard';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
   listEntitlements,
   EntitlementsList,
@@ -133,6 +134,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmAction, setConfirmAction] = useState<'cancel' | null>(null);
+  const [publicProfile, setPublicProfile] = useState({ displayName: '', photoURL: '' });
+  const [publicPhotoFile, setPublicPhotoFile] = useState<File | null>(null);
+  const [publicPhotoPreview, setPublicPhotoPreview] = useState('');
+  const [publicSaving, setPublicSaving] = useState(false);
+  const [publicStatus, setPublicStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   // Compute stable values before any early returns to keep hooks order consistent
   const handle = userInfo?.username || '';
   const joined = useMemo(() => {
@@ -279,9 +285,17 @@ export default function ProfilePage() {
         setData({ items: [], stats: { likes: 0, plays: 0, apps: 0 } });
       }
       if (!db) return;
-      const snap = await getDoc(doc(db, 'users', user.uid));
-      if (snap.exists()) {
-        const d = snap.data() as any;
+      const userDocRef = doc(db, 'users', user.uid);
+      const creatorDocRef = doc(db, 'creators', user.uid);
+      const [userSnap, creatorSnap] = await Promise.all([getDoc(userDocRef), getDoc(creatorDocRef)]);
+      let fallbackPublicName =
+        getDisplayName(user) ||
+        user.displayName ||
+        user.email ||
+        '';
+      let fallbackPublicPhoto = user.photoURL || '';
+      if (userSnap.exists()) {
+        const d = userSnap.data() as any;
         setUserInfo(d);
         setForm({
           firstName: d.firstName || '',
@@ -292,6 +306,40 @@ export default function ProfilePage() {
           website: d.website || '',
           twitter: d.twitter || '',
           github: d.github || '',
+        });
+        const docDisplayName =
+          typeof d.displayName === 'string' ? d.displayName.trim() : '';
+        const docFullName = [d.firstName, d.lastName]
+          .map((part: any) => (typeof part === 'string' ? part.trim() : ''))
+          .filter(Boolean)
+          .join(' ')
+          .trim();
+        const docUsername = typeof d.username === 'string' ? d.username.trim() : '';
+        const bestName = docDisplayName || docFullName || docUsername;
+        if (bestName) fallbackPublicName = bestName;
+        if (typeof d.photoURL === 'string' && d.photoURL.trim()) {
+          fallbackPublicPhoto = d.photoURL.trim();
+        }
+      }
+      if (creatorSnap.exists()) {
+        const c = creatorSnap.data() as any;
+        const creatorDisplay =
+          typeof c.displayName === 'string' && c.displayName.trim()
+            ? c.displayName.trim()
+            : '';
+        const photoCandidates = [
+          typeof c.photoURL === 'string' ? c.photoURL.trim() : '',
+          typeof c.photo === 'string' ? c.photo.trim() : '',
+          typeof c.avatarUrl === 'string' ? c.avatarUrl.trim() : '',
+        ].filter(Boolean);
+        setPublicProfile({
+          displayName: creatorDisplay || fallbackPublicName || '',
+          photoURL: photoCandidates[0] || fallbackPublicPhoto || '',
+        });
+      } else {
+        setPublicProfile({
+          displayName: fallbackPublicName || '',
+          photoURL: fallbackPublicPhoto || '',
         });
       }
       await loadEntitlements();
@@ -515,6 +563,14 @@ export default function ProfilePage() {
   }, [activeSubs, resolvedCreatorNames]);
 
   useEffect(() => {
+    return () => {
+      if (publicPhotoPreview) {
+        URL.revokeObjectURL(publicPhotoPreview);
+      }
+    };
+  }, [publicPhotoPreview]);
+
+  useEffect(() => {
     loadProfile();
   }, [loadProfile]);
 
@@ -533,6 +589,66 @@ export default function ProfilePage() {
   ) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
+  };
+
+  const handlePublicNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPublicProfile((prev) => ({ ...prev, displayName: e.target.value }));
+    setPublicStatus(null);
+  };
+
+  const handlePublicPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setPublicPhotoFile(file);
+    setPublicStatus(null);
+    setPublicPhotoPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : '';
+    });
+  };
+
+  const handlePublicProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !db) return;
+    const displayName = publicProfile.displayName.trim();
+    if (!displayName) {
+      setPublicStatus({ type: 'error', text: 'Unesi ime za javni profil.' });
+      return;
+    }
+    setPublicSaving(true);
+    setPublicStatus(null);
+    try {
+      let photoURL = publicProfile.photoURL;
+      if (publicPhotoFile && storage) {
+        const storageRef = ref(storage, `public-avatars/${user.uid}`);
+        await uploadBytes(storageRef, publicPhotoFile);
+        photoURL = await getDownloadURL(storageRef);
+        setPublicPhotoFile(null);
+        setPublicPhotoPreview((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return '';
+        });
+      }
+      const handleValue = (form.username || userInfo?.username || '').trim();
+      const payload: Record<string, any> = {
+        id: user.uid,
+        displayName,
+        photoURL: photoURL || null,
+        updatedAt: Date.now(),
+      };
+      if (handleValue) payload.handle = handleValue;
+      await setDoc(doc(db, 'creators', user.uid), payload, { merge: true });
+      setPublicProfile((prev) => ({
+        ...prev,
+        displayName,
+        photoURL: photoURL || prev.photoURL,
+      }));
+      setPublicStatus({ type: 'success', text: 'Javni profil je spremljen.' });
+    } catch (err) {
+      console.error('Failed to save public profile', err);
+      setPublicStatus({ type: 'error', text: 'Spremanje nije uspjelo. Pokušaj ponovno.' });
+    } finally {
+      setPublicSaving(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -608,21 +724,39 @@ export default function ProfilePage() {
     [userInfo?.firstName, userInfo?.lastName].filter(Boolean).join(' ').trim() ||
     userInfo?.username ||
     'User';
-  const statusColor =
-    subscription.status === 'active'
-      ? 'text-emerald-600'
-      : subscription.status === 'trial'
-      ? 'text-yellow-600'
-      : subscription.status === 'expired'
-      ? 'text-red-600'
-      : 'text-gray-600';
-  const statusText =
-    subscription.status === 'loading'
-      ? 'Loading…'
-      : subscription.status === 'processing'
-      ? 'Processing…'
-      : subscription.status.charAt(0).toUpperCase() +
-        subscription.status.slice(1);
+  const publicAvatarSrc =
+    publicPhotoPreview || publicProfile.photoURL || user.photoURL || undefined;
+  const publicProfileHref = handle ? `/u/${handle}` : '';
+  const subscriptionStatusLabels: Record<SubscriptionInfo['status'], string> = {
+    active: 'Aktivna',
+    trial: 'Probna',
+    expired: 'Istekla',
+    loading: 'Učitavanje',
+    processing: 'Obrada',
+  };
+  const subscriptionStatusTones: Record<SubscriptionInfo['status'], string> = {
+    active: 'bg-emerald-100 text-emerald-700',
+    trial: 'bg-yellow-100 text-yellow-800',
+    expired: 'bg-red-100 text-red-700',
+    loading: 'bg-gray-100 text-gray-600',
+    processing: 'bg-gray-100 text-gray-600',
+  };
+  const subscriptionStatusLabel = subscriptionStatusLabels[subscription.status] ?? 'Status';
+  const subscriptionStatusClass =
+    subscriptionStatusTones[subscription.status] ?? 'bg-gray-100 text-gray-600';
+  const featureDescriptions: Record<string, string> = {
+    isGold: 'Gold paket',
+    noAds: 'Bez oglasa',
+    'creator-all-access': 'All-access kreator',
+    'app-subscription': 'Pretplata na aplikaciju',
+  };
+  const ownedFeatureBadges = [
+    entitlementsData?.gold ? { key: 'gold', label: 'Gold plan' } : null,
+    entitlementsData?.noAds ? { key: 'noAds', label: 'Bez oglasa' } : null,
+  ].filter(Boolean) as Array<{ key: string; label: string }>;
+  const hasActiveStripeSubs = activeSubs.length > 0;
+  const hasOwnedFeatures = ownedFeatureBadges.length > 0;
+  const hasAnySubscription = hasActiveStripeSubs || hasOwnedFeatures;
   return (
     <>
 
@@ -696,6 +830,76 @@ export default function ProfilePage() {
           </div>
         </Card>
         <Card className="rounded-3xl p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-xl font-semibold">Javni profil</h2>
+                <p className="text-sm text-gray-600">
+                  Prikaži drugačije ime i fotografiju posjetiteljima koji otvore tvoj Public profile.
+                </p>
+              </div>
+              {publicProfileHref && (
+                <Link href={publicProfileHref} className="text-sm text-blue-600 hover:underline">
+                  Pogledaj javni prikaz
+                </Link>
+              )}
+            </div>
+            {!handle && (
+              <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+                Dodaj korisničko ime u nastavku kako bi tvoj javni profil bio dostupan na /u/ime.
+              </div>
+            )}
+            <form onSubmit={handlePublicProfileSubmit} className="space-y-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                <Avatar
+                  uid={user.uid}
+                  src={publicAvatarSrc}
+                  name={publicProfile.displayName || name}
+                  size={72}
+                />
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Fotografija za javni profil
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePublicPhotoChange}
+                    className="mt-1 text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ova fotografija prikazuje se samo na stranici /u/{handle || 'tvoje-ime'}.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Ime koje vide posjetitelji
+                </label>
+                <Input
+                  value={publicProfile.displayName}
+                  onChange={handlePublicNameChange}
+                  placeholder="npr. Studio Pixel"
+                />
+              </div>
+              {publicStatus && (
+                <p
+                  className={`text-sm ${
+                    publicStatus.type === 'success' ? 'text-emerald-600' : 'text-red-600'
+                  }`}
+                >
+                  {publicStatus.text}
+                </p>
+              )}
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="submit" disabled={publicSaving}>
+                  {publicSaving ? 'Spremanje…' : 'Spremi javni prikaz'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </Card>
+        <Card className="rounded-3xl p-6">
           <h2 className="text-xl font-semibold mb-2">Značajke</h2>
           {entitlementsLoading ? (
             <p className="text-sm text-gray-500">Loading…</p>
@@ -711,8 +915,90 @@ export default function ProfilePage() {
           )}
         </Card>
         <Card className="rounded-3xl p-6">
-          <h2 className="text-xl font-semibold mb-2">Subscription</h2>
-          {/* ... existing subscription content ... */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-xl font-semibold">Subscription</h2>
+              <p className="text-sm text-gray-600">
+                {hasAnySubscription
+                  ? 'Aktivne pogodnosti povezane s tvojim računom.'
+                  : 'Trenutno nema aktivnih pretplata.'}
+              </p>
+            </div>
+            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${subscriptionStatusClass}`}>
+              {subscriptionStatusLabel}
+            </span>
+          </div>
+          {subscription.renewalDate && (
+            <p className="text-sm text-gray-500 mb-4">
+              Sljedeća naplata: {subscription.renewalDate}
+            </p>
+          )}
+          {ownedFeatureBadges.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {ownedFeatureBadges.map((badge) => (
+                <span
+                  key={badge.key}
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-sm text-emerald-700"
+                >
+                  {badge.label}
+                </span>
+              ))}
+            </div>
+          )}
+          {hasActiveStripeSubs ? (
+            <ul className="space-y-2 mb-4">
+              {activeSubs.map((sub) => {
+                const detail =
+                  sub.feature === 'creator-all-access' && sub.creatorHandle
+                    ? `Kreator @${sub.creatorHandle}`
+                    : sub.feature === 'app-subscription' && sub.appId
+                    ? `App #${sub.appId}`
+                    : featureDescriptions[sub.feature] || 'Pretplata';
+                return (
+                  <li
+                    key={sub.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 px-4 py-3"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-900">{sub.label}</p>
+                      <p className="text-xs text-gray-500">{detail}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setConfirmCancel({ id: sub.id, label: sub.label })}
+                      >
+                        Otkaži
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-gray-500 mb-4">
+              {hasOwnedFeatures
+                ? 'Pogodnosti su aktivirane ručno i nisu vezane uz Stripe pretplatu.'
+                : 'Još nema aktivnih Stripe pretplata.'}
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            {hasActiveStripeSubs && (
+              <Button type="button" variant="outline" onClick={manageBilling}>
+                Upravljaj naplatom
+              </Button>
+            )}
+            {!hasAnySubscription && (
+              <Link
+                href="/pro/checkout/gold"
+                className={buttonVariants({ className: 'text-sm' })}
+              >
+                Aktiviraj Gold plan
+              </Link>
+            )}
+          </div>
         </Card>
 
         <AmbassadorSection userInfo={userInfo} />

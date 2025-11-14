@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { getCreatorByHandle, readApps, readCreators, type Creator } from '../db.js';
+import { getCreatorByHandle, getCreatorById, readApps, readCreators, type Creator } from '../db.js';
 import type { AppRecord } from '../types.js';
 
 function toStringId(value: unknown): string | undefined {
@@ -106,24 +106,18 @@ function cleanupCreator(data: Creator | undefined, appsCount: number): any {
 export default async function creatorsRoutes(app: FastifyInstance) {
   const byIdHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const { uid } = req.params as { uid: string };
-    const creators = await readCreators();
-    const match = creators.find((c) => c.id === uid);
-    let payload: any;
-    let appsCount = 0;
-    if (match) {
-      const apps = await readApps();
-      const owned = apps.filter((app) => matchesCreator(app, match));
-      appsCount = owned.length;
-      payload = cleanupCreator(match, appsCount);
-    } else {
-      payload = cleanupCreator(
-        {
-          id: uid,
-          handle: uid,
-        } as Creator,
-        0,
-      );
+    let creator = await getCreatorById(uid);
+    if (!creator) {
+      const creators = await readCreators();
+      creator = creators.find((c) => c.id === uid);
     }
+    if (!creator) {
+      creator = { id: uid, handle: uid } as Creator;
+    }
+    const apps = await readApps();
+    const owned = apps.filter((app) => matchesCreator(app, creator!));
+    const appsCount = owned.length;
+    const payload = cleanupCreator(creator, appsCount);
     return reply.send({
       ...payload,
       handle: payload?.handle ?? uid,

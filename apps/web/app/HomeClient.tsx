@@ -74,6 +74,150 @@ function cn(...classes: Array<string | false | undefined>) {
 
 type FeedEntry = { kind: 'app'; item: Listing } | { kind: 'ad'; key: string };
 
+type CommunityStats = {
+  publishedApps: number;
+  membersCount: number;
+};
+
+type TrendingCarouselProps = {
+  items: Listing[];
+  title: string;
+  countLabel: string;
+  onOpen: (slug: string) => void;
+};
+
+function TrendingCarousel({ items, title, countLabel, onOpen }: TrendingCarouselProps) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const firstSlideRef = useRef<HTMLDivElement | null>(null);
+  const [slideSize, setSlideSize] = useState(296);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [disableTransition, setDisableTransition] = useState(false);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = firstSlideRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setSlideSize(Math.round(rect.width + 16));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [items.length]);
+
+  useEffect(() => {
+    if (items.length <= 1 || paused) return;
+    const t = setInterval(() => {
+      setCarouselIndex((i) => i + 1);
+    }, 8000);
+    return () => clearInterval(t);
+  }, [items.length, paused]);
+
+  useEffect(() => {
+    setCarouselIndex(0);
+  }, [items.length]);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    if (carouselIndex >= items.length) {
+      const id = setTimeout(() => {
+        setDisableTransition(true);
+        setCarouselIndex(0);
+        requestAnimationFrame(() => setDisableTransition(false));
+      }, 400);
+      return () => clearTimeout(id);
+    }
+  }, [carouselIndex, items.length]);
+
+  const prevCarousel = useCallback(() => {
+    setDisableTransition(false);
+    setCarouselIndex((prev) => (prev > 0 ? prev - 1 : items.length > 0 ? items.length - 1 : 0));
+  }, [items.length]);
+
+  const nextCarousel = useCallback(() => {
+    setDisableTransition(false);
+    setCarouselIndex((prev) => prev + 1);
+  }, []);
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-gray-700">{title}</span>
+        <div className="text-xs text-gray-500">{countLabel}</div>
+      </div>
+      <div className="relative">
+        <div className="overflow-hidden pb-2">
+          <div
+            ref={trackRef}
+            className={cn('flex gap-4', disableTransition ? '' : 'transition-transform duration-500 ease-out')}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            style={{ transform: `translateX(-${carouselIndex * slideSize}px)` }}
+          >
+            {[...items, ...items].map((it, idx) => {
+              const img = resolvePreviewUrl(it.previewUrl);
+              const hasPreview = Boolean(img);
+              const imgProps = idx === 0 ? { priority: true, loading: 'eager' as const } : {};
+              return (
+                <div
+                  key={`${it.id}-${idx}`}
+                  data-carousel-item
+                  ref={idx === 0 ? firstSlideRef : undefined}
+                  className="w-[280px] flex-none"
+                >
+                  <div
+                    onClick={() => onOpen(it.slug)}
+                    className="group cursor-pointer rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden"
+                  >
+                    <div className="relative h-40">
+                      {hasPreview ? (
+                        <Image
+                          src={img}
+                          alt={it.title}
+                          fill
+                          style={{ color: 'transparent' }}
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          {...imgProps}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 text-slate-500 text-xs font-medium grid place-items-center">
+                          Bez grafike
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+                        <span className="text-white text-base font-medium line-clamp-1">{it.title}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          onClick={prevCarousel}
+          className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md"
+          aria-label="Previous"
+        >
+          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={nextCarousel}
+          className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md"
+          aria-label="Next"
+        >
+          <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function HomeAdsRail({ slotId, slotKey }: { slotId?: string; slotKey: string }) {
   if (!slotId) return null;
   return (
@@ -367,6 +511,10 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
 export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const ent = useEntitlements();
   const initialItemsRef = useRef(initialItems?.map(toCardListing) ?? []);
+  const initialPublishedCount = useMemo(
+    () => initialItemsRef.current.filter((item) => item.visibility !== 'unlisted').length,
+    [initialItemsRef],
+  );
   const [subscribed, setSubscribed] = useState<Set<string>>(new Set());
   const router = useRouter();
   const searchParams = useSafeSearchParams();
@@ -384,6 +532,10 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [detailsItem, setDetailsItem] = useState<Listing | null>(null);
+  const [communityStats, setCommunityStats] = useState<CommunityStats>({
+    publishedApps: initialPublishedCount,
+    membersCount: 0,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -423,6 +575,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const homeRailRightSlot = isSlotEnabled('homeRailRight') ? homeRailRightSlotRaw : '';
   const homeGridInlineSlot = isSlotEnabled('homeGridInline') ? homeGridInlineSlotRaw : '';
   const homeFeedFooterSlot = isSlotEnabled('homeFeedFooter') ? homeFeedFooterSlotRaw : '';
+  const showHomeCtaBanner = true;
   const shouldInjectGridAds = showAds && viewMode === 'grid' && homeGridInlineSlot.length > 0;
   const homeLayoutClass = useMemo(() => {
     const hasLeft = Boolean(homeRailLeftSlot);
@@ -438,6 +591,30 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     }
     return '';
   }, [homeRailLeftSlot, homeRailRightSlot]);
+  const [ctaTopOffset, setCtaTopOffset] = useState(0);
+
+  useEffect(() => {
+    if (!showHomeCtaBanner) return;
+    const header = document.querySelector<HTMLElement>('header.sticky');
+    if (!header) {
+      setCtaTopOffset(0);
+      return;
+    }
+    const updateOffset = () => {
+      setCtaTopOffset(header.getBoundingClientRect().height || 0);
+    };
+    updateOffset();
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => updateOffset())
+        : null;
+    resizeObserver?.observe(header);
+    window.addEventListener('resize', updateOffset);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', updateOffset);
+    };
+  }, [showHomeCtaBanner]);
 
   // Load subscribed app ids to highlight cards
   useEffect(() => {
@@ -484,14 +661,6 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     triggerConfetti();
     router.push('/create');
   }, [router]);
-
-  // Transform-based carousel
-  const trackRef = useRef<HTMLDivElement | null>(null);
-  const firstSlideRef = useRef<HTMLDivElement | null>(null);
-  const [slideSize, setSlideSize] = useState(296);
-  const [carouselIndex, setCarouselIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [disableTransition, setDisableTransition] = useState(false);
 
   const toggleLike = useCallback(
     async (slug: string) => {
@@ -548,7 +717,12 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
       try {
         const { getListings } = await import('@/lib/loaders');
         const { items: normalized } = await getListings({ locale });
-        setItems(normalized.map(toCardListing));
+        const mappedItems = normalized.map(toCardListing);
+        setItems(mappedItems);
+        setCommunityStats((prev) => ({
+          ...prev,
+          publishedApps: mappedItems.filter((it) => it.visibility !== 'unlisted').length,
+        }));
       } catch (e) {
         handleFetchError(e, 'Failed to load listings');
         if (!silent) {
@@ -595,6 +769,41 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     load();
   }, [locale, load]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+    const statsUrl = `${PUBLIC_API_URL}/community/stats`;
+
+    const loadStats = async () => {
+      try {
+        const res = await fetch(statsUrl, {
+          credentials: 'include',
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setCommunityStats((prev) => ({
+          publishedApps:
+            typeof data?.publishedApps === 'number' ? data.publishedApps : prev.publishedApps,
+          membersCount:
+            typeof data?.membersCount === 'number' ? data.membersCount : prev.membersCount,
+        }));
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return;
+      }
+    };
+
+    loadStats();
+    const interval = setInterval(loadStats, 5 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, []);
+
   const tagData = useMemo(() => {
     const counts = new Map<string, number>();
     for (const it of items) (it.tags || []).forEach(t => counts.set(t, (counts.get(t) || 0) + 1));
@@ -638,6 +847,23 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     return result;
   }, [items, q, selectedTags, sortBy]);
 
+  const numberFormatter = useMemo(() => {
+    try {
+      return new Intl.NumberFormat(locale || 'en-US');
+    } catch {
+      return new Intl.NumberFormat('en-US');
+    }
+  }, [locale]);
+
+  const formattedStats = useMemo(
+    () => ({
+      apps: numberFormatter.format(Math.max(0, communityStats.publishedApps)),
+      members: numberFormatter.format(Math.max(0, communityStats.membersCount)),
+    }),
+    [communityStats, numberFormatter],
+  );
+
+
   const gridEntries = useMemo<FeedEntry[]>(() => {
     if (!shouldInjectGridAds) {
       return processed.map((item) => ({ kind: 'app', item }));
@@ -670,31 +896,6 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    const measure = () => {
-      const el = firstSlideRef.current; if (!el) return; const rect = el.getBoundingClientRect(); setSlideSize(Math.round(rect.width + 16));
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [topLiked.length]);
-
-  useEffect(() => {
-    if (topLiked.length <= 1 || paused) return;
-    const t = setInterval(() => { setCarouselIndex((i) => i + 1); }, 2800);
-    return () => clearInterval(t);
-  }, [topLiked.length, paused]);
-
-  useEffect(() => {
-    if (topLiked.length === 0) return;
-    if (carouselIndex >= topLiked.length) {
-      const id = setTimeout(() => { setDisableTransition(true); setCarouselIndex(0); requestAnimationFrame(() => setDisableTransition(false)); }, 400);
-      return () => clearTimeout(id);
-    }
-  }, [carouselIndex, topLiked.length]);
-  const prevCarousel = useCallback(() => { setDisableTransition(false); setCarouselIndex((prev) => (prev > 0 ? prev - 1 : topLiked.length > 0 ? topLiked.length - 1 : 0)); }, [topLiked.length]);
-  const nextCarousel = useCallback(() => { setDisableTransition(false); setCarouselIndex((prev) => prev + 1); }, []);
-
   const cardsLayoutClass = cn(
     viewMode === 'grid'
       ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'
@@ -704,11 +905,53 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     viewMode === 'grid'
       ? gridEntries
       : processed.map((item) => ({ kind: 'app', item }));
+  const homeCtaBannerAlt = (messages['Home.cta.bannerAlt'] as string) || 'Thesara promo banner';
+  const ctaBannerTop = Math.max(0, ctaTopOffset) + 8;
 
   return (
     <div className="min-h-screen text-gray-900 bg-white">
       <SplashScreen />
       <SpiderOverlay />
+      {showHomeCtaBanner && (
+        <>
+          <div
+            className="hidden 2xl:block fixed left-8 z-20"
+            style={{
+              top: `${ctaBannerTop}px`,
+              width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.85))',
+            }}
+          >
+            <div className="overflow-hidden rounded-3xl">
+              <Link href="/create" className="block">
+                <img
+                  src="/assets/cta_vertical_1_left.jpg"
+                  alt={homeCtaBannerAlt}
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+              </Link>
+            </div>
+          </div>
+          <div
+            className="hidden 2xl:block fixed right-8 z-20"
+            style={{
+              top: `${ctaBannerTop}px`,
+              width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.85))',
+            }}
+          >
+            <div className="overflow-hidden rounded-3xl">
+              <Link href="/jednostavne-upute" className="block">
+                <img
+                  src="/assets/cta_vertical_1.jpg"
+                  alt={homeCtaBannerAlt}
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
       <section className="max-w-7xl mx-auto px-4 pt-12 pb-6 relative">
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
@@ -716,98 +959,147 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
           </h1>
           <p className="mt-3 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
         </div>
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium text-gray-700">{tHome('trending')}</span>
-            <div className="text-xs text-gray-500">{tHome('appsCount', { count: topLiked.length })}</div>
-          </div>
-          <div className="relative">
-            <div className="overflow-hidden pb-2">
-              <div
-                ref={trackRef}
-                className={cn('flex gap-4', disableTransition ? '' : 'transition-transform duration-500 ease-out')}
-                onMouseEnter={() => setPaused(true)}
-                onMouseLeave={() => setPaused(false)}
-                style={{ transform: `translateX(-${carouselIndex * slideSize}px)` }}
-              >
-                {[...topLiked, ...topLiked].map((it, idx) => {
-                  const img = resolvePreviewUrl(it.previewUrl);
-                  const hasPreview = Boolean(img);
-                  const imgProps = idx === 0 ? { priority: true, loading: 'eager' as const } : {};
-                  return (
-                    <div key={`${it.id}-${idx}`} data-carousel-item ref={idx === 0 ? firstSlideRef : undefined} className="w-[280px] flex-none">
-                      <div onClick={() => router.push(appDetailsHref(it.slug))} className="group cursor-pointer rounded-2xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
-                        <div className="relative h-40">
-                          {hasPreview ? (
-                            <Image src={img} alt={it.title} fill style={{ color: 'transparent' }} className="object-cover transition-transform duration-300 group-hover:scale-105" {...imgProps} />
-                          ) : (
-                            <div className="w-full h-full bg-slate-100 text-slate-500 text-xs font-medium grid place-items-center">
-                              Bez grafike
-                            </div>
-                          )}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-                            <span className="text-white text-base font-medium line-clamp-1">{it.title}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <button onClick={prevCarousel} className="absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md" aria-label="Previous">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <button onClick={nextCarousel} className="absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 p-2 rounded-full shadow-md" aria-label="Next">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-            </button>
-          </div>
-        </div>
-        <div className="mt-8 w-full max-w-2xl mx-auto">
-          <div className="relative">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input id="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder={tHome('search.placeholder')} className="w-full pl-10 pr-4 py-3 rounded-full border border-gray-200 focus:border-emerald-500 focus:outline-none transition text-base placeholder-gray-400" autoComplete="off" />
-            {q && (
-              <button onClick={() => setQ('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label="Clear search">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            )}
-          </div>
-        </div>
+        <TrendingCarousel
+          items={topLiked}
+          title={tHome('trending')}
+          countLabel={tHome('appsCount', { count: topLiked.length })}
+          onOpen={(slug) => router.push(appDetailsHref(slug))}
+        />
       </section>
       <section className="max-w-7xl mx-auto px-4 pb-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-3 mb-6 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span>{tHome('appsFound', { count: processed.length })}</span>
-            <div className="flex bg-gray-100 rounded-md p-1">
-              <button onClick={() => setViewMode('grid')} className={cn('p-1.5 rounded transition flex items-center', viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')} aria-label="Grid view">
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+        <div className="bg-white rounded-2xl border border-gray-200 p-3 mb-2 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2 w-full">
+            <div className="relative flex-1 min-w-[220px]">
+              <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                id="search-input"
+                value={q}
+                onChange={e => setQ(e.target.value)}
+                placeholder={tHome('search.placeholder')}
+                className="w-full pl-10 pr-10 py-2.5 rounded-full border border-gray-200 focus:border-emerald-500 focus:outline-none transition text-sm placeholder-gray-400"
+                autoComplete="off"
+              />
+              {q && (
+                <button
+                  onClick={() => setQ('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2 bg-gray-100 rounded-md p-1 shrink-0">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={cn('p-1.5 rounded transition flex items-center', viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')}
+                aria-label="Grid view"
+              >
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
               </button>
-              <button onClick={() => setViewMode('list')} className={cn('p-1.5 rounded transition flex items-center', viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')} aria-label="List view">
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+              <button
+                onClick={() => setViewMode('list')}
+                className={cn('p-1.5 rounded transition flex items-center', viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')}
+                aria-label="List view"
+              >
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               </button>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-end flex-1 min-w-[260px]">
+              <div className="flex items-center gap-2 flex-wrap">
+                {tagData.slice(0, 6).map(([tag]) => (
+                  <button
+                    key={tag}
+                    onClick={() => toggleTag(tag)}
+                    className={cn(
+                      'px-3 py-1 rounded-full text-sm border transition',
+                      selectedTags.includes(tag)
+                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    )}
+                    aria-pressed={selectedTags.includes(tag)}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+                {tagData.length > 6 && (
+                  <button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">+{tagData.length - 6}</button>
+                )}
+              </div>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as 'new' | 'popular' | 'title')}
+                className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-emerald-500"
+              >
+                <option value="new">{tHome('sort.new')}</option>
+                <option value="popular">{tHome('sort.popular')}</option>
+                <option value="title">{tHome('sort.title')}</option>
+              </select>
+              {(selectedTags.length > 0 || q) && (
+                <button onClick={clearFilters} className="text-sm text-red-500 hover:underline">
+                  {tHome('clear')}
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex flex-wrap gap-2">
-              {tagData.slice(0, 6).map(([tag]) => (
-                <button key={tag} onClick={() => toggleTag(tag)} className={cn('px-3 py-1 rounded-full text-sm border transition', selectedTags.includes(tag) ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50')} aria-pressed={selectedTags.includes(tag)}>
-                  #{tag}
-                </button>
-              ))}
-              {tagData.length > 6 && (<button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">+{tagData.length - 6}</button>)}
+        </div>
+        <div className="flex justify-end text-xs sm:text-sm text-gray-600 mt-1 mb-6">
+          <div className="flex flex-wrap gap-4">
+            <div
+              className="flex items-center gap-2"
+              title={tHome('publishedCount', { count: formattedStats.apps })}
+            >
+              <span className="text-base font-semibold text-gray-900">{formattedStats.apps}</span>
+              <svg
+                className="h-5 w-5 text-gray-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+                <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+                <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+                <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+              </svg>
+              <span className="sr-only">{tHome('publishedCount', { count: formattedStats.apps })}</span>
             </div>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as 'new' | 'popular' | 'title')} className="rounded-md border border-gray-200 bg-white px-3 py-1 text-sm text-gray-600 focus:outline-none focus:border-emerald-500">
-              <option value="new">{tHome('sort.new')}</option>
-              <option value="popular">{tHome('sort.popular')}</option>
-              <option value="title">{tHome('sort.title')}</option>
-            </select>
-            {(selectedTags.length > 0 || q) && (
-              <button onClick={clearFilters} className="text-sm text-red-500 hover:underline">{tHome('clear')}</button>
-            )}
+            <div
+              className="flex items-center gap-2"
+              title={tHome('membersCount', { count: formattedStats.members })}
+            >
+              <span className="text-base font-semibold text-gray-900">{formattedStats.members}</span>
+              <svg
+                className="h-5 w-5 text-gray-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.5 7.5a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0ZM4 19.25a5.75 5.75 0 0111.5 0v.25H4v-.25Z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17.75 10.5a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0ZM13.5 19.5v-.25a4.25 4.25 0 015.5-4.08"
+                />
+              </svg>
+              <span className="sr-only">{tHome('membersCount', { count: formattedStats.members })}</span>
+            </div>
           </div>
         </div>
         {errorMessage && (<div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm">{errorMessage}</div>)}

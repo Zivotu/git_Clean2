@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   useState,
@@ -11,14 +11,17 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { apiAuthedPost, ApiError, apiPost } from '@/lib/api';
+import { apiAuthedPost, ApiError, apiPatch, apiPost } from '@/lib/api';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import ProgressModal, { type BuildState as ProgressModalState } from '@/components/ProgressModal';
 import { useBuildEvents, type BuildStatus } from '@/hooks/useBuildEvents';
 import {
   MAX_PREVIEW_SIZE_BYTES,
+  MAX_SCREENSHOT_SIZE_BYTES,
   PREVIEW_PRESET_PATHS,
+  ScreenshotUploadError,
   createPresetPreviewFile,
+  uploadScreenshotFile,
 } from '@/lib/previewClient';
 import type { RoomsMode } from '@/lib/types';
 import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
@@ -42,19 +45,22 @@ interface ManifestDraft {
 }
 
 const overlayMaxChars = 22;
+const LONG_DESCRIPTION_LIMIT = 4000;
+const MIN_LONG_DESCRIPTION = 160;
+const SCREENSHOT_FIELD_COUNT = 2;
 const stepsList = ['source', 'basics'] as const;
 type StepKey = typeof stepsList[number];
 
 const friendlyByCode: Record<string, string> = {
   NET_OPEN_NEEDS_DOMAINS: 'Dodaj barem jednu domenu (npr. api.example.com).',
-  NET_DOMAIN_NOT_ALLOWED: 'Ta domena nije dopuštena.',
-  LLM_MISSING_API_KEY: 'Nedostaje LLM API ključ.',
+  NET_DOMAIN_NOT_ALLOWED: 'Ta domena nije dopuÅ¡tena.',
+  LLM_MISSING_API_KEY: 'Nedostaje LLM API kljuÄ.',
   LLM_INVALID_JSON: 'AI servis je vratio neispravan JSON.',
   LLM_UNREACHABLE: 'AI servis trenutno nije dostupan.',
-  BUILD_PUBLISH_RENAME_FAILED: 'Objavljivanje nije uspjelo. Pokušaj ponovno.',
-  ses_lockdown: 'SES/lockdown nije podržan u browseru. Ukloni ga ili pokreni samo na serveru.',
-  ses_compartment: 'Kod koristi SES Compartment – potrebno je ručno odobrenje.',
-  max_apps: 'Dosegnut je maksimalan broj aplikacija za tvoj plan. Obriši postojeću ili aktiviraj Gold.',
+  BUILD_PUBLISH_RENAME_FAILED: 'Objavljivanje nije uspjelo. PokuÅ¡aj ponovno.',
+  ses_lockdown: 'SES/lockdown nije podrÅ¾an u browseru. Ukloni ga ili pokreni samo na serveru.',
+  ses_compartment: 'Kod koristi SES Compartment â€“ potrebno je ruÄno odobrenje.',
+  max_apps: 'Dosegnut je maksimalan broj aplikacija za tvoj plan. ObriÅ¡i postojeÄ‡u ili aktiviraj Gold.',
 };
 
 const detectMode = (value: string): Mode =>
@@ -122,6 +128,15 @@ export default function CreatePage() {
     },
   });
   const [roomsMode, setRoomsMode] = useState<RoomsMode>('off');
+  const [longDescription, setLongDescription] = useState('');
+  const [longDescriptionError, setLongDescriptionError] = useState('');
+  const [screenshots, setScreenshots] = useState<Array<{ file: File; dataUrl: string } | null>>(
+    () => Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => null),
+  );
+  const [screenshotErrors, setScreenshotErrors] = useState<string[]>(
+    () => Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => ''),
+  );
+  const screenshotInputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const [trEn, setTrEn] = useState({ title: '', description: '' });
   const [trDe, setTrDe] = useState({ title: '', description: '' });
@@ -139,6 +154,10 @@ export default function CreatePage() {
   const [customPreview, setCustomPreview] = useState<{ file: File; dataUrl: string } | null>(null);
   const [previewError, setPreviewError] = useState('');
   const [previewUploading, setPreviewUploading] = useState(false);
+  const screenshotMaxMb = useMemo(
+    () => Math.round((MAX_SCREENSHOT_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
+    [],
+  );
 
   const [publishError, setPublishError] = useState('');
   const [publishErrorCode, setPublishErrorCode] = useState<string | null>(null);
@@ -252,7 +271,7 @@ export default function CreatePage() {
     const name = file.name.toLowerCase();
     if (!name.endsWith('.zip')) {
       setBundleFile(null);
-      setBundleError('Podržavamo samo .zip pakete.');
+      setBundleError('PodrÅ¾avamo samo .zip pakete.');
       if (bundleInputRef.current) bundleInputRef.current.value = '';
       return;
     }
@@ -291,7 +310,7 @@ export default function CreatePage() {
     } catch {
       setCustomPreview(null);
       setPreviewChoice('preset');
-      setPreviewError('Neuspješno čitanje datoteke.');
+      setPreviewError('NeuspjeÅ¡no Äitanje datoteke.');
       if (previewInputRef.current) previewInputRef.current.value = '';
     }
   };
@@ -310,6 +329,92 @@ export default function CreatePage() {
     return true;
   };
 
+  const handleLongDescriptionInput = useCallback(
+    (value: string) => {
+      const next = value.slice(0, LONG_DESCRIPTION_LIMIT);
+      setLongDescription(next);
+      if (longDescriptionError && next.trim().length >= MIN_LONG_DESCRIPTION) {
+        setLongDescriptionError('');
+      }
+    },
+    [longDescriptionError],
+  );
+
+  const handleScreenshotSelect = useCallback(
+    async (index: number, files: FileList | null) => {
+      const file = files?.[0];
+      if (!file) return;
+      if (file.size > MAX_SCREENSHOT_SIZE_BYTES) {
+        setScreenshotErrors((prev) => {
+          const next = [...prev];
+          next[index] = `${tCreate('screenshotsTooLarge', { size: screenshotMaxMb })}`;
+          return next;
+        });
+        if (screenshotInputRefs.current[index]) {
+          screenshotInputRefs.current[index]!.value = '';
+        }
+        return;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        setScreenshots((prev) => {
+          const next = [...prev];
+          next[index] = { file, dataUrl };
+          return next;
+        });
+        setScreenshotErrors((prev) => {
+          const next = [...prev];
+          next[index] = '';
+          return next;
+        });
+      } catch (err) {
+        console.warn('screenshot-read-failed', err);
+        setScreenshotErrors((prev) => {
+          const next = [...prev];
+          next[index] = tCreate('screenshotsUploadFailed');
+          return next;
+        });
+      }
+    },
+    [screenshotMaxMb, tCreate],
+  );
+
+  const handleScreenshotRemove = useCallback((index: number) => {
+    setScreenshots((prev) => {
+      const next = [...prev];
+      next[index] = null;
+      return next;
+    });
+    setScreenshotErrors((prev) => {
+      const next = [...prev];
+      next[index] = '';
+      return next;
+    });
+    if (screenshotInputRefs.current[index]) {
+      screenshotInputRefs.current[index]!.value = '';
+    }
+  }, []);
+
+  const syncListingMetadata = useCallback(
+    async (identifier: string) => {
+      if (!identifier) return;
+      const trimmedDescription = longDescription.trim();
+      if (trimmedDescription) {
+        await apiPatch(
+          `/listing/${encodeURIComponent(identifier)}`,
+          { longDescription: trimmedDescription },
+          { auth: true },
+        );
+      }
+      for (let index = 0; index < screenshots.length; index += 1) {
+        const entry = screenshots[index];
+        if (!entry) continue;
+        await uploadScreenshotFile(identifier, index, entry.file);
+      }
+    },
+    [longDescription, screenshots],
+  );
+
   const publish = async () => {
     setPublishError('');
     setAuthError('');
@@ -323,7 +428,7 @@ export default function CreatePage() {
     try {
       if (needsTermsConsent) {
         if (!publishTermsChecked) {
-          setPublishTermsError('Potvrdi da prihvaćaš uvjete korištenja prije prve objave.');
+          setPublishTermsError('Potvrdi da prihvaÄ‡aÅ¡ uvjete koriÅ¡tenja prije prve objave.');
           return;
         }
         try {
@@ -331,13 +436,28 @@ export default function CreatePage() {
           setPublishTermsError(null);
         } catch (err) {
           console.error('terms_accept_publish_failed', err);
-          setPublishTermsError('Spremanje prihvaćanja nije uspjelo. Pokušaj ponovno.');
+          setPublishTermsError('Spremanje prihvaÄ‡anja nije uspjelo. PokuÅ¡aj ponovno.');
           return;
         }
       }
 
       if (!user) {
         setAuthError('Za objavu se prvo prijavi.');
+        return;
+      }
+
+      const trimmedLongDescription = longDescription.trim();
+      if (trimmedLongDescription.length < MIN_LONG_DESCRIPTION) {
+        const message = tCreate('longDescriptionTooShort', { min: MIN_LONG_DESCRIPTION });
+        setLongDescriptionError(message);
+        setPublishError(message);
+        return;
+      }
+
+      const selectedScreenshots = screenshots.filter(Boolean);
+      if (!selectedScreenshots.length) {
+        const message = tCreate('screenshotsRequired');
+        setPublishError(message);
         return;
       }
 
@@ -390,6 +510,16 @@ export default function CreatePage() {
             if (bundlePublish.slug) {
               void ensurePreviewForSlug();
             }
+            const targetIdentifier =
+              bundlePublish.slug || (bundlePublish.listingId ? String(bundlePublish.listingId) : '');
+            if (targetIdentifier) {
+              try {
+                await syncListingMetadata(targetIdentifier);
+              } catch (err) {
+                console.error('bundle-metadata-sync-failed', err);
+                setPublishError(tCreate('metadataSyncFailed'));
+              }
+            }
           } else {
             const message =
               bundlePublish?.error || 'Build ID nije vracen s posluzitelja.';
@@ -402,7 +532,7 @@ export default function CreatePage() {
             if (err.status === 401) {
               setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokusaj ponovno.');
             } else if (err.code === 'terms_not_accepted') {
-              setPublishTermsError('Prije slanja bundla potvrdi i prihvati uvjete korištenja.');
+              setPublishTermsError('Prije slanja bundla potvrdi i prihvati uvjete koriÅ¡tenja.');
               setShowTermsModal(true);
               void refreshTermsStatus();
             } else {
@@ -420,7 +550,7 @@ export default function CreatePage() {
       const sesRe =
         /(lockdown\s*\(|\brequire\s*\(\s*['"]ses['"]\s*\)|\bfrom\s+['"]ses['"]|import\s*\(\s*['"]ses['"]\s*\))/;
       if (sesRe.test(code)) {
-        setPublishError('SES/lockdown nije podržan u browseru. Ukloni ga iz koda ili ga pokreni samo na serveru.');
+        setPublishError('SES/lockdown nije podrÅ¾an u browseru. Ukloni ga iz koda ili ga pokreni samo na serveru.');
         return;
       }
 
@@ -486,22 +616,31 @@ export default function CreatePage() {
         if (json.slug) {
           void ensurePreviewForSlug();
         }
+        const targetIdentifier = json.slug || (json.listingId ? String(json.listingId) : '');
+        if (targetIdentifier) {
+          try {
+            await syncListingMetadata(targetIdentifier);
+          } catch (err) {
+            console.error('metadata-sync-failed', err);
+            setPublishError(tCreate('metadataSyncFailed'));
+          }
+        }
       } else {
-        setPublishError('Build ID nije vraćen s poslužitelja.');
+        setPublishError('Build ID nije vra��en s poslu�_itelja.');
         setShowProgress(false);
         setManualBuildState(null);
       }
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {
-          setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokušaj ponovno.');
+          setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokuÅ¡aj ponovno.');
         } else if (err.code === 'terms_not_accepted') {
-          setPublishTermsError('Prije objave potvrdi i prihvati uvjete korištenja.');
+          setPublishTermsError('Prije objave potvrdi i prihvati uvjete koriÅ¡tenja.');
           setShowTermsModal(true);
           void refreshTermsStatus();
         } else {
           const code = err.code as string | undefined;
-          const friendly = (code && friendlyByCode[code]) || err.message || code || 'Greška pri objavi.';
+          const friendly = (code && friendlyByCode[code]) || err.message || code || 'GreÅ¡ka pri objavi.';
           setPublishError(friendly);
           setPublishErrorCode(code || null);
           if (code === 'max_apps') {
@@ -524,7 +663,15 @@ export default function CreatePage() {
   const titleFilled = manifest.name.trim().length > 0;
   const descFilled = manifest.description.trim().length > 0;
   const imageChosen = Boolean(customPreview?.dataUrl || selectedPreset);
-  const allReady = titleFilled && descFilled && imageChosen && codeOrBundleFilled;
+  const longDescriptionReady = longDescription.trim().length >= MIN_LONG_DESCRIPTION;
+  const screenshotsReady = screenshots.some((entry) => Boolean(entry));
+  const allReady =
+    titleFilled &&
+    descFilled &&
+    imageChosen &&
+    codeOrBundleFilled &&
+    longDescriptionReady &&
+    screenshotsReady;
 
   const previewDisplayUrl =
     previewChoice === 'custom' && customPreview?.dataUrl
@@ -537,9 +684,9 @@ export default function CreatePage() {
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/50" onClick={() => setShowUpgradeModal(false)} />
         <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold mb-2">Trebaš Gold za više aplikacija</h3>
+          <h3 className="text-xl font-semibold mb-2">TrebaÅ¡ Gold za viÅ¡e aplikacija</h3>
           <p className="text-sm text-gray-700 mb-4">
-            U besplatnom paketu možeš imati 1 aplikaciju ukupno. Obriši postojeću u <a href="/my" className="underline text-emerald-700">Mojim aplikacijama</a> ili nadogradi na Gold paket.
+            U besplatnom paketu moÅ¾eÅ¡ imati 1 aplikaciju ukupno. ObriÅ¡i postojeÄ‡u u <a href="/my" className="underline text-emerald-700">Mojim aplikacijama</a> ili nadogradi na Gold paket.
           </p>
           <div className="flex gap-2 justify-end">
             <button
@@ -578,7 +725,7 @@ export default function CreatePage() {
         />
         <span className={done ? 'text-gray-700' : 'text-gray-500'}>{label}</span>
       </div>
-      <span className={`text-xs ${done ? 'text-emerald-700' : 'text-gray-400'}`}>{done ? '✔' : '—'}</span>
+      <span className={`text-xs ${done ? 'text-emerald-700' : 'text-gray-400'}`}>{done ? 'âœ”' : 'â€”'}</span>
     </div>
   );
 
@@ -741,7 +888,7 @@ export default function CreatePage() {
                     </div>
                     {bundleError && <p className="text-sm text-red-600">{bundleError}</p>}
                     <p className="text-xs text-gray-500">
-                      Nakon uspješnog builda dobit ćeš lokalni preview prije slanja na administratorski pregled.
+                      Nakon uspjeÅ¡nog builda dobit Ä‡eÅ¡ lokalni preview prije slanja na administratorski pregled.
                     </p>
                   </div>
                 )}
@@ -751,7 +898,7 @@ export default function CreatePage() {
                     onClick={handleNext}
                     className="rounded-lg bg-emerald-600 px-4 py-2 text-white shadow-sm transition hover:bg-emerald-700"
                   >
-                    Dalje →
+                    Dalje â†’
                   </button>
                 </div>
               </section>
@@ -784,6 +931,106 @@ export default function CreatePage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    {tCreate('longDescriptionLabel')}
+                  </label>
+                  <textarea
+                    className="min-h-[140px] w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400"
+                    value={longDescription}
+                    onChange={(event) => handleLongDescriptionInput(event.target.value)}
+                    placeholder={tCreate('longDescriptionPlaceholder')}
+                  />
+                  <p className="mt-1 text-xs text-gray-600">
+                    {tCreate('longDescriptionHint', { min: MIN_LONG_DESCRIPTION })}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {tCreate('longDescriptionCounter', {
+                      used: longDescription.length,
+                      limit: LONG_DESCRIPTION_LIMIT,
+                    })}
+                  </p>
+                  {longDescriptionError && (
+                    <p className="text-xs text-red-600">{longDescriptionError}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium">
+                    {tCreate('screenshotsLabel')}
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    {tCreate('screenshotsHint', { size: screenshotMaxMb })}
+                  </p>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {Array.from({ length: SCREENSHOT_FIELD_COUNT }).map((_, index) => {
+                      const entry = screenshots[index];
+                      const error = screenshotErrors[index];
+                      const fieldLabel = tCreate('screenshotsPreviewAlt', { index: index + 1 });
+                      return (
+                        <div
+                          key={index}
+                          className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm space-y-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700">{fieldLabel}</p>
+                              <p className="text-[11px] text-gray-500">
+                                {tCreate('screenshotsFileHint', { size: screenshotMaxMb })}
+                              </p>
+                            </div>
+                            {entry && (
+                              <button
+                                type="button"
+                                onClick={() => handleScreenshotRemove(index)}
+                                className="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                              >
+                                {tCreate('screenshotsRemoveButton')}
+                              </button>
+                            )}
+                          </div>
+                          <div className="relative aspect-video rounded-xl border border-dashed border-gray-300 bg-gray-50 overflow-hidden">
+                            {entry ? (
+                              <Image
+                                src={entry.dataUrl}
+                                alt={fieldLabel}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-[11px] uppercase tracking-wide text-gray-400">
+                                  {tCreate('screenshotsEmptyPlaceholder')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => screenshotInputRefs.current[index]?.click()}
+                              className="rounded-lg border border-emerald-500 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                            >
+                              {entry
+                                ? tCreate('screenshotsReplaceButton')
+                                : tCreate('screenshotsUploadButton')}
+                            </button>
+                            <input
+                              ref={(el) => {
+                                screenshotInputRefs.current[index] = el;
+                              }}
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp,image/gif"
+                              className="hidden"
+                              onChange={(event) => handleScreenshotSelect(index, event.target.files)}
+                            />
+                          </div>
+                          {error && <p className="text-xs text-red-600">{error}</p>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
                 <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
                   <div className="flex items-center justify-between gap-2">
                     <div>
@@ -791,7 +1038,7 @@ export default function CreatePage() {
                         Sobe s PIN-om (Thesara Rooms)
                       </p>
                       <p className="text-xs text-slate-600">
-                        Thesara dodatno traži naziv sobe i PIN prije učitavanja iframea, drži PIN izvan tvoje aplikacije i
+                        Thesara dodatno traÅ¾i naziv sobe i PIN prije uÄitavanja iframea, drÅ¾i PIN izvan tvoje aplikacije i
                         nudi javnu demo sobu (PIN 1111) za testiranje.
                       </p>
                     </div>
@@ -804,12 +1051,12 @@ export default function CreatePage() {
                     value={roomsMode}
                     onChange={(event) => setRoomsMode(event.target.value as RoomsMode)}
                   >
-                    <option value="off">Isključeno — svi korisnici dijele istu pohranu</option>
-                    <option value="optional">Demo soba + korisnik može kreirati privatnu sobu</option>
-                    <option value="required">Korisnik mora unijeti naziv i PIN prije korištenja</option>
+                    <option value="off">IskljuÄeno â€” svi korisnici dijele istu pohranu</option>
+                    <option value="optional">Demo soba + korisnik moÅ¾e kreirati privatnu sobu</option>
+                    <option value="required">Korisnik mora unijeti naziv i PIN prije koriÅ¡tenja</option>
                   </select>
                   <p className="mt-1 text-[11px] text-slate-500">
-                    Opciju možeš naknadno promijeniti prilikom sljedeće objave aplikacije.
+                    Opciju moÅ¾eÅ¡ naknadno promijeniti prilikom sljedeÄ‡e objave aplikacije.
                   </p>
                 </div>
 
@@ -837,7 +1084,7 @@ export default function CreatePage() {
                           onClick={resetCustomPreview}
                           className="text-sm text-gray-600 underline"
                         >
-                          Ukloni prilagođenu grafiku
+                          Ukloni prilagoÄ‘enu grafiku
                         </button>
                       )}
                       <span className="text-[11px] text-gray-600">Maks. 1MB</span>
@@ -854,31 +1101,31 @@ export default function CreatePage() {
                         }
                         maxLength={overlayMaxChars}
                         className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                        placeholder="Naslov za overlay…"
+                        placeholder="Naslov za overlayâ€¦"
                       />
                       <p className="mt-1 text-[11px] text-gray-500">
-                        Ovaj naslov će se prikazati preko svih thumbnailova kao naslov aplikacije.
+                        Ovaj naslov Ä‡e se prikazati preko svih thumbnailova kao naslov aplikacije.
                       </p>
                     </div>
                   </div>
 
                   <div>
                     <label className="mt-2 block text-sm font-medium">
-                      Ili odaberi jedan od predložaka
+                      Ili odaberi jedan od predloÅ¾aka
                     </label>
                     <p className="text-xs text-gray-600">
-                      Klikom na predložak vidiš kako izgleda s naslovom preko slike.
+                      Klikom na predloÅ¾ak vidiÅ¡ kako izgleda s naslovom preko slike.
                     </p>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
                     {PREVIEW_PRESET_PATHS.map((preset) => (
                       <button
                         key={preset}
                         type="button"
                         onClick={() => handlePresetSelect(preset)}
                         className="relative w-full text-left"
-                        aria-label="Odaberi predložak"
+                        aria-label="Odaberi predloÅ¾ak"
                       >
                         <div
                           className={`relative overflow-hidden rounded-lg border ${
@@ -923,7 +1170,7 @@ export default function CreatePage() {
                   </div>
 
                   {previewUploading && (
-                    <p className="text-xs text-gray-500">Učitavam preview…</p>
+                    <p className="text-xs text-gray-500">UÄitavam previewâ€¦</p>
                   )}
                   {previewError && <p className="text-sm text-red-600">{previewError}</p>}
                 </div>
@@ -931,7 +1178,7 @@ export default function CreatePage() {
                 <div className="space-y-3 pt-4">
                   <h3 className="font-medium">Prijevodi (neobavezno)</h3>
                   <p className="-mt-1 text-xs text-gray-600">
-                    Ako ostavite prazno, sustav će automatski prevesti nakon odobrenja.
+                    Ako ostavite prazno, sustav Ä‡e automatski prevesti nakon odobrenja.
                   </p>
 
                   <div className="overflow-hidden rounded-xl border">
@@ -941,7 +1188,7 @@ export default function CreatePage() {
                       onClick={() => setOpenEn((value) => !value)}
                     >
                       <span className="font-medium">English</span>
-                      <span className="text-xs text-gray-500">{openEn ? 'Sakrij' : 'Prikaži'}</span>
+                      <span className="text-xs text-gray-500">{openEn ? 'Sakrij' : 'PrikaÅ¾i'}</span>
                     </button>
                     <AnimatePresence initial={false}>
                       {openEn && (
@@ -983,7 +1230,7 @@ export default function CreatePage() {
                       onClick={() => setOpenDe((value) => !value)}
                     >
                       <span className="font-medium">Deutsch</span>
-                      <span className="text-xs text-gray-500">{openDe ? 'Sakrij' : 'Prikaži'}</span>
+                      <span className="text-xs text-gray-500">{openDe ? 'Sakrij' : 'PrikaÅ¾i'}</span>
                     </button>
                     <AnimatePresence initial={false}>
                       {openDe && (
@@ -1025,7 +1272,7 @@ export default function CreatePage() {
                       onClick={() => setOpenHr((value) => !value)}
                     >
                       <span className="font-medium">Hrvatski</span>
-                      <span className="text-xs text-gray-500">{openHr ? 'Sakrij' : 'Prikaži'}</span>
+                      <span className="text-xs text-gray-500">{openHr ? 'Sakrij' : 'PrikaÅ¾i'}</span>
                     </button>
                     <AnimatePresence initial={false}>
                       {openHr && (
@@ -1102,7 +1349,7 @@ export default function CreatePage() {
                   onClick={handleBack}
                     className="rounded-lg border px-4 py-2 transition hover:bg-gray-50"
                   >
-                    ← Nazad
+                    â† Nazad
                   </button>
                   <div className="flex flex-col items-end">
                     <button
@@ -1137,7 +1384,7 @@ export default function CreatePage() {
                     )}
                     {submissionType === 'bundle' && localPreviewUrl && (
                       <p className="mt-2 text-sm text-emerald-700">
-                        Bundle je uspješno izgrađen.{' '}
+                        Bundle je uspjeÅ¡no izgraÄ‘en.{' '}
                         <a href={localPreviewUrl} className="underline" target="_blank" rel="noreferrer">
                           Otvori preview
                         </a>
@@ -1156,7 +1403,7 @@ export default function CreatePage() {
 
           <aside className="space-y-6">
             <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-5">
-              <h3 className="mb-3 font-semibold">Sažetak</h3>
+              <h3 className="mb-3 font-semibold">SaÅ¾etak</h3>
               <div className="space-y-2">
                 <ChecklistItem label="Naslov" done={titleFilled} />
                 <ChecklistItem
@@ -1164,10 +1411,12 @@ export default function CreatePage() {
                   done={codeOrBundleFilled}
                 />
                 <ChecklistItem label="Opis" done={descFilled} />
+                <ChecklistItem label="Detaljni opis" done={longDescriptionReady} />
+                <ChecklistItem label="Snimke zaslona" done={screenshotsReady} />
                 <ChecklistItem label="Slika" done={imageChosen} />
                 <div className="border-t pt-2" />
                 <div className={`text-sm font-medium ${allReady ? 'text-emerald-700' : 'text-gray-500'}`}>
-                  {allReady ? 'Spremno za objavu' : 'Dovrši stavke za objavu'}
+                  {allReady ? 'Spremno za objavu' : 'DovrÅ¡i stavke za objavu'}
                 </div>
               </div>
             </section>
@@ -1197,12 +1446,12 @@ export default function CreatePage() {
                 }`}
                 style={{ paddingTop: '14px', paddingBottom: '14px', fontSize: '1.125rem' }}
               >
-                {publishing ? 'Objavljujem…' : 'OBJAVI'}
+                {publishing ? 'Objavljujemâ€¦' : 'OBJAVI'}
               </button>
               <p className="mt-2 text-xs text-gray-500">
                 {allReady
-                  ? 'Sve stavke su ispunjene — spremno za objavu.'
-                  : 'Dovrši: Naslov, Kod/Bundle, Opis i Slika.'}
+                  ? 'Sve stavke su ispunjene â€” spremno za objavu.'
+                  : 'DovrÅ¡i: Naslov, Kod/Bundle, Opis i Slika.'}
               </p>
             </section>
           </aside>
@@ -1217,3 +1466,4 @@ export default function CreatePage() {
     </main>
   );
 }
+

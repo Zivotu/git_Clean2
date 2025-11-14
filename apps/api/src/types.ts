@@ -58,6 +58,8 @@ export interface AppRecord {
   deletedAt?: number;
   playUrl: string;
   previewUrl?: string | null;
+  longDescription?: string;
+  screenshotUrls?: string[];
   likesCount?: number;
   playsCount?: number;
   // Localized fields stored per locale: { [locale]: { title, description } }

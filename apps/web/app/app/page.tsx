@@ -26,16 +26,26 @@ import {
 import { useRelativeTime } from '@/hooks/useRelativeTime';
 import {
   MAX_PREVIEW_SIZE_BYTES,
+  MAX_SCREENSHOT_SIZE_BYTES,
   PREVIEW_PRESET_PATHS,
   PreviewPresetPath,
   PreviewUploadError,
+  ScreenshotUploadError,
+  deleteScreenshot,
   uploadPreviewFile,
   uploadPresetPreview,
+  uploadScreenshotFile,
 } from '@/lib/previewClient';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { playHref, appDetailsHref } from '@/lib/urls';
 import { getPlayUrl } from '@/lib/play';
 import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
+import PublicAppView from './PublicAppView';
+
+const LONG_DESCRIPTION_LIMIT = 4000;
+const SCREENSHOT_FIELD_COUNT = 2;
+const SCREENSHOT_URL_LIMIT = 1024;
+const MIN_LONG_DESCRIPTION = 160;
 
 // ------------------------------------------------------------------
 // Types
@@ -48,7 +58,9 @@ type Listing = {
   slug: string;
   title: string;
   description?: string;
+  longDescription?: string;
   tags?: string[];
+  screenshotUrls?: string[];
   visibility: 'public' | 'unlisted';
   accessMode?: AccessMode;
   playUrl: string;
@@ -65,6 +77,11 @@ type Listing = {
   status?: ListingStatus;
   moderation?: { status?: string; reasons?: string[] };
   translations?: Record<string, { title?: string; description?: string }>;
+};
+
+type ScreenshotSlotState = {
+  uploading: boolean;
+  error: string;
 };
 
 // ------------------------------------------------------------------
@@ -315,7 +332,17 @@ function AppDetailClient() {
   const { isSlotEnabled } = useAds();
   const name = getDisplayName(user);
   const { messages } = useI18n();
-  const tApp = useCallback((k: string) => messages[`App.${k}`] || k, [messages]);
+  const tApp = useCallback(
+    (k: string, params?: Record<string, string | number>, fallback?: string) => {
+      const template = messages[`App.${k}`] ?? fallback ?? k;
+      if (!params) return template;
+      return Object.entries(params).reduce(
+        (acc, [key, value]) => acc.replaceAll(`{${key}}`, String(value)),
+        template,
+      );
+    },
+    [messages],
+  );
 
   const userId = user?.uid ?? auth?.currentUser?.uid ?? null;
   const normalizedSlug = useMemo(() => (slug ?? '').trim(), [slug]);
@@ -343,6 +370,20 @@ function AppDetailClient() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [longDescription, setLongDescription] = useState('');
+  const [screenshotUrls, setScreenshotUrls] = useState<string[]>(
+    () => Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => ''),
+  );
+  const [screenshotStates, setScreenshotStates] = useState<ScreenshotSlotState[]>(
+    () =>
+      Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => ({
+        uploading: false,
+        error: '',
+      })),
+  );
+  const [screenshotVersions, setScreenshotVersions] = useState<number[]>(
+    () => Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => 0),
+  );
   // Optional manual translations for UI editing
   const [trEn, setTrEn] = useState({ title: '', description: '' });
   const [trDe, setTrDe] = useState({ title: '', description: '' });
@@ -373,12 +414,17 @@ function AppDetailClient() {
 
   const fetchAbortRef = useRef<AbortController | null>(null);
   const previewInputRef = useRef<HTMLInputElement | null>(null);
+  const screenshotInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [imgVersion, setImgVersion] = useState(0);
   const [allowed, setAllowed] = useState(true);
   const overlayMaxChars = 22;
   const maxPreviewMb = useMemo(
     () => Math.round((MAX_PREVIEW_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
+    []
+  );
+  const screenshotMaxMb = useMemo(
+    () => Math.round((MAX_SCREENSHOT_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
     []
   );
   const [previewChoice, setPreviewChoice] = useState<'preset' | 'custom'>('preset');
@@ -593,6 +639,13 @@ useEffect(() => {
     }
   }, [item]);
 
+  useEffect(() => {
+    setScreenshotStates(
+      Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => ({ uploading: false, error: '' })),
+    );
+    setScreenshotVersions(Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => 0));
+  }, [item?.slug]);
+
   // Build headers for API requests
   const buildHeaders = useCallback(
     async (withJson: boolean): Promise<Record<string, string>> => {
@@ -683,6 +736,26 @@ useEffect(() => {
     [item, likeBusy, router, buildHeaders, liked, user]
   );
 
+  const normalizeScreenshotInput = useCallback((raw: string) => {
+    const trimmed = (raw ?? '').toString().trim();
+    if (!trimmed) return '';
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
+    }
+    if (/^[a-z]+:\/\//i.test(trimmed)) {
+      return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
+    }
+    return `https://${trimmed}`.slice(0, SCREENSHOT_URL_LIMIT);
+  }, []);
+
+  const normalizeScreenshotState = useCallback(
+    (values?: string[] | null) =>
+      Array.from({ length: SCREENSHOT_FIELD_COUNT }, (_, index) =>
+        normalizeScreenshotInput(values?.[index] ?? ''),
+      ),
+    [normalizeScreenshotInput],
+  );
+
   // Load listing data
   useEffect(() => {
     setFetchError(null);
@@ -747,6 +820,11 @@ useEffect(() => {
           setPreviewApplied(Boolean(it.previewUrl));
           setTitle(it.title ?? '');
           setDescription(it.description ?? '');
+          setLongDescription(((it as any).longDescription ?? '').slice(0, LONG_DESCRIPTION_LIMIT));
+          const incomingScreens = Array.isArray((it as any).screenshotUrls)
+            ? (it as any).screenshotUrls
+            : [];
+          setScreenshotUrls(normalizeScreenshotState(incomingScreens));
           try {
             const tr = (it as any).translations || {};
             setTrEn({ title: tr?.en?.title || '', description: tr?.en?.description || '' });
@@ -785,7 +863,7 @@ useEffect(() => {
     return () => {
       controller.abort();
     };
-  }, [normalizedSlug, buildHeaders, userId, router]);
+  }, [normalizedSlug, buildHeaders, userId, router, normalizeScreenshotState]);
 
   const imgSrc = useMemo(() => {
     const shouldForcePlaceholder = Boolean(item?.status && !isPublished && !canViewUnpublished);
@@ -800,6 +878,10 @@ useEffect(() => {
     return resolved;
   }, [canViewUnpublished, isPublished, item?.status, item?.previewUrl, imgVersion]);
 
+  const handleLongDescriptionChange = useCallback((value: string) => {
+    setLongDescription(value.slice(0, LONG_DESCRIPTION_LIMIT));
+  }, []);
+
   const hasUnsavedPreview = useMemo(() => {
     if (!canEdit) return false;
     if (previewChoice === 'custom') return !!customPreview;
@@ -811,6 +893,126 @@ useEffect(() => {
   const activePreviewSrc = useEditorPreview ? previewDisplayUrl : imgSrc;
   const activeOverlayLabel =
     useEditorPreview && previewChoice === 'preset' ? presetOverlayLabel : '';
+
+  const isValidScreenshotUrl = useCallback((value: string) => {
+    if (!value) return true;
+    return /^https?:\/\//i.test(value);
+  }, []);
+
+  const updateScreenshotSlotState = useCallback(
+    (index: number, patch: Partial<ScreenshotSlotState>) => {
+      setScreenshotStates((prev) => {
+        const next = [...prev];
+        next[index] = { ...next[index], ...patch };
+        return next;
+      });
+    },
+    [],
+  );
+
+  const bumpScreenshotVersion = useCallback((index: number) => {
+    setScreenshotVersions((prev) => {
+      const next = [...prev];
+      next[index] = (next[index] ?? 0) + 1;
+      return next;
+    });
+  }, []);
+
+  const handleScreenshotFileInput = useCallback(
+    async (index: number, files: FileList | null) => {
+      if (!item || !canEdit) return;
+      const file = files?.[0];
+      const input = screenshotInputRefs.current[index];
+      if (input) {
+        input.value = '';
+      }
+      if (!file) return;
+
+      updateScreenshotSlotState(index, { uploading: true, error: '' });
+
+      try {
+        const resp = await uploadScreenshotFile(item.slug, index, file);
+        const updatedScreens = Array.isArray(resp?.screenshotUrls) ? resp.screenshotUrls : [];
+        setScreenshotUrls(normalizeScreenshotState(updatedScreens));
+        bumpScreenshotVersion(index);
+        setToast({
+          message: tApp('creator.screenshotsUploadSuccess', undefined, 'Screenshot saved.'),
+          type: 'success',
+        });
+        updateScreenshotSlotState(index, { uploading: false, error: '' });
+      } catch (err: any) {
+        let message = tApp(
+          'creator.screenshotsUploadFailed',
+          undefined,
+          'Failed to upload screenshot. Please try again.',
+        );
+        if (err instanceof ScreenshotUploadError) {
+          if (err.code === 'screenshot_too_large') {
+            message = tApp(
+              'creator.screenshotsTooLarge',
+              { size: screenshotMaxMb },
+              `Screenshot must be ${screenshotMaxMb}MB or smaller.`,
+            );
+          } else if (err.message) {
+            message = err.message;
+          }
+        }
+        updateScreenshotSlotState(index, { uploading: false, error: message });
+        setToast({ message, type: 'error' });
+      }
+    },
+    [
+      bumpScreenshotVersion,
+      canEdit,
+      item,
+      normalizeScreenshotState,
+      screenshotMaxMb,
+      tApp,
+      updateScreenshotSlotState,
+      setToast,
+    ],
+  );
+
+  const handleScreenshotRemove = useCallback(
+    async (index: number) => {
+      if (!item || !canEdit) return;
+      const currentValue = screenshotUrls[index];
+      if (!currentValue) return;
+      updateScreenshotSlotState(index, { uploading: true, error: '' });
+      try {
+        const resp = await deleteScreenshot(item.slug, index);
+        const updatedScreens = Array.isArray(resp?.screenshotUrls) ? resp.screenshotUrls : [];
+        setScreenshotUrls(normalizeScreenshotState(updatedScreens));
+        bumpScreenshotVersion(index);
+        updateScreenshotSlotState(index, { uploading: false, error: '' });
+        setToast({
+          message: tApp('creator.screenshotsRemoveSuccess', undefined, 'Screenshot removed.'),
+          type: 'success',
+        });
+      } catch (err: any) {
+        let message = tApp(
+          'creator.screenshotsDeleteFailed',
+          undefined,
+          'Failed to remove screenshot. Please try again.',
+        );
+        if (err instanceof ScreenshotUploadError && err.message) {
+          message = err.message;
+        }
+        updateScreenshotSlotState(index, { uploading: false, error: message });
+        setToast({ message, type: 'error' });
+      }
+    },
+    [
+      bumpScreenshotVersion,
+      canEdit,
+      item,
+      normalizeScreenshotState,
+      screenshotUrls,
+      tApp,
+      updateScreenshotSlotState,
+      setToast,
+    ],
+  );
 
   useEffect(() => {
     if (useEditorPreview) {
@@ -907,7 +1109,14 @@ useEffect(() => {
     overrides: Partial<
       Pick<
         Listing,
-        'title' | 'description' | 'tags' | 'visibility' | 'accessMode' | 'price'
+        | 'title'
+        | 'description'
+        | 'tags'
+        | 'visibility'
+        | 'accessMode'
+        | 'price'
+        | 'longDescription'
+        | 'screenshotUrls'
       >
     > & { pin?: string | null; maxConcurrentPins?: number } = {}
   ) => {
@@ -935,9 +1144,55 @@ useEffect(() => {
       translations.hr = { ...(norm(trHr.title) ? { title: norm(trHr.title) } : {}), ...(norm(trHr.description) ? { description: norm(trHr.description) } : {}) };
     }
 
+    const resolvedLongDescription =
+      typeof overrides.longDescription === 'string'
+        ? overrides.longDescription
+        : longDescription;
+    const normalizedLongDescription = resolvedLongDescription.slice(0, LONG_DESCRIPTION_LIMIT);
+    const trimmedLongDescription = normalizedLongDescription.trim();
+    if (trimmedLongDescription.length < MIN_LONG_DESCRIPTION) {
+      setToast({
+        message: tApp(
+          'creator.longDescriptionTooShort',
+          { min: MIN_LONG_DESCRIPTION },
+          `Detailed overview should have at least ${MIN_LONG_DESCRIPTION} characters.`,
+        ),
+        type: 'error',
+      });
+      setSaving(false);
+      return;
+    }
+
+    const resolvedScreens = Array.isArray(overrides.screenshotUrls)
+      ? overrides.screenshotUrls
+      : screenshotUrls;
+    const processedScreens = resolvedScreens.map((url) =>
+      typeof url === 'string' ? normalizeScreenshotInput(url) : '',
+    );
+    const hasInvalidScreenshot = processedScreens.some(
+      (url) => Boolean(url) && !isValidScreenshotUrl(url),
+    );
+    if (hasInvalidScreenshot) {
+      setToast({
+        message: tApp(
+          'creator.screenshotsInvalidToast',
+          undefined,
+          'Provjeri da URL-ovi snimaka započinju s https:// i pokušaj ponovno.',
+        ),
+        type: 'error',
+      });
+      setSaving(false);
+      return;
+    }
+    const normalizedScreens = processedScreens
+      .filter((url) => Boolean(url) && isValidScreenshotUrl(url))
+      .slice(0, SCREENSHOT_FIELD_COUNT);
+
     const body: any = {
       title,
       description,
+      longDescription: trimmedLongDescription,
+      screenshotUrls: normalizedScreens,
       tags: parsedTags,
       visibility,
       accessMode,
@@ -979,6 +1234,9 @@ useEffect(() => {
         if (overrides.visibility) setVisibility(overrides.visibility);
         if (overrides.accessMode) setAccessMode(overrides.accessMode);
         if ('pin' in overrides) setPin(json.item?.pin ?? '');
+        setLongDescription((json.item?.longDescription ?? '').slice(0, LONG_DESCRIPTION_LIMIT));
+        const updatedScreens = Array.isArray(json.item?.screenshotUrls) ? json.item.screenshotUrls : [];
+        setScreenshotUrls(normalizeScreenshotState(updatedScreens));
         if (typeof overrides.title === 'string') setTitle(overrides.title);
         if (typeof overrides.description === 'string') setDescription(overrides.description);
         if (Array.isArray(overrides.tags)) setTags(overrides.tags.join(', '));
@@ -1206,11 +1464,46 @@ useEffect(() => {
   const appDetailInlineSlotRaw = (AD_SLOT_IDS.appDetailInline || '').trim();
   const appDetailHeaderSlot = isSlotEnabled('appDetailHeader') ? appDetailHeaderSlotRaw : '';
   const appDetailInlineSlot = isSlotEnabled('appDetailInline') ? appDetailInlineSlotRaw : '';
+  const formattedPrice =
+    typeof item.price === 'number' && item.price > 0
+      ? new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }).format(item.price)
+      : tApp('price.free', undefined, 'FREE');
+  const playsDisplay =
+    typeof item.playsCount === 'number'
+      ? item.playsCount.toLocaleString('hr-HR')
+      : '—';
+  const playButtonState: 'login' | 'pay' | 'play' = !user
+    ? 'login'
+    : item.price && !allowed
+      ? 'pay'
+      : 'play';
+  const longDescriptionLabel = tApp('creator.longDescriptionLabel', undefined, 'Detailed overview');
+  const longDescriptionHelper = tApp(
+    'creator.longDescriptionHelper',
+    { min: MIN_LONG_DESCRIPTION },
+    `Aim for at least ${MIN_LONG_DESCRIPTION} characters (2-3 short paragraphs).`,
+  );
+  const longDescriptionPlaceholder = tApp(
+    'creator.longDescriptionPlaceholder',
+    undefined,
+    'Share the story, features, and benefits of your app...',
+  );
+  const longDescriptionCounterLabel = tApp(
+    'creator.longDescriptionCounter',
+    { used: longDescription.length, limit: LONG_DESCRIPTION_LIMIT },
+    `${longDescription.length}/${LONG_DESCRIPTION_LIMIT} characters`,
+  );
+  const screenshotsLabel = tApp('creator.screenshotsLabel', undefined, 'Screenshots');
+  const screenshotsHint = tApp(
+    'creator.screenshotsHint',
+    undefined,
+    'Upload up to two screenshots (PNG/JPG/WebP, max 1MB each). They appear on the public listing alongside the hero preview.',
+  );
 
   // ------------------------------------------------------------------
   // Main UI
   // ------------------------------------------------------------------
-  return (
+  const creatorView = (
     <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white">
       {/* Background decoration */}
       <div className="pointer-events-none fixed inset-0 -z-10">
@@ -1536,7 +1829,7 @@ useEffect(() => {
                       <h3 className="text-sm font-semibold text-gray-900">{tApp('previewGraphic')}</h3>
                       <p className="text-xs text-gray-600 mt-1">{tApp('previewGraphicHint')}</p>
                     </div>
-                    <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="grid gap-3 grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-1">
                       {PREVIEW_PRESET_PATHS.map((preset) => {
                         const isSelected = previewChoice === 'preset' && selectedPreset === preset;
                         return (
@@ -1724,6 +2017,117 @@ useEffect(() => {
                     placeholder="Describe your app..."
                   />
                   <p className="mt-1 text-xs text-gray-600 font-medium">{description.length}/500 characters</p>
+                </div>
+
+                {/* Long Description */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    {longDescriptionLabel}
+                  </label>
+                  <textarea
+                    value={longDescription}
+                    onChange={(e) => handleLongDescriptionChange(e.target.value)}
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 bg-white placeholder-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                    rows={6}
+                    disabled={!canEdit}
+                    placeholder={longDescriptionPlaceholder}
+                  />
+                  <p className="mt-1 text-xs text-gray-600 font-medium">{longDescriptionHelper}</p>
+                  <p className="text-xs text-gray-600 font-medium">{longDescriptionCounterLabel}</p>
+                </div>
+
+                {/* Screenshots */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    {screenshotsLabel}
+                  </label>
+                  <p className="text-xs text-gray-600 mb-3">
+                    {screenshotsHint}
+                  </p>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {Array.from({ length: SCREENSHOT_FIELD_COUNT }).map((_, index) => {
+                      const value = screenshotUrls[index] ?? '';
+                      const state = screenshotStates[index] || { uploading: false, error: '' };
+                      const version = screenshotVersions[index] || 0;
+                      const fieldLabel = tApp('creator.screenshotsPreviewAlt', { index: index + 1 }, `Screenshot ${index + 1}`);
+                      const displaySrc = value
+                        ? value.includes('/uploads/')
+                          ? `${value}${value.includes('?') ? '&' : '?'}v=${version}`
+                          : value
+                        : '';
+                      return (
+                        <div key={index} className="rounded-2xl border border-gray-200 p-4 space-y-3 bg-white shadow-sm/5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700">{fieldLabel}</p>
+                              <p className="text-[11px] text-gray-500">
+                                {tApp('creator.screenshotsFileHint', { size: screenshotMaxMb }, `PNG/JPG/WebP up to ${screenshotMaxMb}MB`)}
+                              </p>
+                            </div>
+                            {value && (
+                              <button
+                                type="button"
+                                onClick={() => handleScreenshotRemove(index)}
+                                className="text-xs font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!canEdit || state.uploading}
+                              >
+                                {tApp('creator.screenshotsRemoveButton', undefined, 'Remove')}
+                              </button>
+                            )}
+                          </div>
+                          <div className="relative aspect-video rounded-xl border border-dashed border-gray-300 bg-gray-50 overflow-hidden">
+                            {value ? (
+                              <Image
+                                src={displaySrc}
+                                alt={fieldLabel}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                className="object-cover"
+                                unoptimized
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <span className="text-[11px] uppercase tracking-wide text-gray-400">
+                                  {tApp('creator.screenshotsEmptyPlaceholder', undefined, 'Upload screenshot')}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!canEdit) return;
+                                screenshotInputRefs.current[index]?.click();
+                              }}
+                              className="px-3 py-1.5 text-sm font-semibold rounded-lg border border-emerald-500 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={!canEdit || state.uploading}
+                            >
+                              {value
+                                ? tApp('creator.screenshotsReplaceButton', undefined, 'Replace screenshot')
+                                : tApp('creator.screenshotsUploadButton', undefined, 'Upload screenshot')}
+                            </button>
+                            {state.uploading && (
+                              <span className="text-[11px] text-gray-500">
+                                {tApp('creator.screenshotsUploading', undefined, 'Uploading…')}
+                              </span>
+                            )}
+                          </div>
+                          {state.error && <p className="text-xs text-red-600">{state.error}</p>}
+                          <input
+                            ref={(el) => {
+                              screenshotInputRefs.current[index] = el;
+                            }}
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif"
+                            className="hidden"
+                            onChange={(e) => handleScreenshotFileInput(index, e.target.files)}
+                            disabled={!canEdit}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Translations (optional) */}
@@ -2241,8 +2645,11 @@ useEffect(() => {
           )}
         </div>
       </main>
+    </div>
+  );
 
-      {/* Dialogs */}
+  const sharedOverlays = (
+    <>
       <ConfirmDialog
         open={showLoginPrompt}
         title="Sign in required"
@@ -2374,7 +2781,59 @@ useEffect(() => {
           animation: slideInRight 0.3s ease-out;
         }
       `}</style>
-    </div>
+    </>
+  );
+
+  if (!canEdit) {
+    return (
+      <>
+        <PublicAppView
+          item={item}
+          authorHandle={authorHandle}
+          relativeCreated={relativeCreated || undefined}
+          isNew={isNew}
+          showStatusNotice={showStatusNotice}
+          canViewUnpublished={canViewUnpublished}
+          appState={appState}
+          visibility={visibility}
+          formattedPrice={formattedPrice}
+          playsDisplay={playsDisplay}
+          likeCount={likeCount}
+          liked={liked}
+          likeBusy={likeBusy}
+          copySuccess={copySuccess}
+          buildBadgesSlot={<BuildBadges playUrl={item.playUrl} />}
+          previewSrc={activePreviewSrc}
+          onPreviewError={() => setPreviewDisplayFailed(true)}
+          playButtonState={playButtonState}
+          onPlay={playListing}
+          onRequireLogin={() => setShowLoginPrompt(true)}
+          onRequirePurchase={() => setShowPayModal(true)}
+          toggleLike={toggleLike}
+          copyLink={copyLink}
+          adHeaderSlot={appDetailHeaderSlot}
+          adInlineSlot={appDetailInlineSlot}
+          tApp={tApp}
+          showContentReport={showContentReport}
+          setShowContentReport={setShowContentReport}
+          contentReportText={contentReportText}
+          setContentReportText={setContentReportText}
+          contentReportBusy={contentReportBusy}
+          submitContentReport={submitContentReport}
+          viewerIdentity={viewerIdentity}
+          descriptionFallback={tApp('noDescription', undefined, 'Autor još radi na detaljima.')}
+          user={user}
+        />
+        {sharedOverlays}
+      </>
+    );
+  }
+
+  return (
+    <>
+      {creatorView}
+      {sharedOverlays}
+    </>
   );
 }
 

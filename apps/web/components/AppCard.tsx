@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
-import { getCreatorHandle } from '@/lib/creators';
+import { getCreatorProfile } from '@/lib/creators';
 import { getPlayUrl } from '@/lib/play';
 import { auth } from '@/lib/firebase';
 import { resolvePreviewUrl } from '@/lib/preview';
@@ -133,45 +133,81 @@ const AppCard = React.memo(
     };
 
     const AuthorLink = () => {
-      const [handle, setHandle] = useState<string | undefined>(item.author?.handle);
+      const baseHandle = item.author?.handle;
+      const baseName =
+        item.author?.name ||
+        (item.author as any)?.displayName ||
+        undefined;
+      const basePhoto =
+        item.author?.photo ||
+        (item.author as any)?.photoURL ||
+        (item.author as any)?.avatarUrl ||
+        undefined;
+      const [creator, setCreator] = useState<{
+        handle?: string;
+        displayName?: string;
+        photoURL?: string;
+      }>({
+        handle: baseHandle,
+        displayName: baseName,
+        photoURL: basePhoto,
+      });
 
       useEffect(() => {
-        if (item.author?.handle) {
-          setHandle(item.author.handle);
-          return;
-        }
+        setCreator({
+          handle: baseHandle,
+          displayName: baseName,
+          photoURL: basePhoto,
+        });
+      }, [baseHandle, baseName, basePhoto]);
+
+      useEffect(() => {
+        const authorUid = item.author?.uid;
+        if (!authorUid) return;
         let cancelled = false;
-        if (item.author?.uid) {
-          getCreatorHandle(item.author.uid).then((h) => {
-            if (!cancelled && h) setHandle(h);
-          });
-        }
+        (async () => {
+          const profile = await getCreatorProfile(authorUid);
+          if (cancelled || !profile) return;
+          setCreator((prev) => ({
+            handle: profile.handle || prev.handle,
+            displayName: profile.displayName || prev.displayName,
+            photoURL: profile.photoURL || prev.photoURL,
+          }));
+        })();
         return () => {
           cancelled = true;
         };
-      }, []);
+      }, [item.author?.uid]);
 
+      const handle = creator.handle;
+      const primaryName =
+        creator.displayName ||
+        (handle ? `@${handle}` : baseName) ||
+        'Anonymous';
+      const secondaryHandle =
+        creator.displayName && handle ? `@${handle}` : undefined;
+      const avatarSrc = creator.photoURL || basePhoto;
       const href = handle ? `/u/${handle}` : undefined;
       const Inner = (
         <>
-          {item.author?.photo && (
-            <Avatar
-              uid={item.author.uid}
-              src={item.author.photo}
-              name={item.author.name}
-              size={viewMode === 'list' ? 20 : 28}
-              className={viewMode === 'grid' ? 'ring-1 ring-gray-200' : ''}
-            />
-          )}
-          {handle ? `@${handle}` : item.author?.name ?? 'Anonymous'}
+          <Avatar
+            uid={item.author?.uid}
+            src={avatarSrc}
+            name={primaryName}
+            size={viewMode === 'list' ? 20 : 28}
+            className={viewMode === 'grid' ? 'ring-1 ring-gray-200' : ''}
+          />
+          <span className="flex flex-col leading-tight">
+            <span className="text-sm text-gray-700 font-medium">{primaryName}</span>
+            {secondaryHandle && (
+              <span className="text-xs text-gray-400">{secondaryHandle}</span>
+            )}
+          </span>
         </>
       );
       if (!href) {
         return (
-          <span
-            className="flex items-center gap-1 text-sm text-gray-500"
-            title={item.author?.name ? `Author: ${item.author.name}` : 'Author'}
-          >
+          <span className="flex items-center gap-2 text-sm text-gray-600" title={primaryName}>
             {Inner}
           </span>
         );
@@ -180,8 +216,8 @@ const AppCard = React.memo(
         <Link
           href={href}
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:underline"
-          title={item.author?.name ? `Author: ${item.author.name}` : 'Author profile'}
+          className="flex items-center gap-2 text-sm text-gray-600 hover:underline"
+          title={`Otvori profil ${primaryName}`}
         >
           {Inner}
         </Link>

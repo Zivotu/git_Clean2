@@ -21,6 +21,33 @@ import { ensureListingPreview, saveListingPreviewFile, removeExistingPreviewFile
 
 const SUPPORTED_LOCALES = ['en', 'hr', 'de'] as const;
 type SupportedLocale = typeof SUPPORTED_LOCALES[number];
+const SCREENSHOT_URL_LIMIT = 1024;
+const SCREENSHOT_SLOT_COUNT = 2;
+const MAX_SCREENSHOT_SIZE_BYTES = 1 * 1024 * 1024;
+
+const sanitizeScreenshotUrl = (raw?: unknown) => {
+  if (typeof raw !== 'string') return '';
+  const trimmed = raw.trim().slice(0, SCREENSHOT_URL_LIMIT);
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^[a-z]+:\/\//i.test(trimmed)) return '';
+  return `https://${trimmed}`;
+};
+
+const normalizeScreenshotList = (raw?: unknown): string[] => {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((value) => sanitizeScreenshotUrl(value))
+    .filter((value): value is string => Boolean(value))
+    .slice(0, SCREENSHOT_SLOT_COUNT);
+};
+
+const expandScreenshotSlots = (record: AppRecord | { screenshotUrls?: unknown }): string[] => {
+  const normalized = normalizeScreenshotList(record.screenshotUrls);
+  return Array.from({ length: SCREENSHOT_SLOT_COUNT }, (_, index) => normalized[index] || '');
+};
+
+const isImageMimeType = (mime?: string) => typeof mime === 'string' && /^image\//i.test(mime);
 
 function pickLang(req: FastifyRequest): SupportedLocale | undefined {
   const q = (req.query as any)?.lang as string | undefined;
@@ -370,6 +397,134 @@ export default async function listingsRoutes(app: FastifyInstance) {
   // Alias to support clients that POST to /api/ prefixed paths
   app.post('/api/listing/:slug/preview', previewUploadHandler);
 
+  const screenshotUploadHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const slug = String((req.params as any).slug);
+    const slotParam = Number((req.params as any).slot ?? (req.params as any).index);
+    if (!Number.isFinite(slotParam) || slotParam < 0 || slotParam >= SCREENSHOT_SLOT_COUNT) {
+      return reply.code(400).send({ ok: false, error: 'invalid_slot' });
+    }
+
+    const apps = await readApps();
+    const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
+    if (idx < 0) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+    const item = apps[idx];
+    if (item.deletedAt) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+
+    const uid = (req.authUser?.uid || (req.query as any)?.uid) as string | undefined;
+    const ownerUid = item.author?.uid || (item as any).ownerUid;
+    const isOwner = Boolean(uid && uid === ownerUid);
+    const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
+    if (!isOwner && !isAdmin) {
+      return DEBUG_LISTING_AUTH
+        ? reply.code(403).send({ ok: false, error: 'not_owner' })
+        : reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+
+    try {
+      const ct = (req.headers['content-type'] || '').toString();
+      if (!/^multipart\/form-data/i.test(ct)) {
+        return reply.code(400).send({ ok: false, error: 'screenshot_upload_required' });
+      }
+      const file = await (req as any).file?.();
+      if (!file) return reply.code(400).send({ ok: false, error: 'no_file' });
+      if (!isImageMimeType(file.mimetype)) {
+        return reply.code(400).send({ ok: false, error: 'unsupported_type' });
+      }
+      const buf = await file.toBuffer();
+      if (!buf.length) return reply.code(400).send({ ok: false, error: 'empty_file' });
+      if (buf.length > MAX_SCREENSHOT_SIZE_BYTES) {
+        return reply
+          .code(413)
+          .send({ ok: false, error: 'screenshot_too_large', maxBytes: MAX_SCREENSHOT_SIZE_BYTES });
+      }
+
+      const slots = expandScreenshotSlots(item);
+      const previousUrl = slots[slotParam];
+      const screenshotUrl = await saveListingPreviewFile({
+        listingId: String(item.id),
+        slug: item.slug,
+        buffer: buf,
+        mimeType: file.mimetype,
+        previousUrl,
+      });
+      slots[slotParam] = screenshotUrl;
+      const screenshotUrls = slots.map((url) => sanitizeScreenshotUrl(url)).filter(Boolean);
+      const next: AppRecord = {
+        ...item,
+        screenshotUrls,
+        updatedAt: Date.now(),
+      };
+      apps[idx] = next;
+      await writeApps(apps);
+      return reply.send({ ok: true, screenshotUrls, slot: slotParam, screenshotUrl });
+    } catch (err) {
+      try {
+        const p = path.join(process.cwd(), 'tmp', 'screenshot-upload-errors.log');
+        const entry = { ts: new Date().toISOString(), slug, err: (err as any)?.stack || String(err) };
+        await fs.mkdir(path.dirname(p), { recursive: true });
+        await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
+      } catch {}
+      req.log.error({ err, slug }, 'screenshot_upload_failed');
+      return reply.code(500).send({ ok: false, error: 'screenshot_failed' });
+    }
+  };
+
+  const screenshotDeleteHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const slug = String((req.params as any).slug);
+    const slotParam = Number((req.params as any).slot ?? (req.params as any).index);
+    if (!Number.isFinite(slotParam) || slotParam < 0 || slotParam >= SCREENSHOT_SLOT_COUNT) {
+      return reply.code(400).send({ ok: false, error: 'invalid_slot' });
+    }
+
+    const apps = await readApps();
+    const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
+    if (idx < 0) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+    const item = apps[idx];
+    if (item.deletedAt) {
+      return reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+
+    const uid = (req.authUser?.uid || (req.query as any)?.uid) as string | undefined;
+    const ownerUid = item.author?.uid || (item as any).ownerUid;
+    const isOwner = Boolean(uid && uid === ownerUid);
+    const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
+    if (!isOwner && !isAdmin) {
+      return DEBUG_LISTING_AUTH
+        ? reply.code(403).send({ ok: false, error: 'not_owner' })
+        : reply.code(404).send({ ok: false, error: 'not_found' });
+    }
+
+    const slots = expandScreenshotSlots(item);
+    const previousUrl = slots[slotParam];
+    if (!previousUrl) {
+      return reply.send({ ok: true, screenshotUrls: slots.filter(Boolean), slot: slotParam });
+    }
+    slots[slotParam] = '';
+    const screenshotUrls = slots.map((url) => sanitizeScreenshotUrl(url)).filter(Boolean);
+    const next: AppRecord = {
+      ...item,
+      screenshotUrls,
+      updatedAt: Date.now(),
+    };
+    apps[idx] = next;
+    await writeApps(apps);
+    try {
+      await removeExistingPreviewFile(previousUrl);
+    } catch {}
+    return reply.send({ ok: true, screenshotUrls, slot: slotParam });
+  };
+
+  app.post('/listing/:slug/screenshot/:slot', screenshotUploadHandler);
+  app.post('/api/listing/:slug/screenshot/:slot', screenshotUploadHandler);
+  app.delete('/listing/:slug/screenshot/:slot', screenshotDeleteHandler);
+  app.delete('/api/listing/:slug/screenshot/:slot', screenshotDeleteHandler);
+
   // Update listing fields (owner or admin). Allows title/description/tags/visibility/accessMode/price/maxConcurrentPins
   const patchListingHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const slug = String((req.params as any).slug);
@@ -398,6 +553,13 @@ export default async function listingsRoutes(app: FastifyInstance) {
       // Enforce a sane limit and normalize type
       const desc = String(body.description);
       next.description = desc.length > 500 ? desc.slice(0, 500) : desc;
+    }
+    if (typeof body.longDescription === 'string') {
+      const longDesc = body.longDescription.toString().trim();
+      next.longDescription = longDesc.length > 5000 ? longDesc.slice(0, 5000) : longDesc;
+    }
+    if (Array.isArray(body.screenshotUrls)) {
+      next.screenshotUrls = normalizeScreenshotList(body.screenshotUrls);
     }
     if (Array.isArray(body.tags)) next.tags = body.tags.filter((t: any) => typeof t === 'string');
     if (body.visibility === 'public' || body.visibility === 'unlisted') next.visibility = body.visibility;

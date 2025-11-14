@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useI18n, useT } from "@/lib/i18n-provider";
 import { fetchDonations, type DonationEntry } from "@/lib/donations";
 import { GOLDEN_BOOK, isGoldenBookCampaignActive } from "@/lib/config";
 import { useSearchParams } from "next/navigation";
+import GoldenBookHero from "../../../../assets/GoldenBook_2.jpg";
 
 const MAX_LIST = 500;
 
@@ -117,41 +118,56 @@ export default function GoldenBookPage() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-12 space-y-8">
       <section className="rounded-3xl border border-gray-200 bg-white/80 p-8 shadow-sm backdrop-blur">
-        <p className="text-sm uppercase tracking-widest text-emerald-600 font-semibold">
-          {t("title")}
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-gray-900">{t("subtitle")}</h1>
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
+          <div className="w-full lg:max-w-sm">
+            <div className="relative mx-auto max-w-xs sm:max-w-sm lg:max-w-none">
+              <div
+                className="pointer-events-none absolute inset-0 rounded-[32px] bg-gradient-to-br from-amber-100/70 via-white to-emerald-50/60 blur-3xl opacity-70"
+                aria-hidden="true"
+              />
+              <div className="relative overflow-hidden rounded-[32px] border border-amber-100 bg-white shadow-xl">
+                <Image
+                  src={GoldenBookHero}
+                  alt="Golden Book illustration"
+                  priority
+                  className="h-auto w-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm uppercase tracking-widest text-emerald-600 font-semibold">
+              {t("title")}
+            </p>
+            <h1 className="mt-4 text-4xl font-black text-gray-900">{t("heroTitle")}</h1>
+            <h2 className="mt-2 text-3xl font-bold text-gray-900">{t("subtitle")}</h2>
 
-        <p className="mt-4 text-gray-600">
-          {startLabel && endLabel
-            ? t("activeWindow").replace("{start}", startLabel).replace("{end}", endLabel)
-            : campaignActive
-              ? t("alwaysOpen")
-              : t("closedWindow")}
-        </p>
-        <p className="mt-2 text-gray-500">{t("permanentNote")}</p>
+            <p className="mt-4 text-gray-600">
+              {startLabel && endLabel
+                ? t("activeWindow").replace("{start}", startLabel).replace("{end}", endLabel)
+                : campaignActive
+                  ? t("alwaysOpen")
+                  : t("closedWindow")}
+            </p>
+            <p className="mt-2 text-gray-500">{t("permanentNote")}</p>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {donateActive ? (
-            <a
-              href={donateLink}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center rounded-full bg-emerald-600 px-6 py-3 text-white font-semibold shadow hover:bg-emerald-700 transition"
-            >
-              {t("cta")}
-            </a>
-          ) : (
-            <span className="inline-flex items-center rounded-full bg-gray-200 px-6 py-3 text-gray-600 font-semibold">
-              {t("ctaClosed")}
-            </span>
-          )}
-          <Link
-            href="/donate/thank-you"
-            className="text-sm font-medium text-emerald-700 hover:text-emerald-900"
-          >
-            {t("aliasLink")}
-          </Link>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {donateActive ? (
+                <a
+                  href={donateLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center rounded-full bg-emerald-600 px-6 py-3 text-white font-semibold shadow hover:bg-emerald-700 transition"
+                >
+                  {t("cta")}
+                </a>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-gray-200 px-6 py-3 text-gray-600 font-semibold">
+                  {t("ctaClosed")}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 

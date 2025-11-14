@@ -1,6 +1,6 @@
-{
+﻿{
   "Nav": {
-    "publishApp": "App ver├╢ffentlichen",
+    "publishApp": "App verâ”œâ•¢ffentlichen",
     "myProjects": "Meine Projekte",
     "myCreators": "Meine Creators",
     "goPro": "Go Pro",
@@ -12,14 +12,14 @@
     "resources": "Ressourcen",
     "proApps": "ProApps",
     "company": "Unternehmen",
-    "about": "├£ber uns",
+    "about": "â”œÂ£ber uns",
     "terms": "AGB",
     "privacy": "Datenschutz",
     "faq": "FAQ",
     "goldenBook": "Golden Book",
     "donate": "Spenden",
     "donateCountdown": "noch {days} Tage",
-    "feedback": "Ihre Vorschl├ñge",
+    "feedback": "Ihre Vorschlâ”œÃ±ge",
     "docs": "Dokumentation",
     "tutorials": "Tutorials",
     "api": "API Referenz",
@@ -27,62 +27,75 @@
     "admin": "Admin"
   },
   "About": {
-    "title": "▄ber Thesara",
-    "subtitle": "Statischer Build-Gesundheitscheck, der die ÷ffentliche API pingt.",
+    "title": "â–„ber Thesara",
+    "subtitle": "Statischer Build-Gesundheitscheck, der die Ã·ffentliche API pingt.",
     "healthTitle": "API-Status",
-    "loading": "Wird geprⁿft...",
+    "loading": "Wird geprâ¿ft...",
     "errorDefault": "Abrufen der Health-Daten fehlgeschlagen."
   },
   "Search": {
     "title": "Kleinanzeigen-Suche",
     "errorShort": "Suchergebnisse konnten nicht geladen werden",
-    "errorLong": "Suchergebnisse konnten nicht geladen werden. Bitte API-URL und Serverstatus prⁿfen.",
+    "errorLong": "Suchergebnisse konnten nicht geladen werden. Bitte API-URL und Serverstatus prâ¿fen.",
     "filters": {
       "location": "Ort",
       "minPrice": "Mindestpreis",
-      "maxPrice": "H÷chstpreis",
+      "maxPrice": "HÃ·chstpreis",
       "category": "Kategorie"
     },
     "actions": {
       "apply": "Filtern",
-      "prev": "Zurⁿck",
+      "prev": "Zurâ¿ck",
       "next": "Weiter"
     }
   },
   "FAQ": {
-    "back": "? Zurⁿck zur Startseite",
+    "back": "? Zurâ¿ck zur Startseite",
     "title": "FAQ",
-    "intro": "HΣufige Fragen und Antworten zur Plattform, Ver÷ffentlichung und Abos."
+    "intro": "HÎ£ufige Fragen und Antworten zur Plattform, VerÃ·ffentlichung und Abos."
   },
   "Legal": {
     "Terms": {
       "fallbackTitle": "Nutzungsbedingungen",
-      "fallbackBodyHtml": "Die Bedingungen sind derzeit nicht verfⁿgbar. Sieh dir <a href=\"/docs/thesara_terms.html\">die statische Seite</a> an."
+      "fallbackBodyHtml": "Die Bedingungen sind derzeit nicht verfâ¿gbar. Sieh dir <a href=\"/docs/thesara_terms.html\">die statische Seite</a> an."
     },
     "Privacy": {
-      "title": "DatenschutzerklΣrung",
+      "title": "DatenschutzerklÎ£rung",
       "intro.title": "Wie wir Daten verwenden",
-      "intro.body": "Wir erfassen nur die Informationen, die fόr dein Thesara-Konto, fόr die Auslieferung deiner Apps und fόr rechtliche Pflichten notwendig sind. Wir verkaufen deine Daten nicht und geben sie nicht an Werbetreibende auίerhalb der unten beschriebenen Integrationen weiter.",
+      "intro.body": "Wir erfassen nur die Informationen, die fÏŒr dein Thesara-Konto, fÏŒr die Auslieferung deiner Apps und fÏŒr rechtliche Pflichten notwendig sind. Wir verkaufen deine Daten nicht und geben sie nicht an Werbetreibende auÎ¯erhalb der unten beschriebenen Integrationen weiter.",
       "data.title": "Welche Daten wir sammeln",
-      "data.body": "Kontoinformationen (E-Mail, Anzeigename, Avatar) werden gespeichert, damit du dich anmelden und deine Apps verwalten kannst. Nutzungsdiagnosen helfen uns, die Plattform stabil zu halten. Zahlungsdaten werden ausschlieίlich von Stripe verarbeitet und nicht auf unseren Servern gespeichert.",
+      "data.body": "Kontoinformationen (E-Mail, Anzeigename, Avatar) werden gespeichert, damit du dich anmelden und deine Apps verwalten kannst. Nutzungsdiagnosen helfen uns, die Plattform stabil zu halten. Zahlungsdaten werden ausschlieÎ¯lich von Stripe verarbeitet und nicht auf unseren Servern gespeichert.",
       "adsense.title": "Google AdSense & Cookies",
       "adsense.body": "Anzeigen werden nur Nutzern gezeigt, die kein No-Ads-Paket besitzen. Bevor die AdSense-Skripte geladen werden, fragen wir nach deiner Einwilligung. Wenn du ablehnst, setzen wir die Auslieferung auf non-personalized (npa=1), sodass nur kontextuelle Werbung erscheint. Nutzer mit aktiven No Ads-, Gold-, Partner- oder Ambassador-Rechten laden die Skripte gar nicht.",
-      "choices.title": "Deine Wahlmφglichkeiten",
-      "choices.body": "Du kannst personalisierte Werbung jederzeit Ιber das Consent-Banner erlauben oder ablehnen; die Entscheidung wird lokal gespeichert, damit du sie nicht stΣndig wiederholen musst. Mit dem Kauf des No-Ads-Pakets werden sΣmtliche Werbeslots sofort deaktiviert – sowohl im Web als auch im Play-Modus.",
+      "choices.title": "Deine WahlmÏ†glichkeiten",
+      "choices.body": "Du kannst personalisierte Werbung jederzeit Î™ber das Consent-Banner erlauben oder ablehnen; die Entscheidung wird lokal gespeichert, damit du sie nicht stÎ£ndig wiederholen musst. Mit dem Kauf des No-Ads-Pakets werden sÎ£mtliche Werbeslots sofort deaktiviert â€“ sowohl im Web als auch im Play-Modus.",
       "contact.title": "Kontakt",
       "contact.body": "Fragen zum Datenschutz oder zur Einwilligung beantwortet unser Team unter privacy@thesara.space."
     },
     "Refunds": {
-      "title": "Rⁿckerstattungsrichtlinie",
-      "body": "Informationen zu unserer Rⁿckerstattungsrichtlinie erscheinen hier."
+      "title": "Râ¿ckerstattungsrichtlinie",
+      "body": "Informationen zu unserer Râ¿ckerstattungsrichtlinie erscheinen hier."
     },
     "Rules": {
       "title": "Nutzungsbedingungen",
-      "body": "Hier erscheint der Inhalt fⁿr die Nutzungsbedingungen."
+      "body": "Hier erscheint der Inhalt fâ¿r die Nutzungsbedingungen."
     },
     "ContentReport": {
       "title": "Inhalt melden",
       "body": "Hier erscheint ein Formular zum Melden unangemessener Inhalte."
+    }
+  },
+  "Creators": {
+    "SimpleGuide": {
+      "title": "Einfache Anleitung fuer Creator",
+      "cta": "Veroeffentlichen",
+      "steps": {
+        "1": "Schreibe deine App in deinem Lieblings-LLM (ChatGPT, Kimi, Google AI Studio oder jeder andere Assistent).",
+        "2": "Kopiere den Code oder lade das Bundle aus dem Assistenten in unseren Editor hoch.",
+        "3": "Veroeffentliche die App mit einem Klick auf Publish.",
+        "4": "Passe Optik, Beschreibung und Titel an, damit alles perfekt aussieht.",
+        "5": "Freu dich darauf, wie andere Nutzer deine App, dein Spiel, deine Simulation oder dein Quiz ausprobieren."
+      }
     }
   },
   "Classifieds": {
@@ -97,51 +110,51 @@
       "title": "Neues Inserat",
       "errorInvalidFile": "Nur JPG/PNG-Bilder bis 5 MB sind erlaubt.",
       "statusSaved": "Gespeichert.",
-      "statusPublished": "Ver÷ffentlicht.",
+      "statusPublished": "VerÃ·ffentlicht.",
       "descriptionPlaceholder": "Beschreibung",
       "actions": {
         "save": "Speichern",
-        "publish": "Ver÷ffentlichen"
+        "publish": "VerÃ·ffentlichen"
       },
       "previewAlt": "Vorschau"
     }
   },
   "Promo": {
-    "title": "Promo-Code einl÷sen",
-    "mustBeSignedIn": "Du musst angemeldet sein, um einen Promo-Code einzul÷sen.",
+    "title": "Promo-Code einlÃ·sen",
+    "mustBeSignedIn": "Du musst angemeldet sein, um einen Promo-Code einzulÃ·sen.",
     "label": "Promo-Code",
     "placeholder": "z. B. THESARA-JANE24",
-    "submit": "Code einl÷sen",
+    "submit": "Code einlÃ·sen",
     "submitting": "Wird verarbeitet...",
-    "success": "Code wurde erfolgreich eingel÷st. Gold-Testphase ist aktiv.",
-    "error": "Code konnte nicht eingel÷st werden.",
-    "validUntil": "Gⁿltig bis {date}",
-    "footnote": "Durch das Aktivieren eines Codes erhΣltst du fⁿr begrenzte Zeit eine kostenlose Gold-Testphase gemΣ▀ den Programmregeln."
+    "success": "Code wurde erfolgreich eingelÃ·st. Gold-Testphase ist aktiv.",
+    "error": "Code konnte nicht eingelÃ·st werden.",
+    "validUntil": "Gâ¿ltig bis {date}",
+    "footnote": "Durch das Aktivieren eines Codes erhÎ£ltst du fâ¿r begrenzte Zeit eine kostenlose Gold-Testphase gemÎ£â–€ den Programmregeln."
   },
   "LegacyHandle": {
     "redirecting": "Weiterleitung..."
   },
   "Checkout": {
-    "pageTitle": "Bestellübersicht",
-    "loading": "Wird geladen…",
+    "pageTitle": "BestellÃ¼bersicht",
+    "loading": "Wird geladenâ€¦",
     "subscriptionLabel": "Abonnement",
     "priceLabel": "Preis",
-    "emailLabel": "E-Mail für die Rechnung",
+    "emailLabel": "E-Mail fÃ¼r die Rechnung",
     "promoPrefix": "Du hast einen Promo-Code von einem Ambassador?",
-    "promoLink": "Hier einlösen",
-    "promoSuffix": "bevor du fortfährst.",
-    "termsPrompt": "Bestätige vor der Zahlung, dass du {termsLabel} akzeptierst.",
-    "termsCheckbox": "Ich bestätige, dass ich die Bedingungen gelesen habe und die Verpflichtungen während des Kaufs und der späteren Nutzung akzeptiere.",
-    "termsButton": "Bedingungen öffnen",
-    "termsNote": "Nur bei der ersten Zahlung oder wenn sich die Bedingungen ändern ({version}).",
-    "termsMissing": "Bitte bestätige die Bedingungen, bevor du kaufst.",
-    "termsSaveError": "Bestätigung konnte nicht gespeichert werden. Bitte versuche es erneut.",
-    "buttonSubmitting": "Wird gesendet…",
+    "promoLink": "Hier einlÃ¶sen",
+    "promoSuffix": "bevor du fortfÃ¤hrst.",
+    "termsPrompt": "BestÃ¤tige vor der Zahlung, dass du {termsLabel} akzeptierst.",
+    "termsCheckbox": "Ich bestÃ¤tige, dass ich die Bedingungen gelesen habe und die Verpflichtungen wÃ¤hrend des Kaufs und der spÃ¤teren Nutzung akzeptiere.",
+    "termsButton": "Bedingungen Ã¶ffnen",
+    "termsNote": "Nur bei der ersten Zahlung oder wenn sich die Bedingungen Ã¤ndern ({version}).",
+    "termsMissing": "Bitte bestÃ¤tige die Bedingungen, bevor du kaufst.",
+    "termsSaveError": "BestÃ¤tigung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+    "buttonSubmitting": "Wird gesendetâ€¦",
     "buttonSubmit": "Weiter",
-    "backLink": "← Zurück",
+    "backLink": "â† ZurÃ¼ck",
     "missingAppId": "App-ID fehlt.",
     "loadErrorGeneric": "Produktdaten konnten nicht geladen werden.",
-    "errorInvalidResponse": "Ungültige Serverantwort.",
+    "errorInvalidResponse": "UngÃ¼ltige Serverantwort.",
     "errorNetwork": "Fehler bei der Kommunikation mit der API."
   },
   "DiagEnv": {
@@ -152,18 +165,18 @@
   "Admin": {
     "title": "Admin-Dashboard",
     "errors": {
-      "accessDenied": "Zugriff verweigert – melde dich als Admin an oder lass dich auf die Whitelist setzen.",
-      "llmMissingApiKey": "LLM-API-Schlüssel fehlt.",
-      "llmInvalidJson": "Der AI-Dienst hat ungültiges JSON zurückgegeben.",
-      "llmUnreachable": "AI-Dienst ist derzeit nicht verfügbar.",
-      "missingArtifact": "Artefakte fehlen – führe den vollständigen Build aus (pnpm run createx:build).",
-      "llmReviewFailed": "LLM-Prüfung fehlgeschlagen."
+      "accessDenied": "Zugriff verweigert â€“ melde dich als Admin an oder lass dich auf die Whitelist setzen.",
+      "llmMissingApiKey": "LLM-API-SchlÃ¼ssel fehlt.",
+      "llmInvalidJson": "Der AI-Dienst hat ungÃ¼ltiges JSON zurÃ¼ckgegeben.",
+      "llmUnreachable": "AI-Dienst ist derzeit nicht verfÃ¼gbar.",
+      "missingArtifact": "Artefakte fehlen â€“ fÃ¼hre den vollstÃ¤ndigen Build aus (pnpm run createx:build).",
+      "llmReviewFailed": "LLM-PrÃ¼fung fehlgeschlagen."
     },
     "buttons": {
       "logout": "Abmelden",
       "login": "Anmelden",
       "edit": "Bearbeiten",
-      "close": "Schließen"
+      "close": "SchlieÃŸen"
     },
     "tabs": {
       "apps": "Apps",
@@ -174,39 +187,39 @@
     },
     "filters": {
       "searchPlaceholder": "Suchen",
-      "clear": "Zurücksetzen",
+      "clear": "ZurÃ¼cksetzen",
       "refresh": "Aktualisieren",
       "status": {
         "all": "Alle",
         "pending": "Ausstehend",
         "approved": "Genehmigt",
         "rejected": "Abgelehnt",
-        "deleted": "Gelöscht"
+        "deleted": "GelÃ¶scht"
       }
     },
     "stats": {
       "foundApps": "{count} Apps gefunden"
     },
     "alerts": {
-      "llmDisabled": "AI-Prüfung ist vorübergehend deaktiviert. Einsendungen warten auf manuelle Prüfung.",
+      "llmDisabled": "AI-PrÃ¼fung ist vorÃ¼bergehend deaktiviert. Einsendungen warten auf manuelle PrÃ¼fung.",
       "bundleNotReady": "Bundle ist noch nicht bereit.",
       "artifactsPending": "Artefakte sind noch nicht bereit. Warte auf den Build oder starte ihn neu und versuche es erneut.",
-      "downloadFailed": "Download fehlgeschlagen. Bitte später erneut versuchen.",
+      "downloadFailed": "Download fehlgeschlagen. Bitte spÃ¤ter erneut versuchen.",
       "noBuildApprove": "Kein aktiver Build zum Freigeben.",
       "approveSuccess": "Eintrag freigegeben.",
       "refreshSuccess": "Eintrag aktualisiert.",
       "noBuildReject": "Kein aktiver Build zum Ablehnen.",
       "rejectSuccess": "Eintrag abgelehnt.",
-      "deleteSuccess": "Eintrag wurde in „Gelöscht“ verschoben.",
-      "deleteFailed": "Löschen fehlgeschlagen.",
-      "forceDeleteSuccess": "Eintrag dauerhaft gelöscht.",
-      "forceDeleteFailed": "Dauerhaftes Löschen fehlgeschlagen.",
+      "deleteSuccess": "Eintrag wurde in â€žGelÃ¶schtâ€œ verschoben.",
+      "deleteFailed": "LÃ¶schen fehlgeschlagen.",
+      "forceDeleteSuccess": "Eintrag dauerhaft gelÃ¶scht.",
+      "forceDeleteFailed": "Dauerhaftes LÃ¶schen fehlgeschlagen.",
       "restoreSuccess": "Eintrag wiederhergestellt.",
       "restoreFailed": "Wiederherstellen fehlgeschlagen.",
-      "buildQueued": "Build wurde eingereiht. Aktualisiere…",
+      "buildQueued": "Build wurde eingereiht. Aktualisiereâ€¦",
       "buildQueueFailed": "Build konnte nicht eingereiht werden.",
       "policySaveFailed": "Speichern der Berechtigungen fehlgeschlagen.",
-      "noSelection": "Bitte zuerst einen Eintrag auswählen.",
+      "noSelection": "Bitte zuerst einen Eintrag auswÃ¤hlen.",
       "saveSuccess": "Gespeichert.",
       "saveFailed": "Speichern fehlgeschlagen.",
       "createSuccess": "Erstellt.",
@@ -234,15 +247,15 @@
     },
     "llmDetails": {
       "attempts": "LLM-Versuche: {count}",
-      "noReport": "Noch kein Bericht verfügbar.",
-      "regenerating": "Analyse…",
+      "noReport": "Noch kein Bericht verfÃ¼gbar.",
+      "regenerating": "Analyseâ€¦",
       "run": "LLM-Analyse starten",
       "disabledButton": "LLM deaktiviert",
-      "enableHint": "Aktiviere die AI-Prüfung in der Konfiguration, damit dieser Bericht erstellt wird.",
+      "enableHint": "Aktiviere die AI-PrÃ¼fung in der Konfiguration, damit dieser Bericht erstellt wird.",
       "providerLabel": "Anbieter",
       "showJson": "JSON anzeigen",
       "hideJson": "JSON ausblenden",
-      "runAgain": "Erneut ausführen"
+      "runAgain": "Erneut ausfÃ¼hren"
     },
     "llmStatus": {
       "failed": "LLM fehlgeschlagen",
@@ -254,20 +267,20 @@
     },
     "ads": {
       "heading": "Anzeigensystem",
-      "description": "Steuert, ob Google AdSense global für Nutzer ohne No-Ads-Berechtigung geladen wird.",
+      "description": "Steuert, ob Google AdSense global fÃ¼r Nutzer ohne No-Ads-Berechtigung geladen wird.",
       "refresh": "Status aktualisieren",
       "statusEnabled": "Anzeigen sind aktiviert",
       "statusDisabled": "Anzeigen sind global deaktiviert",
       "enableButton": "Anzeigen aktivieren",
       "disableButton": "Anzeigen deaktivieren",
-      "loading": "Lade Anzeigeneinstellungen …",
+      "loading": "Lade Anzeigeneinstellungen â€¦",
       "loadFailed": "Anzeigeneinstellungen konnten nicht geladen werden.",
-      "saveFailed": "Änderung der Anzeigeneinstellungen fehlgeschlagen.",
+      "saveFailed": "Ã„nderung der Anzeigeneinstellungen fehlgeschlagen.",
       "updatedAt": "Aktualisiert am {time}",
       "updatedBy": "Aktualisiert am {time} von {uid}",
       "slotsHeading": "Slots verwalten",
       "slotsDescription": "Aktiviere oder deaktiviere einzelne Platzierungen ohne neuen Deploy. Slots ohne Ad-Unit-ID bleiben leer, auch wenn sie aktiviert sind.",
-      "slotsLoading": "Lade Slot-Konfiguration …",
+      "slotsLoading": "Lade Slot-Konfiguration â€¦",
       "slotsLoadFailed": "Slot-Konfiguration konnte nicht geladen werden.",
       "slotsSaveFailed": "Slot-Konfiguration konnte nicht gespeichert werden.",
       "noId": "Kein Ad-Unit-ID hinterlegt",
@@ -287,38 +300,38 @@
         "disable": "Slot deaktivieren"
       },
       "slots": {
-        "playTopLabel": "Play – oberer Banner",
+        "playTopLabel": "Play â€“ oberer Banner",
         "playTopDescription": "Wird oberhalb des Play-Iframes angezeigt.",
-        "playBottomLabel": "Play – unterer Banner",
+        "playBottomLabel": "Play â€“ unterer Banner",
         "playBottomDescription": "Wird unterhalb des Play-Iframes angezeigt.",
-        "appDetailHeaderLabel": "App-Detail – Header",
-        "appDetailHeaderDescription": "Großes Placement ganz oben auf der Detailseite.",
-        "appDetailInlineLabel": "App-Detail – Inline",
-        "appDetailInlineDescription": "Sekundärer Slot innerhalb des Seiteninhalts.",
-        "homeRailLeftLabel": "Startseite – linke Spalte",
+        "appDetailHeaderLabel": "App-Detail â€“ Header",
+        "appDetailHeaderDescription": "GroÃŸes Placement ganz oben auf der Detailseite.",
+        "appDetailInlineLabel": "App-Detail â€“ Inline",
+        "appDetailInlineDescription": "SekundÃ¤rer Slot innerhalb des Seiteninhalts.",
+        "homeRailLeftLabel": "Startseite â€“ linke Spalte",
         "homeRailLeftDescription": "Sticky-Karte in der linken Sidebar (Desktop).",
-        "homeRailRightLabel": "Startseite – rechte Spalte",
+        "homeRailRightLabel": "Startseite â€“ rechte Spalte",
         "homeRailRightDescription": "Sticky-Karte in der rechten Sidebar (Desktop).",
-        "homeGridInlineLabel": "Startseite – Inline im Grid",
+        "homeGridInlineLabel": "Startseite â€“ Inline im Grid",
         "homeGridInlineDescription": "Jede 8. Karte im Grid wird durch einen Slot ersetzt.",
-        "homeFeedFooterLabel": "Startseite – Footer des Feeds",
+        "homeFeedFooterLabel": "Startseite â€“ Footer des Feeds",
         "homeFeedFooterDescription": "Breiter Slot unterhalb der App-Liste.",
-        "marketplaceGridInlineLabel": "Marketplace – Inline im Grid",
+        "marketplaceGridInlineLabel": "Marketplace â€“ Inline im Grid",
         "marketplaceGridInlineDescription": "Jede 8. Karte in der /apps-Liste wird zum Slot."
       },
       "telemetryHeading": "Anzeigen-Telemetrie (letzte {days} Tage)",
-      "telemetryDescription": "Überblick über CMP-Entscheidungen und Slot-Auslieferung, um Probleme früh zu erkennen.",
+      "telemetryDescription": "Ãœberblick Ã¼ber CMP-Entscheidungen und Slot-Auslieferung, um Probleme frÃ¼h zu erkennen.",
       "telemetryRangeLabel": "Zeitraum",
       "telemetryRangeOption": "{days} Tage",
       "telemetryRefresh": "Aktualisieren",
-      "telemetryLoading": "Telemetrie wird geladen…",
+      "telemetryLoading": "Telemetrie wird geladenâ€¦",
       "telemetryLoadFailed": "Telemetrie konnte nicht geladen werden.",
-      "telemetryNoData": "Noch keine Daten für diesen Zeitraum.",
+      "telemetryNoData": "Noch keine Daten fÃ¼r diesen Zeitraum.",
       "telemetryStats": {
         "totalEvents": "Ereignisse gesamt",
         "consentGranted": "Zustimmungen",
         "consentRejected": "Ablehnungen",
-        "slotFills": "Gefüllte Slots"
+        "slotFills": "GefÃ¼llte Slots"
       },
       "telemetry": {
         "table": {
@@ -327,49 +340,53 @@
           "name": "Name",
           "events": "Ereignisse",
           "share": "Anteil",
-          "entries": "{count} Einträge",
+          "entries": "{count} EintrÃ¤ge",
           "empty": "Keine Daten"
         },
         "eventLabels": {
           "consent_prompt_shown": "Banner angezeigt",
           "consent_granted": "Zustimmung erteilt",
           "consent_rejected": "Zustimmung abgelehnt",
-          "consent_reset": "Zustimmung zurückgesetzt",
+          "consent_reset": "Zustimmung zurÃ¼ckgesetzt",
           "slot_render_attempt": "Slot-Render-Versuch",
-          "slot_render_filled": "Slot gefüllt",
+          "slot_render_filled": "Slot gefÃ¼llt",
           "slot_closed": "Slot geschlossen"
         },
-        "dailyHeading": "Tagesübersicht",
+        "dailyHeading": "TagesÃ¼bersicht",
         "dailyEmpty": "Keine Tagesdaten vorhanden."
       }
     },
     "AdsConsent": {
-      "title": "Hilf uns, Anzeigen zu personalisieren",
-      "description": "Wir verwenden Google AdSense, um Thesara zu finanzieren. Du kannst entscheiden, ob wir personalisierte Werbung oder nur einfache, nicht personalisierte Anzeigen zeigen dürfen.",
-      "accept": "Personalisierte Anzeigen erlauben",
-      "reject": "Nur einfache Anzeigen anzeigen"
+      "title": "Cookies & optionale Daten",
+      "description": "Wir verwenden notwendige Cookies fÃ¼r Anmeldung und Sicherheit. Optionale Cookies ermÃ¶glichen Analysen und personalisierte Google AdSense-Werbung - du entscheidest.",
+      "items.essential": "Notwendige Cookies merken dich angemeldet, speichern die Sprache und schÃ¼tzen Zahlungen.",
+      "items.analytics": "Anonyme Analysen zeigen uns, welche Funktionen funktionieren und wo AusfÃ¤lle auftreten.",
+      "items.ads": "AdSense-Cookies bestimmen, ob wir personalisierte oder nur kontextuelle Anzeigen zeigen.",
+      "learnMore": "Details & DatenschutzerklÃ¤rung",
+      "accept": "Alle optionalen Cookies erlauben",
+      "reject": "Nur notwendige Cookies"
     },
     "adminSettings": {
-      "heading": "Admin-Oberflächen-Einstellungen",
-      "description": "Verwaltet die Liste der Konten, die den versteckten Admin-Zugang freischalten dürfen.",
+      "heading": "Admin-OberflÃ¤chen-Einstellungen",
+      "description": "Verwaltet die Liste der Konten, die den versteckten Admin-Zugang freischalten dÃ¼rfen.",
       "refresh": "Aktualisieren",
-      "loading": "Wird geladen…",
+      "loading": "Wird geladenâ€¦",
       "empty": "Keine erlaubten E-Mail-Adressen.",
       "remove": "Entfernen",
       "addPlaceholder": "admin@example.com",
-      "addButton": "Hinzufügen",
+      "addButton": "HinzufÃ¼gen",
       "loadError": "Liste der erlaubten Admins kann nicht geladen werden.",
       "refreshError": "Aktualisieren der Liste fehlgeschlagen.",
       "addEmpty": "E-Mail-Adresse eingeben.",
-      "addInvalid": "Ungültige E-Mail-Adresse.",
+      "addInvalid": "UngÃ¼ltige E-Mail-Adresse.",
       "addDuplicate": "Diese E-Mail ist bereits eingetragen.",
-      "addFailed": "Hinzufügen fehlgeschlagen.",
+      "addFailed": "HinzufÃ¼gen fehlgeschlagen.",
       "removeFailed": "Entfernen fehlgeschlagen.",
       "removeConfirm": "{email} aus der Liste entfernen?"
     },
     "users": {
       "heading": "Benutzerverwaltung",
-      "loading": "Benutzer werden geladen…",
+      "loading": "Benutzer werden geladenâ€¦",
       "loadFailed": "Benutzer konnten nicht geladen werden.",
       "updateFailed": "Benutzerberechtigungen konnten nicht aktualisiert werden.",
       "filterLabel": "Nach Berechtigung filtern:",
@@ -396,11 +413,11 @@
     },
     "emailTemplates": {
       "heading": "E-Mail-Vorlagen",
-      "description": "Bearbeite die Inhalte der E-Mails, die das System versendet. Verwende {{placeholders}} für dynamische Werte (z. B. {{displayName}}, {{appTitle}}).",
+      "description": "Bearbeite die Inhalte der E-Mails, die das System versendet. Verwende {{placeholders}} fÃ¼r dynamische Werte (z. B. {{displayName}}, {{appTitle}}).",
       "refresh": "Aktualisieren",
       "loadFailed": "Vorlagen konnten nicht geladen werden.",
       "scenarioLabel": "Szenario",
-      "scenarioPlaceholder": "-- Szenario wählen --",
+      "scenarioPlaceholder": "-- Szenario wÃ¤hlen --",
       "scenarios": {
         "welcome": "welcome (neuer Benutzer)",
         "reviewApproval": "review:approval_notification (Freigabe)",
@@ -412,7 +429,7 @@
       "restoreFallback": "Fallback wiederherstellen",
       "subjectLabel": "Betreff",
       "bodyLabel": "Nachricht",
-      "loading": "Laden…",
+      "loading": "Ladenâ€¦",
       "empty": "Keine Vorlagen vorhanden.",
       "createTitle": "Neue Vorlage erstellen",
       "createDescription": "Gib eine eindeutige ID ein (z. B. welcome, review:approval_notification).",
@@ -420,35 +437,35 @@
       "placeholderSubject": "Betreff",
       "placeholderBody": "Nachricht",
       "createButton": "Erstellen",
-      "scenarioDropdownHint": "Wähle ein Szenario aus der Liste.",
-      "scenarioRequired": "Bitte zuerst ein Szenario wählen.",
-      "scenarioLoadFailed": "Vorlage oder Fallback für dieses Szenario konnte nicht geladen werden.",
-      "restoreInfo": "Fallback wurde lokal wiederhergestellt — zum Speichern auf „Speichern“ klicken.",
+      "scenarioDropdownHint": "WÃ¤hle ein Szenario aus der Liste.",
+      "scenarioRequired": "Bitte zuerst ein Szenario wÃ¤hlen.",
+      "scenarioLoadFailed": "Vorlage oder Fallback fÃ¼r dieses Szenario konnte nicht geladen werden.",
+      "restoreInfo": "Fallback wurde lokal wiederhergestellt â€” zum Speichern auf â€žSpeichernâ€œ klicken.",
       "restoreFailed": "Fallback konnte nicht wiederhergestellt werden.",
       "templateIdRequired": "Vorlagen-ID angeben."
     },
     "ambassador": {
       "title": "Ambassador-Administration",
-      "subtitle": "Prüfe Bewerbungen, verwalte Codes und bearbeite Auszahlungen.",
-      "emptyValue": "—",
+      "subtitle": "PrÃ¼fe Bewerbungen, verwalte Codes und bearbeite Auszahlungen.",
+      "emptyValue": "â€”",
       "kpis": {
         "approved": "Aktive Botschafter",
         "pendingApplications": "Bewerbungen offen",
         "pendingPayouts": "Auszahlungen offen",
-        "outstandingBalance": "Offener Saldo (€)"
+        "outstandingBalance": "Offener Saldo (â‚¬)"
       },
       "posts": {
         "heading": "Ambassador-Posts (ausstehend)",
         "refresh": "Aktualisieren",
-        "loading": "Beiträge werden geladen…",
-        "empty": "Keine Beiträge ausstehend.",
+        "loading": "BeitrÃ¤ge werden geladenâ€¦",
+        "empty": "Keine BeitrÃ¤ge ausstehend.",
         "table": {
           "link": "Link",
           "ambassador": "Botschafter",
           "month": "Monat",
           "actions": "Aktionen"
         },
-        "verify": "Bestätigen",
+        "verify": "BestÃ¤tigen",
         "reject": "Ablehnen"
       },
       "applicationTabs": {
@@ -474,17 +491,17 @@
         "payoutRejected": "Auszahlung abgelehnt."
       },
       "errors": {
-        "adminOnly": "Nur für Administratoren.",
+        "adminOnly": "Nur fÃ¼r Administratoren.",
         "loadApplications": "Bewerbungen konnten nicht geladen werden.",
         "loadPayouts": "Auszahlungen konnten nicht geladen werden.",
-        "loadPosts": "Beiträge konnten nicht geladen werden.",
+        "loadPosts": "BeitrÃ¤ge konnten nicht geladen werden.",
         "approveFailed": "Freigabe fehlgeschlagen.",
         "rejectFailed": "Ablehnung fehlgeschlagen.",
-        "payoutActionFailed": "Aktion für die Auszahlung fehlgeschlagen."
+        "payoutActionFailed": "Aktion fÃ¼r die Auszahlung fehlgeschlagen."
       },
       "applications": {
-        "loading": "Bewerbungen werden geladen…",
-        "empty": "Keine Bewerbungen für den gewählten Status.",
+        "loading": "Bewerbungen werden geladenâ€¦",
+        "empty": "Keine Bewerbungen fÃ¼r den gewÃ¤hlten Status.",
         "table": {
           "user": "Benutzer",
           "email": "E-Mail",
@@ -497,14 +514,14 @@
         "platform": "Plattform: {value}",
         "audience": "Reichweite: {value}",
         "motivation": "Motivation",
-        "balanceValue": "€{amount}",
+        "balanceValue": "â‚¬{amount}",
         "approve": "Freigeben",
         "reject": "Ablehnen",
         "promoCode": "Code: {code}"
       },
       "payouts": {
-        "loading": "Auszahlungen werden geladen…",
-        "empty": "Keine Auszahlungen für diesen Filter.",
+        "loading": "Auszahlungen werden geladenâ€¦",
+        "empty": "Keine Auszahlungen fÃ¼r diesen Filter.",
         "table": {
           "id": "Payout-ID",
           "ambassador": "Botschafter",
@@ -514,7 +531,7 @@
           "actions": "Aktionen"
         },
         "requestedAt": "Angefragt am: {date}",
-        "amountValue": "€{amount}",
+        "amountValue": "â‚¬{amount}",
         "markPaid": "Als bezahlt markieren",
         "reject": "Ablehnen",
         "transaction": "Txn: {id}"
@@ -524,10 +541,10 @@
   "Register": {
     "title": "Registrieren",
     "errors": {
-      "passwordMismatch": "Passw÷rter stimmen nicht ⁿberein.",
-      "mustAcceptTerms": "Bitte bestΣtige, dass du die Nutzungsbedingungen akzeptierst, bevor du dich registrierst.",
+      "passwordMismatch": "PasswÃ·rter stimmen nicht â¿berein.",
+      "mustAcceptTerms": "Bitte bestÎ£tige, dass du die Nutzungsbedingungen akzeptierst, bevor du dich registrierst.",
       "generic": "Registrierung fehlgeschlagen.",
-      "firestoreHint": "Bitte ⁿberprⁿfe deine Firestore-Regeln oder Konfiguration."
+      "firestoreHint": "Bitte â¿berprâ¿fe deine Firestore-Regeln oder Konfiguration."
     },
     "fields": {
       "firstName": "Vorname",
@@ -536,10 +553,10 @@
       "email": "E-Mail",
       "birthYear": "Geburtsjahr",
       "password": "Passwort",
-      "confirmPassword": "Passwort bestΣtigen",
+      "confirmPassword": "Passwort bestÎ£tigen",
       "phone": "Telefonnummer",
       "gender": "Geschlecht",
-      "genderMale": "MΣnnlich",
+      "genderMale": "MÎ£nnlich",
       "genderFemale": "Weiblich",
       "genderOther": "Divers",
       "bio": "Kurzprofil"
@@ -555,47 +572,49 @@
   "Setup": {
     "title": "Firebase ist nicht konfiguriert",
     "missingIntro": "Folgende Umgebungsvariablen fehlen:",
-    "addPrefix": "Fⁿge sie in deine",
+    "addPrefix": "Fâ¿ge sie in deine",
     "addSuffix": "Datei ein:"
   },
   "Home": {
     "headline": {
-      "one": "Entdecke gro├ƒartige",
+      "one": "Entdecke groâ”œÆ’artige",
       "two": "Mini-Apps & Spiele"
     },
-    "tagline": "Kuratiertes Marketplace f├╝r Browser-Erlebnisse. Bauen, teilen und entdecken.",
+    "tagline": "Kuratiertes Marketplace fâ”œâ•r Browser-Erlebnisse. Bauen, teilen und entdecken.",
     "trending": "Gerade im Trend",
     "appsCount": "{count} Apps",
     "search": {
       "placeholder": "Suche nach Apps, Spielen oder Tags..."
     },
     "appsFound": "{count} Apps gefunden",
+    "publishedCount": "{count} veröffentlichte Apps",
+    "membersCount": "{count} registrierte Mitglieder",
     "sort": {
       "new": "Neueste",
       "popular": "Beliebt",
       "title": "Alphabetisch"
     },
-    "clear": "Zur├╝cksetzen",
+    "clear": "Zurâ”œâ•cksetzen",
     "noApps": "Keine Apps gefunden",
     "tryAdjust": "Passe deine Suche oder Filter an.",
-    "beFirst": "Sei der Erste, der eine App ver├╢ffentlicht!",
-    "publish": "App ver├╢ffentlichen",
+    "beFirst": "Sei der Erste, der eine App verâ”œâ•¢ffentlicht!",
+    "publish": "App verâ”œâ•¢ffentlichen",
     "plays": "{count} Aufrufe"
   },
   "Toasts": {
     "welcome": "Willkommen bei THESARA.SPACE!",
     "loginToLike": "Melde dich an, um Apps zu liken",
-    "slowDown": "Langsam ≡ƒÖé",
-    "likeError": "App konnte nicht geliked werden. Bitte API-URL und Serverstatus pr├╝fen.",
-    "loadError": "Apps konnten nicht geladen werden. Bitte API-URL und Serverstatus pr├╝fen.",
+    "slowDown": "Langsam â‰¡Æ’Ã–Ã©",
+    "likeError": "App konnte nicht geliked werden. Bitte API-URL und Serverstatus prâ”œâ•fen.",
+    "loadError": "Apps konnten nicht geladen werden. Bitte API-URL und Serverstatus prâ”œâ•fen.",
     "retry": "Erneut versuchen"
   },
   "Footer": {
-    "slogan": "Der Marktplatz f├╝r Browser-Apps und -Spiele.",
+    "slogan": "Der Marktplatz fâ”œâ•r Browser-Apps und -Spiele.",
     "allRights": "Alle Rechte vorbehalten."
   },
   "Pro": {
-    "choosePlan": "W├ñhle ein Paket",
+    "choosePlan": "Wâ”œÃ±hle ein Paket",
     "subtitle": "Erweitere deine App mit unseren Paketen",
     "usageTitle": "Deine aktuelle Nutzung",
     "currentPlan": "Aktueller Plan",
@@ -603,174 +622,305 @@
     "storage": "Speicher",
     "purchased": "Gekauft",
     "recommended": "Empfohlen",
-    "loading": "LadenΓÇª",
+    "loading": "LadenÎ“Ã‡Âª",
     "subscribed": "Aktiv",
-    "selectPackage": "Paket ausw├ñhlen",
-    "noPackagesTitle": "Keine Pakete verf├╝gbar",
-    "noPackagesText": "Pakete sind bald verf├╝gbar",
+    "selectPackage": "Paket auswâ”œÃ±hlen",
+    "noPackagesTitle": "Keine Pakete verfâ”œâ•gbar",
+    "noPackagesText": "Pakete sind bald verfâ”œâ•gbar",
     "loadError": "Pakete konnten nicht geladen werden. Bitte erneut versuchen.",
     "perMonth": "pro Monat",
-    "goldDescription": "Schalte h├╢here Limits, mehr Speicher und priorisierten Publish-Support frei.",
+    "goldDescription": "Schalte hâ”œâ•¢here Limits, mehr Speicher und priorisierten Publish-Support frei.",
     "goldFeatureApps": "Bis zu {goldLimit} aktive Apps (Free umfasst {freeLimit})",
-    "goldFeatureStorage": "Gr├╢├ƒeres Upload- und Storage-Kontingent f├╝r Bundles und Assets",
-    "goldFeatureAds": "Entfernt THESARA.SPACE-Werbung in der Oberfl├ñche und deinen Apps",
-    "goldFeatureSupport": "Priorisierter Review deiner Ver├╢ffentlichungen & direkter Support",
-    "noAdsDescription": "Entfernt s├ñmtliche THESARA.SPACE-Werbefl├ñchen im Dashboard und in ver├╢ffentlichten Experiences.",
+    "goldFeatureStorage": "Grâ”œâ•¢â”œÆ’eres Upload- und Storage-Kontingent fâ”œâ•r Bundles und Assets",
+    "goldFeatureAds": "Entfernt THESARA.SPACE-Werbung in der Oberflâ”œÃ±che und deinen Apps",
+    "goldFeatureSupport": "Priorisierter Review deiner Verâ”œâ•¢ffentlichungen & direkter Support",
+    "noAdsDescription": "Entfernt sâ”œÃ±mtliche THESARA.SPACE-Werbeflâ”œÃ±chen im Dashboard und in verâ”œâ•¢ffentlichten Experiences.",
     "noAdsFeatureRemoval": "Keine Anzeigen mehr im Editor, Dashboard oder deinen Apps",
-    "noAdsFeatureFocus": "Mehr Fokus f├╝r Nutzer ΓÇô keine Banner oder Interstitials"
+    "noAdsFeatureFocus": "Mehr Fokus fâ”œâ•r Nutzer Î“Ã‡Ã´ keine Banner oder Interstitials"
   },
   "Login": {
-    "backToHome": "Zur├╝ck zur Startseite",
+    "backToHome": "Zurâ”œâ•ck zur Startseite",
     "welcomeTitle": "Willkommen bei {site}",
-    "welcomeBody": "Entdecke, spiele und ver├╢ffentliche MiniΓÇæApps. Melde dich an, um Apps zu liken, eigene zu ver├╢ffentlichen und Fortschritt zu synchronisieren.",
-    "bulletOne": "GoogleΓÇæAnmeldung mit einem Klick",
-    "bulletTwo": "CreatorΓÇæTools inklusive",
-    "bulletThree": "Standardm├ñ├ƒig sicher",
+    "welcomeBody": "Entdecke, spiele und verâ”œâ•¢ffentliche MiniÎ“Ã‡Ã¦Apps. Melde dich an, um Apps zu liken, eigene zu verâ”œâ•¢ffentlichen und Fortschritt zu synchronisieren.",
+    "bulletOne": "GoogleÎ“Ã‡Ã¦Anmeldung mit einem Klick",
+    "bulletTwo": "CreatorÎ“Ã‡Ã¦Tools inklusive",
+    "bulletThree": "Standardmâ”œÃ±â”œÆ’ig sicher",
     "title": "Anmelden",
-    "subtitle": "Mit Google oder deinem EΓÇæMailΓÇæKonto.",
-    "checking": "Sitzung wird gepr├╝ftΓÇª",
+    "subtitle": "Mit Google oder deinem EÎ“Ã‡Ã¦MailÎ“Ã‡Ã¦Konto.",
+    "checking": "Sitzung wird geprâ”œâ•ftÎ“Ã‡Âª",
     "signedInAs": "Angemeldet als",
-    "goToCreate": "Zur CreateΓÇæSeite",
+    "goToCreate": "Zur CreateÎ“Ã‡Ã¦Seite",
     "signOut": "Abmelden",
     "continueWithGoogle": "Mit Google fortfahren",
     "or": "oder",
-    "email": "EΓÇæMail",
+    "email": "EÎ“Ã‡Ã¦Mail",
     "password": "Passwort",
-    "signInWithEmail": "Mit EΓÇæMail anmelden",
+    "signInWithEmail": "Mit EÎ“Ã‡Ã¦Mail anmelden",
     "noAccount": "Noch kein Konto?",
     "register": "Registrieren"
   },
   "Create": {
-    "pasteCode": "Code einf├╝gen",
-    "placeholderHtml": "<!-- HTMLΓÇæCode hier -->\n<div>\n  <h1>Hallo</h1>\n</div>",
-    "placeholderReact": "// ReactΓÇæCode hier\nexport default function App(){\n  return <h1>Hallo</h1>;\n}",
+    "pasteCode": "Code einfâ”œâ•gen",
+    "placeholderHtml": "<!-- HTMLÎ“Ã‡Ã¦Code hier -->\n<div>\n  <h1>Hallo</h1>\n</div>",
+    "placeholderReact": "// ReactÎ“Ã‡Ã¦Code hier\nexport default function App(){\n  return <h1>Hallo</h1>;\n}",
     "basics": "Grundlagen",
     "name": "Name",
     "description": "Beschreibung",
     "source": "Quelle",
-    "pageTitle": "Neue App veröffentlichen",
+    "pageTitle": "Neue App verÃ¶ffentlichen",
     "sourceSection": "App-Quelle",
-    "optionPasteCode": "Code einfügen",
+    "optionPasteCode": "Code einfÃ¼gen",
     "optionUploadBundle": "Bundle hochladen (.zip)",
     "bundleHintPart1": "Das ZIP-Bundle muss das Build-Output zusammen mit",
     "bundleHintPart2": "und",
-    "bundleHintPart3": "Der Worker installiert es lokal und führt",
-    "bundleAiWarning": "WICHTIG: Apps, die auf Google AI Studio, Gemini, Kimi oder einen anderen LLM-Anbieter angewiesen sind, benötigen einen eigenen API-Schlüssel. Ohne ihn funktioniert das Bundle nach der Veröffentlichung nicht.",
-    "bundleAiWarningDetail": "Trage deinen Schlüssel unten ein (wir stellen keinen bereit). Lass das Feld nur leer, wenn deine AI-App ohne privaten Schlüssel auskommt. Eine Dokumentation zu AI-Bundles folgt in Kürze.",
-    "bundleAiNoKeyNote": "Du kannst weiterhin Demo-Apps veröffentlichen, die keinen Schlüssel brauchen – das hängt davon ab, wie du sie gebaut hast.",
-    "bundleAiApiLabel": "AI- / LLM-API-Schlüssel",
-    "bundleAiApiPlaceholder": "Füge hier deinen Anbieter-Schlüssel ein (wird nur für diesen Build gespeichert)",
-    "bundleAiApiHelp": "Wir betten den Schlüssel in das Bundle ein, damit es deinen AI-Dienst erreichen kann. Wenn die App später nicht mehr funktioniert, überprüfe oder rotiere den Schlüssel.",
-    "chooseZip": "ZIP auswählen",
+    "bundleHintPart3": "Der Worker installiert es lokal und fÃ¼hrt",
+    "bundleAiWarning": "WICHTIG: Apps, die auf Google AI Studio, Gemini, Kimi oder einen anderen LLM-Anbieter angewiesen sind, benÃ¶tigen einen eigenen API-SchlÃ¼ssel. Ohne ihn funktioniert das Bundle nach der VerÃ¶ffentlichung nicht.",
+    "bundleAiWarningDetail": "Trage deinen SchlÃ¼ssel unten ein (wir stellen keinen bereit). Lass das Feld nur leer, wenn deine AI-App ohne privaten SchlÃ¼ssel auskommt. Eine Dokumentation zu AI-Bundles folgt in KÃ¼rze.",
+    "bundleAiNoKeyNote": "Du kannst weiterhin Demo-Apps verÃ¶ffentlichen, die keinen SchlÃ¼ssel brauchen â€“ das hÃ¤ngt davon ab, wie du sie gebaut hast.",
+    "bundleAiApiLabel": "AI- / LLM-API-SchlÃ¼ssel",
+    "bundleAiApiPlaceholder": "FÃ¼ge hier deinen Anbieter-SchlÃ¼ssel ein (wird nur fÃ¼r diesen Build gespeichert)",
+    "bundleAiApiHelp": "Wir betten den SchlÃ¼ssel in das Bundle ein, damit es deinen AI-Dienst erreichen kann. Wenn die App spÃ¤ter nicht mehr funktioniert, Ã¼berprÃ¼fe oder rotiere den SchlÃ¼ssel.",
+    "chooseZip": "ZIP auswÃ¤hlen",
     "placeholderHtmlLong": "HTML-Snippet oder komplette Seite...",
     "placeholderReactLong": "React-Komponente...",
-    "previewGraphic": "App-Grafik ausw├ñhlen",
-    "previewGraphicHint": "W├ñhle eine unserer Vorlagen oder lade dein eigenes Bild hoch (max. 1 MB).",
+    "previewGraphic": "App-Grafik auswâ”œÃ±hlen",
+    "previewGraphicHint": "Wâ”œÃ±hle eine unserer Vorlagen oder lade dein eigenes Bild hoch (max. 1 MB).",
     "previewOverlayPlaceholder": "App-Titel",
     "previewTitleLabel": "Titel auf der Grafik",
     "characters": "Zeichen",
-    "previewTitlePlaceholder": "Titel f├╝r die ├£berlagerung eingeben",
-    "previewTitleHint": "Wird auf einem halbtransparenten Banner ├╝ber der ausgew├ñhlten Grafik angezeigt.",
-    "chooseCustomGraphic": "Eigene Grafik ausw├ñhlen",
-    "removeCustomGraphic": "Zur Vorlage zur├╝ckkehren",
+    "previewTitlePlaceholder": "Titel fâ”œâ•r die â”œÂ£berlagerung eingeben",
+    "previewTitleHint": "Wird auf einem halbtransparenten Banner â”œâ•ber der ausgewâ”œÃ±hlten Grafik angezeigt.",
+    "chooseCustomGraphic": "Eigene Grafik auswâ”œÃ±hlen",
+    "removeCustomGraphic": "Zur Vorlage zurâ”œâ•ckkehren",
     "customGraphicHint": "PNG oder JPG bis",
-    "previewUploading": "Grafik wird gespeichertΓÇª",
+    "previewUploading": "Grafik wird gespeichertÎ“Ã‡Âª",
     "previewUploadSuccess": "Grafik gespeichert.",
     "previewFileTooLarge": "Bild muss kleiner sein als",
-    "previewFileReadFailed": "Das ausgew├ñhlte Bild konnte nicht gelesen werden.",
+    "previewFileReadFailed": "Das ausgewâ”œÃ±hlte Bild konnte nicht gelesen werden.",
     "previewUploadFailed": "Grafik konnte nicht gespeichert werden. Bitte erneut versuchen.",
-    "back": "Zur├╝ck",
+    "longDescriptionLabel": "Ausführliche Beschreibung",
+    "longDescriptionHint": "Ziele auf mindestens {min} Zeichen (2–3 kurze Absätze).",
+    "longDescriptionPlaceholder": "Erzähle die Geschichte, Funktionen und Vorteile deiner App...",
+    "longDescriptionCounter": "{used}/{limit} Zeichen",
+    "longDescriptionTooShort": "Die ausführliche Beschreibung muss mindestens {min} Zeichen haben.",
+    "screenshotsLabel": "Screenshots",
+    "screenshotsHint": "Lade bis zu zwei Screenshots hoch (PNG/JPG/WebP, max. {size}MB).",
+    "screenshotsPreviewAlt": "Screenshot {index}",
+    "screenshotsFileHint": "PNG/JPG/WebP bis {size}MB.",
+    "screenshotsUploadButton": "Screenshot hochladen",
+    "screenshotsReplaceButton": "Screenshot ersetzen",
+    "screenshotsRemoveButton": "Entfernen",
+    "screenshotsEmptyPlaceholder": "Screenshot hochladen",
+    "screenshotsTooLarge": "Screenshot darf höchstens {size}MB groß sein.",
+    "screenshotsRequired": "Füge mindestens einen Screenshot hinzu, bevor du veröffentlichst.",
+    "metadataSyncFailed": "Der Build wurde veröffentlicht, aber die ausführliche Beschreibung oder Screenshots konnten nicht gespeichert werden. Öffne die Detailseite und versuche es erneut.",
+    "back": "Zurâ”œâ•ck",
     "next": "Weiter",
-    "publish": "Ver├╢ffentlichen",
-    "mustSignIn": "Bitte zuerst anmelden, um zu ver├╢ffentlichen.",
+    "publish": "Verâ”œâ•¢ffentlichen",
+    "mustSignIn": "Bitte zuerst anmelden, um zu verâ”œâ•¢ffentlichen.",
     "login": "Anmelden"
   },
   "App": {
     "notFound": "App nicht gefunden",
-    "backToMarketplace": "Zur├╝ck zum Marktplatz",
+    "backToMarketplace": "Zurâ”œâ•ck zum Marktplatz",
     "playNow": "Jetzt spielen",
     "playInNewTab": "In neuem Tab spielen",
-    "about": "├£ber",
+    "about": "â”œÂ£ber",
     "noDescription": "Keine Beschreibung vorhanden.",
     "previewGraphic": "App-Grafik",
-    "previewGraphicHint": "W├ñhle eine Vorlage oder lade dein eigenes Bild hoch (max. 1 MB).",
+    "previewGraphicHint": "Wâ”œÃ±hle eine Vorlage oder lade dein eigenes Bild hoch (max. 1 MB).",
     "previewOverlayPlaceholder": "App-Titel",
     "previewTitleLabel": "Titel auf der Grafik",
     "characters": "Zeichen",
-    "previewTitlePlaceholder": "Titel f├╝r die ├£berlagerung eingeben",
-    "previewTitleHint": "Wird auf einem halbtransparenten Banner ├╝ber der ausgew├ñhlten Grafik angezeigt.",
-    "chooseCustomGraphic": "Eigene Grafik ausw├ñhlen",
-    "removeCustomGraphic": "Zur Vorlage zur├╝ckkehren",
+    "previewTitlePlaceholder": "Titel fâ”œâ•r die â”œÂ£berlagerung eingeben",
+    "previewTitleHint": "Wird auf einem halbtransparenten Banner â”œâ•ber der ausgewâ”œÃ±hlten Grafik angezeigt.",
+    "chooseCustomGraphic": "Eigene Grafik auswâ”œÃ±hlen",
+    "removeCustomGraphic": "Zur Vorlage zurâ”œâ•ckkehren",
     "customGraphicHint": "PNG oder JPG bis",
-    "previewUploading": "Grafik wird gespeichertΓÇª",
+    "previewUploading": "Grafik wird gespeichertâ€¦",
     "previewUploadSuccess": "Grafik gespeichert.",
     "previewUploadFailed": "Grafik konnte nicht gespeichert werden. Bitte erneut versuchen.",
     "previewFileTooLarge": "Bild muss kleiner sein als",
-    "previewFileReadFailed": "Das ausgew├ñhlte Bild konnte nicht gelesen werden.",
-    "previewSelectFileFirst": "Bitte zuerst ein Bild ausw├ñhlen.",
+    "previewFileReadFailed": "Die ausgewÃ¤hlte Datei konnte nicht gelesen werden.",
+    "previewSelectFileFirst": "Bitte zuerst eine Grafik auswÃ¤hlen.",
     "saveGraphic": "Grafik speichern",
-    "savingGraphic": "SpeichernΓÇª"
+    "savingGraphic": "Wird gespeichertâ€¦",
+    "creator": {
+      "longDescriptionLabel": "AusfÃ¼hrliche Beschreibung",
+      "longDescriptionHelper": "Ziele auf mindestens {min} Zeichen (2â€“3 kurze AbsÃ¤tze).",
+      "longDescriptionPlaceholder": "ErzÃ¤hle die Geschichte, Funktionen und Vorteile deiner App...",
+      "longDescriptionCounter": "{used}/{limit} Zeichen",
+      "longDescriptionTooShort": "Die ausfÃ¼hrliche Beschreibung muss mindestens {min} Zeichen haben.",
+      "screenshotsLabel": "Screenshots",
+      "screenshotsHint": "Lade bis zu zwei Screenshots hoch (PNG/JPG/WebP, max. 1 MB). Sie erscheinen neben der Hero-Grafik im öffentlichen Listing.",
+      "screenshotsPlaceholder": "https://beispiel.de/screenshot.jpg",
+      "screenshotsInvalid": "Gib eine gÃ¼ltige https://-Adresse ein.",
+      "screenshotsInvalidToast": "Bitte prÃ¼fe, ob die Screenshot-Links mit https:// beginnen, und versuche es erneut.",
+      "screenshotsPreviewAlt": "Screenshot {index}",
+      "screenshotsFileHint": "PNG/JPG/WebP bis {size}MB.",
+      "screenshotsUploadButton": "Screenshot hochladen",
+      "screenshotsReplaceButton": "Screenshot ersetzen",
+      "screenshotsRemoveButton": "Entfernen",
+      "screenshotsUploading": "Wird hochgeladen...",
+      "screenshotsEmptyPlaceholder": "Screenshot hochladen",
+      "screenshotsUploadSuccess": "Screenshot gespeichert.",
+      "screenshotsUploadFailed": "Screenshot konnte nicht hochgeladen werden. Bitte versuch es erneut.",
+      "screenshotsDeleteFailed": "Screenshot konnte nicht entfernt werden. Bitte versuch es erneut.",
+      "screenshotsRemoveSuccess": "Screenshot entfernt.",
+      "screenshotsTooLarge": "Screenshot darf höchstens {size}MB groß sein."
+    },
+    "viewer": {
+      "play": {
+        "default": "App starten",
+        "login": "Anmelden und starten",
+        "pay": "Zugang freischalten"
+      },
+      "tagline": "Empfohlene App",
+      "added": "HinzugefÃ¼gt {time}",
+      "author": {
+        "unknown": "Anonymer Creator"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Pausiert"
+      },
+      "badges": {
+        "new": "Neu",
+        "paused": "Pausiert",
+        "public": "Ã–ffentlich",
+        "unlisted": "Nicht gelistet"
+      },
+      "banner": {
+        "pending": "Diese App wartet auf Freigabe. Nur der Creator und Moderatoren kÃ¶nnen sie momentan sehen.",
+        "private": "Diese App ist noch nicht Ã¶ffentlich. Du siehst sie, weil du erhÃ¶hte Rechte hast."
+      },
+      "actions": {
+        "copied": "Link kopiert",
+        "copy": "Link kopieren",
+        "like": "GefÃ¤llt mir",
+        "liked": "Gespeichert"
+      },
+      "stats": {
+        "likes": "Likes",
+        "plays": "Plays",
+        "price": "Preis",
+        "status": "Status"
+      },
+      "description": {
+        "title": "Das bekommst du",
+        "empty": "Der Creator ergÃ¤nzt die Details bald."
+      },
+      "gallery": {
+        "title": "Screenshots",
+        "empty": "Screenshots erscheinen, sobald der Creator welche hochlÃ¤dt.",
+        "alt": "Screenshot {index}"
+      },
+      "preview": {
+        "title": "Live-Vorschau",
+        "fallback": "Die Vorschau erscheint, sobald der Creator eine Grafik hochlÃ¤dt."
+      },
+      "securityTitle": "Sicherheits-Badges",
+      "identity": {
+        "missing": "Gastbenutzer"
+      },
+      "report": {
+        "title": "Inhalt melden",
+        "link": "Inhalt melden",
+        "hide": "Formular ausblenden",
+        "identityLabel": "Dein Profil",
+        "identityHint": "Wird automatisch ausgefÃ¼llt, damit sich Moderatoren bei Bedarf melden kÃ¶nnen.",
+        "reasonLabel": "Grund",
+        "reasonPlaceholder": "ErklÃ¤re, was problematisch istâ€¦",
+        "reasonHint": "Mindestens 10 Zeichen. Wir leiten die Nachricht direkt an Moderatoren weiter.",
+        "cancel": "Abbrechen",
+        "submit": "Meldung senden",
+        "busy": "Wird gesendetâ€¦"
+      }
+    },
+    "reviews": {
+      "title": "Bewertungen",
+      "subtitle": "{count} Bewertungen",
+      "averageLabel": "Durchschnittsbewertung",
+      "breakdown": "Verteilung der Sterne",
+      "ratingLabel": "Bewertung",
+      "commentLabel": "Kommentar",
+      "commentPlaceholder": "Was hat dir gefallen? Was kÃ¶nnten wir verbessern?",
+      "leaveReview": "Teile deine Erfahrung",
+      "loginHint": "Melde dich an, um eine Bewertung zu schreiben.",
+      "loginRequired": "Melde dich an, um eine Bewertung zu schreiben.",
+      "requirePurchase": "Nur Nutzer, die die App ausprobiert haben, dÃ¼rfen bewerten.",
+      "requirePurchaseHint": "Nur Nutzer, die die App ausprobiert haben, dÃ¼rfen bewerten.",
+      "tooShort": "Die Nachricht muss mindestens 10 Zeichen enthalten.",
+      "loading": "Bewertungen werden geladen...",
+      "empty": "Noch keine Bewertungen.",
+      "submit": "Bewertung senden",
+      "submitting": "Wird gesendet...",
+      "sent": "Danke! Deine Bewertung ist eingegangen.",
+      "error": "Die Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut."
+    }
   },
   "Rooms": {
     "headerActiveLabel": "Aktiver Raum",
     "panelLabel": "Raum-Panel",
-    "defaultRoomName": "├ûffentlicher Demo-Raum (PIN 1111)",
-    "descriptionDemoCompact": "Der Demo-Raum ist ├╢ffentlich und zum Testen gedacht. Alle Nutzer teilen dieselben Daten.",
+    "defaultRoomName": "â”œÃ»ffentlicher Demo-Raum (PIN 1111)",
+    "descriptionDemoCompact": "Der Demo-Raum ist â”œâ•¢ffentlich und zum Testen gedacht. Alle Nutzer teilen dieselben Daten.",
     "descriptionPrivateCompact": "Dieser Raum hat einen privaten Speicher, den nur Mitglieder mit demselben PIN teilen.",
-    "descriptionDemoFull": "Dieser Demo-Raum ist ├╢ffentlich und zeigt die App. Erstelle deinen eigenen Raum und PIN f├╝r privaten Speicher.",
-    "descriptionPrivateFull": "Der von dir gew├ñhlte Raum verf├╝gt ├╝ber privaten Speicher, der f├╝r alle zug├ñnglich ist, die Raumname und PIN kennen.",
+    "descriptionDemoFull": "Dieser Demo-Raum ist â”œâ•¢ffentlich und zeigt die App. Erstelle deinen eigenen Raum und PIN fâ”œâ•r privaten Speicher.",
+    "descriptionPrivateFull": "Der von dir gewâ”œÃ±hlte Raum verfâ”œâ•gt â”œâ•ber privaten Speicher, der fâ”œâ•r alle zugâ”œÃ±nglich ist, die Raumname und PIN kennen.",
     "roomLabel": "Raumname",
     "pinLabel": "PIN",
-    "roomPlaceholder": "Raumname (z. B. K├╝che)",
+    "roomPlaceholder": "Raumname (z. B. Kâ”œâ•che)",
     "pinPlaceholder": "PIN (4-8 Ziffern)",
-    "modeHint": "F├╝r dauerhaften privaten Speicher erstelle deinen eigenen Raum und PIN.",
+    "modeHint": "Fâ”œâ•r dauerhaften privaten Speicher erstelle deinen eigenen Raum und PIN.",
     "toggleLabel": "Raum-Panel umschalten",
     "createButton": "Neuen Raum erstellen",
     "joinButton": "Bestehenden Raum betreten",
-    "demoButton": "Zum Demo-Raum zur├╝ckkehren (PIN 1111)",
+    "demoButton": "Zum Demo-Raum zurâ”œâ•ckkehren (PIN 1111)",
     "errors": {
       "missingCredentials": "Gib einen Raumnamen und PIN an.",
-      "generic": "Die Arbeit mit R├ñumen ist derzeit nicht m├╢glich."
+      "generic": "Die Arbeit mit Râ”œÃ±umen ist derzeit nicht mâ”œâ•¢glich."
     }
-  }
-  ,"GoldenBookPage": {
-    "title": "Golden Book der Unterstützer",
-    "subtitle": "Jede Spende hält Thesara online und unabhängig. Alle Namen bleiben dauerhaft sichtbar.",
-    "activeWindow": "Spenden sind von {start} bis {end} möglich.",
-    "alwaysOpen": "Spenden sind während dieses 90-Tage-Zeitraums geöffnet.",
-    "closedWindow": "Spenden sind derzeit geschlossen, aber das Golden Book bleibt öffentlich.",
+  },
+  "GoldenBookPage": {
+    "title": "Golden Book der UnterstÃ¼tzer",
+    "heroTitle": "Hilf uns, aus der Garage herauszukommen und verewige deinen Beitrag im Goldenen Buch und werde Teil der Geschichte!",
+    "subtitle": "Jede Spende hÃ¤lt Thesara online und unabhÃ¤ngig. Alle Namen bleiben dauerhaft sichtbar.",
+    "activeWindow": "Spenden sind von {start} bis {end} mÃ¶glich.",
+    "alwaysOpen": "Spenden sind wÃ¤hrend dieses 90-Tage-Zeitraums geÃ¶ffnet.",
+    "closedWindow": "Spenden sind derzeit geschlossen, aber das Golden Book bleibt Ã¶ffentlich.",
     "listTitle": "Spender",
-    "empty": "Noch keine öffentlichen Spender. Sei der Erste!",
+    "empty": "Noch keine Ã¶ffentlichen Spender. Sei der Erste!",
     "pendingBadge": "Alias ausstehend",
     "cta": "Jetzt spenden",
     "ctaClosed": "Spenden geschlossen",
-    "aliasLink": "Schon gespendet? Alias speichern",
     "permanentNote": "Jeder Eintrag bleibt auch nach Ende der Kampagne sichtbar.",
-    "highlightToast": "Dein Name wurde gerade hinzugefügt!"
+    "highlightToast": "Dein Name wurde gerade hinzugefÃ¼gt!"
   },
   "DonateThankYou": {
-    "title": "Danke für deine Unterstützung",
+    "title": "Danke fÃ¼r deine UnterstÃ¼tzung",
     "celebrationKicker": "Du machst den Unterschied",
-    "celebrationBody": "Deine Spende hält Thesara unabhängig. Bestimme deinen Eintrag und wir feiern dich im Golden Book.",
+    "celebrationBody": "Deine Spende hÃ¤lt Thesara unabhÃ¤ngig. Bestimme deinen Eintrag und wir feiern dich im Golden Book.",
     "stepOne": "Anzeigename eintragen",
     "stepTwo": "Golden Book anzeigen",
     "aliasTitle": "Wie sollen wir dich nennen?",
-    "intro": "Bestimme, welcher Name im Golden Book steht. Lass das Feld leer, wenn du anonym bleiben möchtest.",
-    "missingPaymentIntent": "Wir konnten keine Zahlungsreferenz finden. Öffne den Link aus der Stripe-E-Mail oder kontaktiere den Support.",
+    "intro": "Bestimme, welcher Name im Golden Book steht. Lass das Feld leer, wenn du anonym bleiben mÃ¶chtest.",
+    "missingPaymentIntent": "Wir konnten keine Zahlungsreferenz finden. Ã–ffne den Link aus der Stripe-E-Mail oder kontaktiere den Support.",
     "notFound": "Spende nicht gefunden. Bitte aktualisiere die Seite oder melde dich beim Support.",
     "aliasLabel": "Anzeigename",
-    "aliasPlaceholder": "z.B. Thesara Fan, Studio Kaktus…",
-    "aliasOptional": "Wenn das Feld leer bleibt, erscheint “Anonymer Spender”.",
+    "aliasPlaceholder": "z.B. Thesara Fan, Studio Kaktusâ€¦",
+    "aliasOptional": "Wenn das Feld leer bleibt, erscheint â€œAnonymer Spenderâ€.",
     "submit": "Name speichern",
-    "saving": "Speichere…",
+    "saving": "Speichereâ€¦",
     "success": "Alias gespeichert! Du bist jetzt im Golden Book.",
     "alreadySet": "Alias bereits gespeichert. Danke!",
     "alreadySetHint": "Bereits einen Namen eingetragen? Du kannst ihn jederzeit anpassen und erneut speichern.",
     "errorGeneric": "Wir konnten den Alias nicht speichern. Bitte versuche es erneut.",
-    "goToGoldenBook": "Golden Book öffnen",
+    "goToGoldenBook": "Golden Book Ã¶ffnen",
     "backHome": "Zur Startseite",
-    "redirecting": "Weiterleitung zum Golden Book…"
+    "redirecting": "Weiterleitung zum Golden Bookâ€¦"
   }
-
 }
+
+
+
 

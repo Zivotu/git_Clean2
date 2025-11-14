@@ -12,7 +12,7 @@ export default function Logo({ className = '' }: { className?: string }) {
         width={500}
         height={237}
         style={{ color: 'transparent' }}
-        className="h-10 w-auto rounded-xl object-contain"
+        className="h-12 w-auto rounded-xl object-contain"
         priority
       />
     </Link>

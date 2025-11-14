@@ -14,6 +14,7 @@ import FeedbackModal from '@/components/FeedbackModal';
 import { useI18n } from '@/lib/i18n-provider';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
 import { GOLDEN_BOOK, getGoldenBookCountdown, isGoldenBookCampaignActive } from '@/lib/config';
+import GoldenBookIcon from '../../../assets/GoldenBook_Icon_1.png';
 
 export default function Header() {
   const { messages } = useI18n();
@@ -43,128 +44,144 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
-      <div className="relative max-w-screen-2xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <Logo />
-          <nav className="hidden md:flex items-center gap-3">
-            <LocaleSwitcher />
-            {pathname === '/create' ? (
-              <span className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium">{tNav('publishApp')}</span>
-            ) : (
-              <Link
-                href="/create"
-                onClick={handlePublishClick}
-                className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium transition hover:bg-emerald-600"
-                title="Publish new app"
-              >
-                {tNav('publishApp')}
-              </Link>
-            )}
-            {pathname === '/my' ? (
-              <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('myProjects')}</span>
-            ) : (
-              <Link
-                href="/my"
-                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                title="My projects"
-              >
-                {tNav('myProjects')}
-              </Link>
-            )}
-            {user &&
-              (pathname === '/my-creators' ? (
-                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('myCreators')}</span>
-              ) : (
-                <Link
-                  href="/my-creators"
-                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                  title="My creators"
-                >
-                  {tNav('myCreators')}
-                </Link>
-              ))}
-
-            {user &&
-              (pathname === '/pro-apps' ? (
-                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('proApps')}</span>
-              ) : (
-                <Link
-                  href="/pro-apps"
-                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                  title="Pro Apps"
-                >
-                  {tNav('proApps')}
-                </Link>
-              ))}
-            {pathname === '/pro' ? (
-              <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('goPro')}</span>
-            ) : (
-              <Link
-                href="/pro"
-                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                title="Go Pro"
-              >
-                {tNav('goPro')}
-              </Link>
-            )}
-            {pathname === '/faq' ? (
-              <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('faq')}</span>
-            ) : (
-              <Link
-                href="/faq"
-                className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-                title="FAQ"
-              >
-                {tNav('faq')}
-              </Link>
-            )}
-            <Link
-              href="/golden-book"
-              className={`px-4 py-2 rounded-lg text-gray-600 transition font-medium ${
-                pathname === '/golden-book' ? 'bg-gray-200 text-gray-900' : 'hover:bg-gray-100'
-              }`}
-              title="Golden Book"
-            >
-              {tNav('goldenBook')}
-            </Link>
-            {donateEnabled && (
-              donateActive ? (
-                <a
-                  href={donateLink as string}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 rounded-lg bg-amber-500 text-white font-medium transition hover:bg-amber-600 flex items-center gap-2"
-                >
-                  {tNav('donate')}
-                  {donateCountdownLabel && (
-                    <span className="text-xs bg-white/25 rounded-full px-2 py-0.5 font-semibold">
-                      {donateCountdownLabel}
-                    </span>
-                  )}
-                </a>
-              ) : (
-                <span className="px-4 py-2 rounded-lg bg-gray-100 text-gray-400 font-medium">
-                  {tNav('donate')}
+      <div className="relative mx-auto w-[90%] px-4 py-3">
+        <div className="flex items-center gap-6 w-full">
+          <Logo className="shrink-0" />
+          <div className="hidden md:flex flex-1 justify-center">
+            <nav className="flex items-center gap-3 whitespace-nowrap">
+              <LocaleSwitcher />
+              {pathname === '/create' ? (
+                <span className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium">
+                  {tNav('publishApp')}
                 </span>
-              )
-            )}
-            {/* Feedback button (text only) */}
-            <button
-              type="button"
-              onClick={() => setShowFeedback(true)}
-              className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
-              title={tNav('feedback')}
-            >
-              {tNav('feedback')}
-            </button>
-            {user ? (
-              <div className="flex items-center gap-3 ml-2">
-                <button
-                  onClick={() => auth && signOut(auth)}
-                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+              ) : (
+                <Link
+                  href="/create"
+                  onClick={handlePublishClick}
+                  className="px-4 py-2 rounded-lg bg-emerald-500 text-white font-medium transition hover:bg-emerald-600"
+                  title="Publish new app"
                 >
-                  {tNav('logout')}
-                </button>
+                  {tNav('publishApp')}
+                </Link>
+              )}
+              {pathname === '/my' ? (
+                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">
+                  {tNav('myProjects')}
+                </span>
+              ) : (
+                <Link
+                  href="/my"
+                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                  title="My projects"
+                >
+                  {tNav('myProjects')}
+                </Link>
+              )}
+              {user &&
+                (pathname === '/my-creators' ? (
+                  <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">
+                    {tNav('myCreators')}
+                  </span>
+                ) : (
+                  <Link
+                    href="/my-creators"
+                    className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                    title="My creators"
+                  >
+                    {tNav('myCreators')}
+                  </Link>
+                ))}
+
+              {user &&
+                (pathname === '/pro-apps' ? (
+                  <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">
+                    {tNav('proApps')}
+                  </span>
+                ) : (
+                  <Link
+                    href="/pro-apps"
+                    className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                    title="Pro Apps"
+                  >
+                    {tNav('proApps')}
+                  </Link>
+                ))}
+              {pathname === '/pro' ? (
+                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('goPro')}</span>
+              ) : (
+                <Link
+                  href="/pro"
+                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                  title="Go Pro"
+                >
+                  {tNav('goPro')}
+                </Link>
+              )}
+              {pathname === '/faq' ? (
+                <span className="px-4 py-2 rounded-lg bg-gray-200 text-gray-900 font-medium">{tNav('faq')}</span>
+              ) : (
+                <Link
+                  href="/faq"
+                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                  title="FAQ"
+                >
+                  {tNav('faq')}
+                </Link>
+              )}
+              <Link
+                href="/golden-book"
+                className={`rounded-lg transition ${
+                  pathname === '/golden-book' ? 'ring-2 ring-amber-200' : 'hover:bg-gray-100'
+                } p-2`}
+                title="Golden Book"
+                aria-label={tNav('goldenBook')}
+              >
+                <Image
+                  src={GoldenBookIcon}
+                  alt={tNav('goldenBook')}
+                  width={44}
+                  height={44}
+                  style={{ height: 44, width: 'auto' }}
+                  className="object-contain"
+                  priority={false}
+                />
+                <span className="sr-only">{tNav('goldenBook')}</span>
+              </Link>
+              {donateEnabled && (
+                donateActive ? (
+                  <a
+                    href={donateLink as string}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2 rounded-lg bg-amber-500 text-white font-medium transition hover:bg-amber-600 flex items-center gap-2"
+                  >
+                    {tNav('donate')}
+                    {donateCountdownLabel && (
+                      <span className="text-xs bg-white/25 rounded-full px-2 py-0.5 font-semibold">
+                        {donateCountdownLabel}
+                      </span>
+                    )}
+                  </a>
+                ) : (
+                  <span className="px-4 py-2 rounded-lg bg-gray-100 text-gray-400 font-medium">
+                    {tNav('donate')}
+                  </span>
+                )
+              )}
+              {/* Feedback button (text only) */}
+              <button
+                type="button"
+                onClick={() => setShowFeedback(true)}
+                className="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition font-medium"
+                title={tNav('feedback')}
+              >
+                {tNav('feedback')}
+              </button>
+            </nav>
+          </div>
+          <div className="hidden md:flex items-center gap-3 ml-4">
+            {user ? (
+              <>
                 {pathname === '/profile' ? (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-200">
                     <Avatar
@@ -192,7 +209,33 @@ export default function Header() {
                     <span className="hidden lg:block text-sm font-medium text-gray-900">{name}</span>
                   </Link>
                 )}
-              </div>
+                <button
+                  onClick={() => auth && signOut(auth)}
+                  className="p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+                  aria-label={tNav('logout')}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="h-6 w-6"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.25 6.75V5.25A2.25 2.25 0 0110.5 3h6a2.25 2.25 0 012.25 2.25v13.5A2.25 2.25 0 0116.5 21h-6a2.25 2.25 0 01-2.25-2.25v-1.5"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5.25 9l-3 3 3 3m-3-3H15"
+                    />
+                  </svg>
+                  <span className="sr-only">{tNav('logout')}</span>
+                </button>
+              </>
             ) : (
               <Link
                 href="/login"
@@ -202,9 +245,9 @@ export default function Header() {
                 {tNav('login')}
               </Link>
             )}
-          </nav>
+          </div>
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+            className="md:hidden ml-auto p-2 rounded-lg hover:bg-gray-100 transition"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             aria-label="Toggle menu"
           >
@@ -279,10 +322,21 @@ export default function Header() {
             )}
             <Link
               href="/golden-book"
-              className={`block px-4 py-2 rounded-lg text-center ${pathname === '/golden-book' ? 'bg-gray-200 text-gray-900' : 'text-gray-600'}`}
+              className={`block rounded-lg ${
+                pathname === '/golden-book' ? 'bg-gray-200' : 'bg-transparent'
+              } p-2`}
               title="Golden Book"
+              aria-label={tNav('goldenBook')}
             >
-              {tNav('goldenBook')}
+              <Image
+                src={GoldenBookIcon}
+                alt={tNav('goldenBook')}
+                width={64}
+                height={64}
+                style={{ height: 64, width: 'auto' }}
+                className="mx-auto object-contain"
+              />
+              <span className="sr-only">{tNav('goldenBook')}</span>
             </Link>
             {donateEnabled && (
               donateActive ? (

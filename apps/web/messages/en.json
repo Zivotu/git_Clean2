@@ -85,6 +85,19 @@
       "body": "A form for reporting inappropriate content will appear here."
     }
   },
+  "Creators": {
+    "SimpleGuide": {
+      "title": "Simple guide for creators",
+      "cta": "Publish",
+      "steps": {
+        "1": "Write your app in your favorite LLM (ChatGPT, Kimi, Google AI Studio, or any other assistant).",
+        "2": "Copy the code or upload the bundle you get from the assistant into our editor.",
+        "3": "Publish the app by pressing Publish.",
+        "4": "Tweak the visuals, description, and title so everything looks perfect.",
+        "5": "Enjoy watching other users try your app, game, simulation, or quiz questions."
+      }
+    }
+  },
   "Classifieds": {
     "details": {
       "title": "Listing {id}",
@@ -344,10 +357,14 @@
       }
     },
     "AdsConsent": {
-      "title": "Help us personalize your experience",
-      "description": "We use Google AdSense to keep Thesara sustainable. Choose whether we can show personalized ads or only basic, non-personalized ones.",
-      "accept": "Allow personalized ads",
-      "reject": "Show basic ads"
+      "title": "Cookies & optional data",
+      "description": "We use required cookies to keep you signed in and secure the platform. Optional cookies let us measure usage and personalise Google AdSense - you decide what works for you.",
+      "items.essential": "Essential cookies keep you signed in, remember your language and secure payments.",
+      "items.analytics": "Anonymous analytics tells us which features work and helps detect outages.",
+      "items.ads": "AdSense cookies decide whether you see personalised ads or only basic contextual ones.",
+      "learnMore": "Details & privacy policy",
+      "accept": "Allow all optional cookies",
+      "reject": "Use only essential cookies"
     },
     "adminSettings": {
       "heading": "Admin UI settings",
@@ -568,6 +585,8 @@
     "appsCount": "{count} apps",
     "search": { "placeholder": "Search apps, games, or tags..." },
     "appsFound": "{count} apps found",
+    "publishedCount": "{count} published apps",
+    "membersCount": "{count} registered members",
     "sort": {
       "new": "Newest",
       "popular": "Popular",
@@ -680,6 +699,22 @@
     "previewFileTooLarge": "Image must be smaller than",
     "previewFileReadFailed": "Failed to read the selected image.",
     "previewUploadFailed": "Failed to save graphic. Please try again.",
+    "longDescriptionLabel": "Detailed overview",
+    "longDescriptionHint": "Aim for at least {min} characters (2-3 short paragraphs).",
+    "longDescriptionPlaceholder": "Share the story, features, and benefits of your app...",
+    "longDescriptionCounter": "{used}/{limit} characters",
+    "longDescriptionTooShort": "Detailed overview should have at least {min} characters.",
+    "screenshotsLabel": "Screenshots",
+    "screenshotsHint": "Upload up to two screenshots (PNG/JPG/WebP, max {size}MB).",
+    "screenshotsPreviewAlt": "Screenshot {index}",
+    "screenshotsFileHint": "PNG/JPG/WebP up to {size}MB.",
+    "screenshotsUploadButton": "Upload screenshot",
+    "screenshotsReplaceButton": "Replace screenshot",
+    "screenshotsRemoveButton": "Remove",
+    "screenshotsEmptyPlaceholder": "Upload screenshot",
+    "screenshotsTooLarge": "Screenshot must be {size}MB or smaller.",
+    "screenshotsRequired": "Add at least one screenshot before publishing.",
+    "metadataSyncFailed": "We published the build, but saving your long description or screenshots failed. Open the listing details to try again.",
     "back": "Back",
     "next": "Next",
     "publish": "Publish",
@@ -711,7 +746,120 @@
     "previewFileReadFailed": "Failed to read the selected image.",
     "previewSelectFileFirst": "Please choose an image first.",
     "saveGraphic": "Save graphic",
-    "savingGraphic": "Saving…"
+    "savingGraphic": "Saving…",
+    "creator": {
+      "longDescriptionLabel": "Detailed overview",
+      "longDescriptionHelper": "Aim for at least {min} characters (2-3 short paragraphs).",
+      "longDescriptionPlaceholder": "Share the story, features, and benefits of your app...",
+      "longDescriptionCounter": "{used}/{limit} characters",
+      "longDescriptionTooShort": "Detailed overview should have at least {min} characters.",
+      "screenshotsLabel": "Screenshots",
+      "screenshotsHint": "Upload up to two screenshots (PNG/JPG/WebP, max 1MB each). They appear on the public listing alongside the hero preview.",
+      "screenshotsPlaceholder": "https://example.com/screenshot.jpg",
+      "screenshotsInvalid": "Enter a valid https:// image URL.",
+      "screenshotsInvalidToast": "Check that screenshot links start with https:// and try again.",
+      "screenshotsPreviewAlt": "Screenshot {index}",
+      "screenshotsFileHint": "PNG/JPG/WebP up to {size}MB.",
+      "screenshotsUploadButton": "Upload screenshot",
+      "screenshotsReplaceButton": "Replace screenshot",
+      "screenshotsRemoveButton": "Remove",
+      "screenshotsUploading": "Uploading...",
+      "screenshotsEmptyPlaceholder": "Upload screenshot",
+      "screenshotsUploadSuccess": "Screenshot saved.",
+      "screenshotsUploadFailed": "Failed to upload screenshot. Please try again.",
+      "screenshotsDeleteFailed": "Failed to remove screenshot. Please try again.",
+      "screenshotsRemoveSuccess": "Screenshot removed.",
+      "screenshotsTooLarge": "Screenshot must be {size}MB or smaller."
+    },
+    "viewer": {
+      "play": {
+        "default": "Launch app",
+        "login": "Sign in to play",
+        "pay": "Unlock access"
+      },
+      "tagline": "Featured app",
+      "added": "Added {time}",
+      "author": {
+        "unknown": "Anonymous creator"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Paused"
+      },
+      "badges": {
+        "new": "New",
+        "paused": "Paused",
+        "public": "Public",
+        "unlisted": "Unlisted"
+      },
+      "banner": {
+        "pending": "This app is awaiting approval. Only the creator and moderators can see it for now.",
+        "private": "This listing is not public yet. You're seeing it because you have elevated access."
+      },
+      "actions": {
+        "copied": "Link copied",
+        "copy": "Copy link",
+        "like": "Like",
+        "liked": "Saved"
+      },
+      "stats": {
+        "likes": "Likes",
+        "plays": "Plays",
+        "price": "Price",
+        "status": "Status"
+      },
+      "description": {
+        "title": "What you get",
+        "empty": "The creator will add more details soon."
+      },
+      "gallery": {
+        "title": "Screenshots",
+        "empty": "Screenshots will appear as soon as the creator uploads them.",
+        "alt": "Screenshot {index}"
+      },
+      "preview": {
+        "title": "Live preview",
+        "fallback": "Preview image will appear once the creator uploads one."
+      },
+      "securityTitle": "Safety badges",
+      "identity": {
+        "missing": "Guest user"
+      },
+      "report": {
+        "title": "Report content",
+        "link": "Report content",
+        "hide": "Hide form",
+        "identityLabel": "Your profile",
+        "identityHint": "Filled automatically so moderators can reach out if needed.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Explain what feels off…",
+        "reasonHint": "At least 10 characters. We forward the note directly to moderators.",
+        "cancel": "Cancel",
+        "submit": "Send report",
+        "busy": "Sending…"
+      }
+    },
+    "reviews": {
+      "title": "Reviews",
+      "subtitle": "{count} reviews",
+      "averageLabel": "Average rating",
+      "breakdown": "Score distribution",
+      "ratingLabel": "Rating",
+      "commentLabel": "Comment",
+      "commentPlaceholder": "What did you enjoy? What could be better?",
+      "leaveReview": "Share your experience",
+      "loginHint": "Sign in to leave a review.",
+      "loginRequired": "Sign in to leave a review.",
+      "requirePurchase": "Only people who tried the app can leave a review.",
+      "requirePurchaseHint": "Only people who tried the app can leave a review.",
+      "tooShort": "The message should have at least 10 characters.",
+      "loading": "Loading reviews...",
+      "empty": "No reviews yet.",
+      "submit": "Submit review",
+      "submitting": "Sending...",
+      "sent": "Thanks! Your review was received.",
+      "error": "We can't save the review right now. Please try again."
+    }
   },
   "Rooms": {
     "headerActiveLabel": "Active room",
@@ -737,6 +885,7 @@
   },
   "GoldenBookPage": {
     "title": "Golden Book of Supporters",
+    "heroTitle": "Help us get out of the garage and engrave your contribution in the Golden Book to become part of history!",
     "subtitle": "Every contribution keeps Thesara online and independent. Names stay in the book forever.",
     "activeWindow": "Donations are open from {start} to {end}.",
     "alwaysOpen": "Donations are open throughout this 90-day sprint.",
@@ -746,7 +895,6 @@
     "pendingBadge": "Awaiting alias",
     "cta": "Donate now",
     "ctaClosed": "Donations closed",
-    "aliasLink": "Already donated? Save your alias",
     "permanentNote": "Entries stay visible forever, even after the sprint ends.",
     "highlightToast": "Your name was just added!"
   },

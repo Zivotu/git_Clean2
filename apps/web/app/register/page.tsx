@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, ChangeEvent, FormEvent } from "react";
+import { useState, useCallback, ChangeEvent, FormEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -8,12 +8,13 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
+import { auth, db, storage } from "@/lib/firebase";
 import { ensureUserDoc } from "@/lib/ensureUserDoc";
 import { useTerms } from "@/components/terms/TermsProvider";
 import TermsPreviewModal from "@/components/terms/TermsPreviewModal";
 import { TERMS_POLICY } from "@thesara/policies/terms";
 import { useI18n } from "@/lib/i18n-provider";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -43,6 +44,14 @@ export default function RegisterPage() {
   const [agreed, setAgreed] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
   const [showTerms, setShowTerms] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>("");
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -71,12 +80,18 @@ export default function RegisterPage() {
       cred = await createUserWithEmailAndPassword(auth, form.email, form.password);
       const displayName =
         `${form.firstName} ${form.lastName}`.trim() || form.email.split("@")[0];
-      await updateProfile(cred.user, { displayName });
+      let photoURL: string | null = null;
+      if (photoFile && storage) {
+        const storageRef = ref(storage, `avatars/${cred.user.uid}`);
+        await uploadBytes(storageRef, photoFile);
+        photoURL = await getDownloadURL(storageRef);
+      }
+      await updateProfile(cred.user, { displayName, photoURL: photoURL || undefined });
       await ensureUserDoc({
         uid: cred.user.uid,
         email: cred.user.email,
-        displayName: cred.user.displayName,
-        photoURL: cred.user.photoURL,
+        displayName: displayName,
+        photoURL: photoURL || cred.user.photoURL,
       });
       if (!db) throw new Error("DB not initialized");
       await setDoc(
@@ -90,6 +105,7 @@ export default function RegisterPage() {
           phone: form.phone || null,
           gender: form.gender || null,
           bio: form.bio || null,
+          photoURL: photoURL || null,
         },
         { merge: true }
       );
@@ -200,6 +216,31 @@ export default function RegisterPage() {
           onChange={handleChange}
           className="w-full rounded-md border border-gray-300 px-3 py-2"
         />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("fields.photo")}
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              setPhotoFile(file);
+              setPhotoPreview((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return file ? URL.createObjectURL(file) : "";
+              });
+            }}
+            className="w-full text-sm"
+          />
+          {photoPreview && (
+            <img
+              src={photoPreview}
+              alt="Preview"
+              className="mt-2 h-16 w-16 rounded-full object-cover"
+            />
+          )}
+        </div>
         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm text-gray-800">
           <label className="flex items-start gap-3">
             <input

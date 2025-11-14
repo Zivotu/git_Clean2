@@ -48,6 +48,7 @@ import accessRoutes from './routes/access.js';
 import donationsRoutes from './routes/donations.js';
 import meRoutes from './routes/me.js';
 import configRoutes from './routes/config.js';
+import communityStatsRoutes from './routes/communityStats.js';
 import publicRoutes from './routes/public.js';
 import creatorsRoutes from './routes/creators.js';
 import trialRoutes from './routes/trial.js';
@@ -845,6 +846,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(entitlementsRoutes);
   await app.register(adsRoutes);
   await app.register(configRoutes);
+  await app.register(communityStatsRoutes);
   await app.register(donationsRoutes);
   // Mount publicRoutes at root. We already strip '/api' in onRequest so
   // requests to '/api/play/*' will match these root-level routes.

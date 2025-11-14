@@ -54,7 +54,6 @@ export function AdsProvider({ children }: { children: ReactNode }) {
   const {
     status: consentStatus,
     ready: tcfReady,
-    shouldShowBanner,
     grantConsent,
     rejectConsent,
     resetConsent,
@@ -151,7 +150,7 @@ export function AdsProvider({ children }: { children: ReactNode }) {
     const loadingState =
       loading || adsSettingsLoading || slotConfigLoading || consentLoading;
     const showAdsFinal = !globalDisabled && baseEligible && consentReady;
-    const shouldShowConsentBanner = baseEligible && shouldShowBanner;
+    const shouldShowConsentBanner = consentStatus === 'unknown';
     return {
       showAds: showAdsFinal,
       loading: loadingState,
@@ -179,7 +178,6 @@ export function AdsProvider({ children }: { children: ReactNode }) {
     loading,
     resetConsent,
     rejectConsent,
-    shouldShowBanner,
     slotConfig,
     slotConfigLoading,
     tcString,

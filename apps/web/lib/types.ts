@@ -78,6 +78,8 @@ export interface AppRecord {
   deletedAt?: number;
   playUrl: string;
   previewUrl?: string | null;
+  longDescription?: string;
+  screenshotUrls?: string[];
   likesCount?: number;
   playsCount?: number;
   translations?: Record<string, { title?: string; description?: string }>;
@@ -110,6 +112,8 @@ export type Listing = Pick<
   | 'playsCount'
   | 'translations'
   | 'visibility'
+  | 'longDescription'
+  | 'screenshotUrls'
 > & {
   featured?: boolean;
   // Dodano radi HomeClient.tsx:
