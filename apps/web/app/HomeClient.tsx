@@ -25,6 +25,7 @@ import { playHref, appDetailsHref } from '@/lib/urls';
 import SplashScreen from '@/components/layout/SplashScreen';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 import AdminAccessTrigger from '@/components/AdminAccessTrigger';
+import PartnershipModal from '@/components/PartnershipModal';
 export {};
 type HomeClientProps = {
   initialItems?: ApiListing[];
@@ -85,6 +86,233 @@ type TrendingCarouselProps = {
   countLabel: string;
   onOpen: (slug: string) => void;
 };
+
+type LeftPanelContent = {
+  title: string;
+  subtitle: string;
+  llmLabel: string;
+  steps: Array<{ title: string; text: string }>;
+  storage: {
+    title: string;
+    tag: string;
+    shared: { title: string; text: string };
+    rooms: { title: string; text: string };
+  };
+  footer: string;
+  footerHighlight: string;
+};
+
+const leftPanelLinks = [
+  { label: 'ChatGPT', href: 'https://chatgpt.com' },
+  { label: 'Claude', href: 'https://claude.ai' },
+  { label: 'Gemini', href: 'https://gemini.google.com' },
+  { label: 'Perplexity', href: 'https://www.perplexity.ai' },
+  { label: 'Copilot', href: 'https://copilot.microsoft.com' },
+  { label: 'Kimi', href: 'https://kimi.com' },
+] as const;
+
+function LeftInfoPanel({
+  content,
+  className,
+  fullHeight = false,
+  density = 'default',
+}: {
+  content: LeftPanelContent;
+  className?: string;
+  fullHeight?: boolean;
+  density?: 'default' | 'compact';
+}) {
+  const isCompact = density === 'compact';
+  const paddingClass = isCompact ? 'p-4 sm:p-5 lg:p-6' : 'p-5 sm:p-6 lg:p-7';
+  const rootStyle: React.CSSProperties = {
+    background: 'radial-gradient(circle at 0% 0%, #f1f5f9, #ffffff 55%, #f9fafb 100%)',
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  };
+  if (fullHeight) {
+    rootStyle.maxHeight = 'calc(100vh - 64px)';
+    rootStyle.height = '100%';
+  }
+  const innerStyle: React.CSSProperties | undefined = fullHeight
+    ? { maxHeight: 'calc(100vh - 100px)' }
+    : undefined;
+
+  return (
+    <div
+      className={cn(
+        'relative flex w-full max-w-full flex-col overflow-hidden rounded-2xl border border-slate-300/60 bg-white text-left shadow-[0_16px_30px_rgba(15,23,42,0.08)] lg:rounded-[24px]',
+        paddingClass,
+        fullHeight && 'h-full',
+        className,
+      )}
+      style={rootStyle}
+    >
+      <div
+        className="pointer-events-none absolute inset-[-40%] opacity-90"
+        aria-hidden
+        style={{
+          background:
+            'radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.18), transparent 60%), radial-gradient(circle at 100% 0%, rgba(244, 114, 182, 0.15), transparent 60%)',
+        }}
+      />
+      <div
+        className={cn(
+          'relative z-10 flex flex-col',
+          fullHeight && 'overflow-y-auto pr-1 sm:pr-2',
+        )}
+        style={innerStyle}
+      >
+        <h2
+          className={cn(
+            'mt-1 font-bold leading-tight tracking-tight text-slate-950',
+            isCompact
+              ? 'text-[22px] sm:text-[24px] lg:text-[26px]'
+              : 'text-2xl sm:text-[28px] lg:text-[32px]',
+          )}
+        >
+          {content.title}
+        </h2>
+        <p
+          className={cn(
+            'mt-3 leading-relaxed text-gray-600',
+            isCompact ? 'text-[13px] sm:text-sm' : 'text-sm sm:text-base',
+          )}
+        >
+          {content.subtitle}
+        </p>
+        {content.llmLabel && (
+          <p
+            className={cn(
+              'mt-4 font-semibold uppercase text-gray-500',
+              isCompact ? 'text-[10px] tracking-[0.22em]' : 'text-[12px] tracking-[0.18em]',
+            )}
+          >
+            {content.llmLabel}
+          </p>
+        )}
+        <div className={cn('flex flex-wrap gap-2', isCompact ? 'mt-2' : 'mt-3')}>
+          {leftPanelLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                'font-semibold text-slate-900',
+                isCompact ? 'text-[11px]' : 'text-[12px] sm:text-sm',
+              )}
+            >
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full border border-gray-200 bg-gray-50 transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-slate-900 hover:shadow-md',
+                  isCompact ? 'px-3 py-1' : 'px-3 py-1.5',
+                )}
+              >
+                {link.label}
+              </span>
+            </a>
+          ))}
+        </div>
+        {content.steps.length > 0 && (
+          <ol
+            className={cn(
+              'flex flex-col text-slate-600',
+              isCompact ? 'mt-4 gap-2 text-[13px]' : 'mt-6 gap-3 text-sm sm:text-[15px]',
+            )}
+          >
+            {content.steps.map((step, idx) => (
+              <li key={idx} className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-xl border border-indigo-300 bg-gradient-to-br from-blue-100 to-indigo-100 text-[11px] font-semibold text-slate-700 shadow-[0_0_0_1px_rgba(255,255,255,0.9),0_0_10px_rgba(129,140,248,0.55)]">
+                  {idx + 1}
+                </span>
+                <div
+                  className={cn(
+                    'text-slate-900',
+                    isCompact ? 'text-sm font-semibold' : 'text-sm font-semibold sm:text-base',
+                  )}
+                >
+                  {step.title}
+                </div>
+                <p
+                  className={cn(
+                    'col-start-2 text-slate-600',
+                    isCompact ? 'text-xs leading-snug' : 'text-[13px] leading-relaxed sm:text-sm',
+                  )}
+                >
+                  {step.text}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+        <div
+          className={cn(
+            'rounded-2xl border border-gray-200 bg-slate-50',
+            isCompact ? 'mt-4 p-3' : 'mt-5 p-4',
+          )}
+        >
+          <div
+            className={cn(
+              'flex flex-wrap items-center gap-2 font-semibold text-slate-900',
+              isCompact ? 'text-sm' : 'text-sm sm:text-base',
+            )}
+          >
+            <span>{content.storage.title}</span>
+            {content.storage.tag && (
+              <span
+                className={cn(
+                  'font-semibold uppercase text-emerald-700',
+                  isCompact ? 'text-[9px] tracking-[0.18em]' : 'text-[11px] tracking-[0.15em]',
+                )}
+              >
+                {content.storage.tag}
+              </span>
+            )}
+          </div>
+          <div
+            className={cn(
+              'text-slate-600',
+              isCompact
+                ? 'mt-2 space-y-2 text-[12px] leading-snug'
+                : 'mt-3 space-y-4 text-[13px] leading-relaxed sm:text-sm',
+            )}
+          >
+            <div>
+              <div
+                className={cn(
+                  'font-semibold text-slate-900',
+                  isCompact ? 'text-sm' : 'sm:text-base',
+                )}
+              >
+                {content.storage.shared.title}
+              </div>
+              <p>{content.storage.shared.text}</p>
+            </div>
+            <div>
+              <div
+                className={cn(
+                  'font-semibold text-slate-900',
+                  isCompact ? 'text-sm' : 'sm:text-base',
+                )}
+              >
+                {content.storage.rooms.title}
+              </div>
+              <p>{content.storage.rooms.text}</p>
+            </div>
+          </div>
+        </div>
+        <p
+          className={cn(
+            'text-slate-600',
+            isCompact ? 'mt-4 text-[12px] leading-snug' : 'mt-5 text-[13px] leading-relaxed sm:text-sm',
+          )}
+        >
+          {content.footer}{' '}
+          {content.footerHighlight && <strong className="text-blue-600">{content.footerHighlight}</strong>}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function TrendingCarousel({ items, title, countLabel, onOpen }: TrendingCarouselProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -526,6 +754,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   };
   const tToast = useCallback((k: string) => messages[`Toasts.${k}`] || k, [messages]);
   const tNav = (k: string) => messages[`Nav.${k}`] || k;
+  const tFooter = (k: string) => messages[`Footer.${k}`] || k;
   const [items, setItems] = useState<Listing[]>(initialItemsRef.current);
   const [q, setQ] = useState('');
   const [isLoading, setIsLoading] = useState(initialItemsRef.current.length === 0);
@@ -563,6 +792,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [errorDetails, setErrorDetails] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [showPartnership, setShowPartnership] = useState(false);
   const { isSlotEnabled, showAds } = useAds();
   const openDetails = useCallback((it: Listing) => setDetailsItem(it), []);
   const closeDetails = useCallback(() => setDetailsItem(null), []);
@@ -577,6 +807,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const homeFeedFooterSlot = isSlotEnabled('homeFeedFooter') ? homeFeedFooterSlotRaw : '';
   const showHomeCtaBanner = true;
   const shouldInjectGridAds = showAds && viewMode === 'grid' && homeGridInlineSlot.length > 0;
+  const [leftPanelDensity, setLeftPanelDensity] = useState<'default' | 'compact'>('default');
   const homeLayoutClass = useMemo(() => {
     const hasLeft = Boolean(homeRailLeftSlot);
     const hasRight = Boolean(homeRailRightSlot);
@@ -657,6 +888,17 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
       router.replace('/');
     }
   }, [welcome, router, tToast]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const measure = () => {
+      setLeftPanelDensity(window.innerHeight < 920 ? 'compact' : 'default');
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
   const handlePublishClick = useCallback(() => {
     triggerConfetti();
     router.push('/create');
@@ -906,7 +1148,36 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
       ? gridEntries
       : processed.map((item) => ({ kind: 'app', item }));
   const homeCtaBannerAlt = (messages['Home.cta.bannerAlt'] as string) || 'Thesara promo banner';
+  const stackedHomeCtaImages = [
+    '/assets/CTA_Part_1.jpg',
+    '/assets/CTA_Part_2.jpg',
+    '/assets/CTA_Part_3.jpg',
+    '/assets/CTA_Part_4.jpg',
+  ] as const;
   const ctaBannerTop = Math.max(0, ctaTopOffset) + 8;
+  const leftPanelContent: LeftPanelContent = {
+    title: tHome('leftPanel.title'),
+    subtitle: tHome('leftPanel.subtitle'),
+    llmLabel: tHome('leftPanel.llmLabel'),
+    steps: [1, 2, 3].map((idx) => ({
+      title: tHome(`leftPanel.steps.${idx}.title`),
+      text: tHome(`leftPanel.steps.${idx}.text`),
+    })),
+    storage: {
+      title: tHome('leftPanel.storage.title'),
+      tag: tHome('leftPanel.storage.tag'),
+      shared: {
+        title: tHome('leftPanel.storage.shared.title'),
+        text: tHome('leftPanel.storage.shared.text'),
+      },
+      rooms: {
+        title: tHome('leftPanel.storage.rooms.title'),
+        text: tHome('leftPanel.storage.rooms.text'),
+      },
+    },
+    footer: tHome('leftPanel.footer'),
+    footerHighlight: tHome('leftPanel.footerHighlight'),
+  };
 
   return (
     <div className="min-h-screen text-gray-900 bg-white">
@@ -918,36 +1189,35 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
             className="hidden 2xl:block fixed left-8 z-20"
             style={{
               top: `${ctaBannerTop}px`,
-              width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.85))',
+              width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.9))',
             }}
           >
-            <div className="overflow-hidden rounded-3xl">
-              <Link href="/create" className="block">
-                <img
-                  src="/assets/cta_vertical_1_left.jpg"
-                  alt={homeCtaBannerAlt}
-                  className="w-full object-cover"
-                  loading="lazy"
-                />
-              </Link>
-            </div>
+            <LeftInfoPanel content={leftPanelContent} fullHeight density={leftPanelDensity} />
           </div>
           <div
-            className="hidden 2xl:block fixed right-8 z-20"
+            className="hidden 2xl:flex fixed right-8 z-20 items-center justify-center"
             style={{
               top: `${ctaBannerTop}px`,
               width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.85))',
+              height: 'calc(100vh - 64px)',
             }}
           >
-            <div className="overflow-hidden rounded-3xl">
-              <Link href="/jednostavne-upute" className="block">
-                <img
-                  src="/assets/cta_vertical_1.jpg"
-                  alt={homeCtaBannerAlt}
-                  className="w-full object-cover"
-                  loading="lazy"
-                />
-              </Link>
+            <div
+              className="flex flex-col gap-4"
+              style={{ width: '90%', height: '90%' }}
+            >
+              {stackedHomeCtaImages.map((src, index) => (
+                <div key={src} className="flex-1 w-full">
+                  <Link href="/jednostavne-upute" className="flex h-full w-full items-center justify-center">
+                    <img
+                      src={src}
+                      alt={`${homeCtaBannerAlt} ${index + 1}`}
+                      className="max-h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  </Link>
+                </div>
+              ))}
             </div>
           </div>
         </>
@@ -958,6 +1228,9 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
             {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
           </h1>
           <p className="mt-3 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
+          <div className="mt-8 w-full max-w-2xl 2xl:hidden">
+            <LeftInfoPanel content={leftPanelContent} density={leftPanelDensity} />
+          </div>
         </div>
         <TrendingCarousel
           items={topLiked}
@@ -1208,44 +1481,53 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
           <div className="flex flex-col md:flex-row justify-between gap-8">
             <div>
               <Logo className="mb-4" />
+              <p className="text-gray-600">{tFooter('slogan')}</p>
             </div>
             <div className="flex gap-12">
               <div>
-                <h4 className="font-medium mb-3 text-gray-900">Platform</h4>
+                <h4 className="font-medium mb-3 text-gray-900">{tNav('platform')}</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/marketplace" prefetch={false} className="hover:text-emerald-600 transition">Browse Apps</Link></li>
-                  <li><Link href="/create" className="hover:text-emerald-600 transition">Publish App</Link></li>
-                  <li><Link href="/my" className="hover:text-emerald-600 transition">My Projects</Link></li>
+                  <li><Link href="/create" className="hover:text-emerald-600 transition">{tNav('publishApp')}</Link></li>
+                  <li><Link href="/my" className="hover:text-emerald-600 transition">{tNav('myProjects')}</Link></li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-3 text-gray-900">Resources</h4>
+                <h4 className="font-medium mb-3 text-gray-900">{tNav('resources')}</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/faq" className="hover:text-emerald-600 transition">FAQ</Link></li>
-                  <li><Link href="/docs" prefetch={false} className="hover:text-emerald-600 transition">Documentation</Link></li>
-                  <li><Link href="/tutorials" prefetch={false} className="hover:text-emerald-600 transition">Tutorials</Link></li>
-                  <li><Link href="/api" prefetch={false} className="hover:text-emerald-600 transition">API Reference</Link></li>
-                  {process.env.NODE_ENV !== 'production' && (
-                    <li><Link href="/doctor" className="hover:text-emerald-600 transition">Doctor</Link></li>
-                  )}
+                  <li><Link href="/faq" className="hover:text-emerald-600 transition">{tNav('faq')}</Link></li>
+                  <li>
+                    <a href="/docs" className="hover:text-emerald-600 transition">
+                      {tNav('docs')}
+                    </a>
+                  </li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-3 text-gray-900">Company</h4>
+                <h4 className="font-medium mb-3 text-gray-900">{tNav('company')}</h4>
                 <ul className="space-y-2">
-                  <li><Link href="/about" prefetch={false} className="hover:text-emerald-600 transition">About Us</Link></li>
-                  <li><Link href="/docs/thesara_terms.html" prefetch={false} className="hover:text-emerald-600 transition">Terms</Link></li>
-                  <li><Link href="/privacy" prefetch={false} className="hover:text-emerald-600 transition">Privacy</Link></li>
+                  <li><Link href="/about" prefetch={false} className="hover:text-emerald-600 transition">{tNav('about')}</Link></li>
+                  <li><Link href="/docs/thesara_terms.html" prefetch={false} className="hover:text-emerald-600 transition">{tNav('terms')}</Link></li>
+                  <li><Link href="/privacy" prefetch={false} className="hover:text-emerald-600 transition">{tNav('privacy')}</Link></li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setShowPartnership(true)}
+                      className="hover:text-emerald-600 transition"
+                    >
+                      {tFooter('partnershipLink')}
+                    </button>
+                  </li>
                 </ul>
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t text-center">© 2025 {SITE_NAME}.</div>
+          <div className="mt-8 pt-8 border-t text-center">&copy; 2025 {SITE_NAME}. {tFooter('allRights')}</div>
           <AdminAccessTrigger className="absolute bottom-6 right-4 md:right-0" />
         </div>
       </footer>
       {toast && (<Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />)}
       <DetailsModal open={!!detailsItem} item={detailsItem} onClose={closeDetails} />
+      <PartnershipModal open={showPartnership} onClose={() => setShowPartnership(false)} />
     </div>
   );
 }

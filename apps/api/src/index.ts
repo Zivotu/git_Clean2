@@ -32,6 +32,7 @@ import billingRoutes from './routes/billing.js';
 import createxProxy from './routes/createxProxy.js';
 import recenzijeRoutes from './routes/recenzije.js';
 import feedbackRoutes from './routes/feedback.js';
+import partnershipRoutes from './routes/partnership.js';
 import roomsRoutes from './routes/rooms.js';
 import roomsStorageRoutes from './routes/roomsStorage.js';
 import shims from './routes/shims.js';
@@ -821,6 +822,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(createxProxy);
   await app.register(recenzijeRoutes);
   await app.register(feedbackRoutes);
+  await app.register(partnershipRoutes);
   await app.register(roomsRoutes);
   await app.register(roomsStorageRoutes);
   await app.register(roomsStorageRoutes, { prefix: '/api' });

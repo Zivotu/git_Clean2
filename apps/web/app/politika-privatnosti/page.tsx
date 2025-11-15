@@ -12,8 +12,11 @@ export default function PolitikaPrivatnostiPage() {
   const sections = [
     { key: 'intro' },
     { key: 'data' },
+    { key: 'processors' },
     { key: 'adsense' },
+    { key: 'retention' },
     { key: 'choices' },
+    { key: 'rights' },
     { key: 'contact' },
   ];
 

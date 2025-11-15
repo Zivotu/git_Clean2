@@ -1,4 +1,4 @@
-﻿{
+{
   "Nav": {
     "publishApp": "App verâ”œâ•¢ffentlichen",
     "myProjects": "Meine Projekte",
@@ -28,10 +28,13 @@
   },
   "About": {
     "title": "â–„ber Thesara",
-    "subtitle": "Statischer Build-Gesundheitscheck, der die Ã·ffentliche API pingt.",
+    "subtitle": "Ein Garagenprojekt, das heute eine Heimat für KI-Min-Apps und Spiele wird.",
     "healthTitle": "API-Status",
     "loading": "Wird geprâ¿ft...",
-    "errorDefault": "Abrufen der Health-Daten fehlgeschlagen."
+    "errorDefault": "Abrufen der Health-Daten fehlgeschlagen.",
+    "garageTitle": "Projekt aus der Garage",
+    "garageBody": "Thesara entstand als kleines Garagenprojekt, in dem wir Werkzeuge für das Veröffentlichen von KI-Apps und -Spielen zusammengeschraubt haben. Wir wachsen Schritt für Schritt, Build für Build, Creator für Creator, und behalten dabei den hands-on Ansatz bei.",
+    "comingSoon": "Bald teilen wir hier einen liebevollen Text über uns, unser Team und unsere Vision – bleib dran."
   },
   "Search": {
     "title": "Kleinanzeigen-Suche",
@@ -60,17 +63,23 @@
       "fallbackBodyHtml": "Die Bedingungen sind derzeit nicht verfâ¿gbar. Sieh dir <a href=\"/docs/thesara_terms.html\">die statische Seite</a> an."
     },
     "Privacy": {
-      "title": "DatenschutzerklÎ£rung",
-      "intro.title": "Wie wir Daten verwenden",
-      "intro.body": "Wir erfassen nur die Informationen, die fÏŒr dein Thesara-Konto, fÏŒr die Auslieferung deiner Apps und fÏŒr rechtliche Pflichten notwendig sind. Wir verkaufen deine Daten nicht und geben sie nicht an Werbetreibende auÎ¯erhalb der unten beschriebenen Integrationen weiter.",
-      "data.title": "Welche Daten wir sammeln",
-      "data.body": "Kontoinformationen (E-Mail, Anzeigename, Avatar) werden gespeichert, damit du dich anmelden und deine Apps verwalten kannst. Nutzungsdiagnosen helfen uns, die Plattform stabil zu halten. Zahlungsdaten werden ausschlieÎ¯lich von Stripe verarbeitet und nicht auf unseren Servern gespeichert.",
+      "title": "Datenschutzerklärung",
+      "intro.title": "Wer wir sind & Geltungsbereich",
+      "intro.body": "Thesara Space d.o.o. (\"Thesara\", \"wir\") betreibt die Plattform unter thesara.space und ist Verantwortlicher für alle Besucher, Creator und Spieler. Wir verarbeiten nur die Daten, die nötig sind, um dein Konto zu führen, Apps zu veröffentlichen oder zu spielen, Support zu leisten und gesetzliche Pflichten zu erfüllen.",
+      "data.title": "Welche Daten wir erfassen",
+      "data.body": "Bei der Registrierung speichern wir deine E‑Mail-Adresse, deinen Anzeigenamen, ein Profilbild (sofern vorhanden) sowie grundlegende Nutzungs-Telemetrie, damit wir dein Konto schützen und die Plattform stabil halten können. Wenn du Apps veröffentlichst oder bearbeitest, verarbeiten wir die Inhalte, die du hochlädst (Titel, Beschreibungen, Assets, Bundles, Vorschaubilder) sowie Metadaten wie Raum-Codes oder Highscores. Für Zahlungen speichern wir nur Abo-IDs, Rechnungsreferenzen und steuerrelevante Angaben; Kartendaten laufen ausschließlich über unseren Zahlungsdienstleister.",
+      "processors.title": "Auftragsverarbeiter & Integrationen",
+      "processors.body": "Zur Bereitstellung von Thesara nutzen wir ausgewählte Partner: Firebase und Cloudflare hosten Authentifizierungsdaten, Datenbanken, Medien und Backups; Stripe wickelt Zahlungen ab und stellt uns nicht sensible Rechnungsdaten bereit; Redis/BullMQ betreibt unsere Build-Warteschlangen; die Übersetzungsfunktion kann einen LLM-Anbieter für optionale Lokalisierungen einsetzen; transaktionale E-Mails versenden wir über ein SMTP-Relay; Werbeflächen werden – sofern erlaubt – über Google AdSense ausgespielt. Jeder Partner erhält nur die Daten, die für seinen Zweck notwendig sind, und alle unterliegen vertraglichen Schutzmaßnahmen.",
       "adsense.title": "Google AdSense & Cookies",
-      "adsense.body": "Anzeigen werden nur Nutzern gezeigt, die kein No-Ads-Paket besitzen. Bevor die AdSense-Skripte geladen werden, fragen wir nach deiner Einwilligung. Wenn du ablehnst, setzen wir die Auslieferung auf non-personalized (npa=1), sodass nur kontextuelle Werbung erscheint. Nutzer mit aktiven No Ads-, Gold-, Partner- oder Ambassador-Rechten laden die Skripte gar nicht.",
-      "choices.title": "Deine WahlmÏ†glichkeiten",
-      "choices.body": "Du kannst personalisierte Werbung jederzeit Î™ber das Consent-Banner erlauben oder ablehnen; die Entscheidung wird lokal gespeichert, damit du sie nicht stÎ£ndig wiederholen musst. Mit dem Kauf des No-Ads-Pakets werden sÎ£mtliche Werbeslots sofort deaktiviert â€“ sowohl im Web als auch im Play-Modus.",
+      "adsense.body": "Werbung wird ausschließlich Nutzerinnen und Nutzern angezeigt, die keinen No-Ads-Tarif oder vergleichbare Berechtigungen besitzen. Bevor ein Google-Skript geladen wird, fragen wir nach deiner Einwilligung in personalisierte Werbung. Bei Ablehnung läuft AdSense im nicht personalisierten Modus (npa=1) und zeigt rein kontextbezogene Anzeigen. Käufer des No-Ads-Pakets sowie Personen, die Apps im Play-Sandbox-Modus nutzen, laden das AdSense-Skript gar nicht.",
+      "retention.title": "Speicherung & Aufbewahrung",
+      "retention.body": "Kontodaten bleiben gespeichert, solange du ein Thesara-Profil führst. Bundles, Previews und Storage-Daten bleiben bestehen, bis du den zugehörigen Eintrag löschst, die Daten selbst bereinigst oder uns mit der Entfernung beauftragst. Abrechnungsunterlagen bewahren wir nur so lange auf, wie es Steuer- und Aufsichtsrecht verlangt; Sicherheits- und Systemprotokolle werden regelmäßig rotiert.",
+      "choices.title": "Deine Steuerungsmöglichkeiten",
+      "choices.body": "Du kannst Listings, Assets, Räume und Storage-Daten, die dir gehören, jederzeit anpassen oder löschen, Einwilligungen im Banner ändern, Werbung über den No-Ads-Kauf deaktivieren und Kontoinformationen in den Einstellungen verwalten. Sollte etwas nicht im Interface möglich sein, melde dich – wir erledigen es manuell.",
+      "rights.title": "Deine Rechte",
+      "rights.body": "Je nach Rechtsraum kannst du Auskunft, Berichtigung, Einschränkung, Widerspruch oder Löschung personenbezogener Daten verlangen. Wir erfüllen bestätigte Anfragen innerhalb der gesetzlichen Fristen. Bitte sende deine Anfrage von der E‑Mail-Adresse, die mit deinem Konto verbunden ist, damit wir die Inhaberschaft prüfen können.",
       "contact.title": "Kontakt",
-      "contact.body": "Fragen zum Datenschutz oder zur Einwilligung beantwortet unser Team unter privacy@thesara.space."
+      "contact.body": "Fragen zum Datenschutz oder zur Ausübung deiner Rechte kannst du an reports@thesara.space richten. Wir antworten in der Regel innerhalb weniger Werktage."
     },
     "Refunds": {
       "title": "Râ¿ckerstattungsrichtlinie",
@@ -599,7 +608,40 @@
     "tryAdjust": "Passe deine Suche oder Filter an.",
     "beFirst": "Sei der Erste, der eine App verâ”œâ•¢ffentlicht!",
     "publish": "App verâ”œâ•¢ffentlichen",
-    "plays": "{count} Aufrufe"
+    "plays": "{count} Aufrufe",
+    "leftPanel": {
+      "title": "Vom AI-Chat zu deiner Mini-App",
+      "subtitle": "Thesara ist der Ort, an dem du AI-Ideen in wenigen Klicks in Apps, Spiele oder interaktive Stories verwandelst.",
+      "llmLabel": "Starte mit deinem Lieblingsmodell",
+      "steps": {
+        "1": {
+          "title": "Sprich mit deinem AI-Assistenten",
+          "text": "Sag dem Modell, welche Mini-App, welches Spiel, Quiz oder Training es bauen soll."
+        },
+        "2": {
+          "title": "Hol dir den generierten Code oder das ZIP",
+          "text": "Der Assistent liefert dir eine fertige Web-App, die du als Code oder Bundle herunterlaedst."
+        },
+        "3": {
+          "title": "Veroeffentliche auf Thesara in wenigen Klicks",
+          "text": "Upload, bestaetigen und Play - deine App lebt auf Thesara, gratis oder mit Preis von dir."
+        }
+      },
+      "storage": {
+        "title": "Neue Memory-Schicht, die LLMs nicht mitbringen",
+        "tag": "Memory & Rooms",
+        "shared": {
+          "title": "Geteilte Memory",
+          "text": "Alle Spieler teilen Fortschritt und Ergebnisse (z. B. globales Leaderboard) ohne das Chat-Modell zu belasten."
+        },
+        "rooms": {
+          "title": "Rooms",
+          "text": "Aktiviere Rooms, wenn mehrere Personen deine App nutzen sollen, aber jede Session privat bleiben soll."
+        }
+      },
+      "footer": "AI-Fans - stell es dir vor, chatte mit deinem Modell, veroeffentliche hier und lass andere spielen.",
+      "footerHighlight": "Viel Erfolg mit deiner ersten Thesara-App!"
+    }
   },
   "Toasts": {
     "welcome": "Willkommen bei THESARA.SPACE!",
@@ -611,7 +653,26 @@
   },
   "Footer": {
     "slogan": "Der Marktplatz fâ”œâ•r Browser-Apps und -Spiele.",
-    "allRights": "Alle Rechte vorbehalten."
+    "allRights": "Alle Rechte vorbehalten.",
+    "partnershipLink": "Partnerschaft mit uns"
+  },
+  "Partnership": {
+    "title": "Partnerschaft mit uns",
+    "description": "Erzählen Sie uns von Ihrem Team und der Zusammenarbeit, die Sie aufbauen möchten.",
+    "nameLabel": "Ihr Name",
+    "companyLabel": "Firma oder Projekt",
+    "emailLabel": "Geschäftliche E-Mail",
+    "phoneLabel": "Telefon (optional)",
+    "messagePlaceholder": "Beschreiben Sie Idee, Zielgruppe, Zeitplan oder den Mehrwert für beide Seiten.",
+    "submit": "Partnerschaftsanfrage senden",
+    "sending": "Senden…",
+    "cancel": "Abbrechen",
+    "successMessage": "Danke! Wir melden uns in Kürze.",
+    "errorGeneric": "Anfrage konnte nicht gesendet werden. Bitte erneut versuchen.",
+    "errorEmail": "Bitte geben Sie eine gültige E-Mail ein.",
+    "errorMessage": "Beschreiben Sie die Idee (mindestens 5 Zeichen).",
+    "footerNote": "Oder schreiben Sie uns an activity(at)thesara.space",
+    "closeLabel": "Partnerschaftsformular schließen"
   },
   "Pro": {
     "choosePlan": "Wâ”œÃ±hle ein Paket",
@@ -920,7 +981,3 @@
     "redirecting": "Weiterleitung zum Golden Bookâ€¦"
   }
 }
-
-
-
-

@@ -3,16 +3,41 @@
 const isStaticExport = process.env.NEXT_OUTPUT === 'export';
 const SAFE_PUBLISH_ENABLED = process.env.SAFE_PUBLISH_ENABLED === 'true';
 const isDev = process.env.NODE_ENV !== 'production';
+const APPS_HOST = (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '');
 // API_BASE without /api suffix for routes served directly (shims, builds, etc.)
 const API_BASE = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8788/api').replace(/\/api$/, '');
 // API_URL with /api suffix for standard API routes
 const API_URL = API_BASE + '/api';
+
+const buildGeolocationPermissionsPolicy = () => {
+  const sources = new Set(['self']);
+  const addOrigin = (value) => {
+    if (!value) return;
+    try {
+      const origin = new URL(value).origin;
+      sources.add(`"${origin}"`);
+    } catch {
+      sources.add(`"${value}"`);
+    }
+  };
+
+  addOrigin(APPS_HOST);
+  if (isDev) {
+    addOrigin('https://localhost:3000');
+  }
+
+  return `camera=(), microphone=(), geolocation=(${Array.from(sources).join(' ')})`;
+};
+
+const PERMISSIONS_POLICY_VALUE = buildGeolocationPermissionsPolicy();
 
 /** @type {import('next').NextConfig} */
 const baseConfig = {
   ...(isStaticExport ? { output: 'export' } : {}),
   reactStrictMode: true,
   trailingSlash: false,
+  // Allow dev/prod commands to isolate their own .next folder via NEXT_DIST_DIR
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   webpack: (config, { dev }) => {
     if (dev) {
       // Izbjegni eval u DEV → kompatibilno s CSP bez 'unsafe-eval'
@@ -73,7 +98,7 @@ const baseConfig = {
         headers: [
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          { key: 'Permissions-Policy', value: PERMISSIONS_POLICY_VALUE },
           {
             key: 'Content-Security-Policy',
             value: (() => {

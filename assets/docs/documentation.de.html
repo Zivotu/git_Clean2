@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Thesara – Dokumentation für Benutzer und Ersteller</title>
+<style>
+            :root {
+        --bg: #f5f7fb;
+        --bg-elevated: #ffffff;
+        --bg-content: #f9fafb;
+        --border-subtle: #d4d9e3;
+        --accent: #0ea5e9;
+        --accent-soft: rgba(14, 165, 233, 0.08);
+        --text-main: #0f172a;
+        --text-muted: #4b5563;
+        --text-soft: #64748b;
+        --heading: #0f172a;
+        --surface-card: #ffffff;
+        --surface-muted: #eff3fb;
+        --surface-strong: #e0e7f1;
+        --surface-alt: #f2f5fb;
+        --surface-border: #cfd6e3;
+      }
+
+      html[data-theme="dark"] {
+        --bg: #020617;
+        --bg-elevated: #020617;
+        --bg-content: #020617;
+        --border-subtle: #1f2937;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.08);
+        --text-main: #e5e7eb;
+        --text-muted: #9ca3af;
+        --text-soft: #94a3b8;
+        --heading: #f9fafb;
+        --surface-card: rgba(15, 23, 42, 0.9);
+        --surface-muted: rgba(15, 23, 42, 0.85);
+        --surface-strong: rgba(15, 23, 42, 0.95);
+        --surface-alt: rgba(15, 23, 42, 0.9);
+        --surface-border: rgba(55, 65, 81, 0.9);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+            body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: var(--bg);
+        color: var(--text-main);
+      }
+
+      html[data-theme="dark"] body {
+        background: radial-gradient(circle at top left, #0f172a, #020617 40%),
+          #020617;
+      }
+
+      .layout {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 260px;
+        padding: 24px 20px 32px;
+        background: linear-gradient(180deg, var(--bg), var(--bg) 40%, var(--bg));
+        border-right: 1px solid var(--border-subtle);
+        overflow-y: auto;
+      }
+
+      .sidebar h1 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        font-weight: 650;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--heading);
+      }
+
+      .sidebar .tagline {
+        font-size: 12px;
+        color: var(--text-soft);
+        margin-bottom: 8px;
+      }
+
+      .theme-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--border-subtle);
+        background: var(--surface-card);
+        color: var(--text-muted);
+        font-size: 11px;
+        cursor: pointer;
+        margin-bottom: 12px;
+      }
+
+      .theme-toggle:hover {
+        border-color: rgba(56, 189, 248, 0.6);
+        color: var(--heading);
+      }
+
+      .search-container {
+        position: relative;
+        margin-bottom: 14px;
+      }
+
+      #doc-search {
+        width: 100%;
+        padding: 7px 9px;
+        border-radius: 8px;
+        border: 1px solid var(--border-subtle);
+        background: var(--surface-card);
+        color: var(--text-main);
+        font-size: 12px;
+      }
+
+      #doc-search::placeholder {
+        color: var(--text-soft);
+      }
+
+      .search-hidden {
+        display: none !important;
+      }
+
+      .badge-beta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 9px;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.12);
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 500;
+        margin-bottom: 16px;
+      }
+
+      .badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.3);
+      }
+
+      nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+        margin-bottom: 24px;
+      }
+
+      nav .nav-label {
+        margin: 16px 0 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+        color: var(--text-soft);
+      }
+
+      nav a {
+        display: block;
+        padding: 6px 10px;
+        border-radius: 8px;
+        color: var(--text-muted);
+        text-decoration: none;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease,
+          border-color 0.15s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      nav a:hover {
+        background: var(--surface-muted);
+        border-color: var(--surface-border);
+        color: var(--heading);
+      }
+
+      nav a.active {
+        background: var(--accent-soft);
+        border-color: rgba(56, 189, 248, 0.5);
+        color: var(--accent);
+      }
+
+      .sidebar-footer {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--surface-border);
+        font-size: 11px;
+        color: var(--text-soft);
+      }
+
+      .sidebar-footer a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      .sidebar-footer a:hover {
+        text-decoration: underline;
+      }
+
+      .content {
+        margin-left: 260px;
+        padding: 28px 32px 72px;
+        max-width: 960px;
+        width: 100%;
+      }
+
+      .content-inner {
+        background: radial-gradient(circle at top right, #0b1120, #020617 50%);
+        border-radius: 24px;
+        border: 1px solid rgba(31, 41, 55, 0.9);
+        padding: 28px 28px 40px;
+        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.8);
+      }
+
+      html[data-theme="light"] .content-inner {
+        background: var(--bg-elevated);
+        border-color: var(--border-subtle);
+        box-shadow: 0 18px 60px rgba(15, 23, 42, 0.18);
+      }
+
+      .page-title {
+        margin-top: 0;
+        margin-bottom: 4px;
+        font-size: 26px;
+        letter-spacing: 0.02em;
+        color: var(--heading);
+      }
+
+      .page-subtitle {
+        font-size: 14px;
+        color: var(--text-soft);
+        margin-bottom: 20px;
+      }
+
+      .meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 24px;
+        font-size: 11px;
+        color: var(--text-soft);
+      }
+
+      .meta-pill {
+        padding: 4px 9px;
+        border-radius: 999px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface-card);
+      }
+
+      section {
+        margin-bottom: 40px;
+        padding-top: 40px;
+      }
+
+      section:first-of-type {
+        padding-top: 16px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        color: var(--heading);
+      }
+
+      h3 {
+        margin: 24px 0 10px;
+        font-size: 16px;
+        color: var(--heading);
+      }
+
+      p {
+        margin: 0 0 10px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-main);
+      }
+
+      ul {
+        margin: 8px 0 10px 20px;
+        padding: 0;
+        font-size: 14px;
+        color: var(--text-main);
+      }
+
+      li {
+        margin-bottom: 4px;
+      }
+
+      .callout {
+        border-radius: 14px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface-card);
+        padding: 10px 12px;
+        font-size: 13px;
+        color: var(--text-soft);
+      }
+
+      .callout-strong {
+        border-color: rgba(56, 189, 248, 0.6);
+        background: var(--surface-strong);
+        color: var(--text-main);
+      }
+
+      .two-col {
+        display: grid;
+        gap: 16px;
+      }
+
+      @media (min-width: 900px) {
+        .two-col {
+          grid-template-columns: 1.2fr 1fr;
+        }
+      }
+
+      .kbd {
+        display: inline-block;
+        padding: 2px 5px;
+        border-radius: 4px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface-card);
+        font-size: 11px;
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+      }
+
+      .table-like {
+        border-radius: 14px;
+        border: 1px solid var(--surface-border);
+        overflow: hidden;
+      }
+
+      .table-like-row {
+        display: grid;
+        grid-template-columns: minmax(0, 190px) minmax(0, 1fr);
+        gap: 10px;
+        padding: 9px 12px;
+        font-size: 13px;
+      }
+
+      .table-like-row:nth-child(odd) {
+        background: var(--surface-strong);
+      }
+
+      .table-like-row:nth-child(even) {
+        background: var(--surface-muted);
+      }
+
+      .table-like-label {
+        font-weight: 500;
+        color: var(--text-muted);
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: var(--surface-card);
+        border: 1px solid var(--surface-border);
+        font-size: 11px;
+        color: var(--text-soft);
+      }
+
+      .tag-success {
+        border-color: rgba(22, 163, 74, 0.5);
+        color: #6ee7b7;
+      }
+
+      .tag-warning {
+        border-color: rgba(245, 158, 11, 0.6);
+        color: #facc15;
+      }
+
+      .tag-info {
+        border-color: rgba(59, 130, 246, 0.6);
+        color: #93c5fd;
+      }
+
+      @media (max-width: 900px) {
+        .sidebar {
+          position: static;
+          width: 100%;
+          border-right: none;
+          border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .content {
+          margin-left: 0;
+          padding: 16px 14px 40px;
+        }
+
+        .content-inner {
+          border-radius: 20px;
+        }
+
+        nav {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap: 6px;
+        }
+
+        nav a {
+          white-space: normal;
+        }
+      }
+    </style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+<div class="badge-beta">
+<span class="badge-dot"></span>
+<span>Früher Zugang / Beta</span>
+</div>
+<h1>Thesara</h1>
+<div class="tagline">Dokumentation für Benutzer und Entwickler von Minianwendungen</div>
+<button aria-label="Promijeni temu" class="theme-toggle" id="theme-toggle" type="button">
+          ðŸŒ™ Dunkles Thema
+        </button>
+<div class="search-container">
+<input autocomplete="off" id="doc-search" placeholder="PretraÅ¾i dokumentaciju..." type="search"/>
+</div>
+<nav id="side-nav">
+<div class="nav-label">Rezension</div>
+<a href="#intro">1. Einführung in Thesara</a>
+<a href="#for-whom">2. Für wen ist Thesara geeignet?</a>
+<a href="#concepts">3. Grundbegriffe</a>
+<div class="nav-label">Benutzer (Spieler)</div>
+<a href="#getting-started-users">4. Erste Schritte – Benutzer</a>
+<a href="#using-apps">5. Nutzung von Anwendungen</a>
+<div class="nav-label">Schöpfer</div>
+<a href="#getting-started-creators">6. Erste Schritte – Schöpfer</a>
+<a href="#publishing">7. Veröffentlichung der Bewerbungen</a>
+<a href="#rooms-storage">8. Räume und serverseitiger Speicher</a>
+<a href="#monetization">9. Monetarisierung und Auszahlungen</a>
+<a href="#plans-pro-ambassador">10. Pro-, NoAds- und Ambassador-Programm</a>
+<div class="nav-label">Sicherheit und Support</div>
+<a href="#security">11. Sicherheit und Datenschutz</a>
+<a href="#faq">12. Häufig gestellte Fragen (Zusammenfassung)</a>
+<a href="#glossary">13. Glossar</a>
+<a href="#support">14. Kontakt und Support</a>
+</nav>
+<div class="sidebar-footer">
+          Dies ist das zentrale Dokument. Alle weiteren Anleitungen (FAQ, Tutorials, Hilfe
+          Artikel) extrahiert Informationen von dieser Seite.
+        </div>
+</aside>
+<main class="content">
+<div class="content-inner">
+<header>
+<h1 class="page-title">Thesara – Dokumentation</h1>
+<p class="page-subtitle">
+              Ein Single Point of Truth über die Thesara-Plattform, Mini-Anwendungen und
+              alles, was Sie als Benutzer oder Ersteller wissen müssen.
+            </p>
+<div class="meta-row">
+<span class="meta-pill">Zweck: Benutzer + Ersteller</span>
+<span class="meta-pill">Dokumentationsversion: 1.0</span>
+<span class="meta-pill">Plattformstatus: Beta / Early Access</span>
+</div>
+</header>
+<section id="intro">
+<h2>1. Einführung in Thesara</h2>
+<p>
+              Thesara ist ein Online-Marktplatz für Mini-Anwendungen und kleine Spiele
+              werden direkt im Browser ausgeführt. Die Idee ist einfach:
+            </p>
+<ul>
+<li>
+<strong>Benutzer</strong> Ich kann es mit ein paar Klicks finden und ausführen
+                nützliche Werkzeuge oder lustige Minispiele
+              </li>
+<li>
+<strong>Schöpfer</strong> Kann meine sehr schnell posten
+                Mini-Anwendungen (oft mit Hilfe von KI-Tools erstellt) ohne Bedenken ausführen zu müssen
+                Hosting, Bereitstellung und Infrastruktur
+              </li>
+</ul>
+<p>
+              Jede Mini-App läuft in einer sicheren Sandbox innerhalb von Thesaro
+              Schnittstelle. Thesara kümmert sich um Hosting, Guthaben, Sicherheit und
+              Integrationen, während sich der Ersteller ausschließlich auf Logik und Benutzeroberfläche konzentriert
+              Ihre Bewerbungen.
+            </p>
+<div class="callout callout-strong">
+<strong>Hinweis zum Beta-Status:</strong> Die Plattform ist immer noch da
+              in der Beta-Phase. Änderungen an der Oberfläche und den Funktionalitäten sind möglich, u. a
+              Gelegentlich können Fehler oder geringfügige Nichtverfügbarkeit auftreten. Alles
+              Wesentliche Änderungen werden anschließend mit dieser Dokumentation abgestimmt.
+            </div>
+</section>
+<section id="for-whom">
+<h2>2. Für wen ist Thesara geeignet?</h2>
+<div class="two-col">
+<div>
+<h3>Benutzer (Spieler)</h3>
+<p>Thesara ist für Sie, wenn:</p>
+<ul>
+<li>
+                    Du möchtest schnell neue Mini-Tools und Browsergames ausprobieren,
+                    ohne Installation
+                  </li>
+<li>
+                    Sie verwenden KI (z. B. ChatGPT) und benötigen vorgefertigte Dienstprogramme
+                    (Einkaufslisten, Tracker, Taschenrechner...)
+                  </li>
+<li>
+                    Sie möchten eine Liste, einen Raum oder eine Situation mit anderen teilen
+                    Teilnehmer (Familie, Team, Freunde)
+                  </li>
+</ul>
+</div>
+<div>
+<h3>Ersteller (Entwickler / No-Code + KI)</h3>
+<p>Thesara ist für Sie, wenn:</p>
+<ul>
+<li>
+                    Sie schreiben ein kleines Frontend (React/TS/JS) und möchten es ohne veröffentlichen
+                    Hosting-Anliegen
+                  </li>
+<li>
+                    Es nutzt KI, um Mini-Apps zu generieren, und Sie benötigen eine einfache
+                    eine Möglichkeit, sie mit anderen zu teilen
+                  </li>
+<li>
+                    Sie möchten Ideen, Prototypen oder MVPs in der Sandbox testen
+                    Umgebung
+                  </li>
+</ul>
+</div>
+</div>
+</section>
+<section id="concepts">
+<h2>3. Grundbegriffe</h2>
+<div class="table-like">
+<div class="table-like-row">
+<div class="table-like-label">Mini-Anwendung (Mini-App)</div>
+<div>
+                  Eine kleine Webanwendung oder ein Spiel, das in einem Browser ausgeführt wird, ohne
+                  Installationen - z.B. Einkaufsliste, Gewohnheitstracker, Quiz,
+                  Taschenrechner, einfaches Spiel usw.
+                </div>
+</div>
+<div class="table-like-row">
+<div class="table-like-label">Auflistung</div>
+<div>
+                  Die „Karte“ der Bewerbungen auf Thesara – enthält den Titel, die Beschreibung,
+                  Übersichtsbild, Beschriftung KOSTENLOS/kostenpflichtig und Link zur Play-Ansicht.
+                </div>
+</div>
+<div class="table-like-row">
+<div class="table-like-label">Bauen</div>
+<div>
+                  Ein bestimmtes Code-Bundle (HTML/CSS/JS-Bundle), das ausgeführt wird
+                  Sandkasten. Ein Eintrag kann im Laufe der Zeit mehrere Builds haben
+                  (Anwendungsaktualisierungen).
+                </div>
+</div>
+<div class="table-like-row">
+<div class="table-like-label">Wiedergabeansicht</div>
+<div>
+                  Eine spezielle Seite, auf der die Anwendung tatsächlich startet (in
+                  iframe-Sandbox). Die URL sieht normalerweise so aus
+                  <code>/play/&lt;id&gt;</code>.
+                </div>
+</div>
+<div class="table-like-row">
+<div class="table-like-label">Zimmer</div>
+<div>
+                  Ein logischer „Raum“ innerhalb der Anwendung – zum Beispiel ein gemeinsamer
+                  Einkaufsliste für die Familie. Räume sind oft mit einer PIN geschützt und
+                  Erlauben Sie mehreren Benutzern, denselben Status zu teilen.
+                </div>
+</div>
+<div class="table-like-row">
+<div class="table-like-label">Lagerung</div>
+<div>
+                  Serverseitiger Schlüssel-Wert-Speicher, den die Anwendung verwendet
+                  Daten dauerhaft und synchron (statt lokal) speichern
+                  <code>localStorage</code> im Browser).
+                </div>
+</div>
+</div>
+</section>
+<section id="getting-started-users">
+<h2>4. Erste Schritte – Benutzer</h2>
+<h3>4.1. Ankunft in Thesara</h3>
+<p>
+              Thesara ist eine Webplattform – es reicht aus, die Haupt-URL zu öffnen
+              Browser. Auf der Startseite werden vorgestellte und angesagte Anwendungen angezeigt
+              („Jetzt im Trend“), kurze Beschreibungen und Tags wie KOSTENLOS und NEU.
+            </p>
+<p>
+              Als Besucher können Sie das Angebot durchstöbern und viele starten
+              Kostenlose Bewerbungen ohne Registrierung. Allerdings für einige erweiterte Funktionen
+              Es ist ein Benutzerkonto erforderlich.
+            </p>
+<h3>4.2. Registrierung und Bewerbung</h3>
+<p>
+              Mit dem Benutzerkonto können Sie:
+            </p>
+<ul>
+<li>Nutzung privater Räume und PIN-geschützter Inhalte</li>
+<li>möglicher Kauf kostenpflichtiger Anwendungen oder Abonnements</li>
+<li>personalisierte Funktionen (Favoriten, Verlauf, NoAds-Status)</li>
+</ul>
+<p>
+              Eine Anmeldung ist über den Button möglich <span class="kbd">Anmelden</span> in
+              Kopfzeile. Unterstützte Registrierungsmethoden (z. B. Registrierung per E-Mail oder per
+              Identitätsanbieter) werden in der Schnittstelle selbst definiert und können sein
+              im Laufe der Zeit erweitern.
+            </p>
+<h3>4.3. Grundlegende Navigation</h3>
+<ul>
+<li>
+                Auf der Startseite sehen Sie die hervorgehobenen Anwendungen und grundlegende Statistiken
+                (z. B. Anzahl der veröffentlichten Bewerbungen).
+              </li>
+<li>
+                Ein Klick auf den Anwendungsreiter öffnet eine Detailansicht mit
+                Beschreibung, Anleitung und Startknopf (<span class="kbd">Spielen</span>).
+              </li>
+<li>
+                Über das Menü gelangen Sie zu den FAQ, der Dokumentation und der Seite für
+                Rückmeldung.
+              </li>
+</ul>
+</section>
+<section id="using-apps">
+<h2>5. Nutzung von Anwendungen (Playern)</h2>
+<h3>5.1. Starten der Anwendung</h3>
+<p>
+              Wenn Sie eine Anwendung finden, die Sie interessiert, klicken Sie darauf und dann weiter
+              Taste <span class="kbd">Spielen</span>. Es öffnet sich eine separate Seite
+              auf dem die Anwendung in einem Sandbox-Iframe geladen wird.
+            </p>
+<p>
+              Die meisten Anwendungen funktionieren sofort und ohne zusätzliche Vorbereitung. Wenn
+              Die Anwendung verwendet Räume oder PIN (z. B. für eine gemeinsame Liste), Bit Ä‡æÅ¡
+              gefragt, ob Sie Folgendes möchten:
+            </p>
+<ul>
+<li>Nutzen Sie einen gemeinsamen Demoraum</li>
+<li>Erstellen Sie Ihren eigenen Raum mit einer PIN</li>
+<li>oder betreten Sie den Raum mit der PIN, die Sie vom Ersteller erhalten haben</li>
+</ul>
+<h3>5.2. Kostenlose und kostenpflichtige Anwendungen</h3>
+<p>
+              Bewerbungen auf Thesara können sein:
+            </p>
+<ul>
+<li><strong>frei</strong> – jeder kann sie nutzen</li>
+<li>
+<strong>bezahlt</strong> – Der Zugang ist mit einer einmaligen Gebühr verbunden
+                Kauf oder Abonnement
+              </li>
+</ul>
+<p>
+              Bei kostenpflichtigen Bewerbungen erfolgt die Zahlungsabwicklung über einen sicheren Anbieter
+              Zahlungsdienste (z. B. Stripe). Kartennummer und sensible Daten nicht
+              sie passieren die Server von Thesara.
+            </p>
+<h3>5.3. Datenschutz und Berechtigungen</h3>
+<p>
+              Mini-Anwendungen arbeiten in einer isolierten Sandbox und haben keinen direkten Zugriff
+              Ihre Passwörter, Cookies, Ihr Thesara-Konto oder andere Registerkarten
+              Browser. Die Anwendung sieht lediglich die Daten, die Sie selbst eingeben.
+              und was es in seinem serverseitigen Repository speichert.
+            </p>
+<p>
+              Wenn die Anwendung Zugriff auf zusätzliche Dienste (z. B. ihre eigenen) anfordert
+              externe API), wird der Ersteller dies in der Anwendungsbeschreibung deutlich angeben.
+            </p>
+</section>
+<section id="getting-started-creators">
+<h2>6. Erste Schritte – Schöpfer</h2>
+<h3>6.1. Eröffnung eines Kreativkontos</h3>
+<p>
+              Der Ersteller und der reguläre Benutzer verwenden dasselbe Benutzerkonto. Das würde
+              Nachdem Sie die Anwendung veröffentlicht haben, melden Sie sich zuerst bei Thesara an, dann im Hauptmenü
+              aus dem Menü auswählen <span class="kbd">App veröffentlichen</span> oder
+              <span class="kbd">Meine Projekte</span>.
+            </p>
+<p>
+              Das Standardkonto (kostenlos) ist für eine begrenzte Veröffentlichung vorgesehen
+              Anzahl der Anwendungen (z. B. eine aktive Mini-Anwendung). Für Größere
+              Die Anzahl der vorgesehenen Projekte entspricht dem Advanced-/Pro-Plan, der in einem separaten Abschnitt beschrieben wird
+              Kapitel dieser Dokumentation.
+            </p>
+<h3>6.2. Unterstützte Anwendungstypen</h3>
+<p>
+              Thesara ist für Frontend-Minianwendungen optimiert, die ausgeführt werden
+              Browser:
+            </p>
+<ul>
+<li>React oder ein anderes modernes JS-Framework</li>
+<li>einfaches HTML/CSS/JS-Bundle</li>
+<li>Mit KI-Tools generierte Anwendungen (LLMs)</li>
+</ul>
+<p>
+              Die Backend-Logik (falls Sie sie benötigen) sollte sich hinter Ihrer eigenen API befinden oder
+              einige Dienste von Drittanbietern – Thesara führt Ihre serverseitigen Prozesse nicht aus,
+              es dient bereits als sicheres Hosting und Sandbox für den Frontend-Teil.
+            </p>
+</section>
+<section id="publishing">
+<h2>7. Veröffentlichung der Bewerbungen</h2>
+<p>
+              Es gibt zwei Hauptwege zur Veröffentlichung einer Bewerbung:
+            </p>
+<ul>
+<li>
+<strong>Inline-Code</strong> – Fügen Sie den Quellcode der Komponente ein.
+                Thesara bündelt alles für Sie
+              </li>
+<li>
+<strong>Laden Sie ein ZIP-Paket hoch</strong> – für fortgeschrittenere Szenarien,
+                wenn Sie es bereits generiert haben <code>dist/</code> oder ein ähnlicher Ordner
+              </li>
+</ul>
+<h3 id="publishing-inline">7.1. Veröffentlichung über Inline-Code</h3>
+<ol>
+<li>
+                In der Kopfzeile auswählen <span class="kbd">App veröffentlichen</span>.
+              </li>
+<li>
+                Wählen Sie den Modus „Inline-Code“ (oder eine ähnliche Option in der Benutzeroberfläche).
+              </li>
+<li>
+                Fügen Sie den Code Ihrer Anwendung ein – meistens eine React/TSX-Komponente
+                (Das KI-Modell kann ein an Thesara angepasstes Beispiel generieren).
+              </li>
+<li>
+                Füllen Sie die grundlegenden Metadaten aus:
+                <ul>
+<li>Anwendungsname</li>
+<li>kurze und lange Beschreibung</li>
+<li>Sprache(n) und Kategorie</li>
+<li>Miniaturansicht/Titelbild (optional)</li>
+</ul>
+</li>
+<li>
+                Wählen Sie Sichtbarkeit (öffentlich/nicht gelistet/privat) und eventuell
+                Raum-/Lagermöglichkeiten.
+              </li>
+<li>
+                Speichern Sie den Beitrag und führen Sie ihn aus.
+              </li>
+</ol>
+<p>
+              Danach wird der „Build“ Ihrer Anwendung erstellt: fügt Thesara hinzu
+              notwendige Shader, Wrapper-Komponente und Bundle-Code in einem
+              <code>app.js</code> welches in der Play-Ansicht verwendet wird.
+            </p>
+<h3 id="publishing-bundle">7.2. Veröffentlichung per ZIP-Bundle</h3>
+<p>
+              Wenn Sie bereits ein fertiges Paket haben (z. B. <code>dist/</code> von seinem eigenen
+              Build-System), können Sie es in ZIP packen und hochladen.
+            </p>
+<ol>
+<li>
+                Bereiten Sie die ZIP-Datei mit Ihrem Build (HTML/CSS/JS) und der Sperrdatei vor
+                (<code>package-lock.json</code>, <code>pnpm-lock.yaml</code> oder
+                ähnlich) ggf.
+              </li>
+<li>Wählen Sie in der Veröffentlichungsschnittstelle die Option „Veröffentlichung hochladen/bündeln“.</li>
+<li>
+                Geben Sie die Metadaten genauso ein wie für einen Inline-Beitrag (Titel, Beschreibung,
+                Miniaturbild...).
+              </li>
+<li>
+                Senden Sie das Paket zur Bearbeitung.
+              </li>
+</ol>
+<p>
+              Ein Arbeitsprozess auf Thesara in der Sandbox startet die Installation
+              Abhängigkeiten, Build, HTML-Bereinigung (Entfernung illegaler
+              Skript-Tags, Vorbereitung des CSP) und Vorbereitung von allem für die Play-Ansicht.
+            </p>
+<h3>7.3. Überprüfung und Genehmigung</h3>
+<p>
+              Jeder öffentliche Antrag wird dazu mindestens einer grundlegenden Prüfung unterzogen
+              das Risiko von Missbrauch und Regelverstößen verringert. In einem typischen Kurs:
+            </p>
+<ul>
+<li>
+                nach der Veröffentlichung erhält der Antrag den Status „Prüfung ausstehend“
+              </li>
+<li>
+                nach automatischer und/oder manueller Prüfung wird der Antrag genehmigt und
+                wird in der Anwendungsübersicht und Suche sichtbar
+              </li>
+<li>
+                Der Ersteller erhält eine bleibende Karte <span class="kbd">Spielen</span> Die URL, die
+                kann mit Benutzern geteilt werden
+              </li>
+</ul>
+<p>
+              Wenn die Veröffentlichung oder der Build nicht erfolgreich ist, zeigt die Schnittstelle den Grund an
+              und Anweisungen dazu, was behoben werden muss (z. B. fehlende Abhängigkeiten, falsche
+              Bündelstruktur usw.).
+            </p>
+<h3>7.4. Aktualisieren einer vorhandenen Anwendung</h3>
+<p>
+              Wenn Sie die Anwendung aktualisieren möchten:
+            </p>
+<ul>
+<li>
+                In <span class="kbd">Meine Projekte</span> Vorhandenes auswählen
+                Auflistung
+              </li>
+<li>Erstellen Sie einen neuen Beitrag (inline oder ZIP), der sich auf denselben Eintrag bezieht</li>
+<li>
+                Nach erfolgreichem Build und Genehmigung wird der neue Build „aktiv“
+                für alle neuen Benutzer
+              </li>
+</ul>
+</section>
+<section id="rooms-storage">
+<h2>8. Räume und serverseitiger Speicher</h2>
+<h3>8.1. Warum Räume und Lager?</h3>
+<p>
+              Klassiker <code>localStorage</code> Im Browser funktioniert es nur auf einem
+              Gerät und in einem Browser. Thesara bietet stattdessen an
+              Serverseitiges Speicher- und Raumkonzept:
+            </p>
+<ul>
+<li>
+                Daten können zwischen mehreren Benutzern (z. B. Mitgliedern) geteilt werden
+                Familien in derselben Einkaufsliste)
+              </li>
+<li>
+                Der Status wird zwischen mehreren Registerkarten und Geräten synchronisiert
+              </li>
+<li>
+                Der In-Code-Ersteller arbeitet mit einer einfachen API, während Thesara sich darum kümmert
+                Versionen, Konflikte und Sicherheit
+              </li>
+</ul>
+<h3>8.2. Wie die Räume für den Benutzer aussehen</h3>
+<p>
+              Für Apps, die Räume nutzen, bietet die Play-Seite normalerweise Folgendes:
+            </p>
+<ul>
+<li>Button zum Anlegen eines neuen Raumes (PIN wird generiert)</li>
+<li>Feld zur Eingabe der PIN und Betreten des bestehenden Raumes</li>
+<li>
+                manchmal ein Demoraum zum schnellen Ausprobieren ohne Registrierung
+              </li>
+</ul>
+<p>
+              Alle Änderungen im Raum (z. B. das Hinzufügen eines Elements zur Liste) werden sofort wirksam
+              sichtbar für alle Benutzer, die mit demselben Raum verbunden sind.
+            </p>
+<h3>8.3. Speicher aus Sicht des Erstellers</h3>
+<p>Der Ersteller verwendet es nicht direkt in seiner Anwendung</p>
+<p><code>window.localStorage</code>, sondern ein Aufbewahrungshelfer:</p>
+<ul>
+<li>
+                Die gesamte Speicherlogik läuft über die Thesara-API
+                (<code>/api/storage</code>)
+              </li>
+<li>
+                Thesara behält Zustandsversionen bei und löst Konflikte, wenn es weitere gibt
+                Der Benutzer ändert gleichzeitig die Daten
+              </li>
+<li>
+                All dies geschieht über eine Sandbox-Brücke – die Anwendung tut dies nie
+                siehe JWT-Token des Benutzers
+              </li>
+</ul>
+<p>
+              Eine detaillierte Entwickler-API für Speicher und Räume finden Sie im technischen Teil
+              Dokumentation und Codebeispiele (für fortgeschrittene Entwickler gedacht).
+            </p>
+</section>
+<section id="monetization">
+<h2>9. Monetarisierung und Auszahlungen</h2>
+<h3>9.1. Verdienstmodell für YouTuber</h3>
+<p>
+              Thesara unterstützt sowohl kostenlose als auch kostenpflichtige Mini-Anwendungen. Wann
+              Die Monetarisierung ist vollständig aktiv. Ein typisches Modell ist:
+            </p>
+<ul>
+<li>Der Ersteller bestimmt den Preis für den Zugriff auf seine Anwendung</li>
+<li>
+                Thesara wickelt Zahlungen über einen sicheren Zahlungsanbieter ab
+                (z. B. Streifen)
+              </li>
+<li>
+                Das Einkommen wird nach einem vordefinierten Verhältnis aufgeteilt (z. B. 70 %).
+                Ersteller, 30 % Plattform)
+              </li>
+</ul>
+<p>
+              Das genaue Verhältnis, die Währung und die Gebührendetails sind immer klar angegeben
+              Nutzungsbedingungen und Erstellerschnittstelle.
+            </p>
+<h3>9.2. Schwellenwert und Auszahlungsdynamik</h3>
+<p>
+              Die Zahlungen erfolgen in regelmäßigen Abständen (z. B. monatlich) nach Ihrem
+              Die angesammelten Mittel überschreiten den Mindestschwellenwert (z. B. 50 USD oder
+              Gegenwert in Landeswährung). Details zum aktuellen Schwellenwert und zur Währung
+              Sie befinden sich im Ersteller-Dashboard.
+            </p>
+<p>
+              Als Ersteller sind Sie für die Registrierung und Zahlung etwaiger Gebühren verantwortlich
+              Steuern nach den Gesetzen ihres Landes. Thesara bietet einen Überblick
+              Transaktionsverlauf und Kontoauszüge, die Sie in Ihrem verwenden können
+              Aufzeichnungen.
+            </p>
+<h3>9.3. Abonnements und NoAds</h3>
+<p>
+              Neben einmaligen Käufen kann Thesara auch Abonnements anbieten
+              Modelle (z. B. Pro-Plan oder NoAds-Paket), die Benutzern Folgendes bieten:
+            </p>
+<ul>
+<li>größere Anzahl verfügbarer Anwendungen oder zusätzliche Funktionen</li>
+<li>Ausschluss von Werbung auf der gesamten Plattform</li>
+<li>spezielle Profil-Tags und Zugriff auf experimentelle Funktionen</li>
+</ul>
+<p>
+              Einige Entwickler können ihre Apps an solche Pläne binden
+              (z. B. zusätzliche Funktionen, die nur Pro-Benutzern zur Verfügung stehen).
+            </p>
+</section>
+<section id="plans-pro-ambassador">
+<h2>10. Pro-, NoAds- und Ambassador-Programm</h2>
+<h3>10.1. Pro-Plan (für Entwickler und Power-User)</h3>
+<p>
+              Der Pro-Plan ist als Paket für Benutzer konzipiert, die intensiv sind
+              Verwenden Sie Thesara – entweder als Ersteller oder als fortgeschrittener Benutzer.
+              Zu den typischen Vorteilen gehören:
+            </p>
+<ul>
+<li>Erhöhte Anzahl zulässiger aktiver Anwendungen pro Konto</li>
+<li>Vorrangige Bearbeitung von Bauvorhaben und Genehmigungen</li>
+<li>möglicher Zugriff auf erweiterte Analysen und Tools</li>
+<li>NoAds-Status enthalten (keine Anzeigen auf der Plattform)</li>
+</ul>
+<p>
+              Die spezifische Struktur des Pro-Plans (Preis, genaue Leistungen) von Thesara
+              veröffentlicht zum Zeitpunkt der Einführung des Plans und hält ihn auf dem neuesten Stand
+              Dokumentation.
+            </p>
+<h3>10.2. NoAds-Status</h3>
+<p>
+<span class="tag tag-success">Keine Werbung</span> Status bedeutet, dass in
+              Die Thesare-Oberfläche zeigt dem Benutzer keine Werbung mehr an. Status ist möglich
+              kann auf unterschiedliche Weise erhalten werden:
+            </p>
+<ul>
+<li>über das kostenpflichtige NoAds-Paket</li>
+<li>über den Pro/Gold/Partner-Plan</li>
+<li>als Teil der Belohnung im Ambassador-Programm</li>
+</ul>
+<p>
+              Wenn NoAds aktiv ist, lädt Thesara überhaupt keine Anzeigenskripte.
+              So ist das Erlebnis schneller und sauberer.
+            </p>
+<h3>10.3. Botschafterprogramm</h3>
+<p>
+              Das Ambassador-Programm richtet sich an die ältesten und aktivsten Teilnehmer
+              an die Unterstützer von Thesara – diejenigen, die die Plattform fördern,
+              Sie nehmen am Testen teil und gestalten ihn mit ihren Vorschlägen mit
+              zukünftige Funktionen.
+            </p>
+<p>Typische Vorteile für Botschafter können sein:</p>
+<ul>
+<li>dauerhafter NoAds-Status und/oder Pro-Vorteile</li>
+<li>ein spezielles Profilzeichen (Abzeichen), das neben den Bewerbungen sichtbar ist</li>
+<li>Vorrangiger Zugriff auf neue Funktionen und Betatests</li>
+<li>
+                potenzielles Empfehlungs-/Affiliate-Modell (Prozentsatz des Einkommens).
+                Benutzer, die sie mitbringen)
+              </li>
+</ul>
+<p>
+              Detaillierte Regeln und Bedingungen des Ambassador-Programms sind in definiert
+              separates Dokument und Teilnahmebedingungen. Dieses Kapitel dient
+              als Überblick über die Grundidee des Programms.
+            </p>
+</section>
+<section id="security">
+<h2>11. Sicherheit und Datenschutz</h2>
+<h3>11.1. Sandbox und Anwendungsisolation</h3>
+<p>
+              Jede Minianwendung auf Thesara läuft in einer Sandbox
+              <code>iframe</code> zum verstärkten Element
+              <span class="tag tag-info">Inhaltssicherheitsrichtlinie (CSP)</span> ich
+              deaktivierter Zugriff auf sensible Ressourcen der übergeordneten Seite.
+            </p>
+<ul>
+<li>
+                Die Anwendung hat keinen Zugriff auf Ihre Thesara-Cookies, Passwörter oder
+                andere Registerkarten
+              </li>
+<li>
+                Alle Aufrufe der Thesara-API erfolgen über das übergeordnete Element (Play
+                Seite) und nicht direkt aus der Anwendung
+              </li>
+<li>
+                JWT-Token und Authentifizierung bleiben im übergeordneten Element isoliert und niemals
+                Sie werden nicht an die Anwendungssandbox gesendet
+              </li>
+</ul>
+<h3>11.2. Speichersicherheit</h3>
+<p>
+              Die Storage-API verwendet Versionierung (ETag) und kontrollierte Batch-Vorgänge
+              um Inkonsistenzen und Missbrauch zu verhindern. Dazu gehören:
+            </p>
+<ul>
+<li>Begrenzung der Größe einzelner Datensätze</li>
+<li>Begrenzung der Anzahl der Vorgänge in einer Anfrage</li>
+<li>Ratenbegrenzung pro Benutzer und Namespace</li>
+</ul>
+<p>
+              Für typische Anwendungen (Listen, Quiz, einfache Spiele) dieses hier
+              Einschränkungen sind in der Praxis nicht spürbar, tragen aber erheblich dazu bei
+              Systemstabilität.
+            </p>
+<h3>11.3. Privatsphäre der Benutzer</h3>
+<p>
+              Thesara erhebt nur den für den Betrieb erforderlichen Mindestsatz an Daten
+              Konto, Berechnung eventueller Zahlungen und Verbesserung der Plattform.
+              Eine detaillierte Auflistung und Verarbeitungsregeln finden Sie in der Datenschutzerklärung.
+            </p>
+<p>
+              Für Anzeigen und Dritte werden Standard-Einwilligungsmechanismen verwendet
+              (Cookie/Einwilligungsbanner). Wenn der Benutzer die Personalisierung ablehnt
+              Anzeigen oder NoAds kaufen, Anzeigen werden nicht angezeigt.
+            </p>
+</section>
+<section id="faq">
+<h2>12. Häufig gestellte Fragen (Zusammenfassung)</h2>
+<p>
+              Die detaillierten FAQ finden Sie auf einer separaten Seite, hier finden Sie jedoch eine Zusammenfassung
+              Schlüsselfragen und Antworten.
+            </p>
+<ul>
+<li>
+<strong>Was ist Thesara?</strong> – Marktplatz für Mini-Anwendungen
+                und Browsergames, mit Schwerpunkt auf Easy Publishing
+                (insbesondere für KI-generierte Anwendungen) und eine sichere Sandbox für
+                Benutzer.
+              </li>
+<li>
+<strong>Welche Art von Apps kann ich veröffentlichen?</strong> – Alles
+                gehört zur Kategorie der „leichten“ Webanwendungen oder Spiele und
+                respektiert die Nutzungsregeln (kein bösartiger Code, illegal).
+                Inhalte usw.).
+              </li>
+<li>
+<strong>Wie lange dauert der Beitrag?</strong> – Meistens ist die Ankündigung i
+                Der Aufbau ist in wenigen Minuten abgeschlossen. Es kann zusätzliche Zeit geben
+                für die manuelle Inspektion erforderlich.
+              </li>
+<li>
+<strong>Wo werden meine Builds gespeichert?</strong> – Auf Thesara
+                Speicherung (lokal oder in der Cloud), mit automatisierten Prozessen für
+                bauen und servieren.
+              </li>
+<li>
+<strong>Wann kann ich das verdiente Geld abheben?</strong> – Nach was
+                Auch bei regulären Auszahlungszyklen erreichen Sie die Mindestauszahlungsschwelle
+                (zB monatlich). Details finden Sie im Dashboard des Erstellers.
+              </li>
+<li>
+<strong>Was ist das Ambassador-Programm?</strong> – Programm für die Aktivsten
+                Unterstützer, die bei der Förderung und Entwicklung der Plattform helfen und für
+                Sie erhalten besondere Vorteile (NoAds, Pro-Status usw.).
+              </li>
+</ul>
+</section>
+<section id="glossary">
+<h2>13. Glossar (kurzer Überblick)</h2>
+<div class="table-like">
+<div class="table-like-row">
+<div class="table-like-label">Spieler</div>
+<div>Ein Benutzer, der Mini-Anwendungen auf Thesara verwendet.</div>
+</div>
+<div class="table-like-row">
+<div class="table-like-label">Schöpfer</div>
+<div>
+                  Eine Person, die Mini-Apps veröffentlicht (entweder als Entwickler,
+                  No-Code-Benutzer oder mit Hilfe von 
+  <script>
+    (function () {
+      const storageKey = 'thesara-docs-theme';
+      const root = document.documentElement;
+      const toggle = document.getElementById('theme-toggle');
+
+      if (!toggle) return;
+
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        toggle.textContent = theme === 'dark' ? 'ðŸŒ™ Tamna tema' : 'â˜€ï¸ Svijetla tema';
+      }
+
+      function getInitialTheme() {
+        const saved = localStorage.getItem(storageKey);
+        if (saved === 'dark' || saved === 'light') {
+          return saved;
+        }
+        return prefersDark.matches ? 'dark' : 'light';
+      }
+
+      let currentTheme = getInitialTheme();
+      applyTheme(currentTheme);
+
+      toggle.addEventListener('click', () => {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(currentTheme);
+        localStorage.setItem(storageKey, currentTheme);
+      });
+
+      prefersDark.addEventListener?.('change', (event) => {
+        if (localStorage.getItem(storageKey)) return;
+        currentTheme = event.matches ? 'dark' : 'light';
+        applyTheme(currentTheme);
+      });
+    })();
+  </script>
+</div></div></div></section></div></main></div></body>
+</html>

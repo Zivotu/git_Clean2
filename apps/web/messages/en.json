@@ -28,10 +28,13 @@
   },
   "About": {
     "title": "About Thesara",
-    "subtitle": "Static build health check that pings the public API.",
+    "subtitle": "A garage-grown space for publishing AI-made mini apps and games.",
     "healthTitle": "API Health",
     "loading": "Checking...",
-    "errorDefault": "Failed to fetch health data."
+    "errorDefault": "Failed to fetch health data.",
+    "garageTitle": "Born in a garage",
+    "garageBody": "Thesara started as a small garage project where we stitched together tools for publishing AI-generated apps and games. We are expanding carefully, one build and one creator at a time, and still keep that hands-on spirit whenever we add a new feature.",
+    "comingSoon": "We're writing a sweet story about us, our team and our vision—check back soon."
   },
   "Search": {
     "title": "Classifieds Search",
@@ -61,16 +64,22 @@
     },
     "Privacy": {
       "title": "Privacy Policy",
-      "intro.title": "How we use your data",
-      "intro.body": "We collect only the information we need to run your Thesara account, deliver apps you create or play, and comply with applicable laws. We never sell personal data or share it with advertisers outside the integrations described below.",
-      "data.title": "What we collect",
-      "data.body": "Account identifiers (email, display name, profile photo) are stored so you can sign in and manage your creations. Usage diagnostics help us keep the platform reliable. Payment data is handled by Stripe and never stored on our servers.",
+      "intro.title": "Who we are & scope",
+      "intro.body": "Thesara Space d.o.o. (\"Thesara\", \"we\") operates the Thesara platform available at thesara.space and acts as the data controller for all visitors, creators and players. We limit processing to the data that is necessary to create or manage your account, publish and play browser apps, provide support, and meet legal obligations.",
+      "data.title": "Information we collect",
+      "data.body": "When you sign up we store your email, display name, profile photo (if provided) and basic usage telemetry so we can secure your account and keep the service reliable. Publishing or editing apps requires us to process the content you upload (titles, descriptions, assets, bundles, preview images) as well as metadata such as room codes or leaderboard states you create. If you purchase paid plans or add-ons we keep subscription identifiers, invoice references and tax-relevant details; payment card data is handled directly by our payment provider.",
+      "processors.title": "Processors & integrations",
+      "processors.body": "To run Thesara we rely on a short list of trusted partners: Firebase and Cloudflare store authentication records, databases, media and backups; Stripe processes payments and sends us non-sensitive billing metadata; Redis/BullMQ powers build queues; our translation feature can call an LLM provider to generate optional localisations; transactional email is delivered via an SMTP relay; advertising inventory is served through Google AdSense if you consent to it. These partners only receive the data required for their function and they all commit to appropriate contractual safeguards.",
       "adsense.title": "Google AdSense & cookies",
-      "adsense.body": "We show Google AdSense placements to users who have not purchased the No Ads add-on. Before we load the AdSense script we ask for your consent. If you decline, the script runs in non-personalised mode (npa=1) and only contextual ads are served. Users with active No Ads, Gold, Partner or Ambassador entitlements never load the script.",
-      "choices.title": "Your choices",
-      "choices.body": "You can accept or reject personalised ads via the consent banner at any time; we remember the choice in your browser so you do not have to repeat it. Paying for the No Ads add-on disables all ad slots across web and Play immediately.",
+      "adsense.body": "Display ads are offered only to visitors who have not purchased our No Ads plan or similar entitlements. Before we load any Google script we ask you to choose whether personalised ads are allowed. If you decline, AdSense runs in non-personalised mode (npa=1) and shows contextual placements based on the page content. Users who buy No Ads or access apps through the Play sandbox do not load the AdSense script at all.",
+      "retention.title": "Storage & retention",
+      "retention.body": "Account data remains stored while you maintain a Thesara profile. App bundles, previews and storage namespaces stay online until you delete the related listing, clear the data yourself, or request removal through support. Billing records are retained only for the period required by tax and audit regulations, and system logs used for security are rotated on a regular schedule.",
+      "choices.title": "Your controls",
+      "choices.body": "You can update or delete listings, assets, rooms and storage data you control, adjust consent preferences through the banner, disable ads by purchasing No Ads, and manage account information from settings. If any action is unavailable in the interface, contact us and we will make the change manually.",
+      "rights.title": "Your rights",
+      "rights.body": "Depending on your location you may have the right to request access, correction, objection, restriction or deletion of personal data. We will honour verified requests within the timelines required by law. Please write from the email associated with your account so we can confirm ownership before acting.",
       "contact.title": "Contact",
-      "contact.body": "Questions about privacy or consent can be sent to privacy@thesara.space. We will respond as soon as possible."
+      "contact.body": "For privacy questions or to exercise your rights email reports@thesara.space. We aim to answer within a few business days."
     },
     "Refunds": {
       "title": "Refund Policy",
@@ -583,7 +592,9 @@
     "tagline": "Curated marketplace for browser-based experiences. Build, share and explore.",
     "trending": "Trending now",
     "appsCount": "{count} apps",
-    "search": { "placeholder": "Search apps, games, or tags..." },
+    "search": {
+      "placeholder": "Search apps, games, or tags..."
+    },
     "appsFound": "{count} apps found",
     "publishedCount": "{count} published apps",
     "membersCount": "{count} registered members",
@@ -597,7 +608,40 @@
     "tryAdjust": "Try adjusting your search or filters.",
     "beFirst": "Be the first to publish an app!",
     "publish": "Publish App",
-    "plays": "{count} plays"
+    "plays": "{count} plays",
+    "leftPanel": {
+      "title": "From AI chats to your mini app",
+      "subtitle": "Thesara is where you turn AI ideas into real apps, games or interactive stories you can share in just a few clicks.",
+      "llmLabel": "Start with your favorite model",
+      "steps": {
+        "1": {
+          "title": "Chat with your AI",
+          "text": "Ask the model to build you a mini app, game, quiz, simulation or lecture."
+        },
+        "2": {
+          "title": "Grab the generated code or ZIP",
+          "text": "The assistant hands you a finished web app that you download as code or a bundle."
+        },
+        "3": {
+          "title": "Publish on Thesara in a few clicks",
+          "text": "Upload, confirm and hit Play - your app lives on Thesara, free or priced by you."
+        }
+      },
+      "storage": {
+        "title": "A new memory layer LLMs do not ship with",
+        "tag": "Memory & rooms",
+        "shared": {
+          "title": "Shared memory",
+          "text": "Everyone shares the same state and results (like a global leaderboard) without relying on the chat model."
+        },
+        "rooms": {
+          "title": "Rooms",
+          "text": "Enable rooms when you want multiple people to use your app but each in a private session or group."
+        }
+      },
+      "footer": "AI enthusiasts - imagine it, chat with your model, publish here and let others play.",
+      "footerHighlight": "Good luck with your first Thesara app!"
+    }
   },
   "Toasts": {
     "welcome": "Welcome to Thesara!",
@@ -609,9 +653,27 @@
   },
   "Footer": {
     "slogan": "The marketplace for browser-based apps and games.",
-    "allRights": "All rights reserved."
-  }
-  ,
+    "allRights": "All rights reserved.",
+    "partnershipLink": "Partnership with us"
+  },
+  "Partnership": {
+    "title": "Partnership with us",
+    "description": "Tell us about your organization and the type of collaboration you would like to build.",
+    "nameLabel": "Your name",
+    "companyLabel": "Company or project",
+    "emailLabel": "Business email",
+    "phoneLabel": "Phone (optional)",
+    "messagePlaceholder": "Describe your idea, target audience, timelines, or the value you expect for both sides.",
+    "submit": "Send partnership request",
+    "sending": "Sending…",
+    "cancel": "Cancel",
+    "successMessage": "Thank you! We will reply shortly.",
+    "errorGeneric": "We could not send the request. Please try again.",
+    "errorEmail": "Please enter a valid email.",
+    "errorMessage": "Describe the partnership idea (at least 5 characters).",
+    "footerNote": "You can also email activity(at)thesara.space",
+    "closeLabel": "Close partnership form"
+  },
   "Pro": {
     "choosePlan": "Choose a plan",
     "subtitle": "Upgrade your app with our advanced packages",
@@ -636,8 +698,7 @@
     "noAdsDescription": "Remove THESARA.SPACE ad slots from dashboards and every published experience.",
     "noAdsFeatureRemoval": "Zero ads in the editor, dashboard and your apps",
     "noAdsFeatureFocus": "Keeps players focused on your content (no banners or interstitials)"
-  }
-  ,
+  },
   "Login": {
     "backToHome": "Back to Home",
     "welcomeTitle": "Welcome to {site}",
@@ -658,8 +719,7 @@
     "signInWithEmail": "Sign in with Email",
     "noAccount": "Don’t have an account?",
     "register": "Register"
-  }
-  ,
+  },
   "Create": {
     "source": "Source",
     "pageTitle": "Publish new app",
@@ -720,8 +780,7 @@
     "publish": "Publish",
     "mustSignIn": "Please sign in first to publish.",
     "login": "Sign in"
-  }
-  ,
+  },
   "App": {
     "notFound": "App not found",
     "backToMarketplace": "Back to Marketplace",

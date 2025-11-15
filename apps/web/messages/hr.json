@@ -1,4 +1,4 @@
-﻿{
+{
   "Nav": {
     "publishApp": "Objavi aplikaciju",
     "myProjects": "Moji projekti",
@@ -28,10 +28,13 @@
   },
   "About": {
     "title": "O Thesari",
-    "subtitle": "StatiÄki health check builda koji pinga javni API.",
+    "subtitle": "Mjesto iz garaže gdje objavljujemo AI mini aplikacije i igre.",
     "healthTitle": "Zdravlje API-ja",
     "loading": "Provjera...",
-    "errorDefault": "Neuspjelo dohvaÄ‡anje podataka o zdravlju."
+    "errorDefault": "Neuspjelo dohvaÄ‡anje podataka o zdravlju.",
+    "garageTitle": "Projekt iz garaže",
+    "garageBody": "Thesara je nastala kao garažni projekt u kojem smo ručno slagali alate za objavu AI aplikacija i igara. Raste polako, build po build, kreator po kreator, dok god zadržimo taj DIY pristup pri svakoj novoj značajci.",
+    "comingSoon": "Uskoro objavljujemo slatki tekst o nama, timu i našoj viziji – navrati opet."
   },
   "Search": {
     "title": "Pretraga oglasa",
@@ -61,16 +64,22 @@
     },
     "Privacy": {
       "title": "Politika privatnosti",
-      "intro.title": "Kako koristimo tvoje podatke",
-      "intro.body": "Prikupljamo samo podatke koji su nam nužni za otvaranje i održavanje tvog Thesara računa, isporuku aplikacija i poštivanje zakonskih obveza. Nikada ne prodajemo osobne podatke i ne dijelimo ih s oglašivačima izvan integracija navedenih u nastavku.",
+      "intro.title": "Tko smo i što pokrivamo",
+      "intro.body": "Thesara Space d.o.o. (\"Thesara\", \"mi\") upravlja platformom dostupnom na thesara.space i voditelj je obrade za sve posjetitelje, kreatore i igrače. Obradu ograničavamo na podatke nužne za otvaranje računa, objavu i igranje aplikacija, pružanje podrške te ispunjavanje zakonskih obveza.",
       "data.title": "Koje podatke prikupljamo",
-      "data.body": "Spremamo identifikatore računa (e-mail, prikazno ime, avatar) kako bi se mogao prijaviti i upravljati aplikacijama. Dijagnostika korištenja pomaže nam održati platformu stabilnom. Podatke o plaćanju obrađuje Stripe i ne pohranjujemo ih na našim posluživateljima.",
+      "data.body": "Prilikom registracije spremamo tvoju e‑poštu, prikazno ime, fotografiju profila (ako je dodaš) i osnovnu telemetriju korištenja kako bismo zaštitili račun i održali pouzdanost sustava. Objavljivanje ili uređivanje aplikacija uključuje obradu sadržaja koji upload-aš (naslovi, opisi, asseti, bundleovi, preview slike) i metapodataka poput soba ili ljestvica koje kreiraš. Ako kupiš pretplatu ili dodatak, čuvamo identifikatore pretplate, reference računa i porezne podatke koji nam trebaju; podaci o kartici prolaze izravno kroz pružatelja plaćanja.",
+      "processors.title": "Izvršitelji i integracije",
+      "processors.body": "Za rad Thesare oslanjamo se na nekoliko provjerenih partnera: Firebase i Cloudflare čuvaju autentifikacijske zapise, baze, medije i sigurnosne kopije; Stripe obrađuje plaćanja i šalje nam nesenzitivne podatke o naplati; Redis/BullMQ pokreće build queue; značajka prijevoda može koristiti LLM pružatelja za opcionalne lokalizacije; transakcijske e‑mailove šaljemo preko SMTP releja; oglasne pozicije isporučuje Google AdSense ako daš privolu. Partneri dobivaju samo podatke nužne za svoju ulogu i svi imaju ugovorene zaštitne mjere.",
       "adsense.title": "Google AdSense i kolačići",
-      "adsense.body": "Oglase prikazujemo samo korisnicima koji nisu kupili No Ads dodatak. Prije učitavanja AdSense skripte pitamo za tvoj pristanak. Ako ga odbiješ, oglasi se prikazuju u nepersonaliziranom modu (npa=1) i temelje se isključivo na sadržaju stranice. Korisnici s aktivnim No Ads, Gold, Partner ili Ambassador statusom uopće ne učitavaju skriptu.",
-      "choices.title": "Tvoj izbor",
-      "choices.body": "U svakom trenutku možeš prihvatiti ili odbiti personalizirane oglase putem bannera za privolu; izbor se čuva u tvom pregledniku kako ga ne bi morao ponavljati. Kupnjom No Ads paketa svi ad slotovi se gase odmah na webu i u Play načinu.",
+      "adsense.body": "Oglase prikazujemo isključivo korisnicima koji nisu kupili No Ads plan ili slična prava. Prije učitavanja Google skripte pitamo te dopuštaš li personalizirane oglase. Ako odbiješ, AdSense radi u nepersonaliziranom modu (npa=1) i prikazuje kontekstualne oglase prema sadržaju stranice. Korisnici s No Ads dodatkom ili oni koji aplikacije pokreću u Play sandboxu uopće ne učitavaju AdSense.",
+      "retention.title": "Pohrana i zadržavanje",
+      "retention.body": "Podaci o računu ostaju sve dok održavaš Thesara profil. Bundleovi, previewi i storage namespaceovi ostaju dostupni dok ne obrišeš povezani listing, sam ne očistiš podatke ili nas zamoliš za uklanjanje. Zapise o naplati čuvamo samo onoliko koliko to traže porezni propisi, a sigurnosne zapise rotiramo prema internoj politici.",
+      "choices.title": "Tvoje kontrole",
+      "choices.body": "Možeš uređivati ili brisati listinge, assete, sobe i storage podatke koje posjeduješ, mijenjati postavke privole kroz banner, isključiti oglase kupnjom No Ads paketa i upravljati podacima o računu u postavkama. Ako ti neka radnja nije dostupna u sučelju, javi nam se i odradit ćemo je ručno.",
+      "rights.title": "Tvoja prava",
+      "rights.body": "Ovisno o tome gdje živiš, možeš zatražiti pristup, ispravak, ograničenje, prigovor ili brisanje osobnih podataka. Na provjerene zahtjeve odgovaramo u rokovima koje propisuje zakon. Pošalji nam poruku s e‑pošte povezane s tvojim računom kako bismo potvrdili vlasništvo prije poduzimanja akcije.",
       "contact.title": "Kontakt",
-      "contact.body": "Za sva pitanja vezana uz privatnost ili privolu javi nam se na privacy@thesara.space i odgovoriti ćemo u najkraćem roku."
+      "contact.body": "Za pitanja o privatnosti ili ostvarivanje prava piši na reports@thesara.space. Trudimo se odgovoriti u roku od nekoliko radnih dana."
     },
     "Refunds": {
       "title": "Pravila povrata",
@@ -90,11 +99,11 @@
       "title": "Jednostavne upute za kreatore",
       "cta": "Objavi",
       "steps": {
-        "1": "Napi\u0161i aplikaciju u svom omiljenom LLM-u (ChatGPT, Kimi, Google AI Studio ili bilo kojem drugom asistentu).",
-        "2": "Kopiraj kod ili uploadaj bundle koji dobije\u0161 iz asistenta u na\u0161 editor.",
+        "1": "Napiši aplikaciju u svom omiljenom LLM-u (ChatGPT, Kimi, Google AI Studio ili bilo kojem drugom asistentu).",
+        "2": "Kopiraj kod ili uploadaj bundle koji dobiješ iz asistenta u naš editor.",
         "3": "Objavi aplikaciju pritiskom na Publish.",
-        "4": "Poigraj se s vizualom, opisom i naslovom kako bi sve izgledalo savr\u0161eno.",
-        "5": "U\u017eivaj gledaju\u0107i kako drugi korisnici koriste tvoju aplikaciju, igru, simulaciju ili ispitna pitanja."
+        "4": "Poigraj se s vizualom, opisom i naslovom kako bi sve izgledalo savršeno.",
+        "5": "Uživaj gledajući kako drugi korisnici koriste tvoju aplikaciju, igru, simulaciju ili ispitna pitanja."
       }
     }
   },
@@ -599,7 +608,40 @@
     "tryAdjust": "Pokušaj prilagoditi pretragu ili filtre.",
     "beFirst": "Budi prvi koji će objaviti aplikaciju!",
     "publish": "Objavi aplikaciju",
-    "plays": "{count} igranja"
+    "plays": "{count} igranja",
+    "leftPanel": {
+      "title": "Iz razgovora s AI do svoje mini aplikacije",
+      "subtitle": "Thesara je mjesto gdje u par klikova pretvaras AI ideje u aplikacije, igre ili interaktivne price koje dijelis sa svima.",
+      "llmLabel": "Kreni od svog omiljenog modela",
+      "steps": {
+        "1": {
+          "title": "Razgovaraj s AI-em",
+          "text": "Zadaj modelu da ti napravi mini aplikaciju, igru, kviz, simulaciju ili predavanje."
+        },
+        "2": {
+          "title": "Uzmi generirani kod ili ZIP",
+          "text": "Asistent ti isporuci gotovu web aplikaciju i bundle koji samo preuzmes."
+        },
+        "3": {
+          "title": "Objavi na Thesari u par klikova",
+          "text": "Upload, potvrda i Play - tvoja aplikacija zivi na Thesari kao besplatna ili s cijenom."
+        }
+      },
+      "storage": {
+        "title": "Nova memorija koju LLM-ovi nemaju",
+        "tag": "Memorija & sobe",
+        "shared": {
+          "title": "Zajednicka memorija",
+          "text": "Svi igraci dijele iste rezultate i stanje (npr. globalni leaderboard u igri) - nesto sto AI chat modeli nemaju out-of-the-box."
+        },
+        "rooms": {
+          "title": "Sobe (rooms)",
+          "text": "Ukljuci sobe kada zelis da vise korisnika koristi aplikaciju, ali svatko u vlastitoj sesiji ili grupi."
+        }
+      },
+      "footer": "Dragi AI entuzijasti - zamislite, popricajte s modelom, objavite ovdje i pustite drugima da zaigraju.",
+      "footerHighlight": "Sretno s prvom Thesara aplikacijom!"
+    }
   },
   "Toasts": {
     "welcome": "Dobrodošli na THESARA.SPACE!",
@@ -611,7 +653,26 @@
   },
   "Footer": {
     "slogan": "Marketplace za aplikacije i igre u pregledniku.",
-    "allRights": "Sva prava pridržana."
+    "allRights": "Sva prava pridržana.",
+    "partnershipLink": "Partnerstvo s nama"
+  },
+  "Partnership": {
+    "title": "Partnerstvo s nama",
+    "description": "Opišite svoj tim i kakvu suradnju želite graditi s nama.",
+    "nameLabel": "Vaše ime",
+    "companyLabel": "Tvrtka ili projekt",
+    "emailLabel": "Poslovni e-mail",
+    "phoneLabel": "Telefon (opcionalno)",
+    "messagePlaceholder": "Napišite ideju partnerstva, publiku, rokove ili vrijednost za obje strane.",
+    "submit": "Pošalji upit za partnerstvo",
+    "sending": "Slanje…",
+    "cancel": "Odustani",
+    "successMessage": "Hvala! Javit ćemo se uskoro.",
+    "errorGeneric": "Ne možemo poslati upit. Pokušajte ponovno.",
+    "errorEmail": "Unesite valjani e-mail.",
+    "errorMessage": "Opišite ideju partnerstva (najmanje 5 znakova).",
+    "footerNote": "Ili nam pišite na activity(at)thesara.space",
+    "closeLabel": "Zatvori obrazac za partnerstvo"
   },
   "Pro": {
     "choosePlan": "Odaberite paket",
@@ -920,6 +981,3 @@
     "redirecting": "Preusmjeravamo te u Zlatnu knjigu..."
   }
 }
-
-
-

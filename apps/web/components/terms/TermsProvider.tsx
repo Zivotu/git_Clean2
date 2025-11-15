@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { signOut } from 'firebase/auth';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
 import { acceptTerms, fetchTermsStatus, type TermsStatus, TERMS_POLICY } from '@/lib/terms';
 import { auth } from '@/lib/firebase';
@@ -32,6 +33,7 @@ const TermsContext = createContext<TermsContextValue>({
 
 export function TermsProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
+  const pathname = usePathname();
   const userId = user?.uid ?? null;
   const [status, setStatus] = useState<TermsStatus | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,6 +79,8 @@ export function TermsProvider({ children }: { children: ReactNode }) {
 
   const shouldEnforce =
     Boolean(user) && !authLoading && Boolean(status) && status?.accepted === false;
+  const isHomePage = !pathname || pathname === '/';
+  const shouldShowGlobalModal = shouldEnforce && !isHomePage;
 
   const handleModalAccept = useCallback(async () => {
     setEnforceBusy(true);
@@ -116,7 +120,7 @@ export function TermsProvider({ children }: { children: ReactNode }) {
     <TermsContext.Provider value={ctxValue}>
       {children}
       <TermsEnforcementModal
-        open={Boolean(shouldEnforce)}
+        open={Boolean(shouldShowGlobalModal)}
         busy={enforceBusy}
         error={enforceError}
         onAccept={handleModalAccept}
