@@ -602,15 +602,18 @@ if (typeof window !== 'undefined') {
     const sanitizeTranslations = (
       input?: Record<string, { title?: string; description?: string }>,
     ) => {
-      const out: Record<string, { description?: string }> = {};
+      const out: Record<string, { title?: string; description?: string }> = {};
       for (const [loc, obj] of Object.entries(input || {})) {
         const l = String(loc).toLowerCase().slice(0, 2);
         if (!['en', 'hr', 'de'].includes(l)) continue;
+        const title = (obj?.title ?? '').toString().trim();
         const description = (obj?.description ?? '').toString().trim();
-        if (!description) continue;
-        out[l] = { description };
+        if (!title && !description) continue;
+        out[l] = {};
+        if (title) out[l].title = title;
+        if (description) out[l].description = description;
       }
-      return out as any;
+      return out;
     };
 
     try {

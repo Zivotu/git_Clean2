@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {
   useState,
@@ -29,6 +29,7 @@ import { useTerms } from '@/components/terms/TermsProvider';
 import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
 import { useI18n } from '@/lib/i18n-provider';
+import { defaultLocale } from '@/i18n/config';
 
 type Mode = 'html' | 'react';
 type SubmissionType = 'code' | 'bundle';
@@ -50,6 +51,144 @@ const MIN_LONG_DESCRIPTION = 160;
 const SCREENSHOT_FIELD_COUNT = 2;
 const stepsList = ['source', 'basics'] as const;
 type StepKey = typeof stepsList[number];
+
+const createFallbacks: Record<string, Record<string, string>> = {
+  en: {
+    bundlePreviewHint:
+      "After a successful build you'll get a local preview before we send it to admin review.",
+    basicInfoHeading: 'Basic information',
+    namePlaceholder: 'My super app',
+    descriptionPlaceholder: 'Short description of your app...',
+    translationsHeading: 'Translations (optional)',
+    translationsHint: 'Leave the fields empty to auto-translate after approval.',
+    translationsToggleShow: 'Show',
+    translationsToggleHide: 'Hide',
+    translationTitlePlaceholder: 'Translated title',
+    translationDescriptionPlaceholder: 'Translated description',
+    publishTermsPrompt: 'Before your first publish confirm you accept {terms}.',
+    publishTermsCheckbox: 'I confirm I read the terms and accept them for all future publishes.',
+    publishTermsButton: 'Open terms',
+    publishTermsNote: 'Required only the first time or after the version changes ({version}).',
+    bundleBuiltMessage: 'Bundle built successfully.',
+    openPreviewLink: 'Open preview',
+    summaryHeading: 'Summary',
+    summaryTitle: 'Title',
+    summaryCode: 'Code',
+    summaryBundle: 'Bundle (.zip)',
+    summaryDescription: 'Description',
+    summaryDetailed: 'Detailed overview',
+    summaryScreenshots: 'Screenshots',
+    summaryImage: 'Graphic',
+    summaryReady: 'Ready to publish',
+    summaryIncomplete: 'Complete the steps to publish',
+    previewSectionHeading: 'Preview',
+    bundleUnsupported: 'We only support .zip bundles.',
+    publishTermsErrorStart: 'Confirm you accept the terms before your first publish.',
+    publishTermsErrorBundle: 'Accept the terms before uploading a bundle.',
+    publishTermsErrorPublish: 'Accept the terms before publishing.',
+    authErrorSignIn: 'Please sign in before publishing.',
+    authErrorSession: 'You are not signed in or your session expired. Sign in and try again.',
+    roomsHeading: 'Rooms with PIN (Thesara Rooms)',
+    roomsDescription:
+      'Thesara can require a room name and PIN before loading the iframe, keep the PIN outside your app, and offer a public demo room (PIN 1111) for testing.',
+    betaLabel: 'Beta',
+    roomsOptionOff: 'Disabled — everyone shares the same storage',
+    roomsOptionOptional: 'Demo room plus the user can create a private room',
+    roomsOptionRequired: 'User must enter a room name and PIN before using the app',
+    roomsFootnote: 'You can change this option the next time you publish the app.',
+    customGraphicLabel: 'Choose your own graphic',
+  },
+  hr: {
+    bundlePreviewHint: 'Nakon uspješnog builda dobit ćeš lokalni preview prije administratorskog pregleda.',
+    basicInfoHeading: 'Osnovne informacije',
+    namePlaceholder: 'Moj super app',
+    descriptionPlaceholder: 'Kratak opis tvoje aplikacije...',
+    translationsHeading: 'Prijevodi (neobavezno)',
+    translationsHint: 'Ako ostaviš prazno, sustav će automatski prevesti nakon odobrenja.',
+    translationsToggleShow: 'Prikaži',
+    translationsToggleHide: 'Sakrij',
+    translationTitlePlaceholder: 'Naziv (preveden)',
+    translationDescriptionPlaceholder: 'Opis (preveden)',
+    publishTermsPrompt: 'Prije prve objave potvrdi da prihvaćaš {terms}.',
+    publishTermsCheckbox: 'Potvrđujem da sam pročitao/la uvjete i prihvaćam ih za sve buduće objave.',
+    publishTermsButton: 'Otvori uvjete',
+    publishTermsNote: 'Obavezno je samo prvi put ili nakon promjene verzije ({version}).',
+    bundleBuiltMessage: 'Bundle je uspješno izgrađen.',
+    openPreviewLink: 'Otvori preview',
+    summaryHeading: 'Sažetak',
+    summaryTitle: 'Naslov',
+    summaryCode: 'Kod',
+    summaryBundle: 'Bundle (.zip)',
+    summaryDescription: 'Opis',
+    summaryDetailed: 'Detaljni opis',
+    summaryScreenshots: 'Snimke zaslona',
+    summaryImage: 'Slika',
+    summaryReady: 'Spremno za objavu',
+    summaryIncomplete: 'Dovrši stavke za objavu',
+    previewSectionHeading: 'Pregled',
+    bundleUnsupported: 'Podržavamo samo .zip pakete.',
+    publishTermsErrorStart: 'Prije prve objave potvrdi da prihvaćaš uvjete korištenja.',
+    publishTermsErrorBundle: 'Prije slanja bundla potvrdi da prihvaćaš uvjete korištenja.',
+    publishTermsErrorPublish: 'Prije objave potvrdi da prihvaćaš uvjete korištenja.',
+    authErrorSignIn: 'Za objavu se prvo prijavi.',
+    authErrorSession: 'Nisi prijavljen ili je sesija istekla. Prijavi se i pokušaj ponovno.',
+    roomsHeading: 'Sobe s PIN-om (Thesara Rooms)',
+    roomsDescription:
+      'Thesara može tražiti naziv sobe i PIN prije učitavanja iframea, držati PIN izvan tvoje aplikacije i ponuditi demo sobu (PIN 1111) za testiranje.',
+    betaLabel: 'Beta',
+    roomsOptionOff: 'Isključeno — svi korisnici dijele istu pohranu',
+    roomsOptionOptional: 'Demo soba + korisnik može kreirati privatnu sobu',
+    roomsOptionRequired: 'Korisnik mora unijeti naziv i PIN prije korištenja',
+    roomsFootnote: 'Opciju možeš naknadno promijeniti prilikom sljedeće objave aplikacije.',
+    customGraphicLabel: 'Odaberi vlastitu grafiku',
+  },
+  de: {
+    bundlePreviewHint:
+      'Nach einem erfolgreichen Build erhältst du eine lokale Vorschau, bevor wir sie zur Prüfung schicken.',
+    basicInfoHeading: 'Grundlegende Informationen',
+    namePlaceholder: 'Meine Super-App',
+    descriptionPlaceholder: 'Kurze Beschreibung deiner App...',
+    translationsHeading: 'Übersetzungen (optional)',
+    translationsHint: 'Lass die Felder leer, um nach der Freigabe automatisch zu übersetzen.',
+    translationsToggleShow: 'Anzeigen',
+    translationsToggleHide: 'Ausblenden',
+    translationTitlePlaceholder: 'Übersetzter Titel',
+    translationDescriptionPlaceholder: 'Übersetzte Beschreibung',
+    publishTermsPrompt: 'Bestätige vor deiner ersten Veröffentlichung, dass du {terms} akzeptierst.',
+    publishTermsCheckbox:
+      'Ich bestätige, dass ich die Bedingungen gelesen habe und sie für alle zukünftigen Veröffentlichungen akzeptiere.',
+    publishTermsButton: 'Bedingungen öffnen',
+    publishTermsNote: 'Nur bei der ersten Veröffentlichung oder nach einer Versionsänderung erforderlich ({version}).',
+    bundleBuiltMessage: 'Bundle wurde erfolgreich gebaut.',
+    openPreviewLink: 'Vorschau öffnen',
+    summaryHeading: 'Zusammenfassung',
+    summaryTitle: 'Titel',
+    summaryCode: 'Code',
+    summaryBundle: 'Bundle (.zip)',
+    summaryDescription: 'Beschreibung',
+    summaryDetailed: 'Ausführliche Beschreibung',
+    summaryScreenshots: 'Screenshots',
+    summaryImage: 'Grafik',
+    summaryReady: 'Bereit zur Veröffentlichung',
+    summaryIncomplete: 'Schließe die Schritte für die Veröffentlichung ab',
+    previewSectionHeading: 'Vorschau',
+    bundleUnsupported: 'Wir unterstützen nur .zip-Pakete.',
+    publishTermsErrorStart: 'Bestätige die Bedingungen vor deiner ersten Veröffentlichung.',
+    publishTermsErrorBundle: 'Akzeptiere die Bedingungen, bevor du ein Bundle hochlädst.',
+    publishTermsErrorPublish: 'Akzeptiere die Bedingungen vor der Veröffentlichung.',
+    authErrorSignIn: 'Bitte melde dich vor der Veröffentlichung an.',
+    authErrorSession: 'Du bist nicht angemeldet oder deine Sitzung ist abgelaufen. Melde dich erneut an.',
+    roomsHeading: 'Räume mit PIN (Thesara Rooms)',
+    roomsDescription:
+      'Thesara kann vor dem Laden des Iframes einen Raumnamen und eine PIN verlangen, den PIN außerhalb deiner App halten und einen öffentlichen Demo-Raum (PIN 1111) bereitstellen.',
+    betaLabel: 'Beta',
+    roomsOptionOff: 'Deaktiviert — alle teilen denselben Speicher',
+    roomsOptionOptional: 'Demo-Raum plus Nutzer kann einen privaten Raum erstellen',
+    roomsOptionRequired: 'Nutzer muss vor der Verwendung Raumnamen und PIN eingeben',
+    roomsFootnote: 'Diese Option kannst du bei der nächsten Veröffentlichung ändern.',
+    customGraphicLabel: 'Eigene Grafik wählen',
+  },
+};
 
 const friendlyByCode: Record<string, string> = {
   NET_OPEN_NEEDS_DOMAINS: 'Dodaj barem jednu domenu (npr. api.example.com).',
@@ -99,10 +238,16 @@ export default function CreatePage() {
   const [bundleError, setBundleError] = useState('');
   const [llmApiKey, setLlmApiKey] = useState('');
 
-  const { messages } = useI18n();
+  const { messages, locale } = useI18n();
   const tCreate = useCallback(
     (key: string, params?: Record<string, string | number>) => {
-      let value = messages[`Create.${key}`] || key;
+      const localeFallback = createFallbacks[locale] || createFallbacks[defaultLocale] || {};
+      const englishFallback = createFallbacks.en || {};
+      let value =
+        messages[`Create.${key}`] ||
+        localeFallback[key] ||
+        englishFallback[key] ||
+        key;
       if (params) {
         for (const [k, v] of Object.entries(params)) {
           value = value.replaceAll(`{${k}}`, String(v));
@@ -110,7 +255,7 @@ export default function CreatePage() {
       }
       return value;
     },
-    [messages]
+    [messages, locale]
   );
   const getStepLabel = useCallback(
     (key: StepKey) => (key === 'basics' ? tCreate('basics') : tCreate('source')),
@@ -156,6 +301,10 @@ export default function CreatePage() {
   const [previewUploading, setPreviewUploading] = useState(false);
   const screenshotMaxMb = useMemo(
     () => Math.round((MAX_SCREENSHOT_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
+    [],
+  );
+  const previewMaxMb = useMemo(
+    () => Math.round((MAX_PREVIEW_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
     [],
   );
 
@@ -271,7 +420,7 @@ export default function CreatePage() {
     const name = file.name.toLowerCase();
     if (!name.endsWith('.zip')) {
       setBundleFile(null);
-      setBundleError('PodrÅ¾avamo samo .zip pakete.');
+      setBundleError(tCreate('bundleUnsupported'));
       if (bundleInputRef.current) bundleInputRef.current.value = '';
       return;
     }
@@ -428,7 +577,7 @@ export default function CreatePage() {
     try {
       if (needsTermsConsent) {
         if (!publishTermsChecked) {
-          setPublishTermsError('Potvrdi da prihvaÄ‡aÅ¡ uvjete koriÅ¡tenja prije prve objave.');
+        setPublishTermsError(tCreate('publishTermsErrorStart'));
           return;
         }
         try {
@@ -442,7 +591,7 @@ export default function CreatePage() {
       }
 
       if (!user) {
-        setAuthError('Za objavu se prvo prijavi.');
+        setAuthError(tCreate('authErrorSignIn'));
         return;
       }
 
@@ -530,9 +679,9 @@ export default function CreatePage() {
         } catch (err) {
           if (err instanceof ApiError) {
             if (err.status === 401) {
-              setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokusaj ponovno.');
+              setAuthError(tCreate('authErrorSession'));
             } else if (err.code === 'terms_not_accepted') {
-              setPublishTermsError('Prije slanja bundla potvrdi i prihvati uvjete koriÅ¡tenja.');
+              setPublishTermsError(tCreate('publishTermsErrorBundle'));
               setShowTermsModal(true);
               void refreshTermsStatus();
             } else {
@@ -633,9 +782,9 @@ export default function CreatePage() {
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.status === 401) {
-          setAuthError('Nisi prijavljen ili je sesija istekla. Prijavi se i pokuÅ¡aj ponovno.');
+          setAuthError(tCreate('authErrorSession'));
         } else if (err.code === 'terms_not_accepted') {
-          setPublishTermsError('Prije objave potvrdi i prihvati uvjete koriÅ¡tenja.');
+          setPublishTermsError(tCreate('publishTermsErrorPublish'));
           setShowTermsModal(true);
           void refreshTermsStatus();
         } else {
@@ -888,7 +1037,7 @@ export default function CreatePage() {
                     </div>
                     {bundleError && <p className="text-sm text-red-600">{bundleError}</p>}
                     <p className="text-xs text-gray-500">
-                      Nakon uspjeÅ¡nog builda dobit Ä‡eÅ¡ lokalni preview prije slanja na administratorski pregled.
+                      {tCreate('bundlePreviewHint')}
                     </p>
                   </div>
                 )}
@@ -898,7 +1047,7 @@ export default function CreatePage() {
                     onClick={handleNext}
                     className="rounded-lg bg-emerald-600 px-4 py-2 text-white shadow-sm transition hover:bg-emerald-700"
                   >
-                    Dalje â†’
+                    {tCreate('next')} →
                   </button>
                 </div>
               </section>
@@ -906,28 +1055,28 @@ export default function CreatePage() {
 
             {stepsList[step] === 'basics' && (
               <section className="space-y-5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-6">
-                <h2 className="text-lg font-semibold">Osnovne informacije</h2>
+                <h2 className="text-lg font-semibold">{tCreate('basicInfoHeading')}</h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium">Naziv</label>
+                    <label className="block text-sm font-medium">{tCreate('name')}</label>
                     <input
                       className="w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400"
                       value={manifest.name}
                       onChange={(event) =>
                         setManifest({ ...manifest, name: event.target.value })
                       }
-                      placeholder="Moj super app"
+                      placeholder={tCreate('namePlaceholder')}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium">Opis</label>
+                    <label className="block text-sm font-medium">{tCreate('description')}</label>
                     <textarea
                       className="min-h-[80px] w-full rounded-xl border px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400"
                       value={manifest.description}
                       onChange={(event) =>
                         setManifest({ ...manifest, description: event.target.value })
                       }
-                      placeholder="Kratak opis tvoje aplikacije..."
+                      placeholder={tCreate('descriptionPlaceholder')}
                     />
                   </div>
                 </div>
@@ -1035,15 +1184,14 @@ export default function CreatePage() {
                   <div className="flex items-center justify-between gap-2">
                     <div>
                       <p className="text-sm font-semibold text-slate-900">
-                        Sobe s PIN-om (Thesara Rooms)
+                        {tCreate('roomsHeading')}
                       </p>
                       <p className="text-xs text-slate-600">
-                        Thesara dodatno traÅ¾i naziv sobe i PIN prije uÄitavanja iframea, drÅ¾i PIN izvan tvoje aplikacije i
-                        nudi javnu demo sobu (PIN 1111) za testiranje.
+                        {tCreate('roomsDescription')}
                       </p>
                     </div>
                     <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-emerald-700">
-                      Beta
+                      {tCreate('betaLabel')}
                     </span>
                   </div>
                   <select
@@ -1051,25 +1199,25 @@ export default function CreatePage() {
                     value={roomsMode}
                     onChange={(event) => setRoomsMode(event.target.value as RoomsMode)}
                   >
-                    <option value="off">IskljuÄeno â€” svi korisnici dijele istu pohranu</option>
-                    <option value="optional">Demo soba + korisnik moÅ¾e kreirati privatnu sobu</option>
-                    <option value="required">Korisnik mora unijeti naziv i PIN prije koriÅ¡tenja</option>
+                    <option value="off">{tCreate('roomsOptionOff')}</option>
+                    <option value="optional">{tCreate('roomsOptionOptional')}</option>
+                    <option value="required">{tCreate('roomsOptionRequired')}</option>
                   </select>
                   <p className="mt-1 text-[11px] text-slate-500">
-                    Opciju moÅ¾eÅ¡ naknadno promijeniti prilikom sljedeÄ‡e objave aplikacije.
+                    {tCreate('roomsFootnote')}
                   </p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex flex-col gap-2 rounded-xl border bg-emerald-50/40 p-3">
-                    <label className="text-sm font-medium">Odaberi vlastitu grafiku</label>
+                    <label className="text-sm font-medium">{tCreate('customGraphicLabel')}</label>
                     <div className="flex flex-wrap items-center gap-3">
                       <button
                         type="button"
                         onClick={() => previewInputRef.current?.click()}
                         className="rounded-lg border border-emerald-500 px-3 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
                       >
-                        Odaberi sliku
+                        {tCreate('chooseCustomGraphic')}
                       </button>
                       <input
                         ref={previewInputRef}
@@ -1084,15 +1232,19 @@ export default function CreatePage() {
                           onClick={resetCustomPreview}
                           className="text-sm text-gray-600 underline"
                         >
-                          Ukloni prilagoÄ‘enu grafiku
+                          {tCreate('removeCustomGraphic')}
                         </button>
                       )}
-                      <span className="text-[11px] text-gray-600">Maks. 1MB</span>
+                      <span className="text-[11px] text-gray-600">
+                        {tCreate('customGraphicHint')} {previewMaxMb}MB
+                      </span>
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-700">
-                        Naslov aplikacije na slici{' '}
-                        <span className="font-normal text-gray-500">({overlayMaxChars} znakova)</span>
+                        {tCreate('previewTitleLabel')}{' '}
+                        <span className="font-normal text-gray-500">
+                          ({overlayMaxChars} {tCreate('characters')})
+                        </span>
                       </label>
                       <input
                         value={overlayTitle}
@@ -1101,8 +1253,9 @@ export default function CreatePage() {
                         }
                         maxLength={overlayMaxChars}
                         className="mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500"
-                        placeholder="Naslov za overlayâ€¦"
+                        placeholder={tCreate('previewTitlePlaceholder')}
                       />
+                      <p className="text-xs text-gray-500">{tCreate('previewTitleHint')}</p>
                       <p className="mt-1 text-[11px] text-gray-500">
                         Ovaj naslov Ä‡e se prikazati preko svih thumbnailova kao naslov aplikacije.
                       </p>
@@ -1170,15 +1323,15 @@ export default function CreatePage() {
                   </div>
 
                   {previewUploading && (
-                    <p className="text-xs text-gray-500">UÄitavam previewâ€¦</p>
+                    <p className="text-xs text-gray-500">{tCreate('previewUploading')}</p>
                   )}
                   {previewError && <p className="text-sm text-red-600">{previewError}</p>}
                 </div>
 
                 <div className="space-y-3 pt-4">
-                  <h3 className="font-medium">Prijevodi (neobavezno)</h3>
+                  <h3 className="font-medium">{tCreate('translationsHeading')}</h3>
                   <p className="-mt-1 text-xs text-gray-600">
-                    Ako ostavite prazno, sustav Ä‡e automatski prevesti nakon odobrenja.
+                    {tCreate('translationsHint')}
                   </p>
 
                   <div className="overflow-hidden rounded-xl border">
@@ -1188,7 +1341,9 @@ export default function CreatePage() {
                       onClick={() => setOpenEn((value) => !value)}
                     >
                       <span className="font-medium">English</span>
-                      <span className="text-xs text-gray-500">{openEn ? 'Sakrij' : 'PrikaÅ¾i'}</span>
+                      <span className="text-xs text-gray-500">
+                        {openEn ? tCreate('translationsToggleHide') : tCreate('translationsToggleShow')}
+                      </span>
                     </button>
                     <AnimatePresence initial={false}>
                       {openEn && (
@@ -1200,7 +1355,7 @@ export default function CreatePage() {
                         >
                           <input
                             className="w-full rounded-lg border p-2 text-sm"
-                            placeholder="Title"
+                            placeholder={tCreate('translationTitlePlaceholder')}
                             value={trEn.title}
                             onChange={(event) =>
                               setTrEn((prev) => ({ ...prev, title: event.target.value }))
@@ -1209,7 +1364,7 @@ export default function CreatePage() {
                           <textarea
                             className="w-full rounded-lg border p-2 text-sm"
                             rows={3}
-                            placeholder="Description"
+                            placeholder={tCreate('translationDescriptionPlaceholder')}
                             value={trEn.description}
                             onChange={(event) =>
                               setTrEn((prev) => ({
@@ -1230,7 +1385,9 @@ export default function CreatePage() {
                       onClick={() => setOpenDe((value) => !value)}
                     >
                       <span className="font-medium">Deutsch</span>
-                      <span className="text-xs text-gray-500">{openDe ? 'Sakrij' : 'PrikaÅ¾i'}</span>
+                      <span className="text-xs text-gray-500">
+                        {openDe ? tCreate('translationsToggleHide') : tCreate('translationsToggleShow')}
+                      </span>
                     </button>
                     <AnimatePresence initial={false}>
                       {openDe && (
@@ -1242,7 +1399,7 @@ export default function CreatePage() {
                         >
                           <input
                             className="w-full rounded-lg border p-2 text-sm"
-                            placeholder="Titel"
+                            placeholder={tCreate('translationTitlePlaceholder')}
                             value={trDe.title}
                             onChange={(event) =>
                               setTrDe((prev) => ({ ...prev, title: event.target.value }))
@@ -1251,7 +1408,7 @@ export default function CreatePage() {
                           <textarea
                             className="w-full rounded-lg border p-2 text-sm"
                             rows={3}
-                            placeholder="Beschreibung"
+                            placeholder={tCreate('translationDescriptionPlaceholder')}
                             value={trDe.description}
                             onChange={(event) =>
                               setTrDe((prev) => ({
@@ -1272,7 +1429,9 @@ export default function CreatePage() {
                       onClick={() => setOpenHr((value) => !value)}
                     >
                       <span className="font-medium">Hrvatski</span>
-                      <span className="text-xs text-gray-500">{openHr ? 'Sakrij' : 'PrikaÅ¾i'}</span>
+                      <span className="text-xs text-gray-500">
+                        {openHr ? tCreate('translationsToggleHide') : tCreate('translationsToggleShow')}
+                      </span>
                     </button>
                     <AnimatePresence initial={false}>
                       {openHr && (
@@ -1284,7 +1443,7 @@ export default function CreatePage() {
                         >
                           <input
                             className="w-full rounded-lg border p-2 text-sm"
-                            placeholder="Naziv (preveden)"
+                            placeholder={tCreate('translationTitlePlaceholder')}
                             value={trHr.title}
                             onChange={(event) =>
                               setTrHr((prev) => ({ ...prev, title: event.target.value }))
@@ -1293,7 +1452,7 @@ export default function CreatePage() {
                           <textarea
                             className="w-full rounded-lg border p-2 text-sm"
                             rows={3}
-                            placeholder="Opis (preveden)"
+                            placeholder={tCreate('translationDescriptionPlaceholder')}
                             value={trHr.description}
                             onChange={(event) =>
                               setTrHr((prev) => ({
@@ -1310,7 +1469,7 @@ export default function CreatePage() {
               {needsTermsConsent && (
                 <div className="mt-6 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
                   <p className="font-semibold">
-                    Prije prve objave potvrdi da prihvacas {TERMS_POLICY.shortLabel}.
+                    {tCreate('publishTermsPrompt', { terms: TERMS_POLICY.shortLabel })}
                   </p>
                   <label className="flex items-start gap-3 text-gray-800">
                     <input
@@ -1323,8 +1482,7 @@ export default function CreatePage() {
                       className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
                     />
                     <span>
-                      Potvrdujem da sam procitao/la uvjete i da ih prihvacam te cu ih postivati za sve
-                      buduce objave.
+                      {tCreate('publishTermsCheckbox')}
                     </span>
                   </label>
                   <div className="flex flex-wrap items-center gap-3">
@@ -1333,10 +1491,10 @@ export default function CreatePage() {
                       onClick={() => setShowTermsModal(true)}
                       className="text-sm font-semibold text-emerald-700 underline underline-offset-2"
                     >
-                      Otvori uvjete
+                      {tCreate('publishTermsButton')}
                     </button>
                     <span className="text-xs text-amber-800">
-                      Obavezno je samo prvi put ili nakon promjene verzije ({TERMS_POLICY.version}).
+                      {tCreate('publishTermsNote', { version: TERMS_POLICY.version })}
                     </span>
                   </div>
                   {publishTermsError && (
@@ -1347,10 +1505,10 @@ export default function CreatePage() {
               <div className="flex justify-between pt-4">
                 <button
                   onClick={handleBack}
-                    className="rounded-lg border px-4 py-2 transition hover:bg-gray-50"
-                  >
-                    â† Nazad
-                  </button>
+                  className="rounded-lg border px-4 py-2 transition hover:bg-gray-50"
+                >
+                  ← {tCreate('back')}
+                </button>
                   <div className="flex flex-col items-end">
                     <button
                       onClick={publish}
@@ -1359,7 +1517,7 @@ export default function CreatePage() {
                       }
                       className="rounded-lg bg-emerald-600 px-4 py-2 text-white transition hover:bg-emerald-700 disabled:opacity-50"
                     >
-                      Objavi
+                      {tCreate('publish')}
                     </button>
                     {publishError && (
                       <p className="mt-2 max-w-prose text-right text-sm text-red-600">
@@ -1368,9 +1526,9 @@ export default function CreatePage() {
                     )}
                     {!user && (
                       <p className="mt-2 text-sm text-red-600">
-                        Za objavu se prvo prijavi.{' '}
+                        {tCreate('mustSignIn')}{' '}
                         <a href="/login" className="underline">
-                          Prijava
+                          {tCreate('login')}
                         </a>
                       </p>
                     )}
@@ -1378,15 +1536,15 @@ export default function CreatePage() {
                       <p className="mt-2 text-sm text-red-600">
                         {authError}{' '}
                         <a href="/login" className="underline">
-                          Prijava
+                          {tCreate('login')}
                         </a>
                       </p>
                     )}
                     {submissionType === 'bundle' && localPreviewUrl && (
                       <p className="mt-2 text-sm text-emerald-700">
-                        Bundle je uspjeÅ¡no izgraÄ‘en.{' '}
+                        {tCreate('bundleBuiltMessage')}{' '}
                         <a href={localPreviewUrl} className="underline" target="_blank" rel="noreferrer">
-                          Otvori preview
+                          {tCreate('openPreviewLink')}
                         </a>
                       </p>
                     )}
@@ -1403,26 +1561,30 @@ export default function CreatePage() {
 
           <aside className="space-y-6">
             <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-5">
-              <h3 className="mb-3 font-semibold">SaÅ¾etak</h3>
+              <h3 className="mb-3 font-semibold">{tCreate('summaryHeading')}</h3>
               <div className="space-y-2">
-                <ChecklistItem label="Naslov" done={titleFilled} />
+                <ChecklistItem label={tCreate('summaryTitle')} done={titleFilled} />
                 <ChecklistItem
-                  label={submissionType === 'code' ? 'Kod' : 'Bundle (.zip)'}
+                  label={
+                    submissionType === 'code'
+                      ? tCreate('summaryCode')
+                      : tCreate('summaryBundle')
+                  }
                   done={codeOrBundleFilled}
                 />
-                <ChecklistItem label="Opis" done={descFilled} />
-                <ChecklistItem label="Detaljni opis" done={longDescriptionReady} />
-                <ChecklistItem label="Snimke zaslona" done={screenshotsReady} />
-                <ChecklistItem label="Slika" done={imageChosen} />
+                <ChecklistItem label={tCreate('summaryDescription')} done={descFilled} />
+                <ChecklistItem label={tCreate('summaryDetailed')} done={longDescriptionReady} />
+                <ChecklistItem label={tCreate('summaryScreenshots')} done={screenshotsReady} />
+                <ChecklistItem label={tCreate('summaryImage')} done={imageChosen} />
                 <div className="border-t pt-2" />
                 <div className={`text-sm font-medium ${allReady ? 'text-emerald-700' : 'text-gray-500'}`}>
-                  {allReady ? 'Spremno za objavu' : 'DovrÅ¡i stavke za objavu'}
+                  {allReady ? tCreate('summaryReady') : tCreate('summaryIncomplete')}
                 </div>
               </div>
             </section>
 
             <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-5">
-              <h3 className="mb-3 font-semibold">Preview</h3>
+              <h3 className="mb-3 font-semibold">{tCreate('previewSectionHeading')}</h3>
               <div className="overflow-hidden rounded-lg border">
                 <Image
                   src={previewDisplayUrl}
@@ -1466,4 +1628,3 @@ export default function CreatePage() {
     </main>
   );
 }
-

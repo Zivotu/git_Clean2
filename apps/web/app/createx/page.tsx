@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { SANDBOX_SUBDOMAIN_ENABLED } from '@/lib/config';
 import { apiGet, apiAuthedPost, ApiError } from '@/lib/api';
 import { useTerms } from '@/components/terms/TermsProvider';
 import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
+import { useI18n } from '@/lib/i18n-provider';
 
-const steps = [
-  'Analiza',
-  'Generiranje manifesta',
-  'Provjera s LLM-om',
-  'Pitanja',
-  'Transformacija',
-  'Preview',
-  'Gotovo',
-];
+const STEP_KEYS = [
+  'analyze',
+  'manifest',
+  'llm',
+  'questions',
+  'transform',
+  'preview',
+  'done',
+] as const;
 const stepMap: Record<string, number> = {
   analyze: 0,
   manifest: 1,
@@ -29,6 +30,19 @@ const stepMap: Record<string, number> = {
 
 export default function CreateXPage() {
   const { status: termsStatus, accept: acceptTerms, refresh: refreshTerms } = useTerms();
+  const { messages } = useI18n();
+  const tCreateX = useCallback(
+    (key: string, params?: Record<string, string | number>) => {
+      let value = messages[`CreateX.${key}`] || key;
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          value = value.replaceAll(`{${k}}`, String(v));
+        }
+      }
+      return value;
+    },
+    [messages],
+  );
   const [termsChecked, setTermsChecked] = useState(false);
   const [termsError, setTermsError] = useState<string | null>(null);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -47,12 +61,16 @@ export default function CreateXPage() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [planLimit, setPlanLimit] = useState(false);
 
-  const progress = (currentStep / (steps.length - 1)) * 100;
+  const stepLabels = useMemo(
+    () => STEP_KEYS.map((key) => tCreateX(`steps.${key}`)),
+    [tCreateX],
+  );
+  const progress = (currentStep / (stepLabels.length - 1)) * 100;
 
   const publish = async () => {
     if (needsTermsConsent) {
       if (!termsChecked) {
-        setTermsError('Prije pokretanja potvrdi da prihvacas uvjete.');
+        setTermsError(tCreateX('termsErrorStart'));
         return;
       }
       try {
@@ -60,7 +78,7 @@ export default function CreateXPage() {
         setTermsError(null);
       } catch (err) {
         console.error('createx_terms_accept_failed', err);
-        setTermsError('Spremanje prihvacanja nije uspjelo. Pokusaj ponovno.');
+        setTermsError(tCreateX('termsErrorSave'));
         return;
       }
     }
@@ -84,7 +102,7 @@ export default function CreateXPage() {
       setJobId(json.id || null);
     } catch (e) {
       if (e instanceof ApiError && e.code === 'terms_not_accepted') {
-        setTermsError('Prije objave prihvati uvjete korištenja.');
+        setTermsError(tCreateX('termsErrorPublish'));
         setShowTermsModal(true);
         void refreshTerms();
       } else {
@@ -124,7 +142,7 @@ export default function CreateXPage() {
       }
     } catch (e) {
       if (e instanceof ApiError && e.code === 'terms_not_accepted') {
-        setTermsError('Prije potvrde prihvati uvjete korištenja.');
+        setTermsError(tCreateX('termsErrorConfirm'));
         setShowTermsModal(true);
         void refreshTerms();
       } else {
@@ -160,17 +178,17 @@ export default function CreateXPage() {
   return (
     <>
       <div className="max-w-3xl mx-auto p-4 space-y-4">
-        <h1 className="text-2xl font-bold">THESARA.SPACE Publish</h1>
+        <h1 className="text-2xl font-bold">{tCreateX('title')}</h1>
 
       <div className="space-y-2">
         <div className="h-2 bg-gray-200 rounded">
           <div className="h-full bg-emerald-500 rounded" style={{ width: `${progress}%` }} />
         </div>
         <ul className="flex flex-wrap gap-2 text-sm">
-          {steps.map((s, i) => (
-            <li key={s} className="flex items-center gap-1">
+          {stepLabels.map((label, i) => (
+            <li key={STEP_KEYS[i]} className="flex items-center gap-1">
               <span className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs ${i <= currentStep ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-gray-100 text-gray-500 border-gray-300'}`}>{i < currentStep ? '✓' : i + 1}</span>
-              {s}
+              {label}
             </li>
           ))}
         </ul>
@@ -180,25 +198,25 @@ export default function CreateXPage() {
         className="w-full border rounded p-2"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Naslov"
+        placeholder={tCreateX('titlePlaceholder')}
       />
       <input
         className="w-full border rounded p-2"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        placeholder="Opis"
+        placeholder={tCreateX('descriptionPlaceholder')}
       />
   <textarea
     className="w-full border rounded p-2 font-mono text-sm"
     rows={8}
     value={code}
     onChange={(e) => setCode(e.target.value)}
-    placeholder="// Paste your TSX code here"
+    placeholder={tCreateX('codePlaceholder')}
   />
   {needsTermsConsent && (
     <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
       <p className="font-semibold">
-        Potvrdi da prihvacas {TERMS_POLICY.shortLabel} prije pokretanja THESARA.SPACE objave.
+        {tCreateX('termsPrompt', { terms: TERMS_POLICY.shortLabel })}
       </p>
       <label className="mt-2 flex items-start gap-3 text-gray-800">
         <input
@@ -210,10 +228,7 @@ export default function CreateXPage() {
           }}
           className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
         />
-        <span>
-          Potvrdujem da sam procitao/la uvjete i prihvacam ih za sve naredne objave stvorene s
-          THESARA.SPACE alatom.
-        </span>
+        <span>{tCreateX('termsCheckbox')}</span>
       </label>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <button
@@ -221,10 +236,10 @@ export default function CreateXPage() {
           onClick={() => setShowTermsModal(true)}
           className="text-sm font-semibold text-emerald-700 underline underline-offset-2"
         >
-          Otvori uvjete
+          {tCreateX('termsButton')}
         </button>
         <span className="text-xs text-amber-800">
-          Obavezno prilikom prve objave ili nakon promjene verzije ({TERMS_POLICY.version}).
+          {tCreateX('termsNote', { version: TERMS_POLICY.version })}
         </span>
       </div>
       {termsError && <p className="mt-2 text-xs text-red-600">{termsError}</p>}
@@ -235,12 +250,12 @@ export default function CreateXPage() {
         onClick={publish}
         disabled={busy}
       >
-        Pokreni
+        {tCreateX('startButton')}
       </button>
 
       {needsConfirm && (
         <div className="space-y-2">
-          {questions.length > 0 && <h2 className="font-semibold">Pitanja</h2>}
+          {questions.length > 0 && <h2 className="font-semibold">{tCreateX('questionsHeading')}</h2>}
           {questions.map((q, i) => (
             <div key={i} className="space-y-1">
               <label className="block text-sm font-medium">{q}</label>
@@ -252,40 +267,38 @@ export default function CreateXPage() {
             </div>
           ))}
           {planLimit && (
-            <p className="text-sm text-red-600">
-              Free plan allows up to 5 apps. Upgrade to the Gold plan for unlimited publishing.
-            </p>
+            <p className="text-sm text-red-600">{tCreateX('planLimit')}</p>
           )}
           <button
             className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
             onClick={confirm}
             disabled={busy || planLimit}
           >
-            Potvrdi
+            {tCreateX('confirmButton')}
           </button>
         </div>
       )}
 
       {artifacts?.diff && (
         <div>
-          <h2 className="font-semibold">Diff</h2>
+          <h2 className="font-semibold">{tCreateX('diffHeading')}</h2>
           <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-64">{artifacts.diff}</pre>
         </div>
       )}
 
       {previewUrl && (
         <div className="space-y-2">
-          <h2 className="font-semibold">Preview</h2>
+          <h2 className="font-semibold">{tCreateX('previewHeading')}</h2>
           {!SANDBOX_SUBDOMAIN_ENABLED && (
             <div className="text-xs text-gray-700 bg-yellow-100 border border-yellow-200 rounded p-2">
-              Sigurnosni ‘kavez’ je aktivan bez vlastite poddomene. U produkciji preporučujemo wildcard subdomene radi bolje izolacije.
+              {tCreateX('sandboxWarning')}
               <a
                 href="https://github.com/createx/README#sandbox-subdomene"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline ml-1"
               >
-                Saznaj više
+                {tCreateX('sandboxLearnMore')}
               </a>
             </div>
           )}
@@ -296,13 +309,13 @@ export default function CreateXPage() {
             rel="noopener noreferrer"
             className="text-sm text-blue-600 underline"
           >
-            Open in new tab
+            {tCreateX('openInNewTab')}
           </a>
         </div>
       )}
 
       <div>
-        <h2 className="font-semibold">Log</h2>
+        <h2 className="font-semibold">{tCreateX('logHeading')}</h2>
         <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-64">
           {Object.entries(logs)
             .map(([k, v]) => `--- ${k} ---\n${v}`)
