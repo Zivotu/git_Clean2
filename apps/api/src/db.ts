@@ -361,7 +361,8 @@ export async function getCreatorById(uid: string): Promise<Creator | undefined> 
     const col = await getExistingCollection('creators');
     const snap = await col.doc(uid).get();
     if (snap.exists) {
-      return { id: snap.id, ...(snap.data() as Creator) };
+      const data = snap.data() as Creator;
+      return { ...data, id: data.id ?? snap.id };
     }
   } catch {}
   try {
@@ -810,6 +811,115 @@ export async function writeAdsSlotConfig(
   return nextSlots;
 }
 
+export type EarlyAccessSettings = {
+  id: string;
+  isActive: boolean;
+  startsAt?: number;
+  durationDays?: number;
+  perUserDurationDays?: number;
+  updatedAt?: number;
+  updatedBy?: string | null;
+};
+
+const EARLY_ACCESS_SETTINGS_DOC = 'earlyAccess';
+const MIN_DURATION_DAYS = 1;
+
+function toMillis(value: unknown): number | undefined {
+  if (value == null) return undefined;
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+  if (value instanceof Timestamp) {
+    return value.toMillis();
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+    const asDate = Date.parse(value);
+    if (Number.isFinite(asDate) && asDate > 0) {
+      return asDate;
+    }
+  }
+  return undefined;
+}
+
+function toPositiveInteger(value: unknown, fallback?: number): number | undefined {
+  if (value == null) return fallback;
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  const rounded = Math.max(0, Math.floor(num));
+  return rounded > 0 ? rounded : fallback;
+}
+
+function normalizeEarlyAccessDoc(data: Record<string, any> | undefined | null): EarlyAccessSettings | null {
+  if (!data) return null;
+  const id = typeof data.id === 'string' && data.id.trim() ? data.id.trim() : undefined;
+  if (!id) return null;
+  const isActive = Boolean(data.isActive);
+  const startsAt = toMillis(data.startsAt);
+  const durationDays = toPositiveInteger(data.durationDays, undefined);
+  const perUserDurationDays = toPositiveInteger(data.perUserDurationDays, durationDays);
+  const updatedAt =
+    typeof data.updatedAt === 'number' && Number.isFinite(data.updatedAt) ? data.updatedAt : undefined;
+  const updatedBy =
+    typeof data.updatedBy === 'string' && data.updatedBy.trim()
+      ? data.updatedBy.trim()
+      : data.updatedBy ?? null;
+  return {
+    id,
+    isActive,
+    startsAt,
+    durationDays,
+    perUserDurationDays,
+    updatedAt,
+    updatedBy,
+  };
+}
+
+export async function readEarlyAccessSettings(): Promise<EarlyAccessSettings | null> {
+  const doc = await db.collection('settings').doc(EARLY_ACCESS_SETTINGS_DOC).get();
+  if (!doc.exists) return null;
+  return normalizeEarlyAccessDoc(doc.data() as Record<string, any>);
+}
+
+export async function writeEarlyAccessSettings(
+  input: {
+    id: string;
+    isActive: boolean;
+    startsAt?: number;
+    durationDays?: number;
+    perUserDurationDays?: number;
+    updatedBy?: string | null;
+  },
+): Promise<EarlyAccessSettings> {
+  const id = input.id.trim();
+  if (!id) {
+    throw new Error('early_access_id_required');
+  }
+  const durationDays = toPositiveInteger(
+    input.durationDays,
+    input.isActive ? MIN_DURATION_DAYS : undefined,
+  );
+  const perUserDurationDays = toPositiveInteger(
+    input.perUserDurationDays,
+    durationDays ?? MIN_DURATION_DAYS,
+  );
+  const startsAt = toMillis(input.startsAt) ?? Date.now();
+  const payload = {
+    id,
+    isActive: Boolean(input.isActive),
+    startsAt,
+    durationDays: durationDays ?? MIN_DURATION_DAYS,
+    perUserDurationDays: perUserDurationDays ?? durationDays ?? MIN_DURATION_DAYS,
+    updatedAt: Date.now(),
+    updatedBy: input.updatedBy ?? null,
+  };
+  await db.collection('settings').doc(EARLY_ACCESS_SETTINGS_DOC).set(payload, { merge: true });
+  return payload;
+}
+
 type AdsTelemetryEventInput = {
   type: string;
   slotKey?: string | null;
@@ -1174,7 +1284,8 @@ export async function getDonationByPaymentIntent(
 ): Promise<DonationRecord | undefined> {
   const doc = await (await getExistingCollection('donations')).doc(paymentIntentId).get();
   if (!doc.exists) return undefined;
-  return { id: doc.id, ...(doc.data() as DonationRecord) };
+  const data = doc.data() as DonationRecord;
+  return { ...data, id: data.id ?? doc.id };
 }
 
 export async function listDonations(
@@ -1187,7 +1298,10 @@ export async function listDonations(
     query = query.where('campaignId', '==', campaignId);
   }
   const snap = await query.limit(limit).get();
-  return snap.docs.map((doc: any) => ({ id: doc.id, ...(doc.data() as DonationRecord) }));
+  return snap.docs.map((doc: any) => {
+    const data = doc.data() as DonationRecord;
+    return { ...data, id: data.id ?? doc.id };
+  });
 }
 
 export type BillingEvent = {

@@ -47,7 +47,7 @@ interface ManifestDraft {
 
 const overlayMaxChars = 22;
 const LONG_DESCRIPTION_LIMIT = 4000;
-const MIN_LONG_DESCRIPTION = 160;
+const MIN_LONG_DESCRIPTION = 20;
 const SCREENSHOT_FIELD_COUNT = 2;
 const stepsList = ['source', 'basics'] as const;
 type StepKey = typeof stepsList[number];
@@ -77,7 +77,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     summaryBundle: 'Bundle (.zip)',
     summaryDescription: 'Description',
     summaryDetailed: 'Detailed overview',
-    summaryScreenshots: 'Screenshots',
+    summaryScreenshots: 'Screenshots (optional)',
     summaryImage: 'Graphic',
     summaryReady: 'Ready to publish',
     summaryIncomplete: 'Complete the steps to publish',
@@ -121,7 +121,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     summaryBundle: 'Bundle (.zip)',
     summaryDescription: 'Opis',
     summaryDetailed: 'Detaljni opis',
-    summaryScreenshots: 'Snimke zaslona',
+    summaryScreenshots: 'Snimke zaslona (neobavezno)',
     summaryImage: 'Slika',
     summaryReady: 'Spremno za objavu',
     summaryIncomplete: 'Dovrši stavke za objavu',
@@ -167,7 +167,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     summaryBundle: 'Bundle (.zip)',
     summaryDescription: 'Beschreibung',
     summaryDetailed: 'Ausführliche Beschreibung',
-    summaryScreenshots: 'Screenshots',
+    summaryScreenshots: 'Screenshots (optional)',
     summaryImage: 'Grafik',
     summaryReady: 'Bereit zur Veröffentlichung',
     summaryIncomplete: 'Schließe die Schritte für die Veröffentlichung ab',
@@ -603,13 +603,6 @@ export default function CreatePage() {
         return;
       }
 
-      const selectedScreenshots = screenshots.filter(Boolean);
-      if (!selectedScreenshots.length) {
-        const message = tCreate('screenshotsRequired');
-        setPublishError(message);
-        return;
-      }
-
       let previewAttachment: { dataUrl: string } | undefined;
       try {
         if (previewChoice === 'custom' && customPreview?.dataUrl) {
@@ -819,8 +812,7 @@ export default function CreatePage() {
     descFilled &&
     imageChosen &&
     codeOrBundleFilled &&
-    longDescriptionReady &&
-    screenshotsReady;
+    longDescriptionReady;
 
   const previewDisplayUrl =
     previewChoice === 'custom' && customPreview?.dataUrl

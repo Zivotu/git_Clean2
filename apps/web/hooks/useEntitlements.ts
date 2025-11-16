@@ -19,6 +19,7 @@ const GUEST_ENTITLEMENTS: Entitlements = {
   noAds: false,
   purchases: [],
   entitlements: [],
+  earlyAccess: null,
 };
 
 let cache: Entitlements | null = null;

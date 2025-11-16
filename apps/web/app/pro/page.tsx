@@ -7,6 +7,7 @@ import { useRouteParam } from '@/hooks/useRouteParam';
 import PackageDetailView from './PackageDetailView';
 import { useEntitlements, type Entitlements } from '@/hooks/useEntitlements';
 import { useAuth } from '@/lib/auth';
+import { useEarlyAccessCampaign } from '@/hooks/useEarlyAccessCampaign';
 import UserSummary from '@/components/UserSummary';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -47,10 +48,15 @@ function ProPageClient() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const { data: entitlements, loading: entitlementsLoading } = useEntitlements();
   const { user } = useAuth();
+  const { data: earlyAccessCampaign } = useEarlyAccessCampaign();
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [nextPaymentDate, setNextPaymentDate] = useState<string | undefined>(undefined);
   const [subscribedApps, setSubscribedApps] = useState<SubscribedApp[]>([]);
   const [appsCountFallback, setAppsCountFallback] = useState<number | null>(null);
+  const earlyAccessNotice =
+    messages['Pro.earlyAccessNotice'] ||
+    'Early Access is active: billing is temporarily paused while Gold + NoAds are free.';
+  const earlyAccessActive = Boolean(earlyAccessCampaign?.isActive);
 
   useEffect(() => {
     if (!user) {
@@ -319,12 +325,19 @@ function ProPageClient() {
           </Card>
         )}
 
+        {earlyAccessActive && (
+          <Card className="mb-6 border border-amber-200 bg-amber-50">
+            <p className="text-sm text-amber-900">{earlyAccessNotice}</p>
+          </Card>
+        )}
+
         {/* Packages */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {enhancedPackages.map((pkg) => {
             const owned = hasPackage(pkg);
             const recommended = pkg.id === recommendedId;
             const isPackageLoading = checkoutLoading === pkg.id;
+            const isCheckoutDisabled = owned || isPackageLoading || earlyAccessActive;
             const featureList = pkg.features || [];
             const suffix =
               pkg.billingPeriod && pkg.billingPeriod !== 'month'
@@ -355,11 +368,25 @@ function ProPageClient() {
                   </ul>
                 )}
                 <Button
-                  className={`w-full ${owned ? 'bg-gray-200 text-gray-600 cursor-default' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
-                  onClick={() => !owned && !isPackageLoading && goToCheckout(pkg)}
-                  disabled={owned || isPackageLoading}
+                  className={`w-full ${
+                    isCheckoutDisabled
+                      ? 'bg-gray-200 text-gray-600 cursor-not-allowed'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
+                  }`}
+                  onClick={() => {
+                    if (!isCheckoutDisabled) {
+                      goToCheckout(pkg);
+                    }
+                  }}
+                  disabled={isCheckoutDisabled}
                 >
-                  {isPackageLoading ? tPro('loading') : owned ? tPro('subscribed') : tPro('selectPackage')}
+                  {isPackageLoading
+                    ? tPro('loading')
+                    : owned
+                      ? tPro('subscribed')
+                      : earlyAccessActive
+                        ? messages['Pro.earlyAccessButtonLabel'] || 'Available soon'
+                        : tPro('selectPackage')}
                 </Button>
               </Card>
             );

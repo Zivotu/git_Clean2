@@ -45,7 +45,7 @@ import PublicAppView from './PublicAppView';
 const LONG_DESCRIPTION_LIMIT = 4000;
 const SCREENSHOT_FIELD_COUNT = 2;
 const SCREENSHOT_URL_LIMIT = 1024;
-const MIN_LONG_DESCRIPTION = 160;
+const MIN_LONG_DESCRIPTION = 20;
 
 // ------------------------------------------------------------------
 // Types
@@ -1481,7 +1481,7 @@ useEffect(() => {
   const longDescriptionHelper = tApp(
     'creator.longDescriptionHelper',
     { min: MIN_LONG_DESCRIPTION },
-    `Aim for at least ${MIN_LONG_DESCRIPTION} characters (2-3 short paragraphs).`,
+    `Add at least ${MIN_LONG_DESCRIPTION} characters so visitors get enough context.`,
   );
   const longDescriptionPlaceholder = tApp(
     'creator.longDescriptionPlaceholder',

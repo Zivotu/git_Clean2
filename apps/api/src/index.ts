@@ -64,6 +64,7 @@ import adminRoutes from './routes/admin.js';
 import adminAccessRoutes from './routes/adminAccess.js';
 import jwtRoutes from './routes/jwt.js';
 import adsRoutes from './routes/ads.js';
+import earlyAccessRoutes from './routes/earlyAccess.js';
 // admin routes
 import buildEventsRoutes from './routes/buildEvents.js';
 import testingRoutes from './routes/testing.js';
@@ -847,6 +848,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(avatarRoutes);
   await app.register(entitlementsRoutes);
   await app.register(adsRoutes);
+  await app.register(earlyAccessRoutes);
   await app.register(configRoutes);
   await app.register(communityStatsRoutes);
   await app.register(donationsRoutes);

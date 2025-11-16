@@ -17,6 +17,7 @@ import AppCard, { type Listing } from '@/components/AppCard';
 import AdSlot from '@/components/AdSlot';
 import { useAds } from '@/components/AdsProvider';
 import { useEntitlements } from '@/hooks/useEntitlements';
+import { useEarlyAccessCampaign } from '@/hooks/useEarlyAccessCampaign';
 import { useI18n } from '@/lib/i18n-provider';
 import { AD_SLOT_IDS } from '@/config/ads';
 import type { Listing as ApiListing } from '@/lib/types';
@@ -738,6 +739,12 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
 
 export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const ent = useEntitlements();
+  const { data: earlyAccessCampaign } = useEarlyAccessCampaign();
+  const [showEarlyAccessPopup, setShowEarlyAccessPopup] = useState(false);
+  const popupStorageKey = useMemo(
+    () => (earlyAccessCampaign?.id ? `eaPopupSeen:${earlyAccessCampaign.id}` : null),
+    [earlyAccessCampaign?.id],
+  );
   const initialItemsRef = useRef(initialItems?.map(toCardListing) ?? []);
   const initialPublishedCount = useMemo(
     () => initialItemsRef.current.filter((item) => item.visibility !== 'unlisted').length,
@@ -755,16 +762,52 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const tToast = useCallback((k: string) => messages[`Toasts.${k}`] || k, [messages]);
   const tNav = (k: string) => messages[`Nav.${k}`] || k;
   const tFooter = (k: string) => messages[`Footer.${k}`] || k;
+  const popupTitle = messages['Home.earlyAccessTitle'] || 'Early Access is live!';
+  const popupBody =
+    messages['Home.earlyAccessBody'] ||
+    'Gold + NoAds are active for you during the campaign. Publish an app to make the most of it.';
+  const popupCta = messages['Home.earlyAccessPublish'] || 'Publish an app';
+  const popupSignIn = messages['Home.earlyAccessSignIn'] || 'Sign in now';
+  const popupDismiss = messages['Home.earlyAccessDismiss'] || 'Close';
   const [items, setItems] = useState<Listing[]>(initialItemsRef.current);
   const [q, setQ] = useState('');
   const [isLoading, setIsLoading] = useState(initialItemsRef.current.length === 0);
   const { user } = useAuth();
+  const primaryCtaLabel = user ? popupCta : popupSignIn;
+  const primaryHref = user ? '/create' : '/login';
   const [isAdmin, setIsAdmin] = useState(false);
   const [detailsItem, setDetailsItem] = useState<Listing | null>(null);
   const [communityStats, setCommunityStats] = useState<CommunityStats>({
     publishedApps: initialPublishedCount,
     membersCount: 0,
   });
+  const dismissEarlyAccessPopup = useCallback(() => {
+    if (typeof window !== 'undefined' && popupStorageKey) {
+      try {
+        window.localStorage.setItem(popupStorageKey, String(Date.now()));
+      } catch {
+        /* noop */
+      }
+    }
+    setShowEarlyAccessPopup(false);
+  }, [popupStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!earlyAccessCampaign?.isActive || !popupStorageKey) {
+      setShowEarlyAccessPopup(false);
+      return;
+    }
+    try {
+      if (window.localStorage.getItem(popupStorageKey)) {
+        setShowEarlyAccessPopup(false);
+        return;
+      }
+    } catch {
+      /* ignore storage errors */
+    }
+    setShowEarlyAccessPopup(true);
+  }, [earlyAccessCampaign?.isActive, popupStorageKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -808,17 +851,256 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   const showHomeCtaBanner = true;
   const shouldInjectGridAds = showAds && viewMode === 'grid' && homeGridInlineSlot.length > 0;
   const [leftPanelDensity, setLeftPanelDensity] = useState<'default' | 'compact'>('default');
+  const pageContainerClass = 'w-full max-w-none';
+  const renderSearchAndStats = (wrapperClassName: string) => (
+    <div className={wrapperClassName}>
+      <div className="bg-white rounded-2xl border border-gray-200 p-2.5 mb-2 flex flex-col gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 w-full">
+          <div className="relative flex-1 min-w-[220px]">
+            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="search-input"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+              }}
+              placeholder={tHome('searchPlaceholder')}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50/60 pl-10 pr-4 py-2 text-sm focus:border-emerald-500 focus:bg-white focus:outline-none transition"
+              type="text"
+              aria-label={tHome('searchPlaceholder')}
+              autoComplete="off"
+            />
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn('p-1.5 rounded transition flex items-center', viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')}
+              aria-label="Grid view"
+            >
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn('p-1.5 rounded transition flex items-center', viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')}
+              aria-label="List view"
+            >
+              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end flex-1 min-w-[260px]">
+            <div className="flex items-center gap-2 flex-wrap">
+              {tagData.slice(0, 6).map(([tag]) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-sm border transition',
+                    selectedTags.includes(tag)
+                      ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                  )}
+                  aria-pressed={selectedTags.includes(tag)}
+                >
+                  #{tag}
+                </button>
+              ))}
+              {tagData.length > 6 && (
+                <button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">+{tagData.length - 6}</button>
+              )}
+            </div>
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as 'new' | 'popular' | 'title')}
+              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-emerald-500"
+            >
+              <option value="new">{tHome('sort.new')}</option>
+              <option value="popular">{tHome('sort.popular')}</option>
+              <option value="title">{tHome('sort.title')}</option>
+            </select>
+            {(selectedTags.length > 0 || q) && (
+              <button onClick={clearFilters} className="text-sm text-red-500 hover:underline">
+                {tHome('clear')}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end text-xs sm:text-sm text-gray-600 mt-1 mb-4">
+        <div className="flex flex-wrap gap-4">
+          <div
+            className="flex items-center gap-2"
+            title={tHome('publishedCount', { count: formattedStats.apps })}
+          >
+            <span className="text-base font-semibold text-gray-900">{formattedStats.apps}</span>
+            <svg
+              className="h-5 w-5 text-gray-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+              <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+              <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+              <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+            </svg>
+            <span className="sr-only">{tHome('publishedCount', { count: formattedStats.apps })}</span>
+          </div>
+          <div
+            className="flex items-center gap-2"
+            title={tHome('membersCount', { count: formattedStats.members })}
+          >
+            <span className="text-base font-semibold text-gray-900">{formattedStats.members}</span>
+            <svg
+              className="h-5 w-5 text-gray-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.5 7.5a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0ZM4 19.25a5.75 5.75 0 0111.5 0v.25H4v-.25Z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M17.75 10.5a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0ZM13.5 19.5v-.25a4.25 4.25 0 015.5-4.08"
+              />
+            </svg>
+            <span className="sr-only">{tHome('membersCount', { count: formattedStats.members })}</span>
+          </div>
+        </div>
+      </div>
+      {errorMessage && (<div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm">{errorMessage}</div>)}
+    </div>
+  );
+  const renderListings = (wrapperClassName: string, options: { hideRails?: boolean } = {}) => {
+    const { hideRails = false } = options;
+    const layoutClass = hideRails ? '' : homeLayoutClass;
+    return (
+      <div className={wrapperClassName}>
+        <div className={layoutClass}>
+          {!hideRails && homeRailLeftSlot && (
+            <div className="hidden xl:block">
+              <HomeAdsRail slotId={homeRailLeftSlot} slotKey="homeRailLeft" />
+            </div>
+          )}
+          <div>
+            {isLoading ? (
+              <div className={cardsLayoutClass}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-2xl overflow-hidden animate-pulse">
+                    <div className="aspect-video bg-gray-100" />
+                    <div className="p-4">
+                      <div className="h-6 bg-gray-100 rounded w-3/4 mb-2" />
+                      <div className="h-4 bg-gray-100 rounded w-full mb-4" />
+                      <div className="flex gap-2"><div className="h-4 bg-gray-100 rounded w-16" /><div className="h-4 bg-gray-100 rounded w-16" /></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : processed.length ? (
+              <div className={cardsLayoutClass}>
+                {(() => {
+                  let renderedAppIndex = 0;
+                  return entriesToRender.map((entry) => {
+                    if (entry.kind === 'ad') {
+                      if (!homeGridInlineSlot) return null;
+                      return (
+                        <div
+                          key={entry.key}
+                          className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm"
+                        >
+                          <div className="h-full p-4">
+                            <AdSlot
+                              slotId={homeGridInlineSlot}
+                              slotKey="homeGridInline"
+                              placement="home.grid.inline"
+                              className="h-full w-full"
+                              adStyle={{ minHeight: '100%' }}
+                              label="Advertisement"
+                              closable={false}
+                            />
+                          </div>
+                        </div>
+                      );
+                    }
+                    const item = entry.item;
+                    const isFirst = renderedAppIndex === 0;
+                    renderedAppIndex += 1;
+                    return (
+                      <AppCard
+                        key={item.id}
+                        item={{ ...item, isSubscribed: subscribed.has(item.id) }}
+                        toggleLike={toggleLike}
+                        busy={busy}
+                        viewMode={viewMode}
+                        onDetails={openDetails}
+                        priority={isFirst}
+                      />
+                    );
+                  });
+                })()}
+              </div>
+            ) : (
+              <div className="text-center py-20">
+                <h3 className="text-2xl font-bold text-gray-900">{tHome('noApps')}</h3>
+                <p className="mt-2 text-gray-500">{q || selectedTags.length ? tHome('tryAdjust') : tHome('beFirst')}</p>
+                <div className="mt-6">
+                  <Link href="/create" onClick={handlePublishClick} className="px-5 py-2.5 rounded-lg bg-emerald-500 text-white font-medium transition hover:bg-emerald-600" title="Publish your first app">{tHome('publish')}</Link>
+                </div>
+              </div>
+            )}
+            {errorDetails && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-red-700">{errorDetails}</p>
+                <button onClick={() => load()} className="mt-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600">{tToast('retry')}</button>
+              </div>
+            )}
+            {homeFeedFooterSlot && (
+              <div className="mt-10">
+                <AdSlot
+                  slotId={homeFeedFooterSlot}
+                  slotKey="homeFeedFooter"
+                  placement="home.feed.footer"
+                  className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
+                  adStyle={{ minHeight: '300px' }}
+                  label="Advertisement"
+                />
+              </div>
+            )}
+          </div>
+          {!hideRails && homeRailRightSlot && (
+            <div className="hidden xl:block">
+              <HomeAdsRail slotId={homeRailRightSlot} slotKey="homeRailRight" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
   const homeLayoutClass = useMemo(() => {
     const hasLeft = Boolean(homeRailLeftSlot);
     const hasRight = Boolean(homeRailRightSlot);
     if (hasLeft && hasRight) {
-      return 'xl:grid xl:grid-cols-[220px_minmax(0,1fr)_220px] xl:gap-6';
+      return 'xl:grid xl:grid-cols-[220px_minmax(0,1fr)_220px] xl:gap-3';
     }
     if (hasLeft) {
-      return 'xl:grid xl:grid-cols-[220px_minmax(0,1fr)] xl:gap-6';
+      return 'xl:grid xl:grid-cols-[220px_minmax(0,1fr)] xl:gap-3';
     }
     if (hasRight) {
-      return 'xl:grid xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-6';
+      return 'xl:grid xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-3';
     }
     return '';
   }, [homeRailLeftSlot, homeRailRightSlot]);
@@ -1140,7 +1422,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
 
   const cardsLayoutClass = cn(
     viewMode === 'grid'
-      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'
+      ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3'
       : 'space-y-4',
   );
   const entriesToRender: FeedEntry[] =
@@ -1154,7 +1436,8 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     '/assets/CTA_Part_3.jpg',
     '/assets/CTA_Part_4.jpg',
   ] as const;
-  const ctaBannerTop = Math.max(0, ctaTopOffset) + 8;
+  const sidePanelsTop = Math.max(0, ctaTopOffset) + 16;
+  const heroFrameClass = 'w-full max-w-none';
   const leftPanelContent: LeftPanelContent = {
     title: tHome('leftPanel.title'),
     subtitle: tHome('leftPanel.subtitle'),
@@ -1183,299 +1466,146 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
     <div className="min-h-screen text-gray-900 bg-white">
       <SplashScreen />
       <SpiderOverlay />
-      {showHomeCtaBanner && (
-        <>
-          <div
-            className="hidden 2xl:block fixed left-8 z-20"
-            style={{
-              top: `${ctaBannerTop}px`,
-              width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.9))',
-            }}
-          >
-            <LeftInfoPanel content={leftPanelContent} fullHeight density={leftPanelDensity} />
-          </div>
-          <div
-            className="hidden 2xl:flex fixed right-8 z-20 items-center justify-center"
-            style={{
-              top: `${ctaBannerTop}px`,
-              width: 'max(0px, calc(((100vw - 1280px) / 2) * 0.85))',
-              height: 'calc(100vh - 64px)',
-            }}
-          >
+      <section className="pt-10 pb-4 relative">
+        <div
+          className={`${heroFrameClass} hidden 2xl:grid grid-cols-[minmax(320px,380px)_minmax(0,1fr)_minmax(220px,280px)] gap-8 items-start`}
+        >
+          {showHomeCtaBanner ? (
             <div
-              className="flex flex-col gap-4"
-              style={{ width: '90%', height: '90%' }}
+              className="sticky pr-4"
+              style={{
+                top: `${sidePanelsTop}px`,
+                maxHeight: `calc(100vh - ${sidePanelsTop}px)`,
+                overflowY: 'auto',
+              }}
             >
-              {stackedHomeCtaImages.map((src, index) => (
-                <div key={src} className="flex-1 w-full">
-                  <Link href="/jednostavne-upute" className="flex h-full w-full items-center justify-center">
+              <LeftInfoPanel content={leftPanelContent} fullHeight density={leftPanelDensity} />
+            </div>
+          ) : (
+            <div />
+          )}
+          <div
+            className="flex flex-col"
+            style={{
+              maxHeight: `calc(100vh - ${sidePanelsTop}px)`,
+              overflowY: 'auto',
+              paddingRight: '1rem',
+            }}
+          >
+            <div className="flex flex-col items-center text-center">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
+                {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
+              </h1>
+              <p className="mt-2 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
+            </div>
+            <div className="w-full mt-6">
+              <TrendingCarousel
+                items={topLiked}
+                title={tHome('trending')}
+                countLabel={tHome('appsCount', { count: topLiked.length })}
+                onOpen={(slug) => router.push(appDetailsHref(slug))}
+              />
+            </div>
+            {renderSearchAndStats('w-full mt-6')}
+            {renderListings('w-full mt-4 pb-4', { hideRails: true })}
+          </div>
+          {showHomeCtaBanner ? (
+            <div
+              className="sticky w-full pl-4"
+              style={{
+                top: `${sidePanelsTop}px`,
+                maxHeight: `calc(100vh - ${sidePanelsTop}px)`,
+                overflowY: 'auto',
+              }}
+            >
+              <div className="grid gap-3 auto-rows-fr">
+                {stackedHomeCtaImages.map((src, index) => (
+                  <Link
+                    key={src}
+                    href="/jednostavne-upute"
+                    className="block w-full h-full"
+                    style={{ width: '95%' }}
+                  >
                     <img
                       src={src}
                       alt={`${homeCtaBannerAlt} ${index + 1}`}
-                      className="max-h-full w-full object-contain"
+                      className="w-full h-full object-contain"
                       loading="lazy"
                     />
                   </Link>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </>
-      )}
-      <section className="max-w-7xl mx-auto px-4 pt-12 pb-6 relative">
-        <div className="flex flex-col items-center text-center">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
-            {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
-          </h1>
-          <p className="mt-3 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
-          <div className="mt-8 w-full max-w-2xl 2xl:hidden">
-            <LeftInfoPanel content={leftPanelContent} density={leftPanelDensity} />
-          </div>
+          ) : (
+            <div />
+          )}
         </div>
-        <TrendingCarousel
-          items={topLiked}
-          title={tHome('trending')}
-          countLabel={tHome('appsCount', { count: topLiked.length })}
-          onOpen={(slug) => router.push(appDetailsHref(slug))}
-        />
-      </section>
-      <section className="max-w-7xl mx-auto px-4 pb-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-3 mb-2 flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-2 w-full">
-            <div className="relative flex-1 min-w-[220px]">
-              <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="7" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                id="search-input"
-                value={q}
-                onChange={e => setQ(e.target.value)}
-                placeholder={tHome('search.placeholder')}
-                className="w-full pl-10 pr-10 py-2.5 rounded-full border border-gray-200 focus:border-emerald-500 focus:outline-none transition text-sm placeholder-gray-400"
-                autoComplete="off"
+        <div className="w-full px-4 2xl:px-6 2xl:hidden">
+          <div className="flex flex-col items-center text-center">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
+              {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
+            </h1>
+            <p className="mt-2 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
+            <div className="mt-8 w-full max-w-3xl">
+              <LeftInfoPanel
+                content={leftPanelContent}
+                density={leftPanelDensity}
+                className="w-full"
               />
-              {q && (
-                <button
-                  onClick={() => setQ('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Clear search"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
             </div>
-            <div className="flex items-center gap-2 bg-gray-100 rounded-md p-1 shrink-0">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={cn('p-1.5 rounded transition flex items-center', viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')}
-                aria-label="Grid view"
-              >
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={cn('p-1.5 rounded transition flex items-center', viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200')}
-                aria-label="List view"
-              >
-                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end flex-1 min-w-[260px]">
-              <div className="flex items-center gap-2 flex-wrap">
-                {tagData.slice(0, 6).map(([tag]) => (
-                  <button
-                    key={tag}
-                    onClick={() => toggleTag(tag)}
-                    className={cn(
-                      'px-3 py-1 rounded-full text-sm border transition',
-                      selectedTags.includes(tag)
-                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                    )}
-                    aria-pressed={selectedTags.includes(tag)}
-                  >
-                    #{tag}
-                  </button>
-                ))}
-                {tagData.length > 6 && (
-                  <button className="px-3 py-1 text-sm text-gray-500 hover:text-gray-700">+{tagData.length - 6}</button>
-                )}
-              </div>
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as 'new' | 'popular' | 'title')}
-                className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-emerald-500"
-              >
-                <option value="new">{tHome('sort.new')}</option>
-                <option value="popular">{tHome('sort.popular')}</option>
-                <option value="title">{tHome('sort.title')}</option>
-              </select>
-              {(selectedTags.length > 0 || q) && (
-                <button onClick={clearFilters} className="text-sm text-red-500 hover:underline">
-                  {tHome('clear')}
-                </button>
-              )}
+            <div className="w-full mt-6">
+              <TrendingCarousel
+                items={topLiked}
+                title={tHome('trending')}
+                countLabel={tHome('appsCount', { count: topLiked.length })}
+                onOpen={(slug) => router.push(appDetailsHref(slug))}
+              />
             </div>
           </div>
         </div>
-        <div className="flex justify-end text-xs sm:text-sm text-gray-600 mt-1 mb-6">
-          <div className="flex flex-wrap gap-4">
-            <div
-              className="flex items-center gap-2"
-              title={tHome('publishedCount', { count: formattedStats.apps })}
-            >
-              <span className="text-base font-semibold text-gray-900">{formattedStats.apps}</span>
-              <svg
-                className="h-5 w-5 text-gray-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-                <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-                <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-                <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-              </svg>
-              <span className="sr-only">{tHome('publishedCount', { count: formattedStats.apps })}</span>
-            </div>
-            <div
-              className="flex items-center gap-2"
-              title={tHome('membersCount', { count: formattedStats.members })}
-            >
-              <span className="text-base font-semibold text-gray-900">{formattedStats.members}</span>
-              <svg
-                className="h-5 w-5 text-gray-500"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.5 7.5a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0ZM4 19.25a5.75 5.75 0 0111.5 0v.25H4v-.25Z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17.75 10.5a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0ZM13.5 19.5v-.25a4.25 4.25 0 015.5-4.08"
-                />
-              </svg>
-              <span className="sr-only">{tHome('membersCount', { count: formattedStats.members })}</span>
-            </div>
-          </div>
-        </div>
-        {errorMessage && (<div className="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm">{errorMessage}</div>)}
       </section>
-      <main className="max-w-7xl mx-auto px-4 pb-16">
-        <div className={homeLayoutClass}>
-          {homeRailLeftSlot && (
-            <div className="hidden xl:block">
-              <HomeAdsRail slotId={homeRailLeftSlot} slotKey="homeRailLeft" />
-            </div>
-          )}
-          <div>
-            {isLoading ? (
-              <div className={cardsLayoutClass}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="bg-white border border-gray-200 rounded-2xl overflow-hidden animate-pulse">
-                    <div className="aspect-video bg-gray-100" />
-                    <div className="p-4">
-                      <div className="h-6 bg-gray-100 rounded w-3/4 mb-2" />
-                      <div className="h-4 bg-gray-100 rounded w-full mb-4" />
-                      <div className="flex gap-2"><div className="h-4 bg-gray-100 rounded w-16" /><div className="h-4 bg-gray-100 rounded w-16" /></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : processed.length ? (
-              <div className={cardsLayoutClass}>
-                {(() => {
-                  let renderedAppIndex = 0;
-                  return entriesToRender.map((entry) => {
-                    if (entry.kind === 'ad') {
-                      if (!homeGridInlineSlot) return null;
-                      return (
-                        <div
-                          key={entry.key}
-                          className="h-full rounded-2xl border border-gray-200 bg-white shadow-sm"
-                        >
-                          <div className="h-full p-4">
-                            <AdSlot
-                              slotId={homeGridInlineSlot}
-                              slotKey="homeGridInline"
-                              placement="home.grid.inline"
-                              className="h-full w-full"
-                              adStyle={{ minHeight: '100%' }}
-                              label="Advertisement"
-                              closable={false}
-                            />
-                          </div>
-                        </div>
-                      );
+      {renderSearchAndStats("w-full px-4 2xl:px-6 pb-4 2xl:hidden")}
+      {renderListings("w-full px-4 2xl:px-6 pb-12 2xl:hidden")}
+      {showEarlyAccessPopup && earlyAccessCampaign?.isActive && (
+        <div className="fixed bottom-6 right-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-2xl backdrop-blur text-white">
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <p className="text-base font-semibold">{popupTitle}</p>
+              <p className="mt-2 text-sm text-slate-300">{popupBody}</p>
+              <div className="mt-4 flex items-center gap-3">
+                <Link
+                  prefetch={false}
+                  href={primaryHref}
+                  onClick={() => {
+                    dismissEarlyAccessPopup();
+                    if (user) {
+                      handlePublishClick();
                     }
-                    const item = entry.item;
-                    const isFirst = renderedAppIndex === 0;
-                    renderedAppIndex += 1;
-                    return (
-                      <AppCard
-                        key={item.id}
-                        item={{ ...item, isSubscribed: subscribed.has(item.id) }}
-                        toggleLike={toggleLike}
-                        busy={busy}
-                        viewMode={viewMode}
-                        onDetails={openDetails}
-                        priority={isFirst}
-                      />
-                    );
-                  });
-                })()}
+                  }}
+                  className="px-4 py-1.5 rounded-lg bg-white text-sm font-semibold text-slate-900 hover:bg-slate-100"
+                >
+                  {primaryCtaLabel}
+                </Link>
+                <button
+                  type="button"
+                  onClick={dismissEarlyAccessPopup}
+                  className="text-sm text-slate-300 hover:text-white"
+                >
+                  {popupDismiss}
+                </button>
               </div>
-            ) : (
-              <div className="text-center py-20">
-                <h3 className="text-2xl font-bold text-gray-900">{tHome('noApps')}</h3>
-                <p className="mt-2 text-gray-500">{q || selectedTags.length ? tHome('tryAdjust') : tHome('beFirst')}</p>
-                <div className="mt-6">
-                  <Link href="/create" onClick={handlePublishClick} className="px-5 py-2.5 rounded-lg bg-emerald-500 text-white font-medium transition hover:bg-emerald-600" title="Publish your first app">{tHome('publish')}</Link>
-                </div>
-              </div>
-            )}
-            {errorDetails && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-red-700">{errorDetails}</p>
-                <button onClick={() => load()} className="mt-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600">{tToast('retry')}</button>
-              </div>
-            )}
-            {homeFeedFooterSlot && (
-              <div className="mt-10">
-                <AdSlot
-                  slotId={homeFeedFooterSlot}
-                  slotKey="homeFeedFooter"
-                  placement="home.feed.footer"
-                  className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm"
-                  adStyle={{ minHeight: '300px' }}
-                  label="Advertisement"
-                />
-              </div>
-            )}
-          </div>
-          {homeRailRightSlot && (
-            <div className="hidden xl:block">
-              <HomeAdsRail slotId={homeRailRightSlot} slotKey="homeRailRight" />
             </div>
-          )}
+            <button
+              type="button"
+              onClick={dismissEarlyAccessPopup}
+              className="text-slate-500 hover:text-white"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          </div>
         </div>
-      </main>
+      )}
       <footer className="border-t bg-white">
         <div className="relative max-w-7xl mx-auto px-4 py-12 text-sm text-gray-500">
           <div className="flex flex-col md:flex-row justify-between gap-8">

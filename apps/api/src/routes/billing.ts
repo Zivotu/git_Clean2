@@ -28,6 +28,7 @@ import {
   getSubscription,
   listBillingEventsForUser,
   getStripeCustomerIdForUser,
+  readEarlyAccessSettings,
 } from '../db.js';
 import { ForbiddenError } from '../lib/errors.js';
 import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
@@ -38,6 +39,19 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     const pkgs = await listPackages();
     reply.send(pkgs);
   });
+
+  const guardBilling = async (req: FastifyRequest, reply: FastifyReply): Promise<boolean> => {
+    const settings = await readEarlyAccessSettings();
+    if (settings?.isActive) {
+      reply.code(409).send({
+        error: 'billing_temporarily_disabled',
+        reason: 'early_access_active',
+        campaignId: settings.id,
+      });
+      return false;
+    }
+    return true;
+  };
 
   const guardTerms = async (req: FastifyRequest, reply: FastifyReply): Promise<boolean> => {
     const uid = req.authUser?.uid;
@@ -144,6 +158,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Dynamic checkout with Connect split */
   app.post('/billing/checkout', { preHandler: requireRole('user') }, async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({
       creatorId: z.string(),
       title: z.string(),
@@ -171,6 +186,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
   });
 
   app.post('/billing/subscriptions', { preHandler: requireRole('user') }, async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({
       priceId: z.string(),
       customerEmail: z.string().email().optional(),
@@ -206,6 +222,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Fixed subscription: Gold Creator */
   app.post('/billing/subscriptions/gold', { preHandler: requireRole('user') }, async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({ customerEmail: z.string().email().optional() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
@@ -228,6 +245,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Fixed subscription: No-Ads add-on */
   app.post('/billing/subscriptions/no-ads', { preHandler: requireRole('user') }, async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({ customerEmail: z.string().email().optional() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
@@ -250,6 +268,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Subscription for a specific app */
   app.post('/billing/subscriptions/app', { preHandler: requireRole('user') }, async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     app.log.info({ bodyKeys: Object.keys(req.body), appIdType: typeof req.body.appId }, 'billing_subscriptions_app_pre_validation');
     const schema = z.object({
       appId: z.string(),
@@ -285,6 +304,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Subscription for creator all-access */
   app.post('/billing/subscriptions/creator', { preHandler: requireRole('user') }, async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({
       creatorId: z.string(),
       customerEmail: z.string().email().optional(),
@@ -308,6 +328,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Upgrade an existing subscription */
   app.post('/billing/subscriptions/upgrade', async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({
       subscriptionId: z.string(),
       priceId: z.string(),
@@ -326,6 +347,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Downgrade an existing subscription */
   app.post('/billing/subscriptions/downgrade', async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({
       subscriptionId: z.string(),
       priceId: z.string(),
@@ -344,6 +366,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
 
   /** Cancel a subscription at period end */
   app.post('/billing/subscriptions/cancel', async (req, reply) => {
+    if (!(await guardBilling(req, reply))) return;
     const schema = z.object({ subscriptionId: z.string() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });
@@ -361,6 +384,7 @@ const billingRoutes: FastifyPluginAsync = async (app, _opts) => {
     '/billing/sync-checkout',
     { preHandler: requireRole('user') },
     async (req, reply) => {
+      if (!(await guardBilling(req, reply))) return;
       const schema = z.object({ session_id: z.string() });
       const parsed = schema.safeParse(req.query);
       if (!parsed.success) return reply.code(400).send({ error: 'invalid_input' });

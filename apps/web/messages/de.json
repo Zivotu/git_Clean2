@@ -24,7 +24,16 @@
     "tutorials": "Tutorials",
     "api": "API Referenz",
     "language": "Sprache",
-    "admin": "Admin"
+    "admin": "Admin",
+    "earlyAccessBadge": "GRATIS, MACH MIT!",
+    "earlyAccessDays": "noch {days} Tage",
+    "earlyAccessTooltip": "Registriere dich und erhalte 30 Tage Gold + Keine Werbung gratis. Kein Haken - veroeffentliche deine App solange alles freigeschaltet ist.",
+    "earlyAccessCountdownUnit": "tage",
+    "goldBadge": "Gold-Mitglied",
+    "noAdsBadge": "Keine Werbung",
+    "subscribeEarlyAccess": "Für Early Access anmelden",
+    "earlyAccessSubscribed": "Du erhältst 50 % Rabatt im ersten Monat.",
+    "earlyAccessSubscribeError": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
   },
   "About": {
     "title": "â–„ber Thesara",
@@ -641,7 +650,12 @@
       },
       "footer": "AI-Fans - stell es dir vor, chatte mit deinem Modell, veroeffentliche hier und lass andere spielen.",
       "footerHighlight": "Viel Erfolg mit deiner ersten Thesara-App!"
-    }
+    },
+    "earlyAccessTitle": "Alles ist gerade kostenlos",
+    "earlyAccessBody": "Gold + Keine Werbung sind während des Early Access freigeschaltet. Veröffentliche eine App, um die Vorteile zu nutzen.",
+    "earlyAccessPublish": "Jetzt veröffentlichen",
+    "earlyAccessDismiss": "Schließen",
+    "earlyAccessSignIn": "Jetzt anmelden"
   },
   "Toasts": {
     "welcome": "Willkommen bei THESARA.SPACE!",
@@ -697,7 +711,9 @@
     "goldFeatureSupport": "Priorisierter Review deiner Verâ”œâ•¢ffentlichungen & direkter Support",
     "noAdsDescription": "Entfernt sâ”œÃ±mtliche THESARA.SPACE-Werbeflâ”œÃ±chen im Dashboard und in verâ”œâ•¢ffentlichten Experiences.",
     "noAdsFeatureRemoval": "Keine Anzeigen mehr im Editor, Dashboard oder deinen Apps",
-    "noAdsFeatureFocus": "Mehr Fokus fâ”œâ•r Nutzer Î“Ã‡Ã´ keine Banner oder Interstitials"
+    "noAdsFeatureFocus": "Mehr Fokus fâ”œâ•r Nutzer Î“Ã‡Ã´ keine Banner oder Interstitials",
+    "earlyAccessNotice": "Early Access ist aktiv – die Abrechnung ist vorübergehend pausiert, solange alles gratis bleibt.",
+    "earlyAccessButtonLabel": "Bald verfügbar"
   },
   "Login": {
     "backToHome": "Zurâ”œâ•ck zur Startseite",
@@ -760,7 +776,7 @@
     "previewFileReadFailed": "Das ausgewâ”œÃ±hlte Bild konnte nicht gelesen werden.",
     "previewUploadFailed": "Grafik konnte nicht gespeichert werden. Bitte erneut versuchen.",
     "longDescriptionLabel": "Ausführliche Beschreibung",
-    "longDescriptionHint": "Ziele auf mindestens {min} Zeichen (2–3 kurze Absätze).",
+    "longDescriptionHint": "Schreibe mindestens {min} Zeichen, damit der Eintrag genug Kontext bietet.",
     "longDescriptionPlaceholder": "Erzähle die Geschichte, Funktionen und Vorteile deiner App...",
     "longDescriptionCounter": "{used}/{limit} Zeichen",
     "longDescriptionTooShort": "Die ausführliche Beschreibung muss mindestens {min} Zeichen haben.",
@@ -808,7 +824,7 @@
     "savingGraphic": "Wird gespeichertâ€¦",
     "creator": {
       "longDescriptionLabel": "AusfÃ¼hrliche Beschreibung",
-      "longDescriptionHelper": "Ziele auf mindestens {min} Zeichen (2â€“3 kurze AbsÃ¤tze).",
+      "longDescriptionHelper": "Schreibe mindestens {min} Zeichen, damit der Eintrag genug Kontext bietet.",
       "longDescriptionPlaceholder": "ErzÃ¤hle die Geschichte, Funktionen und Vorteile deiner App...",
       "longDescriptionCounter": "{used}/{limit} Zeichen",
       "longDescriptionTooShort": "Die ausfÃ¼hrliche Beschreibung muss mindestens {min} Zeichen haben.",

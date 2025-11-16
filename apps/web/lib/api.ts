@@ -2,6 +2,17 @@ import { joinUrl } from './url';
 import { API_URL } from './config';
 import { getApiBase, INTERNAL_API_URL } from './apiBase';
 
+const DEFAULT_API_TIMEOUT_MS = (() => {
+  const raw = process.env.NEXT_PUBLIC_API_TIMEOUT_MS || process.env.API_TIMEOUT_MS;
+  if (raw) {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return 0;
+})();
+
 function getBase() {
   if (typeof window === 'undefined') {
     return process.env.LOCAL_API_URL || INTERNAL_API_URL || API_URL;
@@ -23,10 +34,18 @@ interface ApiOptions extends Omit<RequestInit, 'body'> {
   method?: string;
   body?: any;
   auth?: boolean;
+  timeoutMs?: number;
 }
 
 async function apiFetchRaw(path: string, opts: ApiOptions = {}): Promise<Response> {
-  const { method = 'GET', headers = {}, body, auth: useAuth, signal } = opts;
+  const {
+    method = 'GET',
+    headers = {},
+    body,
+    auth: useAuth,
+    signal,
+    timeoutMs,
+  } = opts;
   const urlPath = '/' + path.replace(/^\/+/, '');
   const url = joinUrl(getBase(), urlPath);
 
@@ -73,7 +92,8 @@ async function apiFetchRaw(path: string, opts: ApiOptions = {}): Promise<Respons
     if (signal.aborted) controller.abort();
     else signal.addEventListener('abort', () => controller.abort());
   }
-  const timer = setTimeout(() => controller.abort(), 10000);
+  const timeout = typeof timeoutMs === 'number' ? timeoutMs : DEFAULT_API_TIMEOUT_MS;
+  const timer = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
   try {
     return await fetch(url, {
       method,
@@ -89,7 +109,7 @@ async function apiFetchRaw(path: string, opts: ApiOptions = {}): Promise<Respons
       signal: signal || controller.signal,
     });
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
   }
 }
 

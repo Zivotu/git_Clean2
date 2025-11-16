@@ -8,11 +8,19 @@ export type RawEntitlement = {
   [key: string]: any
 }
 
+export type EarlyAccessState = {
+  campaignId: string
+  startedAt: number
+  expiresAt: number
+  subscribedAt?: number
+}
+
 export type EntitlementSummary = {
   gold: boolean
   noAds: boolean
   purchases: string[]
   entitlements: RawEntitlement[]
+  earlyAccess?: EarlyAccessState | null
 }
 
 function toStringId(value: unknown): string | undefined {
@@ -51,6 +59,24 @@ function isActive(ent: RawEntitlement, now: number): boolean {
   if (!valid.length) return true
   const expiry = Math.max(...valid)
   return expiry > now
+}
+
+function normalizeEarlyAccess(input: unknown): EarlyAccessState | undefined {
+  if (!input || typeof input !== 'object') return undefined
+  const obj = input as Record<string, any>
+  const campaignId =
+    typeof obj.campaignId === 'string' && obj.campaignId.trim() ? obj.campaignId.trim() : undefined
+  if (!campaignId) return undefined
+  const startedAt =
+    typeof obj.startedAt === 'number' && Number.isFinite(obj.startedAt) ? obj.startedAt : undefined
+  const expiresAt =
+    typeof obj.expiresAt === 'number' && Number.isFinite(obj.expiresAt) ? obj.expiresAt : undefined
+  if (!startedAt || !expiresAt) return undefined
+  const subscribedAt =
+    typeof obj.subscribedAt === 'number' && Number.isFinite(obj.subscribedAt)
+      ? obj.subscribedAt
+      : undefined
+  return { campaignId, startedAt, expiresAt, subscribedAt }
 }
 
 export function summarizeEntitlementArray(list: RawEntitlement[]): EntitlementSummary {
@@ -163,5 +189,7 @@ export function summarizeEntitlementResponse(input: unknown): EntitlementSummary
         ? base.entitlements
         : []
 
-  return { gold, noAds, purchases, entitlements }
+  const earlyAccess = normalizeEarlyAccess(obj.earlyAccess)
+
+  return { gold, noAds, purchases, entitlements, earlyAccess }
 }

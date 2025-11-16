@@ -1,11 +1,12 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { requireRole } from '../middleware/auth.js'
-import { db, listEntitlements, readApps } from '../db.js'
+import { db, listEntitlements, readApps, readEarlyAccessSettings } from '../db.js'
 import type { Entitlement } from '../entitlements/service.js'
 import type { AppRecord } from '../types.js'
 import { notifyReports, sendTemplateToUser } from '../notifier.js'
 import { getConfig } from '../config.js'
 import { readTermsStatus, recordTermsAcceptance } from '../lib/terms.js'
+import { ensureEarlyAccessForUser, markEarlyAccessSubscribed } from '../lib/earlyAccess.js'
 
 type EntitlementSummary = {
   entitlements: Entitlement[]
@@ -78,8 +79,11 @@ function localizeApp(record: AppRecord, lang?: string): AppRecord {
   return next
 }
 
-async function buildEntitlementSummary(uid: string): Promise<EntitlementSummary> {
-  const raw = await listEntitlements(uid)
+async function buildEntitlementSummary(
+  uid: string,
+  preloaded?: Entitlement[],
+): Promise<EntitlementSummary> {
+  const raw = preloaded ?? (await listEntitlements(uid))
   const now = Date.now()
   const gold = raw.some((ent) => ent.feature === 'isGold' && isEntitlementActive(ent as any, now))
   const noAds = raw.some((ent) => ent.feature === 'noAds' && isEntitlementActive(ent as any, now))
@@ -271,13 +275,19 @@ export default async function meRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: 'unauthorized' })
     }
     try {
-        const summary = await buildEntitlementSummary(uid)
-        return reply.send({
-          gold: summary.gold,
-          noAds: summary.noAds,
-          purchases: summary.purchases,
-          entitlements: summary.entitlements,
-        })
+      let entitlements = await listEntitlements(uid)
+      const earlyAccess = await ensureEarlyAccessForUser({ uid, entitlements })
+      if (earlyAccess.entitlementsChanged) {
+        entitlements = await listEntitlements(uid)
+      }
+      const summary = await buildEntitlementSummary(uid, entitlements)
+      return reply.send({
+        gold: summary.gold,
+        noAds: summary.noAds,
+        purchases: summary.purchases,
+        entitlements: summary.entitlements,
+        earlyAccess: earlyAccess.state,
+      })
     } catch (err) {
       req.log.error({ err, uid }, 'me_entitlements_failed')
       return reply.code(500).send({ error: 'failed_to_load_entitlements' })
@@ -286,6 +296,33 @@ export default async function meRoutes(app: FastifyInstance) {
 
   for (const prefix of ['', '/api']) {
     secureGet(`${prefix}/me/entitlements`, entitlementsHandler)
+  }
+
+  const earlyAccessSubscribeHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' })
+    }
+    try {
+      const settings = await readEarlyAccessSettings()
+      if (!settings || !settings.isActive) {
+        return reply.code(400).send({ error: 'campaign_inactive' })
+      }
+      await ensureEarlyAccessForUser({ uid })
+      await markEarlyAccessSubscribed(uid, settings.id)
+      return reply.send({ ok: true, campaignId: settings.id })
+    } catch (err) {
+      req.log.error({ err, uid }, 'early_access_subscribe_failed')
+      return reply.code(500).send({ error: 'early_access_subscribe_failed' })
+    }
+  }
+
+  for (const prefix of ['', '/api']) {
+    app.post(
+      `${prefix}/me/early-access/subscribe`,
+      { preHandler: requireRole('user') },
+      earlyAccessSubscribeHandler,
+    )
   }
 
   const subscribedHandler = async (req: FastifyRequest, reply: FastifyReply) => {
