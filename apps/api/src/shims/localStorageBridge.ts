@@ -93,7 +93,7 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
       console.log('[Thesara Shim]', ...args);
     } catch (e) {}
   }
-  debugLog('boot', { ns: (window.__THESARA_APP_NS || getNamespace()), hasToken: !!getJwtToken() });
+  debugLog('boot', { ns: NS, hasToken: !!getJwtToken() });
 
   function decodeBase64(str) {
     try {
@@ -351,6 +351,9 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
           try { console.error('[Thesara Shim] init without capability token, ignoring.'); } catch (e) {}
           return;
         }
+        if (typeof msg.namespace === 'string' && msg.namespace) {
+          setNamespace(msg.namespace);
+        }
         CAP = msg.cap;
         ROOM_TOKEN = typeof msg.roomToken === 'string' ? msg.roomToken : null;
         awaitingAck = false;
@@ -362,6 +365,9 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
       }
       case 'thesara:storage:sync': {
         if (!CAP || msg.cap !== CAP) return;
+        if (typeof msg.namespace === 'string' && msg.namespace) {
+          setNamespace(msg.namespace);
+        }
         if (typeof msg.roomToken === 'string') {
           ROOM_TOKEN = msg.roomToken;
         }
@@ -408,16 +414,32 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     try { return new URLSearchParams(window.location.search).get(name) || null; } catch (e) { return null; }
   }
   function getNamespace() {
-    const hinted = (window.__THESARA_APP_NS || '').toString();
-    if (hinted) return hinted;
     const ns = getQueryParam('ns');
     if (ns) return ns;
+    const hinted = (window.__THESARA_APP_NS || '').toString();
+    if (hinted) return hinted;
     const appId = getQueryParam('appId');
     if (appId) return 'app:' + appId;
     return 'app:default';
   }
-  const NS = getNamespace();
-  const APP_ID_HEADER = NS.startsWith('app:') ? NS.slice(4) : NS;
+  let NS = getNamespace();
+  function deriveAppId(ns) {
+    return ns && ns.startsWith('app:') ? ns.slice(4) : ns;
+  }
+  let APP_ID_HEADER = deriveAppId(NS);
+  try {
+    if (!window.__THESARA_APP_NS) {
+      window.__THESARA_APP_NS = NS;
+    }
+  } catch (e) {}
+  function setNamespace(ns) {
+    if (!ns || typeof ns !== 'string' || NS === ns) return;
+    NS = ns;
+    APP_ID_HEADER = deriveAppId(ns);
+    try { window.__THESARA_APP_NS = ns; } catch (e) {}
+    debugLog('namespace updated', { ns });
+  }
+
   const API_BASE = (() => {
     try {
       const hinted = (window.__THESARA_API_BASE__ || window.THESARA_API_BASE || '').toString().trim();
