@@ -1630,6 +1630,11 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
                       {tNav('docs')}
                     </a>
                   </li>
+                  <li>
+                    <a href="/ThesaraMediaBundle.7z" className="hover:text-emerald-600 transition" download>
+                      Thesara Media Bundle
+                    </a>
+                  </li>
                 </ul>
               </div>
               <div>
