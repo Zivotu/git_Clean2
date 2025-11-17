@@ -77,6 +77,47 @@ function stripDisallowedScripts(html: string): string {
   });
 }
 
+const API_KEY_PLACEHOLDERS = [
+  'PLACEHOLDER_API_KEY',
+  'YOUR_API_KEY',
+  'YOUR_GOOGLE_API_KEY',
+];
+
+async function replaceApiKeyPlaceholders(rootDir: string, apiKey: string) {
+  const targetExts = new Set(['.js', '.mjs', '.cjs', '.html', '.txt']);
+  let filesTouched = 0;
+  let replacements = 0;
+
+  async function walk(dir: string) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(abs);
+        continue;
+      }
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!targetExts.has(ext)) continue;
+      let contents = await fs.readFile(abs, 'utf8');
+      let next = contents;
+      for (const placeholder of API_KEY_PLACEHOLDERS) {
+        const segments = next.split(placeholder);
+        if (segments.length > 1) {
+          replacements += segments.length - 1;
+          next = segments.join(apiKey);
+        }
+      }
+      if (next !== contents) {
+        await fs.writeFile(abs, next, 'utf8');
+        filesTouched += 1;
+      }
+    }
+  }
+
+  await walk(rootDir);
+  return { filesTouched, replacements };
+}
+
 const BUNDLE_BUILD_QUEUE_NAME = 'bundle-build';
 const REQUIRED_LOCK_FILES = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lockb'];
 const DEFAULT_NPM_REGISTRY = process.env.BUNDLE_BUILD_NPM_REGISTRY ?? 'https://registry.npmjs.org/';
@@ -574,6 +615,19 @@ async function runBundleBuildProcess(
       await copyDir(distDir, buildDir);
     } else {
       await copyDir(projectDir, buildDir);
+    }
+
+    if (llmApiKey) {
+      try {
+        const stats = await replaceApiKeyPlaceholders(buildDir, llmApiKey);
+        if (stats.replacements > 0) {
+          console.log(
+            `[bundle-worker] Replaced ${stats.replacements} API key placeholders across ${stats.filesTouched} files.`,
+          );
+        }
+      } catch (err) {
+        console.warn('[bundle-worker] Failed to replace API key placeholders.', err);
+      }
     }
 
     // 2. Inject shims + base href into the final index.html
