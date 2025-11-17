@@ -432,6 +432,7 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
       window.__THESARA_APP_NS = NS;
     }
   } catch (e) {}
+
   function setNamespace(ns) {
     if (!ns || typeof ns !== 'string' || NS === ns) return;
     NS = ns;
@@ -439,7 +440,6 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     try { window.__THESARA_APP_NS = ns; } catch (e) {}
     debugLog('namespace updated', { ns });
   }
-
   const API_BASE = (() => {
     try {
       const hinted = (window.__THESARA_API_BASE__ || window.THESARA_API_BASE || '').toString().trim();
