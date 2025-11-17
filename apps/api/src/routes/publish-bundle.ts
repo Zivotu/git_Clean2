@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import extract from 'extract-zip';
+import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyBaseLogger } from 'fastify';
 import { getConfig } from '../config.js';
 import { getBuildDir } from '../paths.js';
 import { readApps, writeApps, listEntitlements, updateApp, db } from '../db.js';
@@ -12,6 +13,75 @@ import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile, pickRandomPreviewPreset } from '../lib/preview.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
+
+const AI_MARKERS = [
+  'generativelanguage.googleapis.com',
+  'generativelanguage#ai',
+  '__AI_KEY__',
+  'PLACEHOLDER_API_KEY',
+  'YOUR_API_KEY',
+  'window.__THESARA_AI_KEY__',
+];
+const AI_SCAN_EXTENSIONS = new Set([
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.tsx',
+  '.jsx',
+  '.html',
+  '.htm',
+  '.json',
+]);
+const MAX_SCAN_FILE_BYTES = 512 * 1024;
+
+async function detectAiMarkers(
+  zipPath: string,
+  tempDir: string,
+  logger: FastifyBaseLogger,
+): Promise<string | null> {
+  const inspectDir = path.join(tempDir, 'inspect');
+  try {
+    await extract(zipPath, { dir: inspectDir });
+  } catch (err) {
+    logger.warn({ err }, 'publish-bundle:ai_scan_extract_failed');
+    return null;
+  }
+
+  async function walk(dir: string): Promise<string | null> {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        const nested = await walk(abs);
+        if (nested) return nested;
+        continue;
+      }
+      const ext = path.extname(entry.name).toLowerCase();
+      if (!AI_SCAN_EXTENSIONS.has(ext)) continue;
+      const stat = await fs.stat(abs);
+      if (stat.size > MAX_SCAN_FILE_BYTES) continue;
+      let contents: string;
+      try {
+        contents = await fs.readFile(abs, 'utf8');
+      } catch {
+        continue;
+      }
+      for (const marker of AI_MARKERS) {
+        if (contents.includes(marker)) {
+          return marker;
+        }
+      }
+    }
+    return null;
+  }
+
+  try {
+    return await walk(inspectDir);
+  } finally {
+    await fs.rm(inspectDir, { recursive: true, force: true });
+  }
+}
 
 async function ensureListingRecord(opts: {
   listingId: string | number;
@@ -192,6 +262,20 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     const zipPath = path.join(tempDir, 'bundle.zip');
     await fs.writeFile(zipPath, await data.toBuffer());
     req.log.info({ buildId, zipPath }, 'publish-bundle:zip_saved');
+
+    if (!llmApiKey) {
+      const marker = await detectAiMarkers(zipPath, tempDir, req.log);
+      if (marker) {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        return reply.code(400).send({
+          ok: false,
+          error: 'llm_api_key_missing',
+          message:
+            'Ovaj bundle sadrži AI pozive (npr. prema Gemini API-ju), ali API ključ nije unesen. Dodajte ključ prije objave.',
+          marker,
+        });
+      }
+    }
 
     // 4. Create DB records (similar to publish.ts)
     const numericIds = apps

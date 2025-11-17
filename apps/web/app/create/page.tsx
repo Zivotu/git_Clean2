@@ -56,6 +56,10 @@ const createFallbacks: Record<string, Record<string, string>> = {
   en: {
     bundlePreviewHint:
       "After a successful build you'll get a local preview before we send it to admin review.",
+    bundleTestingNote:
+      'Before uploading, launch the bundle where you built it, save something to storage, close the browser and reopen. If it fails there, it will also fail on Thesara.',
+    bundleTestingPromptHint:
+      'When prompting an LLM, remind it to persist state with localStorage so our shim can sync it.',
     basicInfoHeading: 'Basic information',
     namePlaceholder: 'My super app',
     descriptionPlaceholder: 'Short description of your app...',
@@ -100,6 +104,10 @@ const createFallbacks: Record<string, Record<string, string>> = {
   },
   hr: {
     bundlePreviewHint: 'Nakon uspješnog builda dobit ćeš lokalni preview prije administratorskog pregleda.',
+    bundleTestingNote:
+      'Prije uploadanja pokreni bundle tamo gdje si ga gradio, pokušaj nešto spremiti u pohranu, zatvori preglednik i ponovno otvori. Ako tamo ne radi, neće raditi ni na Thesari.',
+    bundleTestingPromptHint:
+      'Kad koristiš LLM, napomeni u promptu da treba koristiti localStorage kako bi naš shim mogao sinkati podatke.',
     basicInfoHeading: 'Osnovne informacije',
     namePlaceholder: 'Moj super app',
     descriptionPlaceholder: 'Kratak opis tvoje aplikacije...',
@@ -145,6 +153,10 @@ const createFallbacks: Record<string, Record<string, string>> = {
   de: {
     bundlePreviewHint:
       'Nach einem erfolgreichen Build erhältst du eine lokale Vorschau, bevor wir sie zur Prüfung schicken.',
+    bundleTestingNote:
+      'Teste dein Bundle dort, wo es erstellt wurde: etwas speichern, Browser schließen und erneut öffnen. Wenn es dort nicht funktioniert, funktioniert es auch auf Thesara nicht.',
+    bundleTestingPromptHint:
+      'Wenn du ein LLM nutzt, erwähne im Prompt, dass Daten über localStorage gespeichert werden sollen, damit unser Shim sie synchronisieren kann.',
     basicInfoHeading: 'Grundlegende Informationen',
     namePlaceholder: 'Meine Super-App',
     descriptionPlaceholder: 'Kurze Beschreibung deiner App...',
@@ -1030,6 +1042,12 @@ export default function CreatePage() {
                     {bundleError && <p className="text-sm text-red-600">{bundleError}</p>}
                     <p className="text-xs text-gray-500">
                       {tCreate('bundlePreviewHint')}
+                    </p>
+                    <p className="text-xs text-amber-600">
+                      {tCreate('bundleTestingNote')}
+                    </p>
+                    <p className="text-xs text-amber-600">
+                      {tCreate('bundleTestingPromptHint')}
                     </p>
                   </div>
                 )}
