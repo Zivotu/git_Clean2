@@ -15,7 +15,7 @@ import AdSlot from '@/components/AdSlot';
 import { useAds } from '@/components/AdsProvider';
 import { AD_SLOT_IDS } from '@/config/ads';
 import { checkAccess } from '@/lib/access';
-import type { AccessMode } from '@/lib/types';
+import type { AccessMode, RoomsMode } from '@/lib/types';
 import { handleFetchError } from '@/lib/handleFetchError';
 import { translateReason } from '@/lib/reviewReasons';
 import { getCreatorHandle } from '@/lib/creators';
@@ -77,6 +77,7 @@ type Listing = {
   status?: ListingStatus;
   moderation?: { status?: string; reasons?: string[] };
   translations?: Record<string, { title?: string; description?: string }>;
+  capabilities?: { storage?: { roomsMode?: RoomsMode } };
 };
 
 type ScreenshotSlotState = {
@@ -396,6 +397,7 @@ function AppDetailClient() {
   const [accessMode, setAccessMode] = useState<AccessMode>('public');
   const [pin, setPin] = useState('');
   const [maxPins, setMaxPins] = useState(1);
+  const [roomsMode, setRoomsMode] = useState<RoomsMode>('off');
   const [appState, setAppState] = useState<'active' | 'inactive'>('active');
   const [sessions, setSessions] = useState<Array<{ sessionId: string; anonId?: string; ipHash: string; createdAt: number; lastSeenAt: number }>>([]);
   const [refreshingSessions, setRefreshingSessions] = useState(false);
@@ -838,6 +840,9 @@ useEffect(() => {
           setMaxPins(typeof it.maxConcurrentPins === 'number' ? it.maxConcurrentPins : 1);
           setAppState((it.state as any) ?? 'active');
           setPin(it.pin ?? '');
+          setRoomsMode(
+            ((it as any).capabilities?.storage?.roomsMode as RoomsMode | undefined) ?? 'off',
+          );
         } else {
           setItem(null);
         }
@@ -1198,6 +1203,9 @@ useEffect(() => {
       accessMode,
       maxConcurrentPins: maxPins,
       authorUid: user?.uid,
+      capabilities: {
+        storage: { roomsMode },
+      },
       ...overrides,
       ...(Object.keys(translations).length ? { translations } : {}),
     };
@@ -1241,6 +1249,9 @@ useEffect(() => {
         if (typeof overrides.description === 'string') setDescription(overrides.description);
         if (Array.isArray(overrides.tags)) setTags(overrides.tags.join(', '));
         if (typeof overrides.maxConcurrentPins === 'number') setMaxPins(overrides.maxConcurrentPins);
+        const updatedRoomsMode =
+          (json.item?.capabilities?.storage?.roomsMode as RoomsMode | undefined) ?? roomsMode;
+        setRoomsMode(updatedRoomsMode);
         setToast({ message: 'Changes saved successfully!', type: 'success' });
       } else {
         throw new Error(json?.error || 'Failed to save changes');
@@ -2017,6 +2028,25 @@ useEffect(() => {
                     placeholder="Describe your app..."
                   />
                   <p className="mt-1 text-xs text-gray-600 font-medium">{description.length}/500 characters</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Rooms (beta)
+                  </label>
+                  <select
+                    value={roomsMode}
+                    onChange={(event) => setRoomsMode(event.target.value as RoomsMode)}
+                    disabled={!canEdit}
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 bg-white placeholder-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  >
+                    <option value="off">No rooms</option>
+                    <option value="optional">Optional rooms</option>
+                    <option value="required">Rooms required</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-600 font-medium">
+                    Change the PIN room experience without republishing the bundle. Optional keeps the demo ready; Required forces players to start their own room.
+                  </p>
                 </div>
 
                 {/* Long Description */}

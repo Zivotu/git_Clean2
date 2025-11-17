@@ -18,6 +18,7 @@ import { getBuildDir } from '../paths.js';
 import { getBucket } from '../storage.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { ensureListingPreview, saveListingPreviewFile, removeExistingPreviewFile } from '../lib/preview.js';
+import { normalizeRoomsMode } from '../lib/rooms.js';
 
 const SUPPORTED_LOCALES = ['en', 'hr', 'de'] as const;
 type SupportedLocale = typeof SUPPORTED_LOCALES[number];
@@ -596,6 +597,33 @@ export default async function listingsRoutes(app: FastifyInstance) {
     if ((titleEdited || descriptionEdited) && Object.keys(providedTr).length === 0) {
       delete next.translations;
     }
+
+    const capabilitiesPatch = body?.capabilities;
+    if (capabilitiesPatch && typeof capabilitiesPatch === 'object') {
+      const currentCapabilities = { ...(next.capabilities || {}) } as Record<string, any>;
+      let capabilitiesMutated = false;
+      const storagePatch = capabilitiesPatch.storage;
+      if (storagePatch && typeof storagePatch === 'object') {
+        const currentStorage = { ...(currentCapabilities.storage || {}) };
+        let storageMutated = false;
+        if (Object.prototype.hasOwnProperty.call(storagePatch, 'enabled') && typeof storagePatch.enabled === 'boolean') {
+          currentStorage.enabled = storagePatch.enabled;
+          storageMutated = true;
+        }
+        if (Object.prototype.hasOwnProperty.call(storagePatch, 'roomsMode')) {
+          currentStorage.roomsMode = normalizeRoomsMode(storagePatch.roomsMode);
+          storageMutated = true;
+        }
+        if (storageMutated) {
+          currentCapabilities.storage = currentStorage;
+          capabilitiesMutated = true;
+        }
+      }
+      if (capabilitiesMutated) {
+        next.capabilities = currentCapabilities;
+      }
+    }
+
     next.updatedAt = Date.now();
     // Support updating preview via PATCH body
     try {

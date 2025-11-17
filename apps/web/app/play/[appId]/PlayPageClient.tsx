@@ -204,8 +204,13 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const rawRoomsMode = app.capabilities?.storage?.roomsMode
   const storageDisabled = app.capabilities?.storage?.enabled === false
   const normalizedRoomsMode = storageDisabled ? 'off' : normalizeRoomsMode(rawRoomsMode)
-  const roomsMode: RoomsMode = GLOBAL_ROOMS_ENABLED ? normalizedRoomsMode : 'off'
-  const roomsEnabled = GLOBAL_ROOMS_ENABLED && roomsMode !== 'off'
+  const roomsMode: RoomsMode =
+    GLOBAL_ROOMS_ENABLED && !storageDisabled
+      ? normalizedRoomsMode === 'off'
+        ? 'optional'
+        : normalizedRoomsMode
+      : 'off'
+  const roomsEnabled = roomsMode !== 'off'
   const baseNamespace = useMemo(() => makeNamespace(appId), [appId])
   const activeNamespace = roomSession?.namespace ?? baseNamespace
   const roomsReady = !roomsEnabled || Boolean(roomSession)

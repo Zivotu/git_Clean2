@@ -6,6 +6,7 @@ import { useRouteParam } from '@/hooks/useRouteParam';
 import { useAuth } from '@/lib/auth';
 import { apiGet, apiPatch } from '@/lib/api';
 import { appDetailsHref } from '@/lib/urls';
+import type { AppCapabilities, RoomsMode } from '@/lib/types';
 
 interface Listing {
   slug: string;
@@ -14,6 +15,7 @@ interface Listing {
   tags?: string[];
   visibility: 'public' | 'unlisted';
   author?: { uid?: string };
+  capabilities?: AppCapabilities;
 }
 
 export default function EditAppPage() {
@@ -41,6 +43,7 @@ function EditAppClient() {
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [visibility, setVisibility] = useState<'public' | 'unlisted'>('public');
+  const [roomsMode, setRoomsMode] = useState<RoomsMode>('off');
   const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -64,6 +67,7 @@ function EditAppClient() {
         setDescription(item.description || '');
         setTags((item.tags || []).join(', '));
         setVisibility(item.visibility || 'public');
+        setRoomsMode(item?.capabilities?.storage?.roomsMode || 'off');
         setLoaded(true);
       } catch (e) {
         setError('Failed to load application');
@@ -81,6 +85,9 @@ function EditAppClient() {
         description,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         visibility,
+        capabilities: {
+          storage: { roomsMode },
+        },
       }, { auth: true });
       router.push('/my');
     } catch (e) {
@@ -137,6 +144,21 @@ function EditAppClient() {
             <option value="public">Public</option>
             <option value="unlisted">Unlisted</option>
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Rooms (beta)</label>
+          <select
+            value={roomsMode}
+            onChange={e => setRoomsMode(e.target.value as RoomsMode)}
+            className="w-full border rounded-md px-3 py-2"
+          >
+            <option value="off">No rooms</option>
+            <option value="optional">Optional rooms</option>
+            <option value="required">Rooms required</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            Control the PIN room experience for this app without rebuilding the bundle.
+          </p>
         </div>
         <div className="flex gap-2">
           <button

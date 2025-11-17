@@ -18,6 +18,7 @@ import { initBuild } from '../models/Build.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import type { RoomsMode } from '../types.js';
 import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
+import { normalizeRoomsMode } from '../lib/rooms.js';
 
 function slugify(input: string): string {
   return input
@@ -57,19 +58,6 @@ interface PublishPayload {
   preview?: {
     dataUrl?: string;
   };
-}
-
-const ROOMS_MODE_VALUES: RoomsMode[] = ['off', 'optional', 'required'];
-const DEFAULT_ROOMS_MODE: RoomsMode = 'off';
-
-function normalizeRoomsMode(value: unknown): RoomsMode {
-  if (typeof value === 'string') {
-    const lower = value.toLowerCase() as RoomsMode;
-    if (ROOMS_MODE_VALUES.includes(lower)) {
-      return lower;
-    }
-  }
-  return DEFAULT_ROOMS_MODE;
 }
 
 function normalizeCapabilities(raw?: PublishPayload['capabilities']): PublishPayload['capabilities'] {
