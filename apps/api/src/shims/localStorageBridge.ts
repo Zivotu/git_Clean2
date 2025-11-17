@@ -62,6 +62,81 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
     schedulePlayRedirect();
   }
 
+  function getQueryParam(name) {
+    try {
+      return new URLSearchParams(window.location.search).get(name) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function getNamespace() {
+    const ns = getQueryParam('ns');
+    if (ns) return ns;
+    const hinted = (window.__THESARA_APP_NS || '').toString();
+    if (hinted) return hinted;
+    const appId = getQueryParam('appId');
+    if (appId) return 'app:' + appId;
+    return 'app:default';
+  }
+  function deriveAppId(ns) {
+    return ns && ns.startsWith('app:') ? ns.slice(4) : ns;
+  }
+  let NS = getNamespace();
+  let APP_ID_HEADER = deriveAppId(NS);
+  try {
+    if (!window.__THESARA_APP_NS) {
+      window.__THESARA_APP_NS = NS;
+    }
+  } catch (e) {}
+
+  function setNamespace(ns) {
+    if (!ns || typeof ns !== 'string' || NS === ns) return;
+    NS = ns;
+    APP_ID_HEADER = deriveAppId(ns);
+    try {
+      window.__THESARA_APP_NS = ns;
+    } catch (e) {}
+    debugLog('namespace updated', { ns });
+  }
+  const API_BASE = (() => {
+    try {
+      const hinted = (window.__THESARA_API_BASE__ || window.THESARA_API_BASE || '').toString().trim();
+      if (hinted) {
+        try {
+          const resolved = new URL(hinted, window.location.origin);
+          return resolved.href.replace(/\/$/, '');
+        } catch (e) {}
+        return hinted.replace(/\/$/, '');
+      }
+      const ref = document.referrer || '';
+      if (ref) {
+        try {
+          const u = new URL(ref);
+          return u.origin.replace(/\/$/, '') + '/api';
+        } catch (e) {}
+      }
+      return new URL(window.location.origin).origin.replace(/\/$/, '') + '/api';
+    } catch (e) {
+      return '/api';
+    }
+  })();
+  function buildApiUrl(path) {
+    try {
+      if (!path) return API_BASE;
+      if (/^https?:\/\//i.test(path)) return path;
+      let relative = path.replace(/^\/+/, '');
+      if (relative.startsWith('api/')) {
+        relative = relative.slice(4);
+      }
+      const baseUrl = API_BASE.endsWith('/') ? API_BASE : API_BASE + '/';
+      return new URL(relative, baseUrl).href;
+    } catch (e) {
+      if (!path) return API_BASE;
+      const base = API_BASE.replace(/\/$/, '');
+      return base + '/' + path.replace(/^\/+/, '');
+    }
+  }
+
   if (STANDALONE && !getQueryParam('token')) {
     showStandaloneWarning('missing_token');
   }
@@ -409,74 +484,6 @@ export const LOCALSTORAGE_BRIDGE_SHIM = String.raw`;(function () {
       keys: Object.keys(PREFETCH_BOOTSTRAP.snapshot || {}).slice(0, 5),
     });
     PREFETCH_BOOTSTRAP = null;
-  }
-  function getQueryParam(name) {
-    try { return new URLSearchParams(window.location.search).get(name) || null; } catch (e) { return null; }
-  }
-  function getNamespace() {
-    const ns = getQueryParam('ns');
-    if (ns) return ns;
-    const hinted = (window.__THESARA_APP_NS || '').toString();
-    if (hinted) return hinted;
-    const appId = getQueryParam('appId');
-    if (appId) return 'app:' + appId;
-    return 'app:default';
-  }
-  let NS = getNamespace();
-  function deriveAppId(ns) {
-    return ns && ns.startsWith('app:') ? ns.slice(4) : ns;
-  }
-  let APP_ID_HEADER = deriveAppId(NS);
-  try {
-    if (!window.__THESARA_APP_NS) {
-      window.__THESARA_APP_NS = NS;
-    }
-  } catch (e) {}
-
-  function setNamespace(ns) {
-    if (!ns || typeof ns !== 'string' || NS === ns) return;
-    NS = ns;
-    APP_ID_HEADER = deriveAppId(ns);
-    try { window.__THESARA_APP_NS = ns; } catch (e) {}
-    debugLog('namespace updated', { ns });
-  }
-  const API_BASE = (() => {
-    try {
-      const hinted = (window.__THESARA_API_BASE__ || window.THESARA_API_BASE || '').toString().trim();
-      if (hinted) {
-        try {
-          const resolved = new URL(hinted, window.location.origin);
-          return resolved.href.replace(/\/$/, '');
-        } catch (e) {}
-        return hinted.replace(/\/$/, '');
-      }
-      const ref = document.referrer || '';
-      if (ref) {
-        try {
-          const u = new URL(ref);
-          return u.origin.replace(/\/$/, '') + '/api';
-        } catch (e) {}
-      }
-      return (new URL(window.location.origin).origin).replace(/\/$/, '') + '/api';
-    } catch (e) {
-      return '/api';
-    }
-  })();
-  function buildApiUrl(path) {
-    try {
-      if (!path) return API_BASE;
-      if (/^https?:\/\//i.test(path)) return path;
-      let relative = path.replace(/^\/+/, '');
-      if (relative.startsWith('api/')) {
-        relative = relative.slice(4);
-      }
-      const baseUrl = API_BASE.endsWith('/') ? API_BASE : API_BASE + '/';
-      return new URL(relative, baseUrl).href;
-    } catch (e) {
-      if (!path) return API_BASE;
-      const base = API_BASE.replace(/\/$/, '');
-      return base + '/' + path.replace(/^\/+/, '');
-    }
   }
   function getJwtToken() {
     // Prefer token from our own query string
