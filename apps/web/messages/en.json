@@ -958,6 +958,13 @@
       "generic": "Working with rooms is temporarily unavailable."
     }
   },
+  "MyProjectsPage": {
+    "congrats": {
+      "title": "Congratulations!",
+      "message": "Now just wait while we publish your app. Good luck!",
+      "confirm": "OK"
+    }
+  },
   "GoldenBookPage": {
     "title": "Golden Book of Supporters",
     "heroTitle": "Help us get out of the garage and engrave your contribution in the Golden Book to become part of history!",

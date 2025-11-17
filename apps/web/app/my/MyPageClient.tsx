@@ -9,7 +9,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { translateReason } from '@/lib/reviewReasons';
-import { useI18n } from '@/lib/i18n-provider';
+import { useI18n, useT } from '@/lib/i18n-provider';
 import { useRelativeTime } from '@/hooks/useRelativeTime';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
@@ -122,6 +122,7 @@ export default function MyProjectsPage() {
   const searchParams = useSafeSearchParams();
   const router = useRouter();
   const { locale } = useI18n();
+  const t = useT('MyProjectsPage');
   const lastLocaleRef = useRef<string | null>(null);
 
   const [items, setItems] = useState<Listing[]>([]);
@@ -802,7 +803,9 @@ const handlePlayClick = useCallback(
       {/* Toast */}
       {showCongrats && (
         <CongratsModal
-          message={"Čestitamo! Sad samo pričekajte da objavimo Vašu aplikaciju. I SRETNO!"}
+          title={t('congrats.title')}
+          message={t('congrats.message')}
+          confirmLabel={t('congrats.confirm')}
           onClose={() => {
             setShowCongrats(false);
             // remove the submitted flag from the URL by replacing the route

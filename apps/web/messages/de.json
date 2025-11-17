@@ -958,6 +958,13 @@
       "generic": "Die Arbeit mit Râ”œÃ±umen ist derzeit nicht mâ”œâ•¢glich."
     }
   },
+  "MyProjectsPage": {
+    "congrats": {
+      "title": "Glückwunsch!",
+      "message": "Warten Sie nun einfach, bis wir Ihre App veröffentlichen. Viel Erfolg!",
+      "confirm": "OK"
+    }
+  },
   "GoldenBookPage": {
     "title": "Golden Book der UnterstÃ¼tzer",
     "heroTitle": "Hilf uns, aus der Garage herauszukommen und verewige deinen Beitrag im Goldenen Buch und werde Teil der Geschichte!",

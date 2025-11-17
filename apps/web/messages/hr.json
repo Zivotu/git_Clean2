@@ -958,6 +958,13 @@
       "generic": "Rad sa sobama je trenutno onemogućen."
     }
   },
+  "MyProjectsPage": {
+    "congrats": {
+      "title": "Čestitamo!",
+      "message": "Sad samo pričekajte da objavimo vašu aplikaciju. Sretno!",
+      "confirm": "U redu"
+    }
+  },
   "GoldenBookPage": {
     "title": "Zlatna knjiga podržavatelja",
     "heroTitle": "Pomozi nam da izađemo iz garaže i zapiši svoju kontribuciju u Zlatnu knjigu i postani dio povijesti!",
