@@ -18,9 +18,25 @@ function injectBaseHref(html: string, baseHref: string): string {
   return `${baseTag}\n${html}`;
 }
 
+const BLOCKED_SCRIPT_PATTERNS = [
+  /https?:\/\/(?:www\.)?googletagmanager\.com/i,
+  /https?:\/\/www\.google-analytics\.com/i,
+  /https?:\/\/www\.clarity\.ms/i,
+  /https?:\/\/fundingchoicesmessages\.google\.com/i,
+];
+
 function stripDisallowedScripts(html: string): string {
-  // Previously we stripped ads scripts entirely; now we keep them so AdSense can load.
-  return html;
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+  return html.replace(scriptRegex, (tag) => {
+    const srcMatch = tag.match(/src\s*=\s*["']([^"']+)["']/i);
+    if (srcMatch && BLOCKED_SCRIPT_PATTERNS.some((pattern) => pattern.test(srcMatch[1]))) {
+      return '';
+    }
+    if (!srcMatch && /clarity|googletag|fundingchoices/i.test(tag)) {
+      return '';
+    }
+    return tag;
+  });
 }
 
 function rewriteAbsoluteAssetUrls(html: string): string {

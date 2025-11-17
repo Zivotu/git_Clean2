@@ -56,8 +56,25 @@ function injectBaseHref(html: string, baseHref: string): string {
   return `${baseTag}\n${html}`;
 }
 
+const BLOCKED_SCRIPT_PATTERNS = [
+  /https?:\/\/(?:www\.)?googletagmanager\.com/i,
+  /https?:\/\/www\.google-analytics\.com/i,
+  /https?:\/\/www\.clarity\.ms/i,
+  /https?:\/\/fundingchoicesmessages\.google\.com/i,
+];
+
 function stripDisallowedScripts(html: string): string {
-  return html;
+  const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
+  return html.replace(scriptRegex, (tag) => {
+    const srcMatch = tag.match(/src\s*=\s*["']([^"']+)["']/i);
+    if (srcMatch && BLOCKED_SCRIPT_PATTERNS.some((pattern) => pattern.test(srcMatch[1]))) {
+      return '';
+    }
+    if (!srcMatch && /clarity|googletag|fundingchoices/i.test(tag)) {
+      return '';
+    }
+    return tag;
+  });
 }
 
 const BUNDLE_BUILD_QUEUE_NAME = 'bundle-build';
@@ -566,12 +583,66 @@ async function runBundleBuildProcess(
       const listingId = (await getBuildData(buildId))?.listingId;
       const aiSnippet = llmApiKey
         ? `
-          window.__THESARA_AI_API_KEY__ = ${JSON.stringify(llmApiKey)};
-          window.thesara.ai = Object.assign({}, window.thesara.ai, {
-            apiKey: ${JSON.stringify(llmApiKey)},
-            provider: 'user',
-            updatedAt: new Date().toISOString(),
-          });
+          (function() {
+            const __AI_KEY__ = ${JSON.stringify(llmApiKey)};
+            const assignEnv = (env) => {
+              const next = Object.assign({}, env);
+              next.THESARA_AI_API_KEY = __AI_KEY__;
+              next.GOOGLE_API_KEY = __AI_KEY__;
+              next.GEMINI_API_KEY = __AI_KEY__;
+              next.GENERATIVE_LANGUAGE_API_KEY = __AI_KEY__;
+              return next;
+            };
+
+            globalThis.__THESARA_AI_API_KEY__ = __AI_KEY__;
+            globalThis.thesara = globalThis.thesara || {};
+            globalThis.thesara.ai = Object.assign({}, globalThis.thesara.ai, {
+              apiKey: __AI_KEY__,
+              provider: 'user',
+              updatedAt: new Date().toISOString(),
+            });
+            if (typeof globalThis.process !== 'object' || globalThis.process === null) {
+              globalThis.process = {};
+            }
+            globalThis.process.env = assignEnv(globalThis.process.env);
+
+            const originalFetch = globalThis.fetch;
+            if (typeof originalFetch === 'function' && !globalThis.__THESARA_AI_FETCH_SHIM__) {
+              globalThis.__THESARA_AI_FETCH_SHIM__ = true;
+              globalThis.fetch = function(input, init) {
+                try {
+                  const url =
+                    typeof input === 'string'
+                      ? input
+                      : input instanceof Request
+                      ? input.url
+                      : input && typeof input.url === 'string'
+                      ? input.url
+                      : '';
+                  if (url && url.startsWith('https://generativelanguage.googleapis.com')) {
+                    const nextInit = Object.assign({}, init);
+                    const headers = new Headers(
+                      nextInit.headers ||
+                        (input instanceof Request ? input.headers : undefined) ||
+                        undefined,
+                    );
+                    if (!headers.has('x-goog-api-key')) {
+                      headers.set('x-goog-api-key', __AI_KEY__);
+                    }
+                    nextInit.headers = headers;
+                    if (input instanceof Request) {
+                      const request = new Request(input, nextInit);
+                      return originalFetch.call(this, request);
+                    }
+                    return originalFetch.call(this, input, nextInit);
+                  }
+                } catch (err) {
+                  console.warn('[thesara] ai_fetch_shim_failed', err);
+                }
+                return originalFetch.call(this, input, init);
+              };
+            }
+          })();
         `
         : '';
       const shimScript = `
