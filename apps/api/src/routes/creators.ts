@@ -1,6 +1,17 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { getCreatorByHandle, getCreatorById, readApps, readCreators, type Creator } from '../db.js';
+import {
+  db,
+  getCreatorByHandle,
+  getCreatorById,
+  readApps,
+  readCreators,
+  upsertCreator,
+  type Creator,
+} from '../db.js';
 import type { AppRecord } from '../types.js';
+import { requireRole } from '../middleware/auth.js';
+import { ensureCreatorAllAccessProductPrice } from '../billing/products.js';
+import { getConnectStatus } from '../billing/service.js';
 
 function toStringId(value: unknown): string | undefined {
   if (value == null) return undefined;
@@ -55,6 +66,15 @@ function normalizePreview(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   return trimmed || undefined;
+}
+
+const HANDLE_REGEX = /^[a-z0-9_-]{3,30}$/;
+
+function normalizeHandleInput(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim().toLowerCase();
+  if (!HANDLE_REGEX.test(trimmed)) return undefined;
+  return trimmed;
 }
 
 function mapAppPayload(app: AppRecord): Record<string, any> {
@@ -174,13 +194,138 @@ export default async function creatorsRoutes(app: FastifyInstance) {
     return reply.send(cleanupCreator(creator, owned.length));
   };
 
+  const updateByHandleHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const handle = ((req.params as any)?.handle ?? '').toString().trim();
+    if (!handle) {
+      return reply.code(400).send({ error: 'invalid_handle' });
+    }
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' });
+    }
+    let creator = await getCreatorByHandle(handle);
+    if (!creator) {
+      return reply.code(404).send({ error: 'creator_not_found' });
+    }
+    const body = (req.body as any) ?? {};
+    const ownerId = creator.id || (creator as any)?.uid || (creator as any)?.ownerUid;
+    const isAdmin = req.authUser?.role === 'admin' || (req.authUser?.claims as any)?.admin === true;
+    const isOwner = ownerId && uid === ownerId;
+    if (!isOwner && !isAdmin) {
+      return reply.code(403).send({ error: 'forbidden' });
+    }
+    let mutated = false;
+    const now = Date.now();
+    if (Object.prototype.hasOwnProperty.call(body, 'allAccessPrice')) {
+      const priceCandidate = body.allAccessPrice;
+      if (typeof priceCandidate !== 'number' || !Number.isFinite(priceCandidate) || priceCandidate < 0) {
+        return reply.code(400).send({ error: 'invalid_price' });
+      }
+      if (!ownerId) {
+        return reply.code(400).send({ error: 'creator_missing_id' });
+      }
+      if (priceCandidate > 0) {
+        try {
+          const status = await getConnectStatus(ownerId);
+          if (!status.payouts_enabled || (status.requirements_due ?? 0) > 0) {
+            return reply.code(403).send({ error: 'creator_not_onboarded' });
+          }
+        } catch (err) {
+          req.log.error({ err, creatorId: ownerId }, 'creator_connect_status_failed');
+          return reply.code(500).send({ error: 'connect_status_failed' });
+        }
+      }
+      creator = { ...creator, allAccessPrice: priceCandidate, allAccessPriceUpdatedAt: now } as Creator;
+      if (priceCandidate <= 0) {
+        delete (creator as any).stripeAllAccessPriceId;
+        delete (creator as any).stripeAllAccessProductId;
+      }
+      mutated = true;
+    }
+    if (!mutated) {
+      return reply.code(400).send({ error: 'no_changes' });
+    }
+    let saved = creator;
+    try {
+      await upsertCreator(saved);
+      if (typeof saved.allAccessPrice === 'number' && saved.allAccessPrice > 0) {
+        saved = await ensureCreatorAllAccessProductPrice(saved);
+      }
+    } catch (err) {
+      req.log.error({ err, handle, creatorId: ownerId }, 'creator_update_failed');
+      return reply.code(500).send({ error: 'creator_update_failed' });
+    }
+    const apps = await readApps();
+    const owned = apps.filter((app) => matchesCreator(app, saved));
+    return reply.send({ ok: true, creator: cleanupCreator(saved, owned.length) });
+  };
+
+  const updateMyHandleHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid;
+    if (!uid) {
+      return reply.code(401).send({ error: 'unauthorized' });
+    }
+    const body = (req.body as any) ?? {};
+    const normalized = normalizeHandleInput(body.handle);
+    if (!normalized) {
+      return reply.code(400).send({ error: 'invalid_handle' });
+    }
+    const existing = await getCreatorByHandle(normalized);
+    if (existing && existing.id && existing.id !== uid) {
+      return reply.code(409).send({ error: 'handle_taken' });
+    }
+    let creator = await getCreatorById(uid);
+    if (!creator) {
+      creator = { id: uid, handle: normalized } as Creator;
+    } else {
+      creator = { ...creator, id: uid, handle: normalized };
+    }
+    try {
+      await upsertCreator(creator);
+    } catch (err) {
+      req.log.error({ err, uid, handle: normalized }, 'creator_handle_upsert_failed');
+      return reply.code(500).send({ error: 'handle_update_failed' });
+    }
+    try {
+      await db.collection('users').doc(uid).set({ handle: normalized }, { merge: true });
+    } catch (err) {
+      req.log.error({ err, uid }, 'user_handle_update_failed');
+      return reply.code(500).send({ error: 'handle_update_failed' });
+    }
+    return reply.send({ ok: true, handle: normalized });
+  };
+
   // Primary routes
   app.route({ method: ['GET', 'HEAD'], url: '/creators/id/:uid', handler: byIdHandler });
   app.route({ method: ['GET', 'HEAD'], url: '/creators/:handle/apps', handler: appsHandler });
   app.route({ method: ['GET', 'HEAD'], url: '/creators/:handle', handler: byHandleHandler });
+  app.route({
+    method: 'PATCH',
+    url: '/creators/:handle',
+    handler: updateByHandleHandler,
+    preHandler: requireRole(['user', 'admin']),
+  });
+  app.route({
+    method: 'PATCH',
+    url: '/creators/me/handle',
+    handler: updateMyHandleHandler,
+    preHandler: requireRole(['user', 'admin']),
+  });
 
   // Defensive aliases when '/api' prefix stripping isn't applied by upstream proxy
   app.route({ method: ['GET', 'HEAD'], url: '/api/creators/id/:uid', handler: byIdHandler });
   app.route({ method: ['GET', 'HEAD'], url: '/api/creators/:handle/apps', handler: appsHandler });
   app.route({ method: ['GET', 'HEAD'], url: '/api/creators/:handle', handler: byHandleHandler });
+  app.route({
+    method: 'PATCH',
+    url: '/api/creators/:handle',
+    handler: updateByHandleHandler,
+    preHandler: requireRole(['user', 'admin']),
+  });
+  app.route({
+    method: 'PATCH',
+    url: '/api/creators/me/handle',
+    handler: updateMyHandleHandler,
+    preHandler: requireRole(['user', 'admin']),
+  });
 }
