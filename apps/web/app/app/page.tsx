@@ -738,17 +738,23 @@ useEffect(() => {
     [item, likeBusy, router, buildHeaders, liked, user]
   );
 
-  const normalizeScreenshotInput = useCallback((raw: string) => {
-    const trimmed = (raw ?? '').toString().trim();
-    if (!trimmed) return '';
-    if (/^https?:\/\//i.test(trimmed)) {
-      return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
-    }
-    if (/^[a-z]+:\/\//i.test(trimmed)) {
-      return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
-    }
-    return `https://${trimmed}`.slice(0, SCREENSHOT_URL_LIMIT);
-  }, []);
+const normalizeScreenshotInput = useCallback((raw: string) => {
+  const trimmed = (raw ?? '').toString().trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
+  }
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`.slice(0, SCREENSHOT_URL_LIMIT);
+  }
+  if (trimmed.startsWith('/')) {
+    return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
+  }
+  if (/^[a-z]+:\/\//i.test(trimmed)) {
+    return trimmed.slice(0, SCREENSHOT_URL_LIMIT);
+  }
+  return `https://${trimmed}`.slice(0, SCREENSHOT_URL_LIMIT);
+}, []);
 
   const normalizeScreenshotState = useCallback(
     (values?: string[] | null) =>

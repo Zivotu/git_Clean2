@@ -30,6 +30,7 @@ const APPS_HOST =
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false'
 const MIN_FRAME_HEIGHT = 360
 const PAGE_BOTTOM_PADDING_PX = 24
+const VIEWPORT_FIT_OFFSET = 160
 
 function notifyPlay(slugOrId?: string) {
   if (!slugOrId) return
@@ -300,7 +301,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     const rect = container.getBoundingClientRect()
     const paddingBottom = isFullscreen ? 0 : PAGE_BOTTOM_PADDING_PX
     const available = window.innerHeight - rect.top - paddingBottom
-    const safeHeight = Math.max(Math.round(available), MIN_FRAME_HEIGHT)
+    const desiredViewportFit = Math.max(
+      window.innerHeight - (isFullscreen ? 0 : VIEWPORT_FIT_OFFSET),
+      MIN_FRAME_HEIGHT,
+    )
+    const safeHeight = Math.max(Math.round(available), Math.round(desiredViewportFit))
     setFrameHeight((prev) => (prev === safeHeight ? prev : safeHeight))
   }, [isFullscreen])
 
