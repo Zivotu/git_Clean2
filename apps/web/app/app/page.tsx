@@ -1922,24 +1922,35 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
                       </span>
                     </div>
                     <div className="rounded-xl border border-gray-200 overflow-hidden">
-                  {previewChoice === 'custom' && customPreview?.dataUrl ? (
-                    <div className="relative aspect-video bg-gray-100">
-                      <Image
-                        src={customPreview.dataUrl}
-                        alt="Custom preview"
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  ) : (
-                    <div className="relative aspect-video bg-gray-100 bg-[radial-gradient(circle_at_center,_rgba(15,23,42,0.12),_transparent_55%)] border border-dashed border-slate-300 text-slate-500 flex flex-col items-center justify-center text-xs uppercase tracking-wide">
-                      <span className="font-semibold">{tApp('previewGraphicHint')}</span>
-                      <span className="mt-1 text-[11px] text-slate-400">
-                        {tApp('chooseCustomGraphic')}
-                      </span>
-                    </div>
-                  )}
+                      {previewChoice === 'custom' && customPreview?.dataUrl ? (
+                        <div className="relative aspect-video bg-gray-100">
+                          <Image
+                            src={customPreview.dataUrl}
+                            alt="Custom preview"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        </div>
+                      ) : activePreviewSrc ? (
+                        <div className="relative aspect-video bg-gray-100">
+                          <Image
+                            src={activePreviewSrc}
+                            alt="Current preview"
+                            fill
+                            className="object-cover"
+                            sizes="(min-width: 1024px) 50vw, 100vw"
+                            unoptimized
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative aspect-video bg-gray-100 bg-[radial-gradient(circle_at_center,_rgba(15,23,42,0.12),_transparent_55%)] border border-dashed border-slate-300 text-slate-500 flex flex-col items-center justify-center text-xs uppercase tracking-wide">
+                          <span className="font-semibold">{tApp('previewGraphicHint')}</span>
+                          <span className="mt-1 text-[11px] text-slate-400">
+                            {tApp('chooseCustomGraphic')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
                       <button
