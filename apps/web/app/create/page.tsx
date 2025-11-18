@@ -101,6 +101,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     roomsOptionRequired: 'User must enter a room name and PIN before using the app',
     roomsFootnote: 'You can change this option the next time you publish the app.',
     customGraphicLabel: 'Choose your own graphic',
+    shortVideoButton: 'Thesara Short Video',
   },
   hr: {
     bundlePreviewHint: 'Nakon uspješnog builda dobit ćeš lokalni preview prije administratorskog pregleda.',
@@ -149,6 +150,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     roomsOptionRequired: 'Korisnik mora unijeti naziv i PIN prije korištenja',
     roomsFootnote: 'Opciju možeš naknadno promijeniti prilikom sljedeće objave aplikacije.',
     customGraphicLabel: 'Odaberi vlastitu grafiku',
+    shortVideoButton: 'Thesara kratki video',
   },
   de: {
     bundlePreviewHint:
@@ -199,6 +201,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     roomsOptionRequired: 'Nutzer muss vor der Verwendung Raumnamen und PIN eingeben',
     roomsFootnote: 'Diese Option kannst du bei der nächsten Veröffentlichung ändern.',
     customGraphicLabel: 'Eigene Grafik wählen',
+    shortVideoButton: 'Thesara Kurzvideo',
   },
 };
 
@@ -328,6 +331,15 @@ export default function CreatePage() {
 
   const { user } = useAuth();
   const router = useRouter();
+
+  const handleOpenShortVideo = useCallback(() => {
+    const shortUrl = 'https://youtube.com/shorts/m_4RqaGClFI';
+    if (typeof window !== 'undefined') {
+      window.open(shortUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      router.push(shortUrl);
+    }
+  }, [router]);
   const { status: termsStatus, accept: acceptLatestTerms, refresh: refreshTermsStatus } = useTerms();
 
   const [showProgress, setShowProgress] = useState(false);
@@ -1607,25 +1619,39 @@ export default function CreatePage() {
               </div>
             </section>
 
+            
             <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-5">
-              <button
-                onClick={publish}
-                disabled={!allReady || publishing || (submissionType === 'bundle' && !bundleFile)}
-                className={`w-full rounded-xl text-white font-semibold tracking-wide transition shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 ${
-                  !allReady || publishing || (submissionType === 'bundle' && !bundleFile)
-                    ? 'cursor-not-allowed bg-emerald-500/60'
-                    : 'bg-emerald-600 hover:bg-emerald-700'
-                }`}
-                style={{ paddingTop: '14px', paddingBottom: '14px', fontSize: '1.125rem' }}
-              >
-                {publishing ? 'Objavljujemâ€¦' : 'OBJAVI'}
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={handleOpenShortVideo}
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path d="M6 4.5v11a.5.5 0 00.77.423l9-5.5a.5.5 0 000-.846l-9-5.5A.5.5 0 006 4.5z" />
+                  </svg>
+                  {tCreate('shortVideoButton')}
+                </button>
+                <button
+                  onClick={publish}
+                  disabled={!allReady || publishing || (submissionType === 'bundle' && !bundleFile)}
+                  className={`flex-1 rounded-xl text-white font-semibold tracking-wide transition shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 ${
+                    !allReady || publishing || (submissionType === 'bundle' && !bundleFile)
+                      ? 'cursor-not-allowed bg-emerald-500/60'
+                      : 'bg-emerald-600 hover:bg-emerald-700'
+                  }`}
+                  style={{ paddingTop: '14px', paddingBottom: '14px', fontSize: '1.125rem' }}
+                >
+                  {publishing ? 'Objavljujem…' : 'OBJAVI'}
+                </button>
+              </div>
               <p className="mt-2 text-xs text-gray-500">
                 {allReady
-                  ? 'Sve stavke su ispunjene â€” spremno za objavu.'
-                  : 'DovrÅ¡i: Naslov, Kod/Bundle, Opis i Slika.'}
+                  ? 'Sve stavke su ispunjene – spremno za objavu.'
+                  : 'Dovrši: Naslov, Kod/Bundle, Opis i Slika.'}
               </p>
             </section>
+
           </aside>
         </div>
       </div>

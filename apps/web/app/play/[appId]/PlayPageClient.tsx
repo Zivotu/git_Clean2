@@ -191,6 +191,15 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }, [app.slug, app.id])
 
   const { id: appId, buildId, securityPolicy } = app;
+  const redirectToLogin = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const nextUrl =
+      window.location.pathname + window.location.search + window.location.hash
+    const fallback = `/play/${encodeURIComponent(appId)}/`
+    const target =
+      nextUrl && nextUrl.startsWith('/') ? nextUrl : fallback
+    window.location.href = `/login?next=${encodeURIComponent(target || fallback)}`
+  }, [appId])
   const { showAds, isSlotEnabled } = useAds()
   const { messages } = useI18n()
   const topAdSlotRaw = (AD_SLOT_IDS.playTop || '').trim()
@@ -250,10 +259,17 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   const ensureJwt = useCallback(async () => {
     if (jwtRef.current) return jwtRef.current
-    const jwt = await getJwt()
-    jwtRef.current = jwt
-    return jwt
-  }, [])
+    try {
+      const jwt = await getJwt()
+      jwtRef.current = jwt
+      return jwt
+    } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        redirectToLogin()
+      }
+      throw err
+    }
+  }, [redirectToLogin])
 
   useEffect(() => {
     namespaceRef.current = activeNamespace
@@ -399,6 +415,10 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
         setBootstrap({ snapshot: snapshot || {}, version: version || '0' })
       } catch (err: any) {
         if (cancelled) return
+        if (err instanceof ApiError && err.status === 401) {
+          redirectToLogin()
+          return
+        }
         console.error('[Play] bootstrap failed', err)
         setError(err?.message || 'Failed to load storage snapshot.')
       } finally {
@@ -412,7 +432,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return () => {
       cancelled = true
     }
-  }, [activeNamespace, ensureJwt, roomsReady, updateIframeSrc, roomSession?.token])
+  }, [activeNamespace, ensureJwt, roomsReady, updateIframeSrc, roomSession?.token, redirectToLogin])
 
   useEffect(() => {
     if (!bootstrap) return
@@ -538,6 +558,10 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           return
         } catch (err: any) {
           lastError = err
+          if (err instanceof ApiError && err.status === 401) {
+            redirectToLogin()
+            return
+          }
           if (err instanceof ApiError || err?.status === 412) {
             try {
               const jwt = await ensureJwt()
@@ -546,8 +570,12 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
               // Re-project the pending changes onto the new snapshot
               snapshotRef.current = applyBatchOperations(latest.snapshot, serverBatch)
               continue
-            } catch (refreshErr) {
+            } catch (refreshErr: any) {
               lastError = refreshErr
+              if (refreshErr instanceof ApiError && refreshErr.status === 401) {
+                redirectToLogin()
+                return
+              }
             }
           }
           break
@@ -556,7 +584,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
       console.error('[Play] Failed to flush storage batch', lastError)
     },
-    [activeNamespace, ensureJwt, projectSnapshot],
+    [activeNamespace, ensureJwt, projectSnapshot, redirectToLogin],
   )
 
   const onMessage = useCallback(

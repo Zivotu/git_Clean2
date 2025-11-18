@@ -56,6 +56,7 @@ export default function SiteHeader() {
   const earlyAccessDaysText = messages["Nav.earlyAccessDays"] ?? "{days} days left";
   const earlyAccessRibbonLabel = messages["Nav.earlyAccessRibbon"] ?? "EARLY ACCESS";
   const earlyAccessCountdownLabel = messages["Nav.earlyAccessCountdownLabel"] ?? "Countdown";
+  const launchBadgeText = messages["Nav.launchBadge"] ?? "Live od 17.11.2025.";
   const formatEarlyAccessDays = (value: number) => {
     if (!Number.isFinite(value)) return "";
     if (earlyAccessDaysText.includes("{days}")) {
@@ -112,6 +113,12 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-40 backdrop-blur-lg supports-[backdrop-filter]:bg-white/75 border-b border-gray-200/50 shadow-sm">
       <div className="flex items-center gap-6 mx-auto w-[90%] p-4">
         <Logo className="shrink-0" />
+        <span
+          className="text-xs sm:text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 whitespace-nowrap"
+          aria-label={launchBadgeText}
+        >
+          {launchBadgeText}
+        </span>
         <nav className="flex items-center gap-4 text-sm flex-1 justify-start whitespace-nowrap">
           <button
             type="button"

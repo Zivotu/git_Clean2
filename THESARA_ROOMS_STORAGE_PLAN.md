@@ -20,6 +20,8 @@ VPS (per deployment notes in `reportProblems.md`).
   starting with `app:`/`global:` when a client forgets the `X-Thesara-Scope` header,
   so non-room apps automatically share leaderboard/state data across all users.
 
+- **2025-11 fix:** `apps/api/src/shims/localStorageBridge.ts` sada se budi s ispravnim `ns` redoslijedom pa Play više ne baca `ReferenceError`. Demo soba se automatski otvara preko `/api/rooms/storage/demo`, iframe dobiva `ns=app:<id>:room:<code>` i `roomToken`, a `/api/storage` na serveru traži isti token (`X-Thesara-Room-Token`). Ako netko vidi `Failed to fetch snapshot for ns=app:<id>:room:<code>`, prvo provjeri da Firebase ID token u URL-u nije istekao (401) te da je room token prisutan (403).
+
 ### 1.2 Rooms
 - The old Firestore-based `/rooms/*` API is disabled unless `ROOMS_ENABLED=true` and
   it requires a valid Firebase ID token. Locally we often fall back to dev tokens,

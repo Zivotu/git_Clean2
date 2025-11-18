@@ -27,6 +27,7 @@ import SplashScreen from '@/components/layout/SplashScreen';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 import AdminAccessTrigger from '@/components/AdminAccessTrigger';
 import PartnershipModal from '@/components/PartnershipModal';
+import { useBugGuardian } from '@/components/BugGuardian/BugGuardianProvider';
 export {};
 type HomeClientProps = {
   initialItems?: ApiListing[];
@@ -537,9 +538,11 @@ function BugSprite({ size = 21, angle = 0 }: { size?: number; angle?: number }) 
 function WalkingBug({
   path,
   onDone,
+  onClick,
 }: {
   path: SpiderPath;
   onDone: () => void;
+  onClick: () => void;
 }) {
   const [showTip, setShowTip] = useState(false);
   const wiggle: TargetAndTransition = {
@@ -558,6 +561,7 @@ function WalkingBug({
       onMouseLeave={() => setShowTip(false)}
       aria-hidden
       style={{ cursor: 'pointer' }}
+      onClick={onClick}
     >
       <div className="relative">
         {showTip && (
@@ -574,6 +578,7 @@ function WalkingBug({
 }
 
 function SpiderOverlay() {
+  const { open: openBugGuardian } = useBugGuardian();
   const [bugs, setBugs] = useState<SpiderPath[]>([]);
   const timerRef = useRef<number | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -620,6 +625,7 @@ function SpiderOverlay() {
         <WalkingBug
           key={bug.id}
           path={bug}
+          onClick={openBugGuardian}
           onDone={() => {
             setBugs((prev) => prev.filter((b) => b.id !== bug.id));
             planNext();

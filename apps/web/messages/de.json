@@ -19,6 +19,7 @@
     "goldenBook": "Golden Book",
     "donate": "Spenden",
     "donateCountdown": "noch {days} Tage",
+    "launchBadge": "Live seit 17.11.2025.",
     "feedback": "Ihre Vorschlâ”œÃ±ge",
     "docs": "Dokumentation",
     "tutorials": "Tutorials",
@@ -34,6 +35,13 @@
     "subscribeEarlyAccess": "Für Early Access anmelden",
     "earlyAccessSubscribed": "Du erhältst 50 % Rabatt im ersten Monat.",
     "earlyAccessSubscribeError": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "BugGuardian": {
+    "title": "Hallo! Ich bin der Spinnenwächter von Thesara.space. 🕷",
+    "line1": "Wir befinden uns gerade in der Testing-Phase, daher schleichen meine kleinen Käferfreunde und ich herum und verstecken uns vor den Entwicklern.",
+    "line2": "Wenn dir ein seltsamer Sprung, Text oder ein Button auffällt, der nicht funktioniert, ist wahrscheinlich einer der Käfer ausgebüxt.",
+    "line3": "Zeig uns ruhig dem Team – damit hilfst du ihnen, die Seite noch besser zu machen.",
+    "thanks": "Danke, dass du mit uns testest!"
   },
   "About": {
     "title": "â–„ber Thesara",

@@ -153,6 +153,19 @@ Provjeriti u mreÅ¾nom tabu:
 - `PATCH /api/storage?ns=default` â†’ `200/201`; na `412` klijent treba refetch i retry s novim `ETag`
 
 
+
+### 6.1) Novo (2025-11) — shim fix i Rooms/Play dijagnostika
+
+- **Shim inicijalizacija:** `apps/api/src/shims/localStorageBridge.ts` sada postavlja `NS = getNamespace()` prije prvog `debugLog('boot', …)` poziva. Ako se u konzoli pojavi `ReferenceError: Cannot access 'NS' before initialization`, znači da browser još uvijek servira staru verziju (`/shims/localstorage.js`). Riješi se `pnpm --filter @thesara/api build`, `pm2 restart thesara-api` i hard reload ili `?v=<commit>` parametar.
+- **Demo soba/room token:** `PlayPageClient.tsx` automatski zove `/api/rooms/storage/demo` i iframeu dodaje `?ns=app:<appId>:room:<code>&roomToken=<jwt>`. Svaki `app:*:room:*` namespace zahtijeva isti `X-Thesara-Room-Token` na `/api/storage`. Ako ga nema, server vraća `403 room_token_missing`.
+- **401 uzrok:** Poruka “Failed to fetch snapshot…” najčešće je `401` iz `GET /api/storage` jer je Firebase ID token (query param `token=`) istekao ili oštećen. U `pm2 logs thesara-api` to izgleda kao `auth: firebase verify error summary` / `auth/argument-error`. Rješenje je osvježiti login odnosno Play link; `ROOMS_STORAGE_SECRET` je već ispravan.
+- **Kako provjeriti na VPS-u:**
+  ```
+  pm2 logs thesara-api --lines 20 | rg "Storage patch successful"
+  ls storage/kv | rg app-<appId>-room
+  ```
+  Ako se logovi pojavljuju i JSON fajl postoji (npr. `storage/kv/app-74-room-demo.json`), storage radi. Ako vidiš `401`, fokusiraj se na Firebase token; ako vidiš `403`, provjeri stiže li `roomToken`.
+
 ## 7) KljuÄne rute i aliasi (/api prefiks)
 
 Zbog globalnog `onRequest` hooka u `apps/api/src/index.ts` koji skida `/api` prefiks, rute se registriraju na rootu. Kako bismo izbjegli ovisnost o hooku (npr. iza drugaÄijeg reverse proxyja), dodani su eksplicitni aliasi:

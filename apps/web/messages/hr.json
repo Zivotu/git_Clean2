@@ -1,6 +1,7 @@
 {
   "Nav": {
     "publishApp": "Objavi aplikaciju",
+    "shortVideo": "Thesara kratki video",
     "myProjects": "Moji projekti",
     "myCreators": "Moji kreatori",
     "goPro": "Go Pro",
@@ -19,6 +20,7 @@
     "goldenBook": "Zlatna knjiga",
     "donate": "Doniraj",
     "donateCountdown": "još {days} dana",
+    "launchBadge": "Live od 17.11.2025.",
     "earlyAccessBadge": "BESPLATNO, PRIDRUŽI SE!",
     "earlyAccessDays": "još {days} dana",
     "earlyAccessTooltip": "Registracijom dobivas 30 dana Gold + Bez oglasa paketa bez trikova. Sve je otkljucano kako bi odmah objavio svoju aplikaciju.",
@@ -34,6 +36,13 @@
     "api": "API referenca",
     "language": "Jezik",
     "admin": "Admin"
+  },
+  "BugGuardian": {
+    "title": "Pozdrav! Ja sam pauk čuvar Thesara.space. 🕷",
+    "line1": "Trenutno smo u \"testing phase\", što znači da se ja i moje male bube prijateljice motamo okolo i skrivamo od developera.",
+    "line2": "Ako primijetiš neki čudan skok, tekst ili gumbić koji ne radi – vjerojatno je neka od buba pobjegla.",
+    "line3": "Slobodno nas \"prokaži\" ekipi, tako im pomažeš da sajt postane još bolji.",
+    "thanks": "Hvala što testiraš s nama!"
   },
   "About": {
     "title": "O Thesari",
@@ -794,6 +803,7 @@
     "back": "Nazad",
     "next": "Dalje",
     "publish": "Objavi",
+    "shortVideoButton": "Thesara kratki video",
     "mustSignIn": "Za objavu se prvo prijavi.",
     "login": "Prijava"
   },

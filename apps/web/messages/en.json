@@ -1,6 +1,7 @@
 {
   "Nav": {
     "publishApp": "Publish App",
+    "shortVideo": "Thesara Short Video",
     "myProjects": "My Projects",
     "myCreators": "My Creators",
     "goPro": "Go Pro",
@@ -19,6 +20,7 @@
     "goldenBook": "Golden Book",
     "donate": "Donate",
     "donateCountdown": "{days} days left",
+    "launchBadge": "Live since Nov 17, 2025.",
     "earlyAccessBadge": "FREE, JOIN US!",
     "earlyAccessDays": "{days} days left",
     "earlyAccessTooltip": "Sign up today and get 30 free days of Gold + No Ads. No tricks, just launch your app while everything is unlocked.",
@@ -34,6 +36,13 @@
     "api": "API Reference",
     "language": "Language",
     "admin": "Admin"
+  },
+  "BugGuardian": {
+    "title": "Hello! I'm the spider guardian of Thesara.space. 🕷",
+    "line1": "We're currently in the testing phase, so my tiny bug buddies and I sneak around and hide from the developers.",
+    "line2": "If you notice a weird jump, text or a button that doesn't work, one of the bugs probably escaped.",
+    "line3": "Feel free to report us to the team; it helps them make the site even better.",
+    "thanks": "Thanks for testing with us!"
   },
   "About": {
     "title": "About Thesara",
@@ -794,6 +803,7 @@
     "back": "Back",
     "next": "Next",
     "publish": "Publish",
+    "shortVideoButton": "Thesara Short Video",
     "mustSignIn": "Please sign in first to publish.",
     "login": "Sign in"
   },

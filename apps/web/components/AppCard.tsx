@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
+import '@/lib/fontawesome';
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { getCreatorProfile } from '@/lib/creators';
@@ -14,7 +16,7 @@ import { resolvePreviewUrl } from '@/lib/preview';
 import Avatar from '@/components/Avatar';
 import { useI18n } from '@/lib/i18n-provider';
 import { useRelativeTime } from '@/hooks/useRelativeTime';
-import { appDetailsHref } from '@/lib/urls';
+import { appDetailsHref, playHref } from '@/lib/urls';
 
 // Types
 export type Listing = {
@@ -56,6 +58,17 @@ function timeSince(ts: number) {
   return `${y}y ago`;
 }
 
+function makeAbsoluteUrl(url?: string | null): string | null {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (typeof window === 'undefined') return url;
+  try {
+    return new URL(url, window.location.origin).toString();
+  } catch {
+    return url;
+  }
+}
+
 // Component
 export interface AppCardProps {
   item: Listing;
@@ -79,6 +92,15 @@ const AppCard = React.memo(
     const { user } = useAuth();
     const { locale } = useI18n();
     const subscribedLabel = locale === 'hr' ? 'Pretplaćeno' : 'Subscribed';
+    const shareButtonRef = useRef<HTMLButtonElement | null>(null);
+    const shareMenuRef = useRef<HTMLDivElement | null>(null);
+    const [shareMenuOpen, setShareMenuOpen] = useState(false);
+    const shareBaseUrl = useMemo(() => {
+      const base = playHref(item.id, { run: 1 });
+      return makeAbsoluteUrl(base) || base;
+    }, [item.id]);
+    const [shareUrl, setShareUrl] = useState<string | null>(shareBaseUrl);
+    const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
 
     const imgSrc = resolvePreviewUrl(item.previewUrl);
     const hasPreview = Boolean(imgSrc);
@@ -131,6 +153,197 @@ const AppCard = React.memo(
         onDetails(item);
       }
     };
+
+    useEffect(() => {
+      setShareUrl(shareBaseUrl);
+    }, [shareBaseUrl]);
+
+    useEffect(() => {
+      if (!shareMenuOpen) return;
+      const handleClick = (event: MouseEvent) => {
+        const target = event.target as Node;
+        if (
+          (shareMenuRef.current && shareMenuRef.current.contains(target)) ||
+          (shareButtonRef.current && shareButtonRef.current.contains(target))
+        ) {
+          return;
+        }
+        setShareMenuOpen(false);
+      };
+      document.addEventListener('mousedown', handleClick);
+      return () => document.removeEventListener('mousedown', handleClick);
+    }, [shareMenuOpen]);
+
+    useEffect(() => {
+      if (!shareMenuOpen) return;
+      const handleKey = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') setShareMenuOpen(false);
+      };
+      document.addEventListener('keydown', handleKey);
+      return () => document.removeEventListener('keydown', handleKey);
+    }, [shareMenuOpen]);
+
+    useEffect(() => {
+      if (copyState !== 'copied') return;
+      const timer = window.setTimeout(() => setCopyState('idle'), 2000);
+      return () => window.clearTimeout(timer);
+    }, [copyState]);
+
+    const ensureShareUrl = async (): Promise<string | null> => {
+      if (shareUrl) return shareUrl;
+      const fallback = shareBaseUrl;
+      setShareUrl(fallback);
+      return fallback;
+    };
+
+    const handleShareClick = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setCopyState('idle');
+
+      const url = await ensureShareUrl();
+      if (!url) {
+        setShareMenuOpen((prev) => !prev);
+        return;
+      }
+
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        try {
+          await navigator.share({
+            title: item.title,
+            text: item.description || undefined,
+            url,
+          });
+          return;
+        } catch (err: any) {
+          if (err?.name === 'AbortError') {
+            return;
+          }
+          console.warn('Native share failed, falling back to menu', err);
+        }
+      }
+
+      setShareMenuOpen((prev) => !prev);
+    };
+
+    const copyToClipboard = async (value: string) => {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(value);
+        return;
+      }
+      const temp = document.createElement('textarea');
+      temp.value = value;
+      temp.style.position = 'fixed';
+      temp.style.left = '-9999px';
+      document.body.appendChild(temp);
+      temp.focus();
+      temp.select();
+      try {
+        document.execCommand('copy');
+      } finally {
+        document.body.removeChild(temp);
+      }
+    };
+
+    const handleCopyLink = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      const url = await ensureShareUrl();
+      if (!url) {
+        setCopyState('error');
+        return;
+      }
+      try {
+        await copyToClipboard(url);
+        setCopyState('copied');
+        setShareMenuOpen(false);
+      } catch (err) {
+        console.error('Copy link failed', err);
+        setCopyState('error');
+      }
+    };
+
+    const shareTargets = useMemo(() => {
+      if (!shareUrl) return [];
+      const encodedUrl = encodeURIComponent(shareUrl);
+      const encodedMessage = encodeURIComponent(`${item.title} - ${shareUrl}`);
+      return [
+        {
+          id: 'whatsapp',
+          label: 'WhatsApp',
+          href: `https://wa.me/?text=${encodedMessage}`,
+        },
+        {
+          id: 'facebook',
+          label: 'Facebook',
+          href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+        },
+        {
+          id: 'linkedin',
+          label: 'LinkedIn',
+          href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+        },
+      ];
+    }, [shareUrl, item.title]);
+
+    const ShareMenu = ({ align = 'right' }: { align?: 'left' | 'right' }) => (
+      <div className="relative">
+        <button
+          ref={shareButtonRef}
+          type="button"
+          onClick={handleShareClick}
+          className="p-2 text-gray-700 hover:text-emerald-600 focus:outline-none"
+          aria-label="Share mini app"
+          aria-haspopup="menu"
+          aria-expanded={shareMenuOpen}
+        >
+          <FontAwesomeIcon icon={['fas', 'share-alt'] as const} className="text-xl" />
+        </button>
+        {shareMenuOpen && (
+          <div
+            ref={shareMenuRef}
+            onClick={(event) => event.stopPropagation()}
+            className={cn(
+              'absolute mt-2 w-56 bg-white border border-gray-200 rounded-2xl shadow-xl p-2 text-sm text-gray-700 z-20',
+              align === 'right' ? 'right-0' : 'left-0'
+            )}
+          >
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="w-full flex items-center justify-between rounded-xl px-3 py-2 hover:bg-gray-50"
+            >
+              <span>
+                {copyState === 'copied' ? 'Link copied' : copyState === 'error' ? 'Try again' : 'Copy link'}
+              </span>
+            </button>
+            <div className="mt-1 border-t border-gray-100" />
+            {shareTargets.length ? (
+              <div className="mt-1 space-y-1">
+                {shareTargets.map((target) => (
+                  <a
+                    key={target.id}
+                    href={target.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-xl px-3 py-2 hover:bg-gray-50"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setShareMenuOpen(false);
+                    }}
+                  >
+                    <span>{target.label}</span>
+                    <svg className="w-4 h-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414L12.414 10l-3.707 3.707a1 1 0 01-1.414 0z" />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="px-3 py-2 text-xs text-gray-400">Link will be ready soon.</p>
+            )}
+          </div>
+        )}
+      </div>
+    );
 
     const AuthorLink = () => {
       const baseHandle = item.author?.handle;
@@ -231,7 +444,7 @@ const AppCard = React.memo(
           tabIndex={0}
           onClick={goToDetails}
           onKeyDown={onKey}
-          className="group bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer flex items-center gap-4 p-4"
+          className="group bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex items-center gap-4 p-4"
           aria-label={`Open details for ${item.title}`}
         >
           <div className="relative flex-shrink-0 w-32 h-32 rounded-xl overflow-hidden">
@@ -285,6 +498,7 @@ const AppCard = React.memo(
             <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
               <span>{relativeCreated || ''}</span>
               <div className="flex items-center gap-4">
+                <ShareMenu align="left" />
                 <span className="flex items-center gap-1">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -346,12 +560,12 @@ const AppCard = React.memo(
         onClick={goToDetails}
         onKeyDown={onKey}
         className={cn(
-          'group bg-white rounded-2xl overflow-hidden flex flex-col transition-all duration-300 hover:shadow-md cursor-pointer animate-fadeIn',
+          'group bg-white rounded-2xl flex flex-col transition-all duration-300 hover:shadow-md cursor-pointer animate-fadeIn',
           item.isSubscribed ? 'border border-emerald-300 ring-1 ring-emerald-200' : 'border border-gray-200'
         )}
         aria-label={`Open details for ${item.title}`}
       >
-        <div className="relative aspect-video">
+        <div className="relative aspect-video rounded-t-2xl overflow-hidden">
           {hasPreview ? (
             <Image
               src={imgSrc}
@@ -412,6 +626,7 @@ const AppCard = React.memo(
           <div className="mt-auto pt-4 flex items-center justify-between text-sm text-gray-500">
             <span>{relativeCreated || ''}</span>
             <div className="flex items-center gap-4">
+              <ShareMenu align="left" />
               <span className="flex items-center gap-1">
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

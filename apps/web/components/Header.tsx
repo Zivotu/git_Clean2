@@ -18,11 +18,13 @@ import GoldenBookIcon from '../../../assets/GoldenBook_Icon_1.png';
 import { useEarlyAccessCampaign } from '@/hooks/useEarlyAccessCampaign';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { apiPost } from '@/lib/api';
+import { useBugGuardian } from '@/components/BugGuardian/BugGuardianProvider';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function Header() {
   const { messages } = useI18n();
+  const { open: openBugGuardian } = useBugGuardian();
   const tNav = (k: string) => messages[`Nav.${k}`] || k;
   const router = useRouter();
   const pathname = usePathname() ?? '';
@@ -68,6 +70,7 @@ export default function Header() {
   const earlyAccessRibbonLabel = messages['Nav.earlyAccessRibbon'] ?? 'EARLY ACCESS';
   const earlyAccessCountdownLabel = messages['Nav.earlyAccessCountdownLabel'] ?? 'Countdown';
   const earlyAccessCountdownUnit = messages['Nav.earlyAccessCountdownUnit'] ?? 'days';
+  const launchBadgeText = messages['Nav.launchBadge'] ?? 'Live od 17.11.2025.';
   const formatEarlyAccessDays = (value: number) => {
     if (!Number.isFinite(value)) return '';
     if (earlyAccessDaysText.includes('{days}')) {
@@ -111,6 +114,15 @@ export default function Header() {
   const handlePublishClick = useCallback(() => {
     triggerConfetti();
     router.push('/create');
+  }, [router]);
+
+  const handleOpenShortVideo = useCallback(() => {
+    const shortUrl = 'https://youtube.com/shorts/m_4RqaGClFI';
+    if (typeof window !== 'undefined') {
+      window.open(shortUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      router.push(shortUrl);
+    }
   }, [router]);
 
   const handleEarlyAccessBadgeClick = useCallback(() => {
@@ -230,8 +242,24 @@ export default function Header() {
       <div className="relative mx-auto w-[90%] px-4 py-4">
         <div className="flex items-center gap-4 w-full">
           <Logo className="shrink-0" />
+          <span
+            className="hidden sm:inline-flex items-center text-xs md:text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 whitespace-nowrap"
+            aria-label={launchBadgeText}
+          >
+            {launchBadgeText}
+          </span>
           <div className="hidden md:flex flex-1 justify-center min-w-0">
             <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
+              <button
+                type="button"
+                onClick={handleOpenShortVideo}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-emerald-200 text-emerald-700 font-semibold transition hover:bg-emerald-50"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M6 4.5v11a.5.5 0 00.77.423l9-5.5a.5.5 0 000-.846l-9-5.5A.5.5 0 006 4.5z" />
+                </svg>
+                {tNav('shortVideo')}
+              </button>
               {pathname === '/create' ? (
                 <span className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-base font-semibold">
                   {tNav('publishApp')}
@@ -467,6 +495,16 @@ export default function Header() {
                 </span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleOpenShortVideo}
+              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg border border-emerald-200 text-emerald-700 text-base font-semibold text-center transition hover:bg-emerald-50"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M6 4.5v11a.5.5 0 00.77.423l9-5.5a.5.5 0 000-.846l-9-5.5A.5.5 0 006 4.5z" />
+              </svg>
+              {tNav('shortVideo')}
+            </button>
             {pathname === '/create' ? (
               <span className="block px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-base font-semibold text-center">
                 {tNav('publishApp')}
@@ -630,10 +668,17 @@ export default function Header() {
       {/* Decorative Bugs graphic positioned just under the header (looks like it's hanging from the header). Placed as child of header so left:0 is viewport-left. */}
       <div
         className="hidden md:block"
-        style={{ position: 'absolute', left: 0, top: '100%', transform: 'translateY(1px)', zIndex: 40, pointerEvents: 'none' }}
+        style={{ position: 'absolute', left: 0, top: '100%', transform: 'translateY(1px)', zIndex: 40, pointerEvents: 'auto' }}
       >
         {/* Increased by 20% from 112 -> 135 */}
-        <Image src="/assets/Bugs.png" alt="Bugs" width={135} height={135} />
+        <button
+          type="button"
+          onClick={openBugGuardian}
+          aria-label={messages['BugGuardian.title'] ?? 'Meet the Thesara spider guardian'}
+          className="rounded-full border border-transparent bg-transparent p-1 transition hover:scale-[1.03] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
+        >
+          <Image src="/assets/Bugs.png" alt="Bugs" width={135} height={135} />
+        </button>
       </div>
     </header>
   );

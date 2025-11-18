@@ -14,6 +14,7 @@ import AdsConsentBanner from '@/components/AdsConsentBanner';
 import { TermsProvider } from '@/components/terms/TermsProvider';
 import { messages as ALL_MESSAGES, type Locale, defaultLocale } from '@/i18n/config';
 import { getServerLocale } from '@/lib/locale';
+import { BugGuardianProvider } from '@/components/BugGuardian/BugGuardianProvider';
 
 export const metadata = {
   title: 'Thesara',
@@ -65,10 +66,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <TermsProvider>
               <AdsProvider>
                 <I18nRootProvider locale={locale} messages={messages}>
-                  <AdScriptLoader />
-                  <AdsConsentBanner />
-                  <Header />
-                  {children}
+                  <BugGuardianProvider>
+                    <AdScriptLoader />
+                    <AdsConsentBanner />
+                    <Header />
+                    {children}
+                  </BugGuardianProvider>
                 </I18nRootProvider>
               </AdsProvider>
             </TermsProvider>
