@@ -30,7 +30,7 @@ const APPS_HOST =
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false'
 const MIN_FRAME_HEIGHT = 360
 const PAGE_BOTTOM_PADDING_PX = 24
-const VIEWPORT_FIT_OFFSET = 160
+const VIEWPORT_FIT_OFFSET = 120
 
 function notifyPlay(slugOrId?: string) {
   if (!slugOrId) return
@@ -294,18 +294,25 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     roomTokenRef.current = roomSession?.token ?? null
   }, [roomSession])
 
+  const baseViewportMinHeight = useMemo(
+    () => (isFullscreen ? '100vh' : `calc(100vh - ${VIEWPORT_FIT_OFFSET}px)`),
+    [isFullscreen],
+  )
+
   const recomputeFrameHeight = useCallback(() => {
     if (typeof window === 'undefined') return
-    const container = iframeContainerRef.current
-    if (!container) return
-    const rect = container.getBoundingClientRect()
-    const paddingBottom = isFullscreen ? 0 : PAGE_BOTTOM_PADDING_PX
-    const available = window.innerHeight - rect.top - paddingBottom
-    const desiredViewportFit = Math.max(
+    const viewportFit = Math.max(
       window.innerHeight - (isFullscreen ? 0 : VIEWPORT_FIT_OFFSET),
       MIN_FRAME_HEIGHT,
     )
-    const safeHeight = Math.max(Math.round(available), Math.round(desiredViewportFit))
+    let safeHeight = Math.round(viewportFit)
+    const container = iframeContainerRef.current
+    if (container) {
+      const rect = container.getBoundingClientRect()
+      const paddingBottom = isFullscreen ? 0 : PAGE_BOTTOM_PADDING_PX
+      const available = window.innerHeight - rect.top - paddingBottom
+      safeHeight = Math.max(Math.round(available), safeHeight)
+    }
     setFrameHeight((prev) => (prev === safeHeight ? prev : safeHeight))
   }, [isFullscreen])
 
@@ -829,7 +836,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       <div
         ref={iframeContainerRef}
         className="relative flex flex-1"
-        style={frameHeight ? { height: `${frameHeight}px` } : { minHeight: '70vh' }}
+        style={
+          frameHeight
+            ? { height: `${frameHeight}px`, minHeight: baseViewportMinHeight }
+            : { minHeight: baseViewportMinHeight }
+        }
       >
         <button
           type="button"
@@ -850,7 +861,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           allow="geolocation"
           sandbox={sandboxFlags}
           className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
-          style={{ border: 'none', display: 'block' }}
+          style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
         />
       </div>
       {!isFullscreen && showBottomAd && (
