@@ -635,14 +635,6 @@ function PublicAppViewComponent({
           </div>
 
           <aside className="space-y-6">
-            <section className="overflow-hidden rounded-3xl border border-gray-100 bg-white/95 shadow-sm">
-              <img
-                src="/assets/cta_vertical_1.jpg"
-                alt={ctaBannerAlt}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </section>
             <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-gray-500">

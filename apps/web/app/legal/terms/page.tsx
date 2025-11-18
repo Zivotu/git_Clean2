@@ -2,17 +2,29 @@ import fs from 'fs';
 import path from 'path';
 import { messages as ALL_MESSAGES, defaultLocale, type Locale } from '@/i18n/config';
 import { getServerLocale } from '@/lib/locale';
+import { getTermsDocFilenames } from '@/lib/termsDocs';
 
 export default async function TermsPage() {
-  // Read the canonical HTML file from the repository root `docs` folder
-  const filePath = path.resolve(process.cwd(), 'docs', 'thesara_terms.html');
+  const docsDir = path.resolve(process.cwd(), 'docs');
   let bodyHtml = '';
   const locale: Locale = await getServerLocale(defaultLocale);
   const translations = ALL_MESSAGES[locale] || ALL_MESSAGES[defaultLocale];
   const t = (key: string) => translations[`Legal.Terms.${key}`] || key;
+  const docCandidates = getTermsDocFilenames(locale);
   try {
-    const raw = await fs.promises.readFile(filePath, 'utf8');
-    // extract the content inside the <body> tag so we don't inject another full HTML document
+    let raw = '';
+    for (const candidate of docCandidates) {
+      const fullPath = path.resolve(docsDir, candidate);
+      try {
+        raw = await fs.promises.readFile(fullPath, 'utf8');
+        break;
+      } catch {
+        continue;
+      }
+    }
+    if (!raw) {
+      throw new Error('terms_doc_missing');
+    }
     const m = raw.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     bodyHtml = m ? m[1] : raw;
   } catch (e) {

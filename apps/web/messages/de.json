@@ -111,6 +111,27 @@
       "body": "Hier erscheint ein Formular zum Melden unangemessener Inhalte."
     }
   },
+  "Terms": {
+    "label": "Nutzungsbedingungen",
+    "preview": {
+      "lastUpdated": "Zuletzt aktualisiert: {version}",
+      "openFull": "Vollständige Version öffnen",
+      "close": "Schließen"
+    },
+    "enforcement": {
+      "badge": "Nutzersicherheit",
+      "title": "Akzeptiere {label}",
+      "intro": "Um Thesara weiter zu verwenden, musst du die aktuelle Version (v{version}) akzeptieren.",
+      "warning": "Wenn du ablehnst, wirst du abgemeldet und kannst erst wieder veröffentlichen oder kaufen, nachdem du sie akzeptiert hast.",
+      "checkbox": "Ich akzeptiere {label} und bestätige, dass ich sie gelesen und verstanden habe.",
+      "primary": "Bedingungen akzeptieren",
+      "saving": "Speichere…",
+      "secondary": "Melde mich ab"
+    },
+    "provider": {
+      "saveError": "Wir konnten deine Zustimmung nicht speichern. Bitte versuch es erneut."
+    }
+  },
   "Creators": {
     "SimpleGuide": {
       "title": "Einfache Anleitung fuer Creator",

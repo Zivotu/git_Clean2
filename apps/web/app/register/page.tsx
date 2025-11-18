@@ -10,23 +10,17 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db, storage } from "@/lib/firebase";
 import { ensureUserDoc } from "@/lib/ensureUserDoc";
-import { useTerms } from "@/components/terms/TermsProvider";
-import TermsPreviewModal from "@/components/terms/TermsPreviewModal";
-import { TERMS_POLICY } from "@thesara/policies/terms";
 import { useI18n } from "@/lib/i18n-provider";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { accept: acceptTerms } = useTerms();
   const { messages } = useI18n();
   const t = useCallback(
     (key: string) => messages[`Register.${key}`] || key,
     [messages]
   );
   const field = useCallback((key: string) => t(`fields.${key}`), [t]);
-  const beforeTerms = t("terms.beforeLink");
-  const afterTerms = t("terms.afterLink");
 
   const [form, setForm] = useState({
     firstName: "",
@@ -41,9 +35,6 @@ export default function RegisterPage() {
     bio: "",
   });
   const [error, setError] = useState<string | null>(null);
-  const [agreed, setAgreed] = useState(false);
-  const [termsError, setTermsError] = useState<string | null>(null);
-  const [showTerms, setShowTerms] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
 
@@ -63,13 +54,8 @@ export default function RegisterPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setTermsError(null);
     if (form.password !== form.confirmPassword) {
       setError(t("errors.passwordMismatch"));
-      return;
-    }
-    if (!agreed) {
-      setTermsError(t("errors.mustAcceptTerms"));
       return;
     }
 
@@ -110,11 +96,6 @@ export default function RegisterPage() {
         { merge: true }
       );
       await auth.currentUser?.getIdToken(true);
-      try {
-        await acceptTerms("manual-register");
-      } catch (acceptErr) {
-        console.warn("terms_accept_failed", acceptErr);
-      }
       router.push("/?welcome=1");
     } catch (err: any) {
       console.error(`Error writing to ${collection} for user ${cred?.user?.uid}`, err);
@@ -241,32 +222,6 @@ export default function RegisterPage() {
             />
           )}
         </div>
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-sm text-gray-800">
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(event) => {
-                setAgreed(event.target.checked);
-                if (event.target.checked) setTermsError(null);
-              }}
-              className="mt-1 h-4 w-4 rounded border-gray-400 text-emerald-600 focus:ring-emerald-500"
-              required
-            />
-            <span>
-              {beforeTerms}
-              <button
-                type="button"
-                onClick={() => setShowTerms(true)}
-                className="text-emerald-700 underline underline-offset-2"
-              >
-                {TERMS_POLICY.shortLabel}
-              </button>{" "}
-              {afterTerms}
-            </span>
-          </label>
-          {termsError && <p className="mt-2 text-xs text-red-600">{termsError}</p>}
-        </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}
         <button
           type="submit"
@@ -275,11 +230,6 @@ export default function RegisterPage() {
           {t("cta.submit")}
         </button>
       </form>
-      <TermsPreviewModal
-        open={showTerms}
-        onClose={() => setShowTerms(false)}
-        title={TERMS_POLICY.shortLabel}
-      />
     </main>
   );
 }

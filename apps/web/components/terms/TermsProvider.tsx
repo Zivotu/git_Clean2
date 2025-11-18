@@ -12,10 +12,12 @@ import {
 import { signOut } from 'firebase/auth';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth';
-import { acceptTerms, fetchTermsStatus, type TermsStatus, TERMS_POLICY } from '@/lib/terms';
+import { acceptTerms, fetchTermsStatus, type TermsStatus } from '@/lib/terms';
 import { auth } from '@/lib/firebase';
 import TermsPreviewModal from './TermsPreviewModal';
 import TermsEnforcementModal from './TermsEnforcementModal';
+import { useTermsLabel } from '@/hooks/useTermsLabel';
+import { useT } from '@/lib/i18n-provider';
 
 type TermsContextValue = {
   status: TermsStatus | null;
@@ -40,6 +42,8 @@ export function TermsProvider({ children }: { children: ReactNode }) {
   const [enforceError, setEnforceError] = useState<string | null>(null);
   const [enforceBusy, setEnforceBusy] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const termsLabel = useTermsLabel();
+  const tTerms = useT('Terms');
 
   const refresh = useCallback(async () => {
     if (!userId) {
@@ -89,11 +93,11 @@ export function TermsProvider({ children }: { children: ReactNode }) {
       await accept('global-modal');
     } catch (err) {
       console.error('terms_accept_failed', err);
-      setEnforceError('Nismo mogli spremiti prihvaćanje. Pokušaj ponovno.');
+      setEnforceError(tTerms('provider.saveError'));
     } finally {
       setEnforceBusy(false);
     }
-  }, [accept]);
+  }, [accept, tTerms]);
 
   const handleModalDecline = useCallback(async () => {
     if (auth) {
@@ -130,7 +134,7 @@ export function TermsProvider({ children }: { children: ReactNode }) {
       <TermsPreviewModal
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
-        title={TERMS_POLICY.shortLabel}
+        title={termsLabel}
       />
     </TermsContext.Provider>
   );

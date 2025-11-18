@@ -10,6 +10,7 @@ import { useTerms } from '@/components/terms/TermsProvider';
 import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
 import { useI18n } from '@/lib/i18n-provider';
+import { useTermsLabel } from '@/hooks/useTermsLabel';
 
 export default function CheckoutPage() {
   return (
@@ -36,6 +37,7 @@ function CheckoutClient() {
   const { user } = useAuth();
   const { status: termsStatus, accept: acceptTerms, refresh: refreshTerms } = useTerms();
   const { messages, locale } = useI18n();
+  const termsLabel = useTermsLabel();
   const tCheckout = useCallback(
     (key: string, params?: Record<string, string | number>) => {
       let value = messages[`Checkout.${key}`] || key;
@@ -229,7 +231,7 @@ function CheckoutClient() {
               <section className="bg-white rounded-lg shadow p-4 space-y-2 text-sm text-gray-800">
                 <p className="text-amber-900">
 
-                  {tCheckout('termsPrompt', { termsLabel: TERMS_POLICY.shortLabel })}
+                  {tCheckout('termsPrompt', { termsLabel })}
 
                 </p>
                 <label className="flex items-start gap-3">
@@ -284,7 +286,7 @@ function CheckoutClient() {
       <TermsPreviewModal
         open={showTermsModal}
         onClose={() => setShowTermsModal(false)}
-        title={TERMS_POLICY.shortLabel}
+        title={termsLabel}
       />
     </main>
   );

@@ -112,6 +112,27 @@
       "body": "A form for reporting inappropriate content will appear here."
     }
   },
+  "Terms": {
+    "label": "Terms of Use",
+    "preview": {
+      "lastUpdated": "Last updated: {version}",
+      "openFull": "Open full version",
+      "close": "Close"
+    },
+    "enforcement": {
+      "badge": "User safety",
+      "title": "Accept {label}",
+      "intro": "To continue using Thesara you need to accept the current version (v{version}).",
+      "warning": "If you decline you'll be signed out and won't be able to publish or purchase until you accept.",
+      "checkbox": "I accept {label} and confirm I've read and understood them.",
+      "primary": "Accept terms",
+      "saving": "Saving…",
+      "secondary": "Sign me out"
+    },
+    "provider": {
+      "saveError": "We couldn't save your acceptance. Try again."
+    }
+  },
   "Creators": {
     "SimpleGuide": {
       "title": "Simple guide for creators",

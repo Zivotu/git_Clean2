@@ -2,7 +2,16 @@
 
 import { Buffer } from 'buffer'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useCallback, useEffect, useMemo, useRef, useState, type HTMLInputTypeAttribute, type InputHTMLAttributes } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type HTMLInputTypeAttribute,
+  type InputHTMLAttributes,
+} from 'react'
 import { ApiError, apiFetch } from '@/lib/api'
 import AdSlot from '@/components/AdSlot'
 import { useAds } from '@/components/AdsProvider'
@@ -19,6 +28,8 @@ import { useI18n } from '@/lib/i18n-provider'
 const APPS_HOST =
   (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '')
 const SHIM_ENABLED = process.env.NEXT_PUBLIC_SHIM_ENABLED !== 'false'
+const MIN_FRAME_HEIGHT = 360
+const PAGE_BOTTOM_PADDING_PX = 24
 
 function notifyPlay(slugOrId?: string) {
   if (!slugOrId) return
@@ -170,6 +181,7 @@ function normalizeRoomsMode(value: unknown): RoomsMode {
 
 export default function PlayPageClient({ app }: { app: AppRecord }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const iframeContainerRef = useRef<HTMLDivElement>(null)
   const capRef = useRef<string | null>(null)
   const bcRef = useRef<BroadcastChannel | null>(null)
   const storageVersionRef = useRef<string>('0')
@@ -237,6 +249,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }, [appId, buildId])
   // Delay setting iframe URL until we have token/snapshot to avoid first-load race
   const [iframeUrl, setIframeUrl] = useState<string>('')
+  const [frameHeight, setFrameHeight] = useState<number | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   
   const sandboxFlags = useMemo(() => {
     const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads'];
@@ -278,6 +292,85 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   useEffect(() => {
     roomTokenRef.current = roomSession?.token ?? null
   }, [roomSession])
+
+  const recomputeFrameHeight = useCallback(() => {
+    if (typeof window === 'undefined') return
+    const container = iframeContainerRef.current
+    if (!container) return
+    const rect = container.getBoundingClientRect()
+    const paddingBottom = isFullscreen ? 0 : PAGE_BOTTOM_PADDING_PX
+    const available = window.innerHeight - rect.top - paddingBottom
+    const safeHeight = Math.max(Math.round(available), MIN_FRAME_HEIGHT)
+    setFrameHeight((prev) => (prev === safeHeight ? prev : safeHeight))
+  }, [isFullscreen])
+
+  useLayoutEffect(() => {
+    recomputeFrameHeight()
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.addEventListener('resize', recomputeFrameHeight)
+    window.addEventListener('orientationchange', recomputeFrameHeight)
+    return () => {
+      window.removeEventListener('resize', recomputeFrameHeight)
+      window.removeEventListener('orientationchange', recomputeFrameHeight)
+    }
+  }, [recomputeFrameHeight])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null
+      webkitExitFullscreen?: () => Promise<void> | void
+      msExitFullscreen?: () => Promise<void> | void
+    }
+    const handleFullscreenChange = () => {
+      const container = iframeContainerRef.current
+      const activeEl = doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null
+      const active = Boolean(container && activeEl === container)
+      setIsFullscreen(active)
+      requestAnimationFrame(() => {
+        recomputeFrameHeight()
+      })
+    }
+    doc.addEventListener('fullscreenchange', handleFullscreenChange)
+    doc.addEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener)
+    return () => {
+      doc.removeEventListener('fullscreenchange', handleFullscreenChange)
+      doc.removeEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener)
+    }
+  }, [recomputeFrameHeight])
+
+  const toggleFullscreen = useCallback(() => {
+    if (typeof document === 'undefined') return
+    const container = iframeContainerRef.current
+    if (!container) return
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null
+      webkitExitFullscreen?: () => Promise<void> | void
+      msExitFullscreen?: () => Promise<void> | void
+    }
+    const element = container as Element & {
+      webkitRequestFullscreen?: () => Promise<void> | void
+      msRequestFullscreen?: () => Promise<void> | void
+    }
+    const activeEl = doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null
+    if (activeEl === container) {
+      const exit = doc.exitFullscreen ?? doc.webkitExitFullscreen ?? doc.msExitFullscreen
+      const result = exit?.call(doc)
+      if (result && typeof (result as Promise<unknown>).catch === 'function') {
+        ;(result as Promise<unknown>).catch(() => {})
+      }
+      return
+    }
+    const request =
+      container.requestFullscreen ?? element.webkitRequestFullscreen ?? element.msRequestFullscreen
+    const result = request?.call(container)
+    if (result && typeof (result as Promise<unknown>).catch === 'function') {
+      ;(result as Promise<unknown>).catch(() => {})
+    }
+  }, [])
 
   useEffect(() => {
     if (!roomsReady || !SHIM_ENABLED) return
@@ -719,8 +812,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   return (
     <div className="flex min-h-screen flex-col gap-4 px-4 pb-6">
-      {roomsControl}
-      {showTopAd && (
+      {!isFullscreen && roomsControl}
+      {!isFullscreen && showTopAd && (
         <AdSlot
           slotId={topAdSlot}
           slotKey="playTop"
@@ -728,7 +821,21 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           className="rounded-2xl border border-slate-200 bg-white/80 shadow-sm"
         />
       )}
-      <div className="flex flex-1">
+      <div
+        ref={iframeContainerRef}
+        className="relative flex flex-1"
+        style={frameHeight ? { height: `${frameHeight}px` } : { minHeight: '70vh' }}
+      >
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          aria-pressed={isFullscreen}
+          className="absolute right-4 top-4 z-10 rounded-full bg-slate-900/70 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg backdrop-blur transition hover:bg-slate-900/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+        >
+          {isFullscreen
+            ? messages['Play.exitFullscreen'] ?? 'Exit full screen'
+            : messages['Play.enterFullscreen'] ?? 'Full screen'}
+        </button>
         <iframe
           ref={iframeRef}
           src={iframeUrl}
@@ -737,11 +844,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           referrerPolicy="no-referrer"
           allow="geolocation"
           sandbox={sandboxFlags}
-          className="h-full w-full flex-1 rounded-3xl bg-white"
-          style={{ border: 'none', minHeight: '70vh', display: 'block' }}
+          className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
+          style={{ border: 'none', display: 'block' }}
         />
       </div>
-      {showBottomAd && (
+      {!isFullscreen && showBottomAd && (
         <AdSlot
           slotId={bottomAdSlot}
           slotKey="playBottom"

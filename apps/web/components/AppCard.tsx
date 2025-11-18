@@ -374,8 +374,9 @@ const AppCard = React.memo(
         });
       }, [baseHandle, baseName, basePhoto]);
 
+      const authorUid = item.author?.uid;
+
       useEffect(() => {
-        const authorUid = item.author?.uid;
         if (!authorUid) return;
         let cancelled = false;
         (async () => {
@@ -390,7 +391,7 @@ const AppCard = React.memo(
         return () => {
           cancelled = true;
         };
-      }, [item.author?.uid]);
+      }, [authorUid]);
 
       const handle = creator.handle;
       const primaryName =

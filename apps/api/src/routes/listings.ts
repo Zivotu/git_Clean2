@@ -30,7 +30,13 @@ const sanitizeScreenshotUrl = (raw?: unknown) => {
   if (typeof raw !== 'string') return '';
   const trimmed = raw.trim().slice(0, SCREENSHOT_URL_LIMIT);
   if (!trimmed) return '';
+  if (/^https?:\/\/\//i.test(trimmed)) {
+    const remainder = trimmed.replace(/^https?:\/\/\//i, '').replace(/^\/+/, '');
+    return remainder ? `/${remainder}` : '';
+  }
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith('//')) return `https:${trimmed}`;
+  if (trimmed.startsWith('/')) return trimmed;
   if (/^[a-z]+:\/\//i.test(trimmed)) return '';
   return `https://${trimmed}`;
 };
@@ -46,6 +52,39 @@ const normalizeScreenshotList = (raw?: unknown): string[] => {
 const expandScreenshotSlots = (record: AppRecord | { screenshotUrls?: unknown }): string[] => {
   const normalized = normalizeScreenshotList(record.screenshotUrls);
   return Array.from({ length: SCREENSHOT_SLOT_COUNT }, (_, index) => normalized[index] || '');
+};
+
+const ensureListingScreenshots = (record: AppRecord): { next: AppRecord; changed: boolean } => {
+  const normalized = normalizeScreenshotList(record.screenshotUrls);
+  const hasArray = Array.isArray(record.screenshotUrls);
+  let changed = false;
+  if (!hasArray) {
+    if (record.screenshotUrls !== undefined) {
+      changed = true;
+    }
+  } else {
+    const current = record.screenshotUrls as string[];
+    if (current.length > SCREENSHOT_SLOT_COUNT) {
+      changed = true;
+    } else if (current.length !== normalized.length) {
+      changed = true;
+    } else {
+      for (let i = 0; i < normalized.length; i += 1) {
+        if (current[i] !== normalized[i]) {
+          changed = true;
+          break;
+        }
+      }
+    }
+  }
+  if (!changed) return { next: record, changed: false };
+  const next: AppRecord = { ...record };
+  if (normalized.length) {
+    next.screenshotUrls = normalized;
+  } else {
+    delete (next as any).screenshotUrls;
+  }
+  return { next, changed: true };
 };
 
 const isImageMimeType = (mime?: string) => typeof mime === 'string' && /^image\//i.test(mime);
@@ -66,9 +105,18 @@ export default async function listingsRoutes(app: FastifyInstance) {
     let items: AppRecord[] = await readApps();
     let mutated = false;
     items = items.map((it) => {
-      const { next, changed } = ensureListingPreview(it);
-      if (changed) mutated = true;
-      return next;
+      let nextRecord = it;
+      const previewResult = ensureListingPreview(nextRecord);
+      if (previewResult.changed) {
+        nextRecord = previewResult.next;
+        mutated = true;
+      }
+      const screenshotsResult = ensureListingScreenshots(nextRecord);
+      if (screenshotsResult.changed) {
+        nextRecord = screenshotsResult.next;
+        mutated = true;
+      }
+      return nextRecord;
     });
     if (mutated) {
       try {
@@ -152,8 +200,19 @@ export default async function listingsRoutes(app: FastifyInstance) {
     if (item.deletedAt) {
       return reply.code(404).send({ ok: false, error: 'not_found' });
     }
-    const { next: normalizedItem, changed: previewChanged } = ensureListingPreview(item);
-    if (previewChanged) {
+    let normalizedItem = item;
+    let needsPersist = false;
+    const previewResult = ensureListingPreview(normalizedItem);
+    if (previewResult.changed) {
+      normalizedItem = previewResult.next;
+      needsPersist = true;
+    }
+    const screenshotsResult = ensureListingScreenshots(normalizedItem);
+    if (screenshotsResult.changed) {
+      normalizedItem = screenshotsResult.next;
+      needsPersist = true;
+    }
+    if (needsPersist) {
       apps[idx] = normalizedItem;
       try {
         await writeApps(apps);

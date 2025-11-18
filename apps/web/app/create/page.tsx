@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { apiAuthedPost, ApiError, apiPatch, apiPost } from '@/lib/api';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import ProgressModal, { type BuildState as ProgressModalState } from '@/components/ProgressModal';
+import AlertDialog from '@/components/AlertDialog';
 import { useBuildEvents, type BuildStatus } from '@/hooks/useBuildEvents';
 import {
   MAX_PREVIEW_SIZE_BYTES,
@@ -30,6 +31,7 @@ import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
 import { useI18n } from '@/lib/i18n-provider';
 import { defaultLocale } from '@/i18n/config';
+import { useTermsLabel } from '@/hooks/useTermsLabel';
 
 type Mode = 'html' | 'react';
 type SubmissionType = 'code' | 'bundle';
@@ -254,6 +256,7 @@ export default function CreatePage() {
   const [llmApiKey, setLlmApiKey] = useState('');
 
   const { messages, locale } = useI18n();
+  const termsLabel = useTermsLabel();
   const tCreate = useCallback(
     (key: string, params?: Record<string, string | number>) => {
       const localeFallback = createFallbacks[locale] || createFallbacks[defaultLocale] || {};
@@ -312,7 +315,7 @@ export default function CreatePage() {
   >(() => PREVIEW_PRESET_PATHS[0]);
   const [overlayTitle, setOverlayTitle] = useState('');
   const [customPreview, setCustomPreview] = useState<{ file: File; dataUrl: string } | null>(null);
-  const [previewError, setPreviewError] = useState('');
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewUploading, setPreviewUploading] = useState(false);
   const screenshotMaxMb = useMemo(
     () => Math.round((MAX_SCREENSHOT_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
@@ -332,14 +335,6 @@ export default function CreatePage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const handleOpenShortVideo = useCallback(() => {
-    const shortUrl = 'https://youtube.com/shorts/m_4RqaGClFI';
-    if (typeof window !== 'undefined') {
-      window.open(shortUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      router.push(shortUrl);
-    }
-  }, [router]);
   const { status: termsStatus, accept: acceptLatestTerms, refresh: refreshTermsStatus } = useTerms();
 
   const [showProgress, setShowProgress] = useState(false);
@@ -462,13 +457,13 @@ export default function CreatePage() {
     setPreviewChoice('preset');
     setSelectedPreset(preset);
     setCustomPreview(null);
-    setPreviewError('');
+    setPreviewError(null);
   };
 
   const handleCustomPreview = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setPreviewError('');
+    setPreviewError(null);
     if (file.size > MAX_PREVIEW_SIZE_BYTES) {
       setCustomPreview(null);
       setPreviewChoice('preset');
@@ -491,7 +486,7 @@ export default function CreatePage() {
   const resetCustomPreview = () => {
     setCustomPreview(null);
     setPreviewChoice('preset');
-    setPreviewError('');
+    setPreviewError(null);
     if (previewInputRef.current) previewInputRef.current.value = '';
   };
 
@@ -592,7 +587,7 @@ export default function CreatePage() {
     setPublishError('');
     setAuthError('');
     setBundleError('');
-    setPreviewError('');
+    setPreviewError(null);
     setLocalJobLog('');
     setLocalPreviewUrl(null);
     setManualBuildState(null);
@@ -1347,7 +1342,6 @@ export default function CreatePage() {
                   {previewUploading && (
                     <p className="text-xs text-gray-500">{tCreate('previewUploading')}</p>
                   )}
-                  {previewError && <p className="text-sm text-red-600">{previewError}</p>}
                 </div>
 
                 <div className="space-y-3 pt-4">
@@ -1491,7 +1485,7 @@ export default function CreatePage() {
               {needsTermsConsent && (
                 <div className="mt-6 space-y-3 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
                   <p className="font-semibold">
-                    {tCreate('publishTermsPrompt', { terms: TERMS_POLICY.shortLabel })}
+                    {tCreate('publishTermsPrompt', { terms: termsLabel })}
                   </p>
                   <label className="flex items-start gap-3 text-gray-800">
                     <input
@@ -1621,30 +1615,18 @@ export default function CreatePage() {
 
             
             <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-200 md:p-5">
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={handleOpenShortVideo}
-                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path d="M6 4.5v11a.5.5 0 00.77.423l9-5.5a.5.5 0 000-.846l-9-5.5A.5.5 0 006 4.5z" />
-                  </svg>
-                  {tCreate('shortVideoButton')}
-                </button>
-                <button
-                  onClick={publish}
-                  disabled={!allReady || publishing || (submissionType === 'bundle' && !bundleFile)}
-                  className={`flex-1 rounded-xl text-white font-semibold tracking-wide transition shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 ${
-                    !allReady || publishing || (submissionType === 'bundle' && !bundleFile)
-                      ? 'cursor-not-allowed bg-emerald-500/60'
-                      : 'bg-emerald-600 hover:bg-emerald-700'
-                  }`}
-                  style={{ paddingTop: '14px', paddingBottom: '14px', fontSize: '1.125rem' }}
-                >
-                  {publishing ? 'Objavljujem…' : 'OBJAVI'}
-                </button>
-              </div>
+              <button
+                onClick={publish}
+                disabled={!allReady || publishing || (submissionType === 'bundle' && !bundleFile)}
+                className={`w-full rounded-xl text-white font-semibold tracking-wide transition shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-300 ${
+                  !allReady || publishing || (submissionType === 'bundle' && !bundleFile)
+                    ? 'cursor-not-allowed bg-emerald-500/60'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+                style={{ paddingTop: '14px', paddingBottom: '14px', fontSize: '1.125rem' }}
+              >
+                {publishing ? 'Objavljujem…' : 'OBJAVI'}
+              </button>
               <p className="mt-2 text-xs text-gray-500">
                 {allReady
                   ? 'Sve stavke su ispunjene – spremno za objavu.'
@@ -1659,7 +1641,13 @@ export default function CreatePage() {
       <TermsPreviewModal
         open={showTermsModal}
         onClose={() => setShowTermsModal(false)}
-        title={TERMS_POLICY.shortLabel}
+        title={termsLabel}
+      />
+      <AlertDialog
+        open={Boolean(previewError)}
+        title="Gre\u0161ka pri grafici"
+        message={previewError ?? ''}
+        onClose={() => setPreviewError(null)}
       />
     </main>
   );

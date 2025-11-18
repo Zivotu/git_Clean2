@@ -7,6 +7,7 @@ import { useTerms } from '@/components/terms/TermsProvider';
 import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
 import { useI18n } from '@/lib/i18n-provider';
+import { useTermsLabel } from '@/hooks/useTermsLabel';
 
 const STEP_KEYS = [
   'analyze',
@@ -31,6 +32,7 @@ const stepMap: Record<string, number> = {
 export default function CreateXPage() {
   const { status: termsStatus, accept: acceptTerms, refresh: refreshTerms } = useTerms();
   const { messages } = useI18n();
+  const termsLabel = useTermsLabel();
   const tCreateX = useCallback(
     (key: string, params?: Record<string, string | number>) => {
       let value = messages[`CreateX.${key}`] || key;
@@ -216,7 +218,7 @@ export default function CreateXPage() {
   {needsTermsConsent && (
     <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
       <p className="font-semibold">
-        {tCreateX('termsPrompt', { terms: TERMS_POLICY.shortLabel })}
+        {tCreateX('termsPrompt', { terms: termsLabel })}
       </p>
       <label className="mt-2 flex items-start gap-3 text-gray-800">
         <input
@@ -326,7 +328,7 @@ export default function CreateXPage() {
       <TermsPreviewModal
         open={showTermsModal}
         onClose={() => setShowTermsModal(false)}
-        title={TERMS_POLICY.shortLabel}
+        title={termsLabel}
       />
     </>
   );

@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TERMS_POLICY } from '@thesara/policies/terms';
+import { useI18n, useT } from '@/lib/i18n-provider';
+import { getTermsDocUrl } from '@/lib/termsDocs';
+import { useTermsLabel } from '@/hooks/useTermsLabel';
 
 interface TermsEnforcementModalProps {
   open: boolean;
@@ -21,6 +24,20 @@ export default function TermsEnforcementModal({
   onOpenFull,
 }: TermsEnforcementModalProps) {
   const [agreed, setAgreed] = useState(false);
+  const { locale } = useI18n();
+  const tTerms = useT('Terms');
+  const termsLabel = useTermsLabel();
+  const tEnforce = useCallback(
+    (key: string, params?: Record<string, string | number>) =>
+      tTerms(`enforcement.${key}`, params),
+    [tTerms],
+  );
+  const labelPlaceholder = '__terms_label__';
+  const checkboxTemplate = tEnforce('checkbox', { label: labelPlaceholder });
+  const [checkboxBefore, checkboxAfter = ''] = checkboxTemplate.split(labelPlaceholder);
+  const localizedDoc = getTermsDocUrl(locale);
+  const embeddedSrc =
+    localizedDoc || TERMS_POLICY.embedPath || TERMS_POLICY.fallbackUrl || TERMS_POLICY.url;
 
   useEffect(() => {
     if (open) {
@@ -29,21 +46,19 @@ export default function TermsEnforcementModal({
   }, [open]);
 
   if (!open) return null;
-  const embeddedSrc = TERMS_POLICY.embedPath || TERMS_POLICY.fallbackUrl || TERMS_POLICY.url;
 
   return (
     <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-black/70 px-4 py-6">
       <div className="w-full max-w-2xl space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
-            Sigurnost korisnika
+            {tEnforce('badge')}
           </p>
           <h2 className="mt-1 text-2xl font-semibold text-gray-900">
-            Prihvati {TERMS_POLICY.shortLabel}
+            {tEnforce('title', { label: termsLabel })}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Nastavkom korištenja platforme trebaš potvrditi da se slažeš s
-            aktualnom verzijom uvjeta (v{TERMS_POLICY.version}).
+            {tEnforce('intro', { version: TERMS_POLICY.version })}
           </p>
         </div>
 
@@ -56,8 +71,7 @@ export default function TermsEnforcementModal({
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Odbijanjem uvjeta bit ćeš odjavljen i nećeš moći objavljivati aplikacije niti kupovati
-          pakete sve dok ih ne prihvatiš.
+          {tEnforce('warning')}
         </div>
 
         <label className="flex items-start gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800">
@@ -68,15 +82,15 @@ export default function TermsEnforcementModal({
             onChange={(event) => setAgreed(event.target.checked)}
           />
           <span>
-            Prihvaćam{' '}
+            {checkboxBefore}
             <button
               type="button"
               onClick={onOpenFull}
               className="text-emerald-700 underline underline-offset-2"
             >
-              {TERMS_POLICY.shortLabel}
-            </button>{' '}
-            i potvrđujem da sam ih pročitao/la i razumio/la.
+              {termsLabel}
+            </button>
+            {checkboxAfter}
           </span>
         </label>
 
@@ -88,14 +102,14 @@ export default function TermsEnforcementModal({
             disabled={!agreed || busy}
             className="flex-1 rounded-2xl bg-emerald-600 px-4 py-3 text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {busy ? 'Spremanje…' : 'Prihvaćam uvjete'}
+            {busy ? tEnforce('saving') : tEnforce('primary')}
           </button>
           <button
             onClick={onDecline}
             disabled={busy}
             className="flex-1 rounded-2xl border border-gray-300 px-4 py-3 text-gray-700 hover:bg-gray-50"
           >
-            Odjavi me
+            {tEnforce('secondary')}
           </button>
         </div>
       </div>

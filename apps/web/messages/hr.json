@@ -112,6 +112,27 @@
       "body": "Ovdje će biti obrazac za prijavu neprikladnog sadržaja."
     }
   },
+  "Terms": {
+    "label": "Uvjeti korištenja",
+    "preview": {
+      "lastUpdated": "Zadnje ažuriranje: {version}",
+      "openFull": "Otvori punu verziju",
+      "close": "Zatvori"
+    },
+    "enforcement": {
+      "badge": "Sigurnost korisnika",
+      "title": "Prihvati {label}",
+      "intro": "Za nastavak korištenja Thesare moraš prihvatiti aktualnu verziju (v{version}).",
+      "warning": "Ako odbiješ, bit ćeš odjavljen/a i nećeš moći objavljivati niti kupovati dok ih ne prihvatiš.",
+      "checkbox": "Prihvaćam {label} i potvrđujem da sam ih pročitao/la i razumio/la.",
+      "primary": "Prihvaćam uvjete",
+      "saving": "Spremanje…",
+      "secondary": "Odjavi me"
+    },
+    "provider": {
+      "saveError": "Ne možemo spremiti prihvaćanje. Pokušaj ponovno."
+    }
+  },
   "Creators": {
     "SimpleGuide": {
       "title": "Jednostavne upute za kreatore",
