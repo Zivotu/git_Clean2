@@ -274,17 +274,26 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     return [FILTER_ALL, FILTER_TRENDING, ...categories];
   }, [apps]);
 
-  const PREDEFINED_TAGS = [
-    "Igre",
-    "Kvizovi",
-    "Učenje",
-    "Alati",
-    "Business",
-    "Zabava",
-    "Ostalo",
+  // Predefined tag keys (will be localized via i18n)
+  const PREDEFINED_TAG_KEYS = [
+    'tags.games',
+    'tags.quiz',
+    'tags.learning',
+    'tags.tools',
+    'tags.business',
+    'tags.entertainment',
+    'tags.other',
   ];
 
-  const visibleTags = useMemo(() => PREDEFINED_TAGS.map(tag => [tag, 0]), []);
+  const _predefinedTagKeysHash = PREDEFINED_TAG_KEYS.join('|');
+  const visibleTags = useMemo(() =>
+    PREDEFINED_TAG_KEYS.map((key) => {
+      const labelFallback = key.split('.').pop() || key;
+      return [tBeta(key, labelFallback), 0] as [string, number];
+    }),
+    // include locale/messages, tBeta and PREDEFINED_TAG_KEYS so labels recompute on locale change
+    [locale, messages, _predefinedTagKeysHash, tBeta, PREDEFINED_TAG_KEYS],
+  );
   const hiddenTagCount = 0;
 
   const trendingApps = useMemo(() => {

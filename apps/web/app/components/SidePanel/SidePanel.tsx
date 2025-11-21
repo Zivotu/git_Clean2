@@ -188,8 +188,6 @@ export default function SidePanel({
 
       <nav className="space-y-1 text-base font-semibold">
         <SidebarItem label={sidebarLabels.nav.discover} icon={LayoutDashboard} active isDark={isDark} href="/" />
-        <SidebarItem label={sidebarLabels.nav.games} icon={Gamepad2} isDark={isDark} href="/search?tag=games" />
-        <SidebarItem label={sidebarLabels.nav.productivity} icon={AppWindow} isDark={isDark} href="/search?tag=productivity" />
         <SidebarItem label={sidebarLabels.nav.paidApps} icon={DollarSign} isDark={isDark} href="/search?tag=paid" />
         <SidebarItem label={sidebarLabels.nav.myProjects ?? 'Projects'} icon={FolderKanban} isDark={isDark} href="/my" />
         <SidebarItem label={sidebarLabels.nav.myCreators ?? 'Creators'} icon={Users} isDark={isDark} href="/my-creators" />

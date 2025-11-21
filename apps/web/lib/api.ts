@@ -95,19 +95,25 @@ async function apiFetchRaw(path: string, opts: ApiOptions = {}): Promise<Respons
   const timeout = typeof timeoutMs === 'number' ? timeoutMs : DEFAULT_API_TIMEOUT_MS;
   const timer = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
   try {
-    return await fetch(url, {
-      method,
-      credentials: 'include',
-      cache: 'no-store',
-      headers: hdrs,
-      body:
-        body === undefined
-          ? undefined
-          : isBinaryBody
-          ? (body as BodyInit)
-          : JSON.stringify(body),
-      signal: signal || controller.signal,
-    });
+    try {
+      return await fetch(url, {
+        method,
+        credentials: 'include',
+        cache: 'no-store',
+        headers: hdrs,
+        body:
+          body === undefined
+            ? undefined
+            : isBinaryBody
+            ? (body as BodyInit)
+            : JSON.stringify(body),
+        signal: signal || controller.signal,
+      });
+    } catch (err: any) {
+      // Make network errors more actionable during SSR/dev by including the URL
+      const msg = err?.message || String(err);
+      throw new Error(`Network fetch failed: ${msg} (url: ${url})`);
+    }
   } finally {
     if (timer) clearTimeout(timer);
   }

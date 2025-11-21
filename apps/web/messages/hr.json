@@ -688,6 +688,17 @@
       "footerHighlight": "Sretno s prvom Thesara aplikacijom!"
     }
   },
+  "BetaHome": {
+    "tags": {
+      "games": "Igre",
+      "quiz": "Kvizovi",
+      "learning": "Učenje",
+      "tools": "Alati",
+      "business": "Business",
+      "entertainment": "Zabava",
+      "other": "Ostalo"
+    }
+  },
   "Toasts": {
     "welcome": "Dobrodošli na THESARA.SPACE!",
     "loginToLike": "Prijavi se da lajkiraš aplikacije",
@@ -735,6 +746,10 @@
     "noPackagesText": "Paketi će uskoro biti dostupni",
     "loadError": "Došlo je do greške prilikom učitavanja paketa. Molimo pokušajte ponovno.",
     "perMonth": "mjesečno",
+    "Gold": "Gold",
+    "Free": "Besplatno",
+    "cardBrandVisa": "VISA",
+    "cardMasked": "•••• 4242",
     "goldDescription": "Otključajte veće limite, više prostora i prioritetnu podršku pri objavi.",
     "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Free uključuje {freeLimit})",
     "goldFeatureStorage": "Veći upload i storage za bundlove te assete",
@@ -744,7 +759,32 @@
     "noAdsFeatureRemoval": "Nema oglasa u editoru, dashboardu ni vašim aplikacijama",
     "noAdsFeatureFocus": "Publika ostaje fokusirana na sadržaj (bez bannera i pop-upova)",
     "earlyAccessNotice": "Early Access je aktivan – naplata je privremeno pauzirana dok je sve besplatno.",
-    "earlyAccessButtonLabel": "Dostupno uskoro"
+    "earlyAccessButtonLabel": "Dostupno uskoro",
+    "contactSupport": "Kontaktirajte podršku",
+    "upgradePlan": "Nadogradite plan",
+    "active": "Aktivno",
+    "inactive": "Neaktivno",
+    "nextPayment": "Obnavlja se",
+    "planDescription": "Vaš trenutni plan i stanje naplate. Upravljajte pretplatom i detaljima plaćanja u nastavku.",
+    "manageSubscription": "Upravljajte pretplatom",
+    "paymentMethod": "Način plaćanja",
+    "lastInvoice": "Posljednji račun",
+    "invoiceSampleDate": "—",
+    "downloadPdf": "Preuzmi PDF",
+    "resetsIn": "Poništava se za 14 dana",
+    "earlyAccess": "Rani pristup",
+    "promoTitle": "Pro Studio za Kreatore",
+    "promoText": "Otključajte naprednu analitiku i alate za generiranje sadržaja uz pomoć AI-ja.",
+    "joinWaitlist": "Pridružite se listi čekanja",
+    "availablePlans": "Dostupni planovi",
+    "selectPackage": "Odaberite paket",
+    "recentActivity": "Nedavne aktivnosti",
+    "invoiceId": "ID računa",
+    "date": "Datum",
+    "amount": "Iznos",
+    "status": "Status",
+    "action": "Radnja",
+    "paid": "Plaćeno"
   },
   "Login": {
     "backToHome": "Nazad na naslovnicu",

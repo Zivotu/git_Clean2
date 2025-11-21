@@ -688,6 +688,17 @@
       "footerHighlight": "Good luck with your first Thesara app!"
     }
   },
+  "BetaHome": {
+    "tags": {
+      "games": "Games",
+      "quiz": "Quizzes",
+      "learning": "Learning",
+      "tools": "Tools",
+      "business": "Business",
+      "entertainment": "Entertainment",
+      "other": "Other"
+    }
+  },
   "Toasts": {
     "welcome": "Welcome to Thesara!",
     "loginToLike": "Sign in to like apps",
@@ -735,6 +746,10 @@
     "noPackagesText": "Packages will be available soon",
     "loadError": "Failed to load packages. Please try again.",
     "perMonth": "per month",
+    "Gold": "Gold",
+    "Free": "Free",
+    "cardBrandVisa": "VISA",
+    "cardMasked": "•••• 4242",
     "goldDescription": "Unlock higher limits, premium storage and priority publish support.",
     "goldFeatureApps": "Up to {goldLimit} active apps (Free includes {freeLimit})",
     "goldFeatureStorage": "Larger upload & storage quota for bundles and assets",
@@ -744,7 +759,32 @@
     "noAdsFeatureRemoval": "Zero ads in the editor, dashboard and your apps",
     "noAdsFeatureFocus": "Keeps players focused on your content (no banners or interstitials)",
     "earlyAccessNotice": "Early Access is active – billing is temporarily paused while everything stays free.",
-    "earlyAccessButtonLabel": "Available soon"
+    "earlyAccessButtonLabel": "Available soon",
+    "contactSupport": "Contact Support",
+    "upgradePlan": "Upgrade Plan",
+    "active": "Active",
+    "inactive": "Inactive",
+    "nextPayment": "Renews",
+    "planDescription": "Your current plan and billing state. Manage subscription and payment details below.",
+    "manageSubscription": "Manage Subscription",
+    "paymentMethod": "Payment Method",
+    "lastInvoice": "Last Invoice",
+    "invoiceSampleDate": "—",
+    "downloadPdf": "Download PDF",
+    "resetsIn": "Resets in 14 days",
+    "earlyAccess": "Early Access",
+    "promoTitle": "Creator Studio Pro",
+    "promoText": "Unlock advanced analytics and AI-powered asset generation tools.",
+    "joinWaitlist": "Join Waitlist",
+    "availablePlans": "Available Plans",
+    "selectPackage": "Select Package",
+    "recentActivity": "Recent Activity",
+    "invoiceId": "Invoice ID",
+    "date": "Date",
+    "amount": "Amount",
+    "status": "Status",
+    "action": "Action",
+    "paid": "Paid"
   },
   "Login": {
     "backToHome": "Back to Home",
