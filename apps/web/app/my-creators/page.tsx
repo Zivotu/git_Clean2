@@ -139,8 +139,8 @@ export default function MyCreatorsPage() {
                 <Link href={`/u/${c.handle}`} className="flex items-center gap-3 group">
                   <Avatar uid={c.id} src={c.photo} name={c.displayName || c.handle} size={44} />
                   <div>
+                    <div className={`text-base font-semibold ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{c.displayName || c.handle}</div>
                     <div className={`text-sm group-hover:underline ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>@{c.handle}</div>
-                    {c.displayName && <div className={`text-base font-semibold ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{c.displayName}</div>}
                   </div>
                 </Link>
                 <Link href={`/u/${c.handle}`} className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium">Profil</Link>

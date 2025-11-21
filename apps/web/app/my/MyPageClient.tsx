@@ -652,6 +652,7 @@ export default function MyProjectsPage() {
                 authorName: it.author?.name || 'Anonymous',
                 authorInitials: (it.author?.name || 'A').slice(0, 2).toUpperCase(),
                 authorPhoto: it.author?.photo,
+                authorId: it.author?.uid, // Add this
                 playsCount: it.playCount || 0,
                 likesCount: it.likesCount || 0,
                 usersLabel: (it.playCount || 0).toString(),

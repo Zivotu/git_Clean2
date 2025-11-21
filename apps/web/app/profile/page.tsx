@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import Avatar from '@/components/Avatar';
 // Using global header from layout; no local header
 import { type Listing } from '@/components/AppCard';
-import { doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { auth, db, storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -80,7 +80,7 @@ async function buildHeaders(withJson: boolean): Promise<Record<string, string>> 
   try {
     const token = await auth?.currentUser?.getIdToken?.();
     if (token) headers['Authorization'] = `Bearer ${token}`;
-  } catch {}
+  } catch { }
   return headers;
 }
 
@@ -139,6 +139,10 @@ export default function ProfilePage() {
   const [publicPhotoPreview, setPublicPhotoPreview] = useState('');
   const [publicSaving, setPublicSaving] = useState(false);
   const [publicStatus, setPublicStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [repositoryName, setRepositoryName] = useState('');
+  const [initialRepositoryName, setInitialRepositoryName] = useState('');
+  const [repositoryNameError, setRepositoryNameError] = useState<string | null>(null);
+  const [lastChangeTimestamp, setLastChangeTimestamp] = useState<number | null>(null);
   // Compute stable values before any early returns to keep hooks order consistent
   const handle = userInfo?.username || '';
   const joined = useMemo(() => {
@@ -183,8 +187,8 @@ export default function ProfilePage() {
               json.status === 'active'
                 ? 'active'
                 : json.status === 'trialing'
-                ? 'trial'
-                : 'expired';
+                  ? 'trial'
+                  : 'expired';
             const renewal = json.currentPeriodEnd
               ? new Date(json.currentPeriodEnd).toLocaleDateString()
               : undefined;
@@ -233,8 +237,8 @@ export default function ProfilePage() {
         const key = item.feature === 'app-subscription'
           ? `${item.feature}:${item.id}`
           : item.feature === 'creator-all-access'
-          ? `${item.feature}:${item.creatorUid || item.id}`
-          : String(item.feature);
+            ? `${item.feature}:${item.creatorUid || item.id}`
+            : String(item.feature);
         if (seen.has(key as string)) continue;
         seen.add(key as string);
         deduped.push(item);
@@ -336,6 +340,10 @@ export default function ProfilePage() {
           displayName: creatorDisplay || fallbackPublicName || '',
           photoURL: photoCandidates[0] || fallbackPublicPhoto || '',
         });
+        const currentRepoName = c.customRepositoryName || c.handle || creatorDisplay || fallbackPublicName;
+        setRepositoryName(currentRepoName);
+        setInitialRepositoryName(currentRepoName);
+        setLastChangeTimestamp(c.lastRepositoryNameChangeTimestamp || null);
       } else {
         setPublicProfile({
           displayName: fallbackPublicName || '',
@@ -458,7 +466,7 @@ export default function ProfilePage() {
               }
             }
             if (ok && title) updated[s.id] = title;
-          } catch {}
+          } catch { }
         }
         if (Object.keys(updated).length) {
           setActiveSubs((arr) => arr.map((x) => (updated[x.id] ? { ...x, label: updated[x.id] } : x)));
@@ -473,7 +481,7 @@ export default function ProfilePage() {
             await cancelSubscription(subId, { silent: true });
             setAutoCanceledIds((prev) => new Set(prev).add(subId));
             setErrorMessage('Pretplata je automatski otkazana jer je aplikacija obrisana.');
-          } catch {}
+          } catch { }
         }
       } finally {
         setResolvingTitles(false);
@@ -543,7 +551,7 @@ export default function ProfilePage() {
             const j = await res.json();
             names[uid] = { name: j?.displayName || j?.name || j?.handle || undefined, handle: j?.handle };
           }
-        } catch {}
+        } catch { }
       }
       setActiveSubs((arr) =>
         arr.map((x) => {
@@ -636,12 +644,47 @@ export default function ProfilePage() {
         updatedAt: Date.now(),
       };
       if (handleValue) payload.handle = handleValue;
+
+      // Repository Name Logic
+      const repositoryNameTrimmed = repositoryName.trim();
+      if (repositoryNameTrimmed) {
+        if (!/^[a-zA-Z0-9_-]+$/.test(repositoryNameTrimmed)) {
+          setPublicStatus({ type: 'error', text: 'Ime repozitorija može sadržavati samo slova, brojeve, crtice i donje crte.' });
+          setPublicSaving(false);
+          return;
+        }
+        const repoChanged = repositoryNameTrimmed !== initialRepositoryName;
+        if (repoChanged) {
+          const now = Date.now();
+          const THREE_MONTHS = 90 * 24 * 60 * 60 * 1000;
+          if (lastChangeTimestamp && (now - lastChangeTimestamp < THREE_MONTHS)) {
+            setPublicStatus({ type: 'error', text: 'Ime repozitorija možete mijenjati jednom u 3 mjeseca.' });
+            setPublicSaving(false);
+            return;
+          }
+          // Check uniqueness
+          const q = query(collection(db, 'creators'), where('customRepositoryName', '==', repositoryNameTrimmed));
+          const snap = await getDocs(q);
+          if (!snap.empty && snap.docs[0].id !== user.uid) {
+            setPublicStatus({ type: 'error', text: 'Ovo ime repozitorija je već zauzeto.' });
+            setPublicSaving(false);
+            return;
+          }
+          payload.customRepositoryName = repositoryNameTrimmed;
+          payload.lastRepositoryNameChangeTimestamp = now;
+        }
+      }
+
       await setDoc(doc(db, 'creators', user.uid), payload, { merge: true });
       setPublicProfile((prev) => ({
         ...prev,
         displayName,
         photoURL: photoURL || prev.photoURL,
       }));
+      if (payload.customRepositoryName) {
+        setInitialRepositoryName(payload.customRepositoryName);
+        setLastChangeTimestamp(payload.lastRepositoryNameChangeTimestamp || lastChangeTimestamp);
+      }
       setPublicStatus({ type: 'success', text: 'Javni profil je spremljen.' });
     } catch (err) {
       console.error('Failed to save public profile', err);
@@ -696,7 +739,7 @@ export default function ProfilePage() {
     }
   }
 
-  
+
 
   if (loading || busy) {
     return (
@@ -793,11 +836,10 @@ export default function ProfilePage() {
                 {name}
                 {connect && (
                   <span
-                    className={`ml-3 text-xs px-2 py-1 rounded-full ${
-                      canMonetize
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
+                    className={`ml-3 text-xs px-2 py-1 rounded-full ${canMonetize
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-yellow-100 text-yellow-800'
+                      }`}
                   >
                     {canMonetize ? 'Isplate aktivne' : 'Onboarding potreban'}
                   </span>
@@ -882,11 +924,23 @@ export default function ProfilePage() {
                   placeholder="npr. Studio Pixel"
                 />
               </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Ime repozitorija
+                </label>
+                <Input
+                  value={repositoryName}
+                  onChange={(e) => setRepositoryName(e.target.value)}
+                  placeholder="npr. studio-pixel"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Ovo će biti adresa tvog repozitorija. Možeš ga promijeniti jednom u 3 mjeseca.
+                </p>
+              </div>
               {publicStatus && (
                 <p
-                  className={`text-sm ${
-                    publicStatus.type === 'success' ? 'text-emerald-600' : 'text-red-600'
-                  }`}
+                  className={`text-sm ${publicStatus.type === 'success' ? 'text-emerald-600' : 'text-red-600'
+                    }`}
                 >
                   {publicStatus.text}
                 </p>
@@ -952,8 +1006,8 @@ export default function ProfilePage() {
                   sub.feature === 'creator-all-access' && sub.creatorHandle
                     ? `Kreator @${sub.creatorHandle}`
                     : sub.feature === 'app-subscription' && sub.appId
-                    ? `App #${sub.appId}`
-                    : featureDescriptions[sub.feature] || 'Pretplata';
+                      ? `App #${sub.appId}`
+                      : featureDescriptions[sub.feature] || 'Pretplata';
                 return (
                   <li
                     key={sub.id}
@@ -1106,23 +1160,23 @@ export default function ProfilePage() {
                 <li key={app.id}>
                   <Card className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
-                    <h3 className="text-lg font-medium">{app.title}</h3>
-                    {app.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">
-                        {app.description}
-                      </p>
-                    )}
-                    <div className="mt-1 text-xs text-gray-500 flex gap-4">
-                      {typeof app.likesCount === 'number' && (
-                        <span>Likes: {app.likesCount}</span>
+                      <h3 className="text-lg font-medium">{app.title}</h3>
+                      {app.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {app.description}
+                        </p>
                       )}
-                      {typeof (app as any).playCount === 'number' || typeof app.playsCount === 'number' ? (
-                        <span>
-                          Plays: {(app as any).playCount ?? app.playsCount ?? 0}
-                        </span>
-                      ) : null}
+                      <div className="mt-1 text-xs text-gray-500 flex gap-4">
+                        {typeof app.likesCount === 'number' && (
+                          <span>Likes: {app.likesCount}</span>
+                        )}
+                        {typeof (app as any).playCount === 'number' || typeof app.playsCount === 'number' ? (
+                          <span>
+                            Plays: {(app as any).playCount ?? app.playsCount ?? 0}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
                     <div className="flex gap-2">
                       <a
                         href={playHref(app.id, { run: 1 })}

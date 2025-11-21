@@ -6,7 +6,7 @@ import Avatar from '@/components/Avatar';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { updateProfile } from 'firebase/auth';
 import { db, storage } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore'; // Added getDoc
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PUBLIC_API_URL } from '@/lib/config';
 
@@ -40,11 +40,17 @@ function Toast({
   );
 }
 
+const THREE_MONTHS_IN_MS = 3 * 30 * 24 * 60 * 60 * 1000; // Rough calculation
+
 export default function SettingsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [name, setName] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [repositoryName, setRepositoryName] = useState('');
+  const [initialRepositoryName, setInitialRepositoryName] = useState('');
+  const [repositoryNameError, setRepositoryNameError] = useState<string | null>(null);
+  const [lastChangeTimestamp, setLastChangeTimestamp] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
@@ -57,13 +63,59 @@ export default function SettingsPage() {
   const [loadingVersions, setLoadingVersions] = useState(false);
 
   useEffect(() => {
-    if (user) setName(getDisplayName(user));
+    if (user && db) {
+      setName(getDisplayName(user));
+
+      const fetchCreatorProfile = async () => {
+        const creatorDocRef = doc(db, 'creators', user.uid);
+        const creatorDocSnap = await getDoc(creatorDocRef);
+        if (creatorDocSnap.exists()) {
+          const creatorData = creatorDocSnap.data();
+          const currentRepoName = creatorData.customRepositoryName || creatorData.handle || getDisplayName(user);
+          setRepositoryName(currentRepoName);
+          setInitialRepositoryName(currentRepoName);
+          setLastChangeTimestamp(creatorData.lastRepositoryNameChangeTimestamp || null);
+        } else {
+          // If no creator document, use display name as default
+          const defaultRepoName = getDisplayName(user);
+          setRepositoryName(defaultRepoName);
+          setInitialRepositoryName(defaultRepoName);
+          setLastChangeTimestamp(null);
+        }
+      };
+      fetchCreatorProfile();
+    }
   }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setBusy(true);
+    setRepositoryNameError(null);
+
+    // Validate repository name format
+    if (!repositoryName.trim()) {
+      setRepositoryNameError('Repository name cannot be empty.');
+      setBusy(false);
+      return;
+    }
+    if (!/^[a-zA-Z0-9_-]+$/.test(repositoryName)) {
+      setRepositoryNameError('Repository name can only contain letters, numbers, hyphens, and underscores.');
+      setBusy(false);
+      return;
+    }
+
+    // Cooldown check
+    const now = Date.now();
+    const canChange = !lastChangeTimestamp || (now - lastChangeTimestamp) > THREE_MONTHS_IN_MS;
+    const repositoryNameChanged = repositoryName !== initialRepositoryName;
+
+    if (repositoryNameChanged && !canChange) {
+      setRepositoryNameError('You can only change your repository name once every three months.');
+      setBusy(false);
+      return;
+    }
+
     try {
       let photoURL = user.photoURL || null;
       if (file && storage) {
@@ -76,42 +128,55 @@ export default function SettingsPage() {
             message: 'Upload failed. Please try again or contact support.',
             type: 'error',
           });
+          setBusy(false); // Make sure to set busy to false on error before returning
           return;
         }
         photoURL = await getDownloadURL(storageRef);
       }
       await updateProfile(user, { displayName: name, photoURL: photoURL || undefined });
       if (db) {
-        await updateDoc(doc(db, 'users', user.uid), { displayName: name, photoURL });
+        const updateData: { displayName: string; photoURL: string | null; customRepositoryName?: string; lastRepositoryNameChangeTimestamp?: number; } = {
+          displayName: name,
+          photoURL: photoURL,
+        };
+
+        if (repositoryNameChanged && canChange) {
+          // Perform uniqueness check for repositoryName
+          const creatorsRef = collection(db, 'creators');
+          const q = query(creatorsRef, where('customRepositoryName', '==', repositoryName));
+          const querySnapshot = await getDocs(q);
+
+          if (!querySnapshot.empty && querySnapshot.docs[0].id !== user.uid) {
+            setRepositoryNameError('This repository name is already taken.');
+            setBusy(false);
+            return;
+          }
+
+          updateData.customRepositoryName = repositoryName;
+          updateData.lastRepositoryNameChangeTimestamp = now;
+        }
+
+        await updateDoc(doc(db, 'creators', user.uid), updateData);
+        setToast({ message: 'Profil ažuriran', type: 'success' });
+        // After successful update, re-initialize initialRepositoryName and lastChangeTimestamp
+        if (repositoryNameChanged && canChange) {
+          setInitialRepositoryName(repositoryName);
+          setLastChangeTimestamp(now);
+        }
       }
-      setToast({ message: 'Profil ažuriran', type: 'success' });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setToast({ message: 'Failed to update profile. Please try again.', type: 'error' });
     } finally {
       setBusy(false);
     }
   };
 
-  const loadVersions = async () => {
-    if (!appId) return;
-    setLoadingVersions(true);
-    try {
-      const res = await fetch(`${PUBLIC_API_URL}/app/${appId}/versions`, {
-        credentials: 'include',
-      });
-      const data = await res.json();
-      setVersions(data.archivedVersions || []);
-    } finally {
-      setLoadingVersions(false);
-    }
-  };
-
-  const restoreVersion = async (buildId: string) => {
-    await fetch(`${PUBLIC_API_URL}/app/${appId}/versions/${buildId}/promote`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    setToast({ message: 'Version restored', type: 'success' });
-    await loadVersions();
-  };
+  const timeRemainingForChange = lastChangeTimestamp
+    ? THREE_MONTHS_IN_MS - (Date.now() - lastChangeTimestamp)
+    : 0;
+  const daysRemaining = Math.ceil(timeRemainingForChange / (1000 * 60 * 60 * 24));
+  const canChangeRepoName = daysRemaining <= 0;
 
   if (loading) {
     return (
@@ -134,16 +199,48 @@ export default function SettingsPage() {
           <Avatar uid={user.uid} src={user.photoURL ?? undefined} name={name} size={64} />
           <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </div>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ime"
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
+        <div>
+          <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
+            Ime koje vide posjetitelji
+          </label>
+          <input
+            id="displayName"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ime"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+          />
+        </div>
+        <div>
+          <label htmlFor="repositoryName" className="block text-sm font-medium text-gray-700">
+            Ime repozitorija (jednom u tri mjeseca)
+          </label>
+          <input
+            id="repositoryName"
+            value={repositoryName}
+            onChange={(e) => setRepositoryName(e.target.value)}
+            placeholder="Ime repozitorija"
+            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2"
+            disabled={!canChangeRepoName && repositoryName !== initialRepositoryName} // Disable if not allowed to change and it's not the initial name
+          />
+          {repositoryNameError && (
+            <p className="mt-1 text-sm text-red-600">{repositoryNameError}</p>
+          )}
+          {!canChangeRepoName && repositoryName === initialRepositoryName && (
+            <p className="mt-1 text-sm text-gray-500">
+              Možete promijeniti ime repozitorija za {daysRemaining} dana.
+            </p>
+          )}
+          {repositoryName === initialRepositoryName && (
+            <p className="mt-1 text-sm text-gray-500">
+              Vaše repozitorij ime je: <Link href={`/u/${repositoryName}`} className="text-blue-600 underline">{repositoryName}</Link>
+            </p>
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || (!canChangeRepoName && repositoryName !== initialRepositoryName)}
             className="px-4 py-2 rounded bg-emerald-600 text-white disabled:opacity-50"
           >
             {busy ? 'Spremanje...' : 'Spremi'}

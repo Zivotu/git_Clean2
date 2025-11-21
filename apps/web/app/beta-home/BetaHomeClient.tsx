@@ -181,6 +181,8 @@ function mapListings(
       authorName,
       authorInitials: makeInitials(authorName),
       authorPhoto: item.author?.photo || null,
+      authorId: item.author?.uid, // Pass authorId for fresh data fetching
+      authorHandle: item.author?.handle || undefined, // Added this line
       playsCount: item.playsCount || 0,
       likesCount: item.likesCount || 0,
       usersLabel: formatMetric(item.playsCount, options.metricNewLabel),

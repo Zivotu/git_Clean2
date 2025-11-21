@@ -14,6 +14,7 @@ import Avatar from '@/components/Avatar';
 import AdSlot from '@/components/AdSlot';
 import { PUBLIC_API_URL } from '@/lib/config';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { useTheme } from '@/components/ThemeProvider';
 
 const cx = (...classes: Array<string | undefined | null | false>) =>
   classes.filter(Boolean).join(' ');
@@ -377,20 +378,32 @@ function PublicAppViewComponent({
     : tApp('viewer.report.submit', undefined, 'Pošalji prijavu');
   const reportLinkLabel = tApp('viewer.report.link', undefined, 'Prijavi sadržaj');
   const ctaBannerAlt = tApp('viewer.ctaBanner.alt', undefined, 'Thesara promo banner');
+
+  const { isDark } = useTheme();
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-emerald-50/30 to-white">
+    <div className={`min-h-screen transition-colors duration-300 ${isDark
+      ? 'bg-gradient-to-b from-[#09090B] via-[#18181B] to-[#09090B]'
+      : 'bg-gradient-to-b from-white via-emerald-50/30 to-white'
+      }`}>
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-10 lg:py-16">
         {adHeaderSlot && (
           <AdSlot
             slotId={adHeaderSlot}
             slotKey="appDetailHeader"
             placement="app.detail.header"
-            className="rounded-3xl border border-gray-100 bg-white/80 p-3"
+            className={`rounded-3xl border p-3 transition-colors duration-300 ${isDark
+              ? 'border-[#27272A] bg-[#18181B]/80'
+              : 'border-gray-100 bg-white/80'
+              }`}
           />
         )}
 
         {showStatusNotice && (
-          <div className="rounded-3xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm leading-relaxed text-amber-900">
+          <div className={`rounded-3xl border px-4 py-3 text-sm leading-relaxed transition-colors duration-300 ${isDark
+            ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+            : 'border-amber-200 bg-amber-50/90 text-amber-900'
+            }`}>
             {canViewUnpublished
               ? tApp('viewer.banner.private', undefined, 'Ovaj oglas još nije javan. Vidiš ga jer imaš povišena prava.')
               : tApp('viewer.banner.pending', undefined, 'Aplikacija je u postupku odobravanja.')}
@@ -399,27 +412,42 @@ function PublicAppViewComponent({
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="space-y-6">
-            <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-500">
+            <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+              ? 'border-[#27272A] bg-[#18181B]/95'
+              : 'border-gray-100 bg-white/95'
+              }`}>
+              <p className={`text-xs font-semibold uppercase tracking-[0.35em] ${isDark ? 'text-[#A855F7]' : 'text-emerald-500'
+                }`}>
                 {bannerTagline}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-black text-gray-900 md:text-4xl">{item.title}</h1>
+                <h1 className={`text-3xl font-black md:text-4xl ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                  }`}>{item.title}</h1>
                 {isNew && (
-                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isDark
+                    ? 'bg-[#A855F7]/20 text-[#A855F7]'
+                    : 'bg-emerald-100 text-emerald-700'
+                    }`}>
                     {newBadge}
                   </span>
                 )}
                 {visibility === 'unlisted' && (
-                  <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">{visibilityBadge}</span>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isDark
+                    ? 'bg-zinc-700 text-zinc-200'
+                    : 'bg-gray-900 text-white'
+                    }`}>{visibilityBadge}</span>
                 )}
                 {appState === 'inactive' && (
-                  <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isDark
+                    ? 'bg-rose-500/20 text-rose-400'
+                    : 'bg-rose-100 text-rose-700'
+                    }`}>
                     {tApp('viewer.badges.paused', undefined, 'Pauzirano')}
                   </span>
                 )}
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
+              <div className={`mt-3 flex flex-wrap items-center gap-4 text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                }`}>
                 {item.author && (
                   <div className="flex items-center gap-2">
                     {item.author.photo && (
@@ -449,7 +477,8 @@ function PublicAppViewComponent({
                 <span>•</span>
                 <span>{statusLabel}</span>
               </div>
-              <p className="mt-6 text-lg leading-relaxed text-gray-700">{heroDescription}</p>
+              <p className={`mt-6 text-lg leading-relaxed ${isDark ? 'text-zinc-300' : 'text-gray-700'
+                }`}>{heroDescription}</p>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <div className="flex-1">{renderPlayButton()}</div>
@@ -457,7 +486,10 @@ function PublicAppViewComponent({
                   type="button"
                   onClick={toggleLike}
                   disabled={likeBusy}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-900 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none ${isDark
+                    ? 'border-[#27272A] text-zinc-200 hover:border-[#A855F7] hover:text-[#A855F7]'
+                    : 'border-gray-200 text-gray-900 hover:border-emerald-300 hover:text-emerald-700'
+                    }`}
                 >
                   <span aria-hidden className={cx('text-lg', liked ? 'text-rose-500' : 'text-gray-400')}>♥</span>
                   {likeButtonLabel}
@@ -465,7 +497,10 @@ function PublicAppViewComponent({
                 <button
                   type="button"
                   onClick={copyLink}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-900 transition hover:border-emerald-300 hover:text-emerald-700 sm:flex-none"
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition sm:flex-none ${isDark
+                    ? 'border-[#27272A] text-zinc-200 hover:border-[#A855F7] hover:text-[#A855F7]'
+                    : 'border-gray-200 text-gray-900 hover:border-emerald-300 hover:text-emerald-700'
+                    }`}
                 >
                   <span aria-hidden className="text-lg text-gray-400">⧉</span>
                   {shareLabel}
@@ -474,28 +509,42 @@ function PublicAppViewComponent({
 
               {buildBadgesSlot && (
                 <div className="mt-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">{securityTitle}</p>
+                  <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                    }`}>{securityTitle}</p>
                   <div className="mt-2">{buildBadgesSlot}</div>
                 </div>
               )}
             </section>
 
-            <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
+            <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+              ? 'border-[#27272A] bg-[#18181B]/95'
+              : 'border-gray-100 bg-white/95'
+              }`}>
               <div className="grid gap-4 sm:grid-cols-2">
                 {stats.map((stat) => (
-                  <div key={stat.key} className="rounded-2xl border border-gray-100 bg-white/90 px-4 py-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{stat.label}</p>
-                    <p className="mt-1 text-2xl font-black text-gray-900">{stat.value}</p>
+                  <div key={stat.key} className={`rounded-2xl border px-4 py-3 transition-colors duration-300 ${isDark
+                    ? 'border-[#27272A] bg-[#09090B]/90'
+                    : 'border-gray-100 bg-white/90'
+                    }`}>
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                      }`}>{stat.label}</p>
+                    <p className={`mt-1 text-2xl font-black ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                      }`}>{stat.value}</p>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
+            <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+                ? 'border-[#27272A] bg-[#18181B]/95'
+                : 'border-gray-100 bg-white/95'
+              }`}>
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-xl font-semibold text-gray-900">{descriptionTitle}</h2>
+                <h2 className={`text-xl font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                  }`}>{descriptionTitle}</h2>
               </div>
-              <div className="mt-4 space-y-4 text-gray-700">
+              <div className={`mt-4 space-y-4 ${isDark ? 'text-zinc-300' : 'text-gray-700'
+                }`}>
                 {descriptionParagraphs.length > 0 ? (
                   descriptionParagraphs.map((paragraph, index) => (
                     <p key={index} className="leading-relaxed">
@@ -503,83 +552,121 @@ function PublicAppViewComponent({
                     </p>
                   ))
                 ) : (
-                  <p className="text-sm italic text-gray-500">{descriptionEmpty}</p>
+                  <p className={`text-sm italic ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                    }`}>{descriptionEmpty}</p>
                 )}
               </div>
             </section>
 
-            <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
+            <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+                ? 'border-[#27272A] bg-[#18181B]/95'
+                : 'border-gray-100 bg-white/95'
+              }`}>
               <div className="flex items-center justify-between gap-4">
-                <h2 className="text-xl font-semibold text-gray-900">{galleryTitle}</h2>
+                <h2 className={`text-xl font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                  }`}>{galleryTitle}</h2>
               </div>
               {gallery.length ? (
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {gallery.map((url, index) => (
-                    <figure key={url + index} className="overflow-hidden rounded-2xl border border-gray-100 bg-gray-50">
+                    <figure key={url + index} className={`overflow-hidden rounded-2xl border transition-colors duration-300 ${isDark
+                      ? 'border-[#27272A] bg-[#18181B]'
+                      : 'border-gray-100 bg-gray-50'
+                      }`}>
                       <img src={url} alt={galleryAlt(index)} loading="lazy" className="h-60 w-full object-cover" />
                     </figure>
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-sm italic text-gray-500">{galleryEmpty}</p>
+                <p className={`mt-4 text-sm italic ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                  }`}>{galleryEmpty}</p>
               )}
             </section>
 
-            <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
+            <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+              ? 'border-[#27272A] bg-[#18181B]/95'
+              : 'border-gray-100 bg-white/95'
+              }`}>
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{reviewsTitle}</h2>
-                  <p className="text-sm text-gray-500">{reviewsSubtitle}</p>
+                  <h2 className={`text-xl font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{reviewsTitle}</h2>
+                  <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-500'
+                    }`}>{reviewsSubtitle}</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-4xl font-black text-gray-900">{formattedAverage}</div>
-                  <p className="text-xs uppercase tracking-wide text-gray-500">{reviewsAverageLabel}</p>
+                  <div className={`text-4xl font-black ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{formattedAverage}</div>
+                  <p className={`text-xs uppercase tracking-wide ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                    }`}>{reviewsAverageLabel}</p>
                 </div>
               </div>
               <div className="mt-6 grid gap-6 lg:grid-cols-2">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{reviewsBreakdown}</p>
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                    }`}>{reviewsBreakdown}</p>
                   <div className="mt-3 space-y-3">
                     {[...ratingDistribution].reverse().map((row) => (
                       <div key={row.star}>
-                        <div className="flex items-center justify-between text-sm text-gray-600">
+                        <div className={`flex items-center justify-between text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                          }`}>
                           <span>{row.star} ★</span>
                           <span>{row.percentage}%</span>
                         </div>
-                        <div className="mt-1 h-2 rounded-full bg-gray-100">
-                          <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${row.percentage}%` }} />
+                        <div className={`mt-1 h-2 rounded-full ${isDark ? 'bg-zinc-800' : 'bg-gray-100'
+                          }`}>
+                          <div className={`h-2 rounded-full ${isDark ? 'bg-[#A855F7]' : 'bg-emerald-500'
+                            }`} style={{ width: `${row.percentage}%` }} />
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-gray-100 bg-white/90 p-4">
-                  <h3 className="text-sm font-semibold text-gray-900">{reviewsFormTitle}</h3>
-                  {!user && <p className="mt-2 text-xs text-gray-500">{tApp('reviews.loginHint', undefined, 'Prijavi se kako bi ostavio recenziju.')}</p>}
-                  {user && !canReview && <p className="mt-2 text-xs text-gray-500">{tApp('reviews.requirePurchaseHint', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.')}</p>}
+                <div className={`rounded-2xl border p-4 transition-colors duration-300 ${isDark
+                  ? 'border-[#27272A] bg-[#09090B]/90'
+                  : 'border-gray-100 bg-white/90'
+                  }`}>
+                  <h3 className={`text-sm font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{reviewsFormTitle}</h3>
+                  {!user && <p className={`mt-2 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'
+                    }`}>{tApp('reviews.loginHint', undefined, 'Prijavi se kako bi ostavio recenziju.')}</p>}
+                  {user && !canReview && <p className={`mt-2 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'
+                    }`}>{tApp('reviews.requirePurchaseHint', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.')}</p>}
                   <form className="mt-3 space-y-3" onSubmit={handleReviewSubmit}>
-                    <label className="block text-xs font-semibold text-gray-600">
+                    <label className={`block text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                      }`}>
                       {reviewsRatingLabel}
                       <select
                         value={reviewRating}
                         onChange={(event) => setReviewRating(Number(event.target.value))}
-                        className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm transition-colors duration-300 ${isDark
+                          ? 'border-[#27272A] bg-[#09090B] text-zinc-200'
+                          : 'border-gray-200 bg-white text-gray-900'
+                          }`}
                       >
                         {[5, 4, 3, 2, 1].map((value) => (
-                          <option key={value} value={value}>
+                          <option
+                            key={value}
+                            value={value}
+                            className={isDark ? 'bg-[#09090B] text-zinc-200' : 'bg-white text-gray-900'}
+                          >
                             {value}
                           </option>
                         ))}
                       </select>
                     </label>
-                    <label className="block text-xs font-semibold text-gray-600">
+                    <label className={`block text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                      }`}>
                       {reviewsCommentLabel}
                       <textarea
                         value={reviewComment}
                         onChange={(event) => setReviewComment(event.target.value)}
                         placeholder={reviewsPlaceholder}
                         rows={4}
-                        className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm transition-colors duration-300 ${isDark
+                          ? 'border-[#27272A] bg-[#09090B] text-zinc-200 placeholder:text-zinc-500'
+                          : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400'
+                          }`}
                       />
                     </label>
                     {reviewStatus && (
@@ -595,7 +682,10 @@ function PublicAppViewComponent({
                     <button
                       type="submit"
                       disabled={reviewSubmitting}
-                      className="w-full rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      className={`w-full rounded-2xl px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${isDark
+                        ? 'bg-[#A855F7] hover:bg-[#9333EA]'
+                        : 'bg-emerald-600 hover:bg-emerald-700'
+                        }`}
                     >
                       {reviewSubmitting ? tApp('reviews.submitting', undefined, 'Slanje…') : tApp('reviews.submit', undefined, 'Pošalji recenziju')}
                     </button>
@@ -604,20 +694,28 @@ function PublicAppViewComponent({
               </div>
               <div className="mt-6 space-y-4">
                 {isLoadingReviews ? (
-                  <p className="text-sm text-gray-500">{reviewsLoading}</p>
+                  <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-500'
+                    }`}>{reviewsLoading}</p>
                 ) : reviews.length === 0 ? (
-                  <p className="text-sm text-gray-500">{reviewsEmpty}</p>
+                  <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-500'
+                    }`}>{reviewsEmpty}</p>
                 ) : (
                   reviews.map((review) => (
-                    <div key={`${review.korisnik}-${review.datum}`} className="rounded-2xl border border-gray-100 bg-white/90 p-4">
+                    <div key={`${review.korisnik}-${review.datum}`} className={`rounded-2xl border p-4 transition-colors duration-300 ${isDark
+                      ? 'border-[#27272A] bg-[#09090B]/90'
+                      : 'border-gray-100 bg-white/90'
+                      }`}>
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-gray-900">{review.korisnik}</p>
-                          <p className="text-xs text-gray-500">{formatReviewDate(review.datum)}</p>
+                          <p className={`text-sm font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                            }`}>{review.korisnik}</p>
+                          <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                            }`}>{formatReviewDate(review.datum)}</p>
                         </div>
                         <RatingStars value={review.ocjena} />
                       </div>
-                      <p className="mt-3 text-sm text-gray-700">{review.komentar}</p>
+                      <p className={`mt-3 text-sm ${isDark ? 'text-zinc-300' : 'text-gray-700'
+                        }`}>{review.komentar}</p>
                     </div>
                   ))
                 )}
@@ -629,18 +727,28 @@ function PublicAppViewComponent({
                 slotId={adInlineSlot}
                 slotKey="appDetailInline"
                 placement="app.detail.inline"
-                className="rounded-3xl border border-gray-100 bg-white/80 p-3"
+                className={`rounded-3xl border p-3 transition-colors duration-300 ${isDark
+                  ? 'border-[#27272A] bg-[#18181B]/80'
+                  : 'border-gray-100 bg-white/80'
+                  }`}
               />
             )}
           </div>
 
           <aside className="space-y-6">
-            <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
+            <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+              ? 'border-[#27272A] bg-[#18181B]/95'
+              : 'border-gray-100 bg-white/95'
+              }`}>
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-gray-500">
+                <h2 className={`text-sm font-semibold uppercase tracking-[0.3em] ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                  }`}>
                   {previewTitle}
                 </h2>
-                <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white">
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isDark
+                  ? 'bg-zinc-700 text-zinc-200'
+                  : 'bg-gray-900 text-white'
+                  }`}>
                   {formattedPrice}
                 </span>
               </div>
@@ -652,36 +760,50 @@ function PublicAppViewComponent({
                   onError={handlePreviewError}
                 />
               ) : (
-                <div className="mt-4 flex h-64 items-center justify-center rounded-2xl bg-gray-100 text-sm text-gray-500">
+                <div className={`mt-4 flex h-64 items-center justify-center rounded-2xl text-sm transition-colors duration-300 ${isDark
+                  ? 'bg-zinc-800 text-zinc-500'
+                  : 'bg-gray-100 text-gray-500'
+                  }`}>
                   {previewFallback}
                 </div>
               )}
-              <dl className="mt-5 space-y-2 text-sm text-gray-600">
+              <dl className={`mt-5 space-y-2 text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                }`}>
                 <div className="flex items-center justify-between">
                   <dt>{tApp('viewer.stats.plays', undefined, 'Pokretanja')}</dt>
-                  <dd className="font-semibold text-gray-900">{playsDisplay}</dd>
+                  <dd className={`font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{playsDisplay}</dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt>{tApp('viewer.stats.likes', undefined, 'Sviđanja')}</dt>
-                  <dd className="font-semibold text-gray-900">{likeDisplay}</dd>
+                  <dd className={`font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{likeDisplay}</dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt>{tApp('viewer.stats.status', undefined, 'Status')}</dt>
-                  <dd className="font-semibold text-gray-900">{statusLabel}</dd>
+                  <dd className={`font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{statusLabel}</dd>
                 </div>
               </dl>
             </section>
 
             {canReportContent && (
-              <section className="rounded-3xl border border-gray-100 bg-white/95 p-6 shadow-sm">
+              <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+                ? 'border-[#27272A] bg-[#18181B]/95'
+                : 'border-gray-100 bg-white/95'
+                }`}>
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-gray-500">
+                  <h2 className={`text-sm font-semibold uppercase tracking-[0.3em] ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                    }`}>
                     {reportTitle}
                   </h2>
                   <button
                     type="button"
                     onClick={() => setShowContentReport((prev) => !prev)}
-                    className="text-sm font-semibold text-emerald-700 hover:text-emerald-900"
+                    className={`text-sm font-semibold transition ${isDark
+                      ? 'text-[#A855F7] hover:text-[#9333EA]'
+                      : 'text-emerald-700 hover:text-emerald-900'
+                      }`}
                   >
                     {showContentReport
                       ? tApp('viewer.report.hide', undefined, 'Sakrij obrazac')
@@ -696,17 +818,23 @@ function PublicAppViewComponent({
                       if (!contentReportBusy) submitContentReport();
                     }}
                   >
-                    <label className="block text-xs font-semibold text-gray-600">
+                    <label className={`block text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                      }`}>
                       {reportIdentityLabel}
                       <input
                         type="text"
                         readOnly
                         value={viewerLabel}
-                        className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-medium text-gray-900"
+                        className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-300 ${isDark
+                          ? 'border-[#27272A] bg-zinc-800 text-zinc-200'
+                          : 'border-gray-200 bg-gray-50 text-gray-900'
+                          }`}
                       />
-                      <span className="mt-1 block text-[11px] text-gray-500">{reportIdentityHint}</span>
+                      <span className={`mt-1 block text-[11px] ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                        }`}>{reportIdentityHint}</span>
                     </label>
-                    <label className="block text-xs font-semibold text-gray-600">
+                    <label className={`block text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                      }`}>
                       {reportReasonLabel}
                       <textarea
                         value={contentReportText}
@@ -714,9 +842,13 @@ function PublicAppViewComponent({
                         placeholder={reportReasonPlaceholder}
                         rows={4}
                         maxLength={2000}
-                        className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                        className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm transition-colors duration-300 ${isDark
+                          ? 'border-[#27272A] bg-[#09090B] text-zinc-200 placeholder:text-zinc-500'
+                          : 'border-gray-200 bg-white text-gray-900 placeholder:text-gray-400'
+                          }`}
                       />
-                      <span className="mt-1 block text-[11px] text-gray-500">{reportReasonHint}</span>
+                      <span className={`mt-1 block text-[11px] ${isDark ? 'text-zinc-500' : 'text-gray-500'
+                        }`}>{reportReasonHint}</span>
                     </label>
                     <div className="flex items-center justify-end gap-3">
                       <button
@@ -725,7 +857,10 @@ function PublicAppViewComponent({
                           setShowContentReport(false);
                           setContentReportText('');
                         }}
-                        className="text-sm text-gray-500 hover:text-gray-700"
+                        className={`text-sm transition ${isDark
+                          ? 'text-zinc-400 hover:text-zinc-200'
+                          : 'text-gray-500 hover:text-gray-700'
+                          }`}
                         disabled={contentReportBusy}
                       >
                         {reportCancel}
@@ -733,7 +868,10 @@ function PublicAppViewComponent({
                       <button
                         type="submit"
                         disabled={contentReportBusy || contentReportText.trim().length < 10}
-                        className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className={`rounded-2xl px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${isDark
+                          ? 'bg-[#A855F7] hover:bg-[#9333EA]'
+                          : 'bg-emerald-600 hover:bg-emerald-700'
+                          }`}
                       >
                         {reportSubmit}
                       </button>

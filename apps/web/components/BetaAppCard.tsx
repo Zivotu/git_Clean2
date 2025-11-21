@@ -5,6 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Play, Heart, ArrowRight } from 'lucide-react';
 import { playHref, appDetailsHref } from '@/lib/urls';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useState } from 'react';
 
 export type BetaApp = {
     id: string;
@@ -12,9 +15,11 @@ export type BetaApp = {
     name: string;
     description: string;
     category: string;
+    authorId?: string; // Added for fetching fresh profile
     authorName: string;
     authorInitials: string;
     authorPhoto?: string | null;
+    authorHandle?: string; // Added this line
     playsCount: number;
     likesCount: number;
     usersLabel: string;
@@ -48,6 +53,34 @@ export function BetaAppCard({
     labels: ListingLabels;
     onDetails?: (app: BetaApp) => void;
 }) {
+    const [authorProfile, setAuthorProfile] = useState<{ name: string; handle?: string; photo?: string } | null>(null);
+
+    useEffect(() => {
+        if (app.authorId) {
+            const fetchProfile = async () => {
+                try {
+                    const creatorRef = doc(db, 'creators', app.authorId!);
+                    const creatorSnap = await getDoc(creatorRef);
+                    if (creatorSnap.exists()) {
+                        const data = creatorSnap.data();
+                        setAuthorProfile({
+                            name: data.displayName || data.handle || app.authorName,
+                            handle: data.customRepositoryName || data.handle,
+                            photo: data.photoURL || data.photo || app.authorPhoto
+                        });
+                    }
+                } catch (e) {
+                    // Ignore errors
+                }
+            };
+            fetchProfile();
+        }
+    }, [app.authorId]);
+
+    const displayAuthorName = authorProfile?.name || app.authorName;
+    const displayAuthorHandle = authorProfile?.handle || app.authorHandle;
+    const displayAuthorPhoto = authorProfile?.photo || app.authorPhoto;
+
     const isList = view === 'list';
     const wrapperBase = 'group rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl';
     return (
@@ -112,26 +145,57 @@ export function BetaAppCard({
                 </div>
                 <div className="mt-2 flex flex-col gap-4 text-base md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-3">
-                        {app.authorPhoto ? (
-                            <Image
-                                src={app.authorPhoto}
-                                alt={app.authorName}
-                                width={40}
-                                height={40}
-                                className="h-10 w-10 rounded-full object-cover"
-                                loading="lazy"
-                                sizes="40px"
-                                unoptimized
-                            />
+                        {app.authorHandle ? (
+                            <Link
+                                href={`/u/${displayAuthorHandle}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex items-center gap-3 hover:underline"
+                            >
+                                {displayAuthorPhoto ? (
+                                    <Image
+                                        src={displayAuthorPhoto}
+                                        alt={displayAuthorName}
+                                        width={40}
+                                        height={40}
+                                        className="h-10 w-10 rounded-full object-cover"
+                                        loading="lazy"
+                                        sizes="40px"
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#22C55E] text-[12px] font-bold text-white">
+                                        {app.authorInitials}
+                                    </div>
+                                )}
+                                <div className="flex flex-col">
+                                    <span className={`text-sm font-semibold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>{displayAuthorName}</span>
+                                    <span className={`text-xs tracking-wide ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>{displayAuthorHandle ? `@${displayAuthorHandle}` : labels.creator}</span>
+                                </div>
+                            </Link>
                         ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#22C55E] text-[12px] font-bold text-white">
-                                {app.authorInitials}
-                            </div>
+                            <>
+                                {displayAuthorPhoto ? (
+                                    <Image
+                                        src={displayAuthorPhoto}
+                                        alt={displayAuthorName}
+                                        width={40}
+                                        height={40}
+                                        className="h-10 w-10 rounded-full object-cover"
+                                        loading="lazy"
+                                        sizes="40px"
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#22C55E] text-[12px] font-bold text-white">
+                                        {app.authorInitials}
+                                    </div>
+                                )}
+                                <div className="flex flex-col">
+                                    <span className={`text-sm font-semibold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>{displayAuthorName}</span>
+                                    <span className={`text-xs tracking-wide ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>{displayAuthorHandle ? `@${displayAuthorHandle}` : labels.creator}</span>
+                                </div>
+                            </>
                         )}
-                        <div className="flex flex-col">
-                            <span className={`text-sm font-semibold ${isDark ? 'text-zinc-100' : 'text-slate-900'}`}>{app.authorName}</span>
-                            <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>{labels.creator}</span>
-                        </div>
                     </div>
                     <div className="flex flex-1 flex-wrap items-center justify-between gap-4 md:justify-end">
                         <div className="flex items-center gap-4 text-sm font-semibold">

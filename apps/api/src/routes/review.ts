@@ -223,7 +223,37 @@ export default async function reviewRoutes(app: FastifyInstance) {
     if (status === 'pending') {
       builds = builds.filter((b) => ['pending_review', 'pending_review_llm'].includes(b.state));
     } else if (status === 'approved') {
-      builds = builds.filter((b) => ['approved', 'published'].includes(b.state));
+      // Include builds that are marked as approved/published in build.state
+      // OR apps that have status='published' or state='active' (to match homepage logic)
+      builds = builds.filter((b) => {
+        if (['approved', 'published'].includes(b.state)) return true;
+        const listing: any = apps.find(
+          (a: any) => a.pendingBuildId === b.id || a.buildId === b.id || String(a.id) === b.id,
+        );
+        return listing && (listing.status === 'published' || listing.state === 'active');
+      });
+
+      // Also include apps that are published but don't have a build record
+      const buildIds = new Set(builds.map(b => b.id));
+      const publishedAppsWithoutBuilds = apps.filter((app: any) => {
+        if (app.deletedAt) return false;
+        if (app.status !== 'published' && app.state !== 'active') return false;
+        // Check if this app's buildId is already in our builds list
+        if (app.buildId && buildIds.has(app.buildId)) return false;
+        if (app.pendingBuildId && buildIds.has(app.pendingBuildId)) return false;
+        return true;
+      });
+
+      // Create synthetic build records for these apps
+      for (const app of publishedAppsWithoutBuilds) {
+        const syntheticBuild: any = {
+          id: app.buildId || app.id,
+          state: 'published',
+          createdAt: app.createdAt || Date.now(),
+          updatedAt: app.updatedAt || Date.now(),
+        };
+        builds.push(syntheticBuild);
+      }
     } else if (status === 'rejected') {
       builds = builds.filter((b) => b.state === 'rejected');
     } else if (status === 'failed') {
@@ -247,7 +277,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
           const txt = await fs.readFile(p, 'utf8');
           const j = JSON.parse(txt);
           if (Array.isArray(j?.networkDomains)) networkDomains = j.networkDomains;
-        } catch {}
+        } catch { }
         try {
           const llmPath = path.join(cfg.BUNDLE_STORAGE_PATH, 'builds', b.id, 'llm.json');
           const raw = await fs.readFile(llmPath, 'utf8');
@@ -266,7 +296,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
             try {
               const user = await auth.getUser(uid);
               ownerEmail = user.email || undefined;
-            } catch {}
+            } catch { }
             emailCache.set(uid, ownerEmail);
           }
         }
@@ -485,7 +515,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
     try {
       await fs.access(localDir);
       hasLocalBundle = true;
-    } catch {}
+    } catch { }
     const bucket = getBucket();
     const file = bucket.file(`builds/${buildId}/bundle.tar.gz`);
     const [exists] = await file.exists();
@@ -560,7 +590,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
         try {
           await fs.access(llmPath);
           archive.file(llmPath, { name: 'llm-report.json' });
-        } catch {}
+        } catch { }
 
         const safeBase =
           sanitizeFileName(appRecord?.slug || appRecord?.title || buildId) || buildId;
@@ -604,12 +634,12 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
     let approvalRecipient:
       | {
-          uid?: string;
-          email?: string;
-          title?: string;
-          appId?: string;
-          slug?: string;
-        }
+        uid?: string;
+        email?: string;
+        title?: string;
+        appId?: string;
+        slug?: string;
+      }
       | undefined;
 
     await updateBuild(buildId, { state: 'publishing' });
@@ -668,9 +698,9 @@ export default async function reviewRoutes(app: FastifyInstance) {
         };
 
         if (app.pendingBuildId === buildId) {
-          req.log.info({ 
-            buildId, 
-            appId: app.id, 
+          req.log.info({
+            buildId,
+            appId: app.id,
             pendingBuildId: app.pendingBuildId,
             buildIdType: typeof buildId,
             buildIdLength: buildId.length,
@@ -683,8 +713,8 @@ export default async function reviewRoutes(app: FastifyInstance) {
           payload.pendingBuildId = FieldValue.delete();
           payload.pendingVersion = FieldValue.delete();
         } else if (!app.buildId) {
-          req.log.info({ 
-            buildId, 
+          req.log.info({
+            buildId,
             appId: app.id,
             buildIdType: typeof buildId,
             buildIdLength: buildId.length,
@@ -714,19 +744,19 @@ export default async function reviewRoutes(app: FastifyInstance) {
           by: req.authUser?.uid ?? null,
         };
 
-        req.log.info({ 
+        req.log.info({
           appId: app.id,
           payloadBuildId: payload.buildId,
           payloadKeys: Object.keys(payload)
         }, 'approve_before_updateApp');
-        
+
         await updateApp(app.id, payload);
-        
-        req.log.info({ 
+
+        req.log.info({
           appId: app.id,
-          buildIdWritten: payload.buildId 
+          buildIdWritten: payload.buildId
         }, 'approve_after_updateApp');
-        
+
         try {
           const { ensureListingTranslations } = await import('../lib/translate.js');
           await ensureListingTranslations({ ...app, ...payload }, ['en', 'hr', 'de']);
@@ -805,7 +835,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
         if (approvalRecipient?.appId) payload.listingId = approvalRecipient.appId;
         sse.emit(buildId, 'final', payload);
       }
-    } catch {}
+    } catch { }
 
     req.log.info({ id: buildId, uid: req.authUser?.uid }, 'review_approved');
     return { ok: true };
@@ -820,12 +850,12 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const reason = (req.body as any)?.reason;
     let rejectionRecipient:
       | {
-          uid?: string;
-          email?: string;
-          title?: string;
-          appId?: string;
-          slug?: string;
-        }
+        uid?: string;
+        email?: string;
+        title?: string;
+        appId?: string;
+        slug?: string;
+      }
       | undefined;
 
     if (buildId) {
@@ -865,12 +895,12 @@ export default async function reviewRoutes(app: FastifyInstance) {
           reason: reason || null,
         };
         await updateApp(app.id, payload as Partial<AppRecord>);
-      } 
+      }
     } catch (err: unknown) {
       req.log.error({ err, id: buildId ?? id }, 'listing_reject_update_failed');
     }
 
-  if (rejectionRecipient?.uid) {
+    if (rejectionRecipient?.uid) {
       try {
         const cfgLinks = getConfig();
         const titleForMail =
@@ -910,7 +940,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
         if (rejectionRecipient?.appId) payload.listingId = rejectionRecipient.appId;
         sse.emit(buildId, 'final', payload);
       }
-    } catch {}
+    } catch { }
 
     req.log.info({ id: buildId ?? id, uid: req.authUser?.uid, reason }, 'review_rejected');
     return { ok: true };
@@ -1194,9 +1224,9 @@ export default async function reviewRoutes(app: FastifyInstance) {
       if (buildId) {
         const build = resolved?.build ?? (await readBuild(buildId));
         if (build) {
-        const previousStateValue = asNonDeletedBuildState(build.previousState);
-        const fallbackState: Exclude<BuildState, 'deleted'> =
-          previousStateValue ?? 'pending_review';
+          const previousStateValue = asNonDeletedBuildState(build.previousState);
+          const fallbackState: Exclude<BuildState, 'deleted'> =
+            previousStateValue ?? 'pending_review';
           await updateBuild(buildId, {
             state: fallbackState,
             previousState: undefined,

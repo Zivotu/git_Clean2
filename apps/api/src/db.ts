@@ -105,7 +105,7 @@ function getFirebaseInitOptions(): admin.AppOptions {
 
   const pemCandidates = [
     process.env.FIREBASE_SERVICE_ACCOUNT_PEM &&
-      path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PEM),
+    path.resolve(process.env.FIREBASE_SERVICE_ACCOUNT_PEM),
     path.join(keysDir, 'firebase-sa.pem'),
     '/etc/thesara/creds/firebase-sa.pem',
   ].filter(Boolean) as string[];
@@ -119,7 +119,7 @@ function getFirebaseInitOptions(): admin.AppOptions {
     const projectId = projectIdFromEnv || process.env.FIREBASE_PROJECT_ID;
     if (!clientEmail || !projectId) {
       console.warn(
-        `[firebase] Skipping ${label}: set FIREBASE_CLIENT_EMAIL and FIREBASE_PROJECT_ID to use PEM credentials.`, 
+        `[firebase] Skipping ${label}: set FIREBASE_CLIENT_EMAIL and FIREBASE_PROJECT_ID to use PEM credentials.`,
       );
       continue;
     }
@@ -138,7 +138,7 @@ function getFirebaseInitOptions(): admin.AppOptions {
   throw new Error(
     `No Firebase credentials found. Tried: ${tried.join(
       ', ',
-    )}. Set FIREBASE_SERVICE_ACCOUNT(_BASE64) or GOOGLE_APPLICATION_CREDENTIALS.`, 
+    )}. Set FIREBASE_SERVICE_ACCOUNT(_BASE64) or GOOGLE_APPLICATION_CREDENTIALS.`,
   );
 }
 
@@ -202,7 +202,6 @@ let dbInitialization: Promise<void> | undefined;
 
 async function runDbInitialization(): Promise<void> {
   await ensureCollections(DEFAULT_COLLECTIONS);
-  await ensureAmirSerbicCreator();
 }
 
 export function ensureDbInitialized(): Promise<void> {
@@ -351,7 +350,7 @@ export async function getCreatorByHandle(handle: string): Promise<Creator | unde
   // Persist minimal creator record for future lookups
   try {
     await upsertCreator({ id: creator.id, handle: creator.handle, allAccessPrice: creator.allAccessPrice });
-  } catch {}
+  } catch { }
   return creator;
 }
 
@@ -364,7 +363,7 @@ export async function getCreatorById(uid: string): Promise<Creator | undefined> 
       const data = snap.data() as Creator;
       return { ...data, id: data.id ?? snap.id };
     }
-  } catch {}
+  } catch { }
   try {
     const userDoc = await db.collection('users').doc(uid).get();
     if (!userDoc.exists) return undefined;
@@ -389,7 +388,7 @@ export async function getCreatorById(uid: string): Promise<Creator | undefined> 
         photoURL: creator.photoURL,
         bio: creator.bio,
       });
-    } catch {}
+    } catch { }
     return creator;
   } catch {
     return undefined;
@@ -1415,22 +1414,4 @@ export async function markEventProcessed(eventId: string): Promise<void> {
     });
 }
 
-// Seed a default creator so profile pages load during development and tests
-async function ensureAmirSerbicCreator(): Promise<void> {
-  try {
-    await ensureCollections(['creators']);
-    const col = await getExistingCollection('creators');
-    const docRef = col.doc('amir.serbic');
-    const data = {
-      id: 'amir.serbic',
-      handle: 'amir.serbic',
-      displayName: 'Amir Serbic',
-      photoURL: 'https://avatars.githubusercontent.com/u/583231?v=4',
-      allAccessPrice: 0,
-    };
-    const doc = await docRef.get();
-    if (!doc.exists || doc.data()?.photoURL !== data.photoURL) {
-      await docRef.set(data, { merge: true });
-    }
-  } catch {}
-}
+
