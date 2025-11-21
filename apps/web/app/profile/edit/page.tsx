@@ -155,7 +155,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <main className="max-w-md mx-auto p-4">
+    <div className="max-w-md mx-auto p-4">
       <div className="mb-4 flex items-center justify-between">
         <Logo />
         <Link href="/profile" className="text-sm text-gray-600 hover:text-emerald-700">
@@ -243,6 +243,6 @@ export default function EditProfilePage() {
           onClose={() => setToast(null)}
         />
       )}
-    </main>
+    </div>
   );
 }

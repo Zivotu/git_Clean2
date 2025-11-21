@@ -1,0 +1,58 @@
+"use client";
+
+import React from 'react';
+import Link from 'next/link';
+import Avatar from '@/components/Avatar';
+
+type ProfileCardProps = {
+  user?: any | null;
+  displayName: string;
+  photo?: string | null;
+  isDark?: boolean;
+  onLogout?: () => void;
+  loginLabel?: string;
+  logoutLabel?: string;
+  viewProfileLabel?: string;
+  className?: string;
+};
+
+export default function ProfileCard({
+  user,
+  displayName,
+  photo,
+  isDark, // kept for compatibility but not required
+  onLogout = () => {},
+  loginLabel = 'Sign in',
+  logoutLabel = 'Log out',
+  viewProfileLabel = 'View profile',
+  className = '',
+}: ProfileCardProps) {
+  // Prefer declarative Tailwind `dark:` variants so styling follows the DOM `html.dark` class reliably.
+  const containerClasses = `flex items-center gap-2 rounded-2xl border px-3 py-2 transition hover:-translate-y-0.5 hover:shadow-lg dark:border-[#27272A] dark:bg-[#18181B] dark:text-zinc-100 dark:hover:border-zinc-500 border-slate-200 bg-white text-slate-900 hover:border-slate-400 ${className}`;
+  const subTextClasses = 'text-[11px] dark:text-zinc-500 text-slate-500';
+  const logoutBtnClasses = 'rounded-full border px-3 py-1 text-xs font-semibold dark:border-[#27272A] dark:text-zinc-200 dark:hover:bg-white/5 border-slate-200 text-slate-600 hover:bg-slate-50';
+  const loginBtnClasses = `rounded-full border px-4 py-2 text-sm font-semibold dark:border-[#27272A] dark:text-zinc-100 dark:hover:bg-black/40 border-slate-200 text-slate-700 hover:bg-slate-50 ${className}`;
+
+  if (user) {
+    return (
+      <div className={containerClasses}>
+        <Link prefetch={false} href="/profile" className="flex flex-1 items-center gap-3">
+          <Avatar uid={user.uid} src={photo} name={displayName} size={40} className="h-10 w-10 object-cover" />
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">{displayName}</span>
+            <span className={subTextClasses}>{viewProfileLabel}</span>
+          </div>
+        </Link>
+        <button type="button" onClick={onLogout} className={logoutBtnClasses}>
+          {logoutLabel}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Link href="/login" className={loginBtnClasses}>
+      {loginLabel}
+    </Link>
+  );
+}

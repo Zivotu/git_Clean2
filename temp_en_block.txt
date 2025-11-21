@@ -1,0 +1,138 @@
+  "BetaHome": {
+    "filters": {
+      "all": "All",
+      "trending": "Trending"
+    },
+    "listing": {
+      "badge": {
+        "free": "FREE"
+      },
+      "label": {
+        "creator": "Creator"
+      },
+      "actions": {
+        "play": "Play",
+        "details": "Details"
+      },
+      "tag": {
+        "trending": "Trending"
+      },
+      "defaultDescription": "Mini app from the Thesara community.",
+      "unknownAuthor": "Anon"
+    },
+    "categories": {
+      "fallback": "Apps"
+    },
+    "format": {
+      "metricNew": "New"
+    },
+    "header": {
+      "homeAria": "Thesara home",
+      "liveBadge": "Live now",
+      "themeToggle": "Toggle theme",
+      "backLink": "← Back to live",
+      "backLinkMobile": "← Back to live site"
+    },
+    "sidebar": {
+      "title": "Thesara Space v2.0",
+      "subtitle": "From AI chats to your mini app.",
+      "nav": {
+        "discover": "Discover",
+        "games": "Games",
+        "productivity": "Productivity",
+        "myApps": "My Apps"
+      },
+      "creatorMode": {
+        "badge": "Creator Mode",
+        "title": "From chat to publish",
+        "description": "Build games or tools, upload and share with the community.",
+        "steps": {
+          "0": {
+            "title": "Chat with your AI",
+            "text": "Ask your assistant to ship a mini app."
+          },
+          "1": {
+            "title": "Download the code",
+            "text": "Get a bundle ready for upload."
+          },
+          "2": {
+            "title": "Publish on Thesara",
+            "text": "Upload, confirm and hit Play."
+          }
+        },
+        "memory": {
+          "title": "Memory & Rooms",
+          "detail1": "Extra memory LLMs don't provide.",
+          "detail2": "Enable rooms when you need more users with persistent states."
+        },
+        "cta": "Open Creator Studio"
+      },
+    },
+    "search": {
+      "placeholder": "Search apps, creators, or prompts...",
+      "liveStats": "{apps} live apps · {plays} plays"
+    },
+    "hero": {
+      "badge": "Discover amazing mini-apps & games",
+      "actions": {
+        "play": "Start Playing",
+        "submit": "Submit App"
+      },
+      "card": {
+        "description": "Build collections of AI-powered experiences and share them with a link.",
+        "stats": {
+          "apps": "{count}+ mini-apps",
+          "favorites": "{count} favorites"
+        }
+      },
+    "badges": {
+      "curated": "Curated"
+    },
+    "random": {
+      "label": "Random Pick",
+      "details": "Details"
+    }
+  },
+  "promo": {
+    "sidebar": {
+      "title": "Featured highlights",
+      "subtitle": "Our guide and publishing rules in one place."
+    }
+  },
+    "promo": {
+      "featuredLabel": "Featured",
+      "learnMore": "Learn more",
+      "banners": {
+        "0": {
+          "title": "Simple creator guide",
+          "subtitle": "How to get from AI chats to a publish-ready app."
+        },
+        "1": {
+          "title": "Publishing rules",
+          "subtitle": "All about monetization, licensing, and terms."
+        }
+      }
+    },
+    "view": {
+      "gridLabel": "Grid",
+      "decreaseGrid": "Show fewer cards per row",
+      "increaseGrid": "Show more cards per row"
+    },
+    "sort": {
+      "newest": "Newest"
+    },
+    "metrics": {
+      "creators": "Active creators",
+      "runs": "Total runs",
+      "favorites": "Saved favorites",
+      "liveUsage": "Live usage"
+    },
+    "empty": {
+      "noResults": "No results for that query. Try adjusting filters."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} apps"
+      }
+    }
+  },

@@ -27,10 +27,17 @@ function slugify(input: string): string {
 }
 
 interface PublishPayload {
+
   id: string;
+
   title?: string;
+
   description?: string;
+
+  tags?: string[];
+
   translations?: Record<string, { title?: string; description?: string }>;
+
   author?: { uid: string; handle?: string };
   capabilities?: {
     permissions?: {
@@ -115,10 +122,20 @@ export default async function publishRoutes(app: FastifyInstance) {
       return reply.code(401).send({ ok: false, error: 'unauthorized' });
     }
 
-    const body = req.body as PublishPayload | undefined;
-    if (!body || !body.inlineCode) {
-      return reply.code(400).send({ ok: false, error: 'invalid payload' });
-    }
+    const sanitizeAndValidateTags = (tags: unknown): string[] => {
+      if (!Array.isArray(tags)) {
+        return [];
+      }
+      return tags.filter((tag) => typeof tag === 'string' && tag.trim().length > 0);
+    };
+
+    try {
+      const body = req.body as PublishPayload | undefined;
+      if (!body || !body.inlineCode) {
+        return reply.code(400).send({ ok: false, error: 'invalid payload' });
+      }
+      const safeTags = sanitizeAndValidateTags(body.tags);
+
 
     const appId = (body as any).id != null ? String((body as any).id) : undefined;
     const buildId = randomUUID();
@@ -461,7 +478,7 @@ ${finalCode}`;
           slug,
           title: body.title || existing.title || '',
           description: body.description || existing.description || '',
-          tags: existing.tags ?? [],
+          tags: safeTags.length > 0 ? safeTags : existing.tags ?? ['Ostalo'],
           visibility: (body.visibility as any) || existing.visibility,
           accessMode: existing.accessMode,
           author: body.author,
@@ -499,7 +516,7 @@ ${finalCode}`;
           pendingBuildId: buildId,
           title: body.title || '',
           description: body.description || '',
-          tags: [],
+          tags: safeTags,
           visibility: (body.visibility as any) || 'public',
           accessMode: 'public',
           author: body.author,

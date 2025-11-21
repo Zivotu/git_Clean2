@@ -123,8 +123,17 @@ export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<
   } catch {}
 
   if (!res.ok) {
-    const msg = data?.message || res.statusText || `HTTP ${res.status}`;
-    throw new ApiError(res.status, msg, data?.code);
+    const primaryMessage =
+      (typeof data?.message === 'string' && data.message.trim()) ||
+      (typeof data?.detail === 'string' && data.detail.trim()) ||
+      (typeof data?.error === 'string' && data.error.trim()) ||
+      res.statusText ||
+      `HTTP ${res.status}`;
+    const errorCode =
+      (typeof data?.code === 'string' && data.code.trim()) ||
+      (typeof data?.error === 'string' && data.error.trim()) ||
+      undefined;
+    throw new ApiError(res.status, primaryMessage, errorCode);
   }
   return data as T;
 }

@@ -106,9 +106,9 @@ function CheckoutClient() {
   const price =
     priceAmount != null
       ? new Intl.NumberFormat(numberLocale, {
-          style: 'currency',
-          currency,
-        }).format(priceAmount)
+        style: 'currency',
+        currency,
+      }).format(priceAmount)
       : null;
 
   async function startCheckout() {
@@ -139,18 +139,18 @@ function CheckoutClient() {
       }
       let url = `${PUBLIC_API_URL}/billing/subscriptions/app`;
       let body: any;
-        if (appId === 'gold' || appId === 'no-ads') {
-          url = `${PUBLIC_API_URL}/billing/subscriptions/${appId}`;
-          body = {
-            customerEmail: customerEmail || undefined,
-          };
-        } else {
-          body = {
-            appId,
-            customerEmail: customerEmail || undefined,
-            idempotencyKey: idempotencyKeyRef.current,
-          };
-        }
+      if (appId === 'gold' || appId === 'no-ads') {
+        url = `${PUBLIC_API_URL}/billing/subscriptions/${appId}`;
+        body = {
+          customerEmail: customerEmail || undefined,
+        };
+      } else {
+        body = {
+          appId,
+          customerEmail: customerEmail || undefined,
+          idempotencyKey: idempotencyKeyRef.current,
+        };
+      }
       const res = await fetch(url, {
         method: 'POST',
         headers: {
@@ -182,7 +182,7 @@ function CheckoutClient() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="w-full py-8 px-4">
       <div className="max-w-md mx-auto space-y-4">
         <h1 className="text-2xl font-bold text-center">{tCheckout('pageTitle')}</h1>
 
@@ -288,7 +288,7 @@ function CheckoutClient() {
         onClose={() => setShowTermsModal(false)}
         title={termsLabel}
       />
-    </main>
+    </div>
   );
 }
 

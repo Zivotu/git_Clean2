@@ -1,0 +1,138 @@
+  "BetaHome": {
+    "filters": {
+      "all": "Sve",
+      "trending": "Trending"
+    },
+    "listing": {
+      "badge": {
+        "free": "BESPLATNO"
+      },
+      "label": {
+        "creator": "Kreator"
+      },
+      "actions": {
+        "play": "Pokreni",
+        "details": "Detalji"
+      },
+      "tag": {
+        "trending": "Trending"
+      },
+      "defaultDescription": "Mini aplikacija iz Thesara zajednice.",
+      "unknownAuthor": "Anon"
+    },
+    "categories": {
+      "fallback": "Aplikacije"
+    },
+    "format": {
+      "metricNew": "Novo"
+    },
+    "header": {
+      "homeAria": "Thesara naslovnica",
+      "liveBadge": "Uživo",
+      "themeToggle": "Promijeni temu",
+      "backLink": "← Nazad na live",
+      "backLinkMobile": "← Nazad na live stranicu"
+    },
+    "sidebar": {
+      "title": "Thesara Space v2.0",
+      "subtitle": "Od AI razgovora do tvoje mini aplikacije.",
+      "nav": {
+        "discover": "Otkrij",
+        "games": "Igre",
+        "productivity": "Produktivnost",
+        "myApps": "Moje aplikacije"
+      },
+      "creatorMode": {
+        "badge": "Creator Mode",
+        "title": "Iz razgovora do objave",
+        "description": "Stvori igru ili alat, uploadaj ga i dijeli s cijelom zajednicom.",
+        "steps": {
+          "0": {
+            "title": "Porazgovaraj s AI-em",
+            "text": "Zatraži asistenta da isporuči mini aplikaciju."
+          },
+          "1": {
+            "title": "Preuzmi kod",
+            "text": "Dobivaš bundle spreman za upload."
+          },
+          "2": {
+            "title": "Objavi na Thesari",
+            "text": "Uploadaj, potvrdi i klikni Play."
+          }
+        },
+        "memory": {
+          "title": "Memorija i Sobe",
+          "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
+          "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
+        },
+        "cta": "Otvori Creator Studio"
+      },
+    },
+    "search": {
+      "placeholder": "Pretraži aplikacije, kreatore ili promptove...",
+      "liveStats": "{apps} aplikacija uživo · {plays} pokretanja"
+    },
+    "hero": {
+      "badge": "Otkrij mini aplikacije i igre",
+      "actions": {
+        "play": "Igraj odmah",
+        "submit": "Predaj aplikaciju"
+      },
+      "card": {
+        "description": "Gradi kolekcije AI iskustava i dijeli ih linkom.",
+        "stats": {
+          "apps": "{count}+ mini aplikacija",
+          "favorites": "{count} favorita"
+        }
+      },
+    "badges": {
+      "curated": "Curated"
+    },
+    "random": {
+      "label": "Random Pick",
+      "details": "Pogledaj detalje"
+    }
+  },
+  "promo": {
+    "sidebar": {
+      "title": "Izdvojene priče",
+      "subtitle": "Jednostavne upute i pravila objave na jednom mjestu."
+    }
+  },
+    "promo": {
+      "featuredLabel": "Izdvojeno",
+      "learnMore": "Saznaj više",
+      "banners": {
+        "0": {
+          "title": "Jednostavne upute",
+          "subtitle": "Kako iz razgovora s AI-jem doći do objave na Thesari."
+        },
+        "1": {
+          "title": "Pravila objave",
+          "subtitle": "Sve o monetizaciji, licencama i uvjetima."
+        }
+      }
+    },
+    "view": {
+      "gridLabel": "Mreža",
+      "decreaseGrid": "Prikaži manje kartica u redu",
+      "increaseGrid": "Prikaži više kartica u redu"
+    },
+    "sort": {
+      "newest": "Najnovije"
+    },
+    "metrics": {
+      "creators": "Aktivni kreatori",
+      "runs": "Ukupno pokretanja",
+      "favorites": "Spremljeni favoriti",
+      "liveUsage": "Korištenje uživo"
+    },
+    "empty": {
+      "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} aplikacija"
+      }
+    }
+  },

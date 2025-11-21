@@ -1,0 +1,1219 @@
+{
+  "Nav": {
+    "publishApp": "App verÃ¢â€Å“Ã¢â€¢Â¢ffentlichen",
+    "myProjects": "Meine Projekte",
+    "myCreators": "Meine Creators",
+    "goPro": "Go Pro",
+    "browseApps": "Apps durchsuchen",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "doctor": "Doktor",
+    "platform": "Plattform",
+    "resources": "Ressourcen",
+    "proApps": "ProApps",
+    "company": "Unternehmen",
+    "about": "Ã¢â€Å“Ã‚Â£ber uns",
+    "terms": "AGB",
+    "privacy": "Datenschutz",
+    "faq": "FAQ",
+    "goldenBook": "Golden Book",
+    "donate": "Spenden",
+    "donateCountdown": "noch {days} Tage",
+    "launchBadge": "Live seit 17.11.2025.",
+    "feedback": "Ihre VorschlÃ¢â€Å“ÃƒÂ±ge",
+    "docs": "Dokumentation",
+    "tutorials": "Tutorials",
+    "api": "API Referenz",
+    "language": "Sprache",
+    "admin": "Admin",
+    "earlyAccessBadge": "GRATIS, MACH MIT!",
+    "earlyAccessDays": "noch {days} Tage",
+    "earlyAccessTooltip": "Registriere dich und erhalte 30 Tage Gold + Keine Werbung gratis. Kein Haken - veroeffentliche deine App solange alles freigeschaltet ist.",
+    "earlyAccessCountdownUnit": "tage",
+    "goldBadge": "Gold-Mitglied",
+    "noAdsBadge": "Keine Werbung",
+    "subscribeEarlyAccess": "FÃ¼r Early Access anmelden",
+    "earlyAccessSubscribed": "Du erhÃ¤ltst 50 % Rabatt im ersten Monat.",
+    "earlyAccessSubscribeError": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "BetaHome": {
+    "filters": {
+      "all": "Alle",
+      "trending": "Trend"
+    },
+    "listing": {
+      "badge": {
+        "free": "KOSTENLOS"
+      },
+      "label": {
+        "creator": "Ersteller"
+      },
+      "actions": {
+        "play": "Starten",
+        "details": "Details"
+      },
+      "tag": {
+        "trending": "Trend"
+      },
+      "defaultDescription": "Mini-App aus der Thesara-Community.",
+      "unknownAuthor": "Anon"
+    },
+    "categories": {
+      "fallback": "Apps"
+    },
+    "format": {
+      "metricNew": "Neu"
+    },
+    "header": {
+      "homeAria": "Thesara Startseite",
+      "liveBadge": "Live",
+      "themeToggle": "Design wechseln",
+      "backLink": "← Zur Live-Version",
+      "backLinkMobile": "← Zur Live-Seite"
+    },
+    "sidebar": {
+      "title": "Thesara Space v2.0",
+      "subtitle": "Von AI-Chats zur eigenen Mini-App.",
+      "nav": {
+        "discover": "Entdecken",
+        "games": "Spiele",
+        "productivity": "Produktivität",
+        "myApps": "Meine Apps"
+      },
+      "creatorMode": {
+        "badge": "Creator Mode",
+        "title": "Vom Chat zur Veröffentlichung",
+        "description": "Erstelle Spiele oder Tools, lade sie hoch und teile sie mit der Community.",
+        "steps": {
+          "0": {
+            "title": "Chatte mit deiner KI",
+            "text": "Bitte deinen Assistenten um eine Mini-App."
+          },
+          "1": {
+            "title": "Code herunterladen",
+            "text": "Erhalte ein fertiges Upload-Bundle."
+          },
+          "2": {
+            "title": "Veröffentliche auf Thesara",
+            "text": "Upload, bestätigen und Play drücken."
+          }
+        },
+        "memory": {
+          "title": "Memory & Rooms",
+          "detail1": "Zusätzlicher Speicher, den LLMs nicht bieten.",
+          "detail2": "Aktiviere Rooms, wenn du mehr Nutzer mit persistenten Zuständen brauchst."
+        },
+        "cta": "Creator Studio öffnen"
+      },
+    },
+    "search": {
+      "placeholder": "Suche nach Apps, Creators oder Prompts...",
+      "liveStats": "{apps} Apps live · {plays} Plays"
+    },
+    "hero": {
+      "badge": "Entdecke Mini-Apps & Spiele",
+      "actions": {
+        "play": "Jetzt spielen",
+        "submit": "App einreichen"
+      },
+      "card": {
+        "description": "Erstelle Sammlungen von AI-Erlebnissen und teile sie per Link.",
+        "stats": {
+          "apps": "{count}+ Mini-Apps",
+          "favorites": "{count} Favoriten"
+        }
+      },
+    "badges": {
+      "curated": "Kuratiert"
+    },
+    "random": {
+      "label": "Random Pick",
+      "details": "Details ansehen"
+    }
+  },
+  "promo": {
+    "sidebar": {
+      "title": "Empfohlene Stories",
+      "subtitle": "Einfache Anleitung und Publikationsregeln auf einen Blick."
+    }
+  },
+    "promo": {
+      "featuredLabel": "Empfohlen",
+      "learnMore": "Mehr erfahren",
+      "banners": {
+        "0": {
+          "title": "Einfache Anleitung",
+          "subtitle": "So kommst du vom AI-Chat zur Veröffentlichung auf Thesara."
+        },
+        "1": {
+          "title": "Publikationsregeln",
+          "subtitle": "Alles zu Monetarisierung, Lizenzen und Bedingungen."
+        }
+      }
+    },
+    "view": {
+      "gridLabel": "Raster",
+      "decreaseGrid": "Weniger Karten pro Reihe anzeigen",
+      "increaseGrid": "Mehr Karten pro Reihe anzeigen"
+    },
+    "sort": {
+      "newest": "Neueste"
+    },
+    "metrics": {
+      "creators": "Aktive Creator",
+      "runs": "Gesamtstarts",
+      "favorites": "Gespeicherte Favoriten",
+      "liveUsage": "Live-Nutzung"
+    },
+    "empty": {
+      "noResults": "Keine Ergebnisse für diese Suche. Bitte Filter anpassen."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} Apps"
+      }
+    }
+  },
+  "BugGuardian": {
+    "title": "Hallo! Ich bin der SpinnenwÃ¤chter von Thesara.space. ðŸ•·",
+    "line1": "Wir befinden uns gerade in der Testing-Phase, daher schleichen meine kleinen KÃ¤ferfreunde und ich herum und verstecken uns vor den Entwicklern.",
+    "line2": "Wenn dir ein seltsamer Sprung, Text oder ein Button auffÃ¤llt, der nicht funktioniert, ist wahrscheinlich einer der KÃ¤fer ausgebÃ¼xt.",
+    "line3": "Zeig uns ruhig dem Team â€“ damit hilfst du ihnen, die Seite noch besser zu machen.",
+    "thanks": "Danke, dass du mit uns testest!"
+  },
+  "About": {
+    "title": "Ã¢â€“â€žber Thesara",
+    "subtitle": "Ein Garagenprojekt, das heute eine Heimat fÃ¼r KI-Min-Apps und Spiele wird.",
+    "healthTitle": "API-Status",
+    "loading": "Wird geprÃ¢ÂÂ¿ft...",
+    "errorDefault": "Abrufen der Health-Daten fehlgeschlagen.",
+    "garageTitle": "Projekt aus der Garage",
+    "garageBody": "Thesara entstand als kleines Garagenprojekt, in dem wir Werkzeuge fÃ¼r das VerÃ¶ffentlichen von KI-Apps und -Spielen zusammengeschraubt haben. Wir wachsen Schritt fÃ¼r Schritt, Build fÃ¼r Build, Creator fÃ¼r Creator, und behalten dabei den hands-on Ansatz bei.",
+    "comingSoon": "Bald teilen wir hier einen liebevollen Text Ã¼ber uns, unser Team und unsere Vision â€“ bleib dran."
+  },
+  "Search": {
+    "title": "Kleinanzeigen-Suche",
+    "errorShort": "Suchergebnisse konnten nicht geladen werden",
+    "errorLong": "Suchergebnisse konnten nicht geladen werden. Bitte API-URL und Serverstatus prÃ¢ÂÂ¿fen.",
+    "filters": {
+      "location": "Ort",
+      "minPrice": "Mindestpreis",
+      "maxPrice": "HÃƒÂ·chstpreis",
+      "category": "Kategorie"
+    },
+    "actions": {
+      "apply": "Filtern",
+      "prev": "ZurÃ¢ÂÂ¿ck",
+      "next": "Weiter"
+    }
+  },
+  "FAQ": {
+    "back": "? ZurÃ¢ÂÂ¿ck zur Startseite",
+    "title": "FAQ",
+    "intro": "HÃŽÂ£ufige Fragen und Antworten zur Plattform, VerÃƒÂ·ffentlichung und Abos."
+  },
+  "Legal": {
+    "Terms": {
+      "fallbackTitle": "Nutzungsbedingungen",
+      "fallbackBodyHtml": "Die Bedingungen sind derzeit nicht verfÃ¢ÂÂ¿gbar. Sieh dir <a href=\"/docs/thesara_terms.html\">die statische Seite</a> an."
+    },
+    "Privacy": {
+      "title": "DatenschutzerklÃ¤rung",
+      "intro.title": "Wer wir sind & Geltungsbereich",
+      "intro.body": "Thesara Space d.o.o. (\"Thesara\", \"wir\") betreibt die Plattform unter thesara.space und ist Verantwortlicher fÃ¼r alle Besucher, Creator und Spieler. Wir verarbeiten nur die Daten, die nÃ¶tig sind, um dein Konto zu fÃ¼hren, Apps zu verÃ¶ffentlichen oder zu spielen, Support zu leisten und gesetzliche Pflichten zu erfÃ¼llen.",
+      "data.title": "Welche Daten wir erfassen",
+      "data.body": "Bei der Registrierung speichern wir deine Eâ€‘Mail-Adresse, deinen Anzeigenamen, ein Profilbild (sofern vorhanden) sowie grundlegende Nutzungs-Telemetrie, damit wir dein Konto schÃ¼tzen und die Plattform stabil halten kÃ¶nnen. Wenn du Apps verÃ¶ffentlichst oder bearbeitest, verarbeiten wir die Inhalte, die du hochlÃ¤dst (Titel, Beschreibungen, Assets, Bundles, Vorschaubilder) sowie Metadaten wie Raum-Codes oder Highscores. FÃ¼r Zahlungen speichern wir nur Abo-IDs, Rechnungsreferenzen und steuerrelevante Angaben; Kartendaten laufen ausschlieÃŸlich Ã¼ber unseren Zahlungsdienstleister.",
+      "processors.title": "Auftragsverarbeiter & Integrationen",
+      "processors.body": "Zur Bereitstellung von Thesara nutzen wir ausgewÃ¤hlte Partner: Firebase und Cloudflare hosten Authentifizierungsdaten, Datenbanken, Medien und Backups; Stripe wickelt Zahlungen ab und stellt uns nicht sensible Rechnungsdaten bereit; Redis/BullMQ betreibt unsere Build-Warteschlangen; die Ãœbersetzungsfunktion kann einen LLM-Anbieter fÃ¼r optionale Lokalisierungen einsetzen; transaktionale E-Mails versenden wir Ã¼ber ein SMTP-Relay; WerbeflÃ¤chen werden â€“ sofern erlaubt â€“ Ã¼ber Google AdSense ausgespielt. Jeder Partner erhÃ¤lt nur die Daten, die fÃ¼r seinen Zweck notwendig sind, und alle unterliegen vertraglichen SchutzmaÃŸnahmen.",
+      "adsense.title": "Google AdSense & Cookies",
+      "adsense.body": "Werbung wird ausschlieÃŸlich Nutzerinnen und Nutzern angezeigt, die keinen No-Ads-Tarif oder vergleichbare Berechtigungen besitzen. Bevor ein Google-Skript geladen wird, fragen wir nach deiner Einwilligung in personalisierte Werbung. Bei Ablehnung lÃ¤uft AdSense im nicht personalisierten Modus (npa=1) und zeigt rein kontextbezogene Anzeigen. KÃ¤ufer des No-Ads-Pakets sowie Personen, die Apps im Play-Sandbox-Modus nutzen, laden das AdSense-Skript gar nicht.",
+      "retention.title": "Speicherung & Aufbewahrung",
+      "retention.body": "Kontodaten bleiben gespeichert, solange du ein Thesara-Profil fÃ¼hrst. Bundles, Previews und Storage-Daten bleiben bestehen, bis du den zugehÃ¶rigen Eintrag lÃ¶schst, die Daten selbst bereinigst oder uns mit der Entfernung beauftragst. Abrechnungsunterlagen bewahren wir nur so lange auf, wie es Steuer- und Aufsichtsrecht verlangt; Sicherheits- und Systemprotokolle werden regelmÃ¤ÃŸig rotiert.",
+      "choices.title": "Deine SteuerungsmÃ¶glichkeiten",
+      "choices.body": "Du kannst Listings, Assets, RÃ¤ume und Storage-Daten, die dir gehÃ¶ren, jederzeit anpassen oder lÃ¶schen, Einwilligungen im Banner Ã¤ndern, Werbung Ã¼ber den No-Ads-Kauf deaktivieren und Kontoinformationen in den Einstellungen verwalten. Sollte etwas nicht im Interface mÃ¶glich sein, melde dich â€“ wir erledigen es manuell.",
+      "rights.title": "Deine Rechte",
+      "rights.body": "Je nach Rechtsraum kannst du Auskunft, Berichtigung, EinschrÃ¤nkung, Widerspruch oder LÃ¶schung personenbezogener Daten verlangen. Wir erfÃ¼llen bestÃ¤tigte Anfragen innerhalb der gesetzlichen Fristen. Bitte sende deine Anfrage von der Eâ€‘Mail-Adresse, die mit deinem Konto verbunden ist, damit wir die Inhaberschaft prÃ¼fen kÃ¶nnen.",
+      "contact.title": "Kontakt",
+      "contact.body": "Fragen zum Datenschutz oder zur AusÃ¼bung deiner Rechte kannst du an reports@thesara.space richten. Wir antworten in der Regel innerhalb weniger Werktage."
+    },
+    "Refunds": {
+      "title": "RÃ¢ÂÂ¿ckerstattungsrichtlinie",
+      "body": "Informationen zu unserer RÃ¢ÂÂ¿ckerstattungsrichtlinie erscheinen hier."
+    },
+    "Rules": {
+      "title": "Nutzungsbedingungen",
+      "body": "Hier erscheint der Inhalt fÃ¢ÂÂ¿r die Nutzungsbedingungen."
+    },
+    "ContentReport": {
+      "title": "Inhalt melden",
+      "body": "Hier erscheint ein Formular zum Melden unangemessener Inhalte."
+    }
+  },
+  "Terms": {
+    "label": "Nutzungsbedingungen",
+    "preview": {
+      "lastUpdated": "Zuletzt aktualisiert: {version}",
+      "openFull": "VollstÃ¤ndige Version Ã¶ffnen",
+      "close": "SchlieÃŸen"
+    },
+    "enforcement": {
+      "badge": "Nutzersicherheit",
+      "title": "Akzeptiere {label}",
+      "intro": "Um Thesara weiter zu verwenden, musst du die aktuelle Version (v{version}) akzeptieren.",
+      "warning": "Wenn du ablehnst, wirst du abgemeldet und kannst erst wieder verÃ¶ffentlichen oder kaufen, nachdem du sie akzeptiert hast.",
+      "checkbox": "Ich akzeptiere {label} und bestÃ¤tige, dass ich sie gelesen und verstanden habe.",
+      "primary": "Bedingungen akzeptieren",
+      "saving": "Speichereâ€¦",
+      "secondary": "Melde mich ab"
+    },
+    "provider": {
+      "saveError": "Wir konnten deine Zustimmung nicht speichern. Bitte versuch es erneut."
+    }
+  },
+  "Creators": {
+    "SimpleGuide": {
+      "title": "Einfache Anleitung fuer Creator",
+      "cta": "Veroeffentlichen",
+      "steps": {
+        "1": "Schreibe deine App in deinem Lieblings-LLM (ChatGPT, Kimi, Google AI Studio oder jeder andere Assistent).",
+        "2": "Kopiere den Code oder lade das Bundle aus dem Assistenten in unseren Editor hoch.",
+        "3": "Veroeffentliche die App mit einem Klick auf Publish.",
+        "4": "Passe Optik, Beschreibung und Titel an, damit alles perfekt aussieht.",
+        "5": "Freu dich darauf, wie andere Nutzer deine App, dein Spiel, deine Simulation oder dein Quiz ausprobieren."
+      }
+    }
+  },
+  "Classifieds": {
+    "details": {
+      "title": "Inserat {id}",
+      "average": "Durchschnittliche Bewertung: {rating}",
+      "scoreLabel": "Bewertung: {rating}",
+      "commentPlaceholder": "Kommentar",
+      "submit": "Bewertung senden"
+    },
+    "new": {
+      "title": "Neues Inserat",
+      "errorInvalidFile": "Nur JPG/PNG-Bilder bis 5 MB sind erlaubt.",
+      "statusSaved": "Gespeichert.",
+      "statusPublished": "VerÃƒÂ·ffentlicht.",
+      "descriptionPlaceholder": "Beschreibung",
+      "actions": {
+        "save": "Speichern",
+        "publish": "VerÃƒÂ·ffentlichen"
+      },
+      "previewAlt": "Vorschau"
+    }
+  },
+  "Promo": {
+    "title": "Promo-Code einlÃƒÂ·sen",
+    "mustBeSignedIn": "Du musst angemeldet sein, um einen Promo-Code einzulÃƒÂ·sen.",
+    "label": "Promo-Code",
+    "placeholder": "z. B. THESARA-JANE24",
+    "submit": "Code einlÃƒÂ·sen",
+    "submitting": "Wird verarbeitet...",
+    "success": "Code wurde erfolgreich eingelÃƒÂ·st. Gold-Testphase ist aktiv.",
+    "error": "Code konnte nicht eingelÃƒÂ·st werden.",
+    "validUntil": "GÃ¢ÂÂ¿ltig bis {date}",
+    "footnote": "Durch das Aktivieren eines Codes erhÃŽÂ£ltst du fÃ¢ÂÂ¿r begrenzte Zeit eine kostenlose Gold-Testphase gemÃŽÂ£Ã¢â€“â‚¬ den Programmregeln."
+  },
+  "LegacyHandle": {
+    "redirecting": "Weiterleitung..."
+  },
+  "Checkout": {
+    "pageTitle": "BestellÃƒÂ¼bersicht",
+    "loading": "Wird geladenÃ¢â‚¬Â¦",
+    "subscriptionLabel": "Abonnement",
+    "priceLabel": "Preis",
+    "emailLabel": "E-Mail fÃƒÂ¼r die Rechnung",
+    "promoPrefix": "Du hast einen Promo-Code von einem Ambassador?",
+    "promoLink": "Hier einlÃƒÂ¶sen",
+    "promoSuffix": "bevor du fortfÃƒÂ¤hrst.",
+    "termsPrompt": "BestÃƒÂ¤tige vor der Zahlung, dass du {termsLabel} akzeptierst.",
+    "termsCheckbox": "Ich bestÃƒÂ¤tige, dass ich die Bedingungen gelesen habe und die Verpflichtungen wÃƒÂ¤hrend des Kaufs und der spÃƒÂ¤teren Nutzung akzeptiere.",
+    "termsButton": "Bedingungen ÃƒÂ¶ffnen",
+    "termsNote": "Nur bei der ersten Zahlung oder wenn sich die Bedingungen ÃƒÂ¤ndern ({version}).",
+    "termsMissing": "Bitte bestÃƒÂ¤tige die Bedingungen, bevor du kaufst.",
+    "termsSaveError": "BestÃƒÂ¤tigung konnte nicht gespeichert werden. Bitte versuche es erneut.",
+    "buttonSubmitting": "Wird gesendetÃ¢â‚¬Â¦",
+    "buttonSubmit": "Weiter",
+    "backLink": "Ã¢â€ Â ZurÃƒÂ¼ck",
+    "missingAppId": "App-ID fehlt.",
+    "loadErrorGeneric": "Produktdaten konnten nicht geladen werden.",
+    "errorInvalidResponse": "UngÃƒÂ¼ltige Serverantwort.",
+    "errorNetwork": "Fehler bei der Kommunikation mit der API."
+  },
+  "DiagEnv": {
+    "title": "Umgebungsdiagnose",
+    "missingHeading": "Fehlende Variablen",
+    "none": "Keine"
+  },
+  "Admin": {
+    "title": "Admin-Dashboard",
+    "errors": {
+      "accessDenied": "Zugriff verweigert Ã¢â‚¬â€œ melde dich als Admin an oder lass dich auf die Whitelist setzen.",
+      "llmMissingApiKey": "LLM-API-SchlÃƒÂ¼ssel fehlt.",
+      "llmInvalidJson": "Der AI-Dienst hat ungÃƒÂ¼ltiges JSON zurÃƒÂ¼ckgegeben.",
+      "llmUnreachable": "AI-Dienst ist derzeit nicht verfÃƒÂ¼gbar.",
+      "missingArtifact": "Artefakte fehlen Ã¢â‚¬â€œ fÃƒÂ¼hre den vollstÃƒÂ¤ndigen Build aus (pnpm run createx:build).",
+      "llmReviewFailed": "LLM-PrÃƒÂ¼fung fehlgeschlagen."
+    },
+    "buttons": {
+      "logout": "Abmelden",
+      "login": "Anmelden",
+      "edit": "Bearbeiten",
+      "close": "SchlieÃƒÅ¸en"
+    },
+    "tabs": {
+      "apps": "Apps",
+      "users": "Benutzer",
+      "ambassadorProgram": "Ambassador-Programm",
+      "admins": "Admins",
+      "emailTemplates": "E-Mail-Vorlagen"
+    },
+    "filters": {
+      "searchPlaceholder": "Suchen",
+      "clear": "ZurÃƒÂ¼cksetzen",
+      "refresh": "Aktualisieren",
+      "status": {
+        "all": "Alle",
+        "pending": "Ausstehend",
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt",
+        "deleted": "GelÃƒÂ¶scht"
+      }
+    },
+    "stats": {
+      "foundApps": "{count} Apps gefunden"
+    },
+    "alerts": {
+      "llmDisabled": "AI-PrÃƒÂ¼fung ist vorÃƒÂ¼bergehend deaktiviert. Einsendungen warten auf manuelle PrÃƒÂ¼fung.",
+      "bundleNotReady": "Bundle ist noch nicht bereit.",
+      "artifactsPending": "Artefakte sind noch nicht bereit. Warte auf den Build oder starte ihn neu und versuche es erneut.",
+      "downloadFailed": "Download fehlgeschlagen. Bitte spÃƒÂ¤ter erneut versuchen.",
+      "noBuildApprove": "Kein aktiver Build zum Freigeben.",
+      "approveSuccess": "Eintrag freigegeben.",
+      "approveFailed": "Freigabe fehlgeschlagen.",
+      "refreshSuccess": "Eintrag aktualisiert.",
+      "refreshFailed": "Aktualisierung fehlgeschlagen.",
+      "noBuildReject": "Kein aktiver Build zum Ablehnen.",
+      "rejectSuccess": "Eintrag abgelehnt.",
+      "rejectFailed": "Ablehnung fehlgeschlagen.",
+      "deleteSuccess": "Eintrag wurde in Ã¢â‚¬Å¾GelÃƒÂ¶schtÃ¢â‚¬Å“ verschoben.",
+      "deleteFailed": "LÃƒÂ¶schen fehlgeschlagen.",
+      "forceDeleteSuccess": "Eintrag dauerhaft gelÃƒÂ¶scht.",
+      "forceDeleteFailed": "Dauerhaftes LÃƒÂ¶schen fehlgeschlagen.",
+      "restoreSuccess": "Eintrag wiederhergestellt.",
+      "restoreFailed": "Wiederherstellen fehlgeschlagen.",
+      "buildQueued": "Build wurde eingereiht. AktualisiereÃ¢â‚¬Â¦",
+      "buildQueueFailed": "Build konnte nicht eingereiht werden.",
+      "policySaveFailed": "Speichern der Berechtigungen fehlgeschlagen.",
+      "noSelection": "Bitte zuerst einen Eintrag auswÃƒÂ¤hlen.",
+      "saveSuccess": "Gespeichert.",
+      "saveFailed": "Speichern fehlgeschlagen.",
+      "createSuccess": "Erstellt.",
+      "createFailed": "Erstellen fehlgeschlagen."
+    },
+    "table": {
+      "appId": "App-ID",
+      "preview": "Vorschau",
+      "name": "Name",
+      "ownerEmail": "E-Mail des Besitzers",
+      "submitted": "Eingereicht",
+      "network": "Netzwerk",
+      "llm": "LLM",
+      "actions": "Aktionen"
+    },
+    "preview": {
+      "none": "Ohne"
+    },
+    "network": {
+      "fetchDomain": "Abruf zu {domain}"
+    },
+    "llm": {
+      "disabledLabel": "LLM deaktiviert",
+      "recommendation": "AI-Empfehlung: {value}"
+    },
+    "llmDetails": {
+      "attempts": "LLM-Versuche: {count}",
+      "noReport": "Noch kein Bericht verfÃƒÂ¼gbar.",
+      "regenerating": "AnalyseÃ¢â‚¬Â¦",
+      "run": "LLM-Analyse starten",
+      "disabledButton": "LLM deaktiviert",
+      "enableHint": "Aktiviere die AI-PrÃƒÂ¼fung in der Konfiguration, damit dieser Bericht erstellt wird.",
+      "providerLabel": "Anbieter",
+      "showJson": "JSON anzeigen",
+      "hideJson": "JSON ausblenden",
+      "runAgain": "Erneut ausfÃƒÂ¼hren"
+    },
+    "llmStatus": {
+      "failed": "LLM fehlgeschlagen",
+      "waiting": "LLM wartet",
+      "disabledToast": "LLM-Analyse ist derzeit deaktiviert."
+    },
+    "pagination": {
+      "loadMore": "Mehr laden"
+    },
+    "ads": {
+      "heading": "Anzeigensystem",
+      "description": "Steuert, ob Google AdSense global fÃƒÂ¼r Nutzer ohne No-Ads-Berechtigung geladen wird.",
+      "refresh": "Status aktualisieren",
+      "statusEnabled": "Anzeigen sind aktiviert",
+      "statusDisabled": "Anzeigen sind global deaktiviert",
+      "enableButton": "Anzeigen aktivieren",
+      "disableButton": "Anzeigen deaktivieren",
+      "loading": "Lade Anzeigeneinstellungen Ã¢â‚¬Â¦",
+      "loadFailed": "Anzeigeneinstellungen konnten nicht geladen werden.",
+      "saveFailed": "Ãƒâ€žnderung der Anzeigeneinstellungen fehlgeschlagen.",
+      "updatedAt": "Aktualisiert am {time}",
+      "updatedBy": "Aktualisiert am {time} von {uid}",
+      "slotsHeading": "Slots verwalten",
+      "slotsDescription": "Aktiviere oder deaktiviere einzelne Platzierungen ohne neuen Deploy. Slots ohne Ad-Unit-ID bleiben leer, auch wenn sie aktiviert sind.",
+      "slotsLoading": "Lade Slot-Konfiguration Ã¢â‚¬Â¦",
+      "slotsLoadFailed": "Slot-Konfiguration konnte nicht geladen werden.",
+      "slotsSaveFailed": "Slot-Konfiguration konnte nicht gespeichert werden.",
+      "noId": "Kein Ad-Unit-ID hinterlegt",
+      "slotsTable": {
+        "location": "Platzierung",
+        "envVar": "Env-Variable",
+        "currentId": "Ad-Unit-ID",
+        "status": "Status",
+        "actions": "Aktionen"
+      },
+      "slotsStatus": {
+        "enabled": "Aktiv",
+        "disabled": "Deaktiviert"
+      },
+      "slotsToggle": {
+        "enable": "Slot aktivieren",
+        "disable": "Slot deaktivieren"
+      },
+      "slots": {
+        "playTopLabel": "Play Ã¢â‚¬â€œ oberer Banner",
+        "playTopDescription": "Wird oberhalb des Play-Iframes angezeigt.",
+        "playBottomLabel": "Play Ã¢â‚¬â€œ unterer Banner",
+        "playBottomDescription": "Wird unterhalb des Play-Iframes angezeigt.",
+        "appDetailHeaderLabel": "App-Detail Ã¢â‚¬â€œ Header",
+        "appDetailHeaderDescription": "GroÃƒÅ¸es Placement ganz oben auf der Detailseite.",
+        "appDetailInlineLabel": "App-Detail Ã¢â‚¬â€œ Inline",
+        "appDetailInlineDescription": "SekundÃƒÂ¤rer Slot innerhalb des Seiteninhalts.",
+        "homeRailLeftLabel": "Startseite Ã¢â‚¬â€œ linke Spalte",
+        "homeRailLeftDescription": "Sticky-Karte in der linken Sidebar (Desktop).",
+        "homeRailRightLabel": "Startseite Ã¢â‚¬â€œ rechte Spalte",
+        "homeRailRightDescription": "Sticky-Karte in der rechten Sidebar (Desktop).",
+        "homeGridInlineLabel": "Startseite Ã¢â‚¬â€œ Inline im Grid",
+        "homeGridInlineDescription": "Jede 8. Karte im Grid wird durch einen Slot ersetzt.",
+        "homeFeedFooterLabel": "Startseite Ã¢â‚¬â€œ Footer des Feeds",
+        "homeFeedFooterDescription": "Breiter Slot unterhalb der App-Liste.",
+        "marketplaceGridInlineLabel": "Marketplace Ã¢â‚¬â€œ Inline im Grid",
+        "marketplaceGridInlineDescription": "Jede 8. Karte in der /apps-Liste wird zum Slot."
+      },
+      "telemetryHeading": "Anzeigen-Telemetrie (letzte {days} Tage)",
+      "telemetryDescription": "ÃƒÅ“berblick ÃƒÂ¼ber CMP-Entscheidungen und Slot-Auslieferung, um Probleme frÃƒÂ¼h zu erkennen.",
+      "telemetryRangeLabel": "Zeitraum",
+      "telemetryRangeOption": "{days} Tage",
+      "telemetryRefresh": "Aktualisieren",
+      "telemetryLoading": "Telemetrie wird geladenÃ¢â‚¬Â¦",
+      "telemetryLoadFailed": "Telemetrie konnte nicht geladen werden.",
+      "telemetryNoData": "Noch keine Daten fÃƒÂ¼r diesen Zeitraum.",
+      "telemetryStats": {
+        "totalEvents": "Ereignisse gesamt",
+        "consentGranted": "Zustimmungen",
+        "consentRejected": "Ablehnungen",
+        "slotFills": "GefÃƒÂ¼llte Slots"
+      },
+      "telemetry": {
+        "table": {
+          "headingSlots": "Top-Slots",
+          "headingPlacements": "Top-Placements",
+          "name": "Name",
+          "events": "Ereignisse",
+          "share": "Anteil",
+          "entries": "{count} EintrÃƒÂ¤ge",
+          "empty": "Keine Daten"
+        },
+        "eventLabels": {
+          "consent_prompt_shown": "Banner angezeigt",
+          "consent_granted": "Zustimmung erteilt",
+          "consent_rejected": "Zustimmung abgelehnt",
+          "consent_reset": "Zustimmung zurÃƒÂ¼ckgesetzt",
+          "slot_render_attempt": "Slot-Render-Versuch",
+          "slot_render_filled": "Slot gefÃƒÂ¼llt",
+          "slot_closed": "Slot geschlossen"
+        },
+        "dailyHeading": "TagesÃƒÂ¼bersicht",
+        "dailyEmpty": "Keine Tagesdaten vorhanden."
+      }
+    },
+    "AdsConsent": {
+      "title": "Cookies & optionale Daten",
+      "description": "Wir verwenden notwendige Cookies fÃƒÂ¼r Anmeldung und Sicherheit. Optionale Cookies ermÃƒÂ¶glichen Analysen und personalisierte Google AdSense-Werbung - du entscheidest.",
+      "items.essential": "Notwendige Cookies merken dich angemeldet, speichern die Sprache und schÃƒÂ¼tzen Zahlungen.",
+      "items.analytics": "Anonyme Analysen zeigen uns, welche Funktionen funktionieren und wo AusfÃƒÂ¤lle auftreten.",
+      "items.ads": "AdSense-Cookies bestimmen, ob wir personalisierte oder nur kontextuelle Anzeigen zeigen.",
+      "learnMore": "Details & DatenschutzerklÃƒÂ¤rung",
+      "accept": "Alle optionalen Cookies erlauben",
+      "reject": "Nur notwendige Cookies"
+    },
+    "adminSettings": {
+      "heading": "Admin-OberflÃƒÂ¤chen-Einstellungen",
+      "description": "Verwaltet die Liste der Konten, die den versteckten Admin-Zugang freischalten dÃƒÂ¼rfen.",
+      "refresh": "Aktualisieren",
+      "loading": "Wird geladenÃ¢â‚¬Â¦",
+      "empty": "Keine erlaubten E-Mail-Adressen.",
+      "remove": "Entfernen",
+      "addPlaceholder": "admin@example.com",
+      "addButton": "HinzufÃƒÂ¼gen",
+      "loadError": "Liste der erlaubten Admins kann nicht geladen werden.",
+      "refreshError": "Aktualisieren der Liste fehlgeschlagen.",
+      "addEmpty": "E-Mail-Adresse eingeben.",
+      "addInvalid": "UngÃƒÂ¼ltige E-Mail-Adresse.",
+      "addDuplicate": "Diese E-Mail ist bereits eingetragen.",
+      "addFailed": "HinzufÃƒÂ¼gen fehlgeschlagen.",
+      "removeFailed": "Entfernen fehlgeschlagen.",
+      "removeConfirm": "{email} aus der Liste entfernen?"
+    },
+    "users": {
+      "heading": "Benutzerverwaltung",
+      "loading": "Benutzer werden geladenÃ¢â‚¬Â¦",
+      "loadFailed": "Benutzer konnten nicht geladen werden.",
+      "updateFailed": "Benutzerberechtigungen konnten nicht aktualisiert werden.",
+      "filterLabel": "Nach Berechtigung filtern:",
+      "filterAll": "Alle",
+      "searchLabel": "Suche:",
+      "searchPlaceholder": "Nach E-Mail, Name oder UID suchen",
+      "table": {
+        "email": "E-Mail",
+        "displayName": "Anzeigename",
+        "entitlements": "Berechtigungen",
+        "actions": "Aktionen"
+      },
+      "badges": {
+        "ambassador": "Botschafter",
+        "free": "Kostenlos"
+      },
+      "editTitle": "Benutzer bearbeiten: {email}",
+      "entitlements": {
+        "isGold": "Gold",
+        "noAds": "Keine Werbung",
+        "Ambasador": "Botschafter",
+        "Partner": "Partner"
+      }
+    },
+    "emailTemplates": {
+      "heading": "E-Mail-Vorlagen",
+      "description": "Bearbeite die Inhalte der E-Mails, die das System versendet. Verwende {{placeholders}} fÃƒÂ¼r dynamische Werte (z. B. {{displayName}}, {{appTitle}}).",
+      "refresh": "Aktualisieren",
+      "loadFailed": "Vorlagen konnten nicht geladen werden.",
+      "scenarioLabel": "Szenario",
+      "scenarioPlaceholder": "-- Szenario wÃƒÂ¤hlen --",
+      "scenarios": {
+        "welcome": "welcome (neuer Benutzer)",
+        "reviewApproval": "review:approval_notification (Freigabe)",
+        "reviewReject": "review:reject_notification (Ablehnung)",
+        "publishPending": "publish:pending_notification (ausstehend)"
+      },
+      "load": "Laden",
+      "save": "Speichern",
+      "restoreFallback": "Fallback wiederherstellen",
+      "subjectLabel": "Betreff",
+      "bodyLabel": "Nachricht",
+      "loading": "LadenÃ¢â‚¬Â¦",
+      "empty": "Keine Vorlagen vorhanden.",
+      "createTitle": "Neue Vorlage erstellen",
+      "createDescription": "Gib eine eindeutige ID ein (z. B. welcome, review:approval_notification).",
+      "placeholderId": "Vorlagen-ID",
+      "placeholderSubject": "Betreff",
+      "placeholderBody": "Nachricht",
+      "createButton": "Erstellen",
+      "scenarioDropdownHint": "WÃƒÂ¤hle ein Szenario aus der Liste.",
+      "scenarioRequired": "Bitte zuerst ein Szenario wÃƒÂ¤hlen.",
+      "scenarioLoadFailed": "Vorlage oder Fallback fÃƒÂ¼r dieses Szenario konnte nicht geladen werden.",
+      "restoreInfo": "Fallback wurde lokal wiederhergestellt Ã¢â‚¬â€ zum Speichern auf Ã¢â‚¬Å¾SpeichernÃ¢â‚¬Å“ klicken.",
+      "restoreFailed": "Fallback konnte nicht wiederhergestellt werden.",
+      "templateIdRequired": "Vorlagen-ID angeben."
+    },
+    "ambassador": {
+      "title": "Ambassador-Administration",
+      "subtitle": "PrÃƒÂ¼fe Bewerbungen, verwalte Codes und bearbeite Auszahlungen.",
+      "emptyValue": "Ã¢â‚¬â€",
+      "kpis": {
+        "approved": "Aktive Botschafter",
+        "pendingApplications": "Bewerbungen offen",
+        "pendingPayouts": "Auszahlungen offen",
+        "outstandingBalance": "Offener Saldo (Ã¢â€šÂ¬)"
+      },
+      "posts": {
+        "heading": "Ambassador-Posts (ausstehend)",
+        "refresh": "Aktualisieren",
+        "loading": "BeitrÃƒÂ¤ge werden geladenÃ¢â‚¬Â¦",
+        "empty": "Keine BeitrÃƒÂ¤ge ausstehend.",
+        "table": {
+          "link": "Link",
+          "ambassador": "Botschafter",
+          "month": "Monat",
+          "actions": "Aktionen"
+        },
+        "verify": "BestÃƒÂ¤tigen",
+        "reject": "Ablehnen"
+      },
+      "applicationTabs": {
+        "pending": "Neue Bewerbungen",
+        "approved": "Freigegeben",
+        "rejected": "Abgelehnt"
+      },
+      "payoutTabs": {
+        "pending": "Zu bearbeiten",
+        "processing": "In Bearbeitung",
+        "paid": "Ausbezahlt",
+        "rejected": "Abgelehnt",
+        "all": "Alle"
+      },
+      "prompts": {
+        "rejectReason": "Ablehnungsgrund (optional):",
+        "paypalTransaction": "PayPal-Transaktion (optional):"
+      },
+      "messages": {
+        "approveSuccess": "Bewerbung freigegeben. Code: {code}",
+        "rejectSuccess": "Bewerbung abgelehnt.",
+        "payoutPaid": "Auszahlung als bezahlt markiert.",
+        "payoutRejected": "Auszahlung abgelehnt."
+      },
+      "errors": {
+        "adminOnly": "Nur fÃƒÂ¼r Administratoren.",
+        "loadApplications": "Bewerbungen konnten nicht geladen werden.",
+        "loadPayouts": "Auszahlungen konnten nicht geladen werden.",
+        "loadPosts": "BeitrÃƒÂ¤ge konnten nicht geladen werden.",
+        "approveFailed": "Freigabe fehlgeschlagen.",
+        "rejectFailed": "Ablehnung fehlgeschlagen.",
+        "payoutActionFailed": "Aktion fÃƒÂ¼r die Auszahlung fehlgeschlagen."
+      },
+      "applications": {
+        "loading": "Bewerbungen werden geladenÃ¢â‚¬Â¦",
+        "empty": "Keine Bewerbungen fÃƒÂ¼r den gewÃƒÂ¤hlten Status.",
+        "table": {
+          "user": "Benutzer",
+          "email": "E-Mail",
+          "status": "Status",
+          "details": "Bewerbungsdetails",
+          "balance": "Saldo",
+          "actions": "Aktionen"
+        },
+        "appliedAt": "Beworben am: {date}",
+        "platform": "Plattform: {value}",
+        "audience": "Reichweite: {value}",
+        "motivation": "Motivation",
+        "balanceValue": "Ã¢â€šÂ¬{amount}",
+        "approve": "Freigeben",
+        "reject": "Ablehnen",
+        "promoCode": "Code: {code}"
+      },
+      "payouts": {
+        "loading": "Auszahlungen werden geladenÃ¢â‚¬Â¦",
+        "empty": "Keine Auszahlungen fÃƒÂ¼r diesen Filter.",
+        "table": {
+          "id": "Payout-ID",
+          "ambassador": "Botschafter",
+          "amount": "Betrag",
+          "status": "Status",
+          "paypal": "PayPal",
+          "actions": "Aktionen"
+        },
+        "requestedAt": "Angefragt am: {date}",
+        "amountValue": "Ã¢â€šÂ¬{amount}",
+        "markPaid": "Als bezahlt markieren",
+        "reject": "Ablehnen",
+        "transaction": "Txn: {id}"
+      }
+    }
+  },
+  "Register": {
+    "title": "Registrieren",
+    "errors": {
+      "passwordMismatch": "PasswÃƒÂ·rter stimmen nicht Ã¢ÂÂ¿berein.",
+      "mustAcceptTerms": "Bitte bestÃŽÂ£tige, dass du die Nutzungsbedingungen akzeptierst, bevor du dich registrierst.",
+      "generic": "Registrierung fehlgeschlagen.",
+      "firestoreHint": "Bitte Ã¢ÂÂ¿berprÃ¢ÂÂ¿fe deine Firestore-Regeln oder Konfiguration."
+    },
+    "fields": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "username": "Benutzername",
+      "email": "E-Mail",
+      "birthYear": "Geburtsjahr",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestÃŽÂ£tigen",
+      "phone": "Telefonnummer",
+      "gender": "Geschlecht",
+      "genderMale": "MÃŽÂ£nnlich",
+      "genderFemale": "Weiblich",
+      "genderOther": "Divers",
+      "bio": "Kurzprofil"
+    },
+    "terms": {
+      "beforeLink": "Ich akzeptiere ",
+      "afterLink": " und stimme den Nutzungsbedingungen der Plattform zu."
+    },
+    "cta": {
+      "submit": "Registrieren"
+    }
+  },
+  "Setup": {
+    "title": "Firebase ist nicht konfiguriert",
+    "missingIntro": "Folgende Umgebungsvariablen fehlen:",
+    "addPrefix": "FÃ¢ÂÂ¿ge sie in deine",
+    "addSuffix": "Datei ein:"
+  },
+  "Home": {
+    "headline": {
+      "one": "Entdecke groÃ¢â€Å“Ã†â€™artige",
+      "two": "Mini-Apps & Spiele"
+    },
+    "tagline": "Kuratiertes Marketplace fÃ¢â€Å“Ã¢â€¢Âr Browser-Erlebnisse. Bauen, teilen und entdecken.",
+    "trending": "Gerade im Trend",
+    "appsCount": "{count} Apps",
+    "search": {
+      "placeholder": "Suche nach Apps, Spielen oder Tags..."
+    },
+    "appsFound": "{count} Apps gefunden",
+    "publishedCount": "{count} verÃ¶ffentlichte Apps",
+    "membersCount": "{count} registrierte Mitglieder",
+    "sort": {
+      "new": "Neueste",
+      "popular": "Beliebt",
+      "title": "Alphabetisch"
+    },
+    "clear": "ZurÃ¢â€Å“Ã¢â€¢Âcksetzen",
+    "noApps": "Keine Apps gefunden",
+    "tryAdjust": "Passe deine Suche oder Filter an.",
+    "beFirst": "Sei der Erste, der eine App verÃ¢â€Å“Ã¢â€¢Â¢ffentlicht!",
+    "publish": "App verÃ¢â€Å“Ã¢â€¢Â¢ffentlichen",
+    "plays": "{count} Aufrufe",
+    "leftPanel": {
+      "title": "Vom AI-Chat zu deiner Mini-App",
+      "subtitle": "Thesara ist der Ort, an dem du AI-Ideen in wenigen Klicks in Apps, Spiele oder interaktive Stories verwandelst.",
+      "llmLabel": "Starte mit deinem Lieblingsmodell",
+      "steps": {
+        "1": {
+          "title": "Sprich mit deinem AI-Assistenten",
+          "text": "Sag dem Modell, welche Mini-App, welches Spiel, Quiz oder Training es bauen soll."
+        },
+        "2": {
+          "title": "Hol dir den generierten Code oder das ZIP",
+          "text": "Der Assistent liefert dir eine fertige Web-App, die du als Code oder Bundle herunterlaedst."
+        },
+        "3": {
+          "title": "Veroeffentliche auf Thesara in wenigen Klicks",
+          "text": "Upload, bestaetigen und Play - deine App lebt auf Thesara, gratis oder mit Preis von dir."
+        }
+      },
+      "storage": {
+        "title": "Neue Memory-Schicht, die LLMs nicht mitbringen",
+        "tag": "Memory & Rooms",
+        "shared": {
+          "title": "Geteilte Memory",
+          "text": "Alle Spieler teilen Fortschritt und Ergebnisse (z. B. globales Leaderboard) ohne das Chat-Modell zu belasten."
+        },
+        "rooms": {
+          "title": "Rooms",
+          "text": "Aktiviere Rooms, wenn mehrere Personen deine App nutzen sollen, aber jede Session privat bleiben soll."
+        }
+      },
+      "footer": "AI-Fans - stell es dir vor, chatte mit deinem Modell, veroeffentliche hier und lass andere spielen.",
+      "footerHighlight": "Viel Erfolg mit deiner ersten Thesara-App!"
+    },
+    "earlyAccessTitle": "Alles ist gerade kostenlos",
+    "earlyAccessBody": "Gold + Keine Werbung sind wÃ¤hrend des Early Access freigeschaltet. VerÃ¶ffentliche eine App, um die Vorteile zu nutzen.",
+    "earlyAccessPublish": "Jetzt verÃ¶ffentlichen",
+    "earlyAccessDismiss": "SchlieÃŸen",
+    "earlyAccessSignIn": "Jetzt anmelden"
+  },
+  "Toasts": {
+    "welcome": "Willkommen bei THESARA.SPACE!",
+    "loginToLike": "Melde dich an, um Apps zu liken",
+    "slowDown": "Langsam Ã¢â€°Â¡Ã†â€™Ãƒâ€“ÃƒÂ©",
+    "likeError": "App konnte nicht geliked werden. Bitte API-URL und Serverstatus prÃ¢â€Å“Ã¢â€¢Âfen.",
+    "loadError": "Apps konnten nicht geladen werden. Bitte API-URL und Serverstatus prÃ¢â€Å“Ã¢â€¢Âfen.",
+    "retry": "Erneut versuchen"
+  },
+  "Footer": {
+    "slogan": "Der Marktplatz fÃ¢â€Å“Ã¢â€¢Âr Browser-Apps und -Spiele.",
+    "allRights": "Alle Rechte vorbehalten.",
+    "partnershipLink": "Partnerschaft mit uns"
+  },
+  "Partnership": {
+    "title": "Partnerschaft mit uns",
+    "description": "ErzÃ¤hlen Sie uns von Ihrem Team und der Zusammenarbeit, die Sie aufbauen mÃ¶chten.",
+    "nameLabel": "Ihr Name",
+    "companyLabel": "Firma oder Projekt",
+    "emailLabel": "GeschÃ¤ftliche E-Mail",
+    "phoneLabel": "Telefon (optional)",
+    "messagePlaceholder": "Beschreiben Sie Idee, Zielgruppe, Zeitplan oder den Mehrwert fÃ¼r beide Seiten.",
+    "submit": "Partnerschaftsanfrage senden",
+    "sending": "Sendenâ€¦",
+    "cancel": "Abbrechen",
+    "successMessage": "Danke! Wir melden uns in KÃ¼rze.",
+    "errorGeneric": "Anfrage konnte nicht gesendet werden. Bitte erneut versuchen.",
+    "errorEmail": "Bitte geben Sie eine gÃ¼ltige E-Mail ein.",
+    "errorMessage": "Beschreiben Sie die Idee (mindestens 5 Zeichen).",
+    "footerNote": "Oder schreiben Sie uns an activity(at)thesara.space",
+    "closeLabel": "Partnerschaftsformular schlieÃŸen"
+  },
+  "Pro": {
+    "choosePlan": "WÃ¢â€Å“ÃƒÂ±hle ein Paket",
+    "subtitle": "Erweitere deine App mit unseren Paketen",
+    "usageTitle": "Deine aktuelle Nutzung",
+    "currentPlan": "Aktueller Plan",
+    "apps": "Apps",
+    "storage": "Speicher",
+    "purchased": "Gekauft",
+    "recommended": "Empfohlen",
+    "loading": "LadenÃŽâ€œÃƒâ€¡Ã‚Âª",
+    "subscribed": "Aktiv",
+    "selectPackage": "Paket auswÃ¢â€Å“ÃƒÂ±hlen",
+    "noPackagesTitle": "Keine Pakete verfÃ¢â€Å“Ã¢â€¢Âgbar",
+    "noPackagesText": "Pakete sind bald verfÃ¢â€Å“Ã¢â€¢Âgbar",
+    "loadError": "Pakete konnten nicht geladen werden. Bitte erneut versuchen.",
+    "perMonth": "pro Monat",
+    "goldDescription": "Schalte hÃ¢â€Å“Ã¢â€¢Â¢here Limits, mehr Speicher und priorisierten Publish-Support frei.",
+    "goldFeatureApps": "Bis zu {goldLimit} aktive Apps (Free umfasst {freeLimit})",
+    "goldFeatureStorage": "GrÃ¢â€Å“Ã¢â€¢Â¢Ã¢â€Å“Ã†â€™eres Upload- und Storage-Kontingent fÃ¢â€Å“Ã¢â€¢Âr Bundles und Assets",
+    "goldFeatureAds": "Entfernt THESARA.SPACE-Werbung in der OberflÃ¢â€Å“ÃƒÂ±che und deinen Apps",
+    "goldFeatureSupport": "Priorisierter Review deiner VerÃ¢â€Å“Ã¢â€¢Â¢ffentlichungen & direkter Support",
+    "noAdsDescription": "Entfernt sÃ¢â€Å“ÃƒÂ±mtliche THESARA.SPACE-WerbeflÃ¢â€Å“ÃƒÂ±chen im Dashboard und in verÃ¢â€Å“Ã¢â€¢Â¢ffentlichten Experiences.",
+    "noAdsFeatureRemoval": "Keine Anzeigen mehr im Editor, Dashboard oder deinen Apps",
+    "noAdsFeatureFocus": "Mehr Fokus fÃ¢â€Å“Ã¢â€¢Âr Nutzer ÃŽâ€œÃƒâ€¡ÃƒÂ´ keine Banner oder Interstitials",
+    "earlyAccessNotice": "Early Access ist aktiv â€“ die Abrechnung ist vorÃ¼bergehend pausiert, solange alles gratis bleibt.",
+    "earlyAccessButtonLabel": "Bald verfÃ¼gbar"
+  },
+  "Login": {
+    "backToHome": "ZurÃ¢â€Å“Ã¢â€¢Âck zur Startseite",
+    "welcomeTitle": "Willkommen bei {site}",
+    "welcomeBody": "Entdecke, spiele und verÃ¢â€Å“Ã¢â€¢Â¢ffentliche MiniÃŽâ€œÃƒâ€¡ÃƒÂ¦Apps. Melde dich an, um Apps zu liken, eigene zu verÃ¢â€Å“Ã¢â€¢Â¢ffentlichen und Fortschritt zu synchronisieren.",
+    "bulletOne": "GoogleÃŽâ€œÃƒâ€¡ÃƒÂ¦Anmeldung mit einem Klick",
+    "bulletTwo": "CreatorÃŽâ€œÃƒâ€¡ÃƒÂ¦Tools inklusive",
+    "bulletThree": "StandardmÃ¢â€Å“ÃƒÂ±Ã¢â€Å“Ã†â€™ig sicher",
+    "title": "Anmelden",
+    "subtitle": "Mit Google oder deinem EÃŽâ€œÃƒâ€¡ÃƒÂ¦MailÃŽâ€œÃƒâ€¡ÃƒÂ¦Konto.",
+    "checking": "Sitzung wird geprÃ¢â€Å“Ã¢â€¢ÂftÃŽâ€œÃƒâ€¡Ã‚Âª",
+    "signedInAs": "Angemeldet als",
+    "goToCreate": "Zur CreateÃŽâ€œÃƒâ€¡ÃƒÂ¦Seite",
+    "signOut": "Abmelden",
+    "continueWithGoogle": "Mit Google fortfahren",
+    "or": "oder",
+    "email": "EÃŽâ€œÃƒâ€¡ÃƒÂ¦Mail",
+    "password": "Passwort",
+    "signInWithEmail": "Mit EÃŽâ€œÃƒâ€¡ÃƒÂ¦Mail anmelden",
+    "noAccount": "Noch kein Konto?",
+    "register": "Registrieren"
+  },
+  "Create": {
+    "pasteCode": "Code einfÃ¢â€Å“Ã¢â€¢Âgen",
+    "placeholderHtml": "<!-- HTMLÃŽâ€œÃƒâ€¡ÃƒÂ¦Code hier -->\n<div>\n  <h1>Hallo</h1>\n</div>",
+    "placeholderReact": "// ReactÃŽâ€œÃƒâ€¡ÃƒÂ¦Code hier\nexport default function App(){\n  return <h1>Hallo</h1>;\n}",
+    "basics": "Grundlagen",
+    "name": "Name",
+    "description": "Beschreibung",
+    "source": "Quelle",
+    "pageTitle": "Neue App verÃƒÂ¶ffentlichen",
+    "sourceSection": "App-Quelle",
+    "optionPasteCode": "Code einfÃƒÂ¼gen",
+    "optionUploadBundle": "Bundle hochladen (.zip)",
+    "bundleHintPart1": "Das ZIP-Bundle muss das Build-Output zusammen mit",
+    "bundleHintPart2": "und",
+    "bundleHintPart3": "Der Worker installiert es lokal und fÃƒÂ¼hrt",
+    "bundleAiWarning": "WICHTIG: Apps, die auf Google AI Studio, Gemini, Kimi oder einen anderen LLM-Anbieter angewiesen sind, benÃƒÂ¶tigen einen eigenen API-SchlÃƒÂ¼ssel. Ohne ihn funktioniert das Bundle nach der VerÃƒÂ¶ffentlichung nicht.",
+    "bundleAiWarningDetail": "Trage deinen SchlÃƒÂ¼ssel unten ein (wir stellen keinen bereit). Lass das Feld nur leer, wenn deine AI-App ohne privaten SchlÃƒÂ¼ssel auskommt. Eine Dokumentation zu AI-Bundles folgt in KÃƒÂ¼rze.",
+    "bundleAiNoKeyNote": "Du kannst weiterhin Demo-Apps verÃƒÂ¶ffentlichen, die keinen SchlÃƒÂ¼ssel brauchen Ã¢â‚¬â€œ das hÃƒÂ¤ngt davon ab, wie du sie gebaut hast.",
+    "bundleAiApiLabel": "AI- / LLM-API-SchlÃƒÂ¼ssel",
+    "bundleAiApiPlaceholder": "FÃƒÂ¼ge hier deinen Anbieter-SchlÃƒÂ¼ssel ein (wird nur fÃƒÂ¼r diesen Build gespeichert)",
+    "bundleAiApiHelp": "Wir betten den SchlÃƒÂ¼ssel in das Bundle ein, damit es deinen AI-Dienst erreichen kann. Wenn die App spÃƒÂ¤ter nicht mehr funktioniert, ÃƒÂ¼berprÃƒÂ¼fe oder rotiere den SchlÃƒÂ¼ssel.",
+    "chooseZip": "ZIP auswÃƒÂ¤hlen",
+    "placeholderHtmlLong": "HTML-Snippet oder komplette Seite...",
+    "placeholderReactLong": "React-Komponente...",
+    "previewGraphic": "App-Grafik auswÃ¢â€Å“ÃƒÂ±hlen",
+    "previewGraphicHint": "WÃ¢â€Å“ÃƒÂ±hle eine unserer Vorlagen oder lade dein eigenes Bild hoch (max. 1 MB).",
+    "previewOverlayPlaceholder": "App-Titel",
+    "previewTitleLabel": "Titel auf der Grafik",
+    "characters": "Zeichen",
+    "previewTitlePlaceholder": "Titel fÃ¢â€Å“Ã¢â€¢Âr die Ã¢â€Å“Ã‚Â£berlagerung eingeben",
+    "previewTitleHint": "Wird auf einem halbtransparenten Banner Ã¢â€Å“Ã¢â€¢Âber der ausgewÃ¢â€Å“ÃƒÂ±hlten Grafik angezeigt.",
+    "chooseCustomGraphic": "Eigene Grafik auswÃ¢â€Å“ÃƒÂ±hlen",
+    "removeCustomGraphic": "Zur Vorlage zurÃ¢â€Å“Ã¢â€¢Âckkehren",
+    "customGraphicHint": "PNG oder JPG bis",
+    "customAssets": {
+      "title": "Eigene Grafiken",
+      "subtitle": "Ersetze Bundle-Grafiken ohne neue Prüfung. Lade PNG/JPG/GIF bis {size}KB hoch und wir bauen automatisch neu.",
+      "countLabel": "{used}/{limit} genutzt",
+      "add": "Grafiken hochladen",
+      "refresh": "Aktualisieren",
+      "loading": "Eigene Grafiken werden geladen…",
+      "previewAlt": "Eigene Grafik {name}",
+      "nameLabel": "Dateiname",
+      "pendingBadge": "Wird angewendet",
+      "remove": "Entfernen",
+      "replace": "Ersetzen",
+      "empty": "Noch keine eigenen Grafiken hochgeladen.",
+      "progressNote": "Bitte kurz warten – das Anwenden und Neubauen dauert ein paar Sekunden.",
+      "saving": "Speichere…",
+      "save": "Grafiken speichern",
+      "reset": "Änderungen verwerfen",
+      "limitError": "Du kannst bis zu {limit} Grafiken hinzufügen.",
+      "typeError": "Nur PNG-, JPG- oder GIF-Dateien sind erlaubt.",
+      "sizeError": "Jede Datei darf höchstens {size}KB haben.",
+      "duplicateError": "Verwende eindeutige Dateinamen, damit nichts überschrieben wird.",
+      "readError": "Die Dateien konnten nicht gelesen werden. Bitte erneut versuchen.",
+      "saveFailed": "Eigene Grafiken konnten nicht gespeichert werden. Bitte erneut versuchen.",
+      "savedToast": "Grafiken gespeichert. Wir veröffentlichen den Build erneut.",
+      "loadFailed": "Eigene Grafiken konnten nicht geladen werden. Bitte erneut versuchen."
+    },
+    "previewUploading": "Grafik wird gespeichertÃŽâ€œÃƒâ€¡Ã‚Âª",
+    "previewUploadSuccess": "Grafik gespeichert.",
+    "previewFileTooLarge": "Bild muss kleiner sein als",
+    "previewFileReadFailed": "Das ausgewÃ¢â€Å“ÃƒÂ±hlte Bild konnte nicht gelesen werden.",
+    "previewUploadFailed": "Grafik konnte nicht gespeichert werden. Bitte erneut versuchen.",
+    "advancedSettingsToggle": "Erweiterte Grafiken",
+    "advancedSettingsExpand": "Anzeigen",
+    "advancedSettingsCollapse": "Ausblenden",
+    "advancedAssetsHint": "Optional: Lade bis zu {limit} PNG/JPG/GIF-Dateien hoch (max. {size}KB pro Datei). Wir legen sie automatisch ins Bundle.",
+    "advancedAssetsAdd": "Grafikdatei hinzufügen",
+    "advancedAssetsCount": "{used}/{limit} Dateien hinzugefügt",
+    "advancedAssetsRemove": "Entfernen",
+    "advancedAssetsEmpty": "Noch keine eigenen Dateien hinzugefügt.",
+    "advancedAssetsLimitError": "Du kannst bis zu {limit} Dateien hochladen.",
+    "advancedAssetsSizeError": "Jede Datei darf höchstens 100KB haben.",
+    "advancedAssetsTypeError": "Nur PNG-, JPG- oder GIF-Dateien sind erlaubt.",
+    "advancedAssetsDuplicateError": "Eine Datei mit diesem Namen wurde bereits hinzugefügt.",
+    "advancedAssetsReadError": "Die Datei konnte nicht gelesen werden. Bitte versuche es erneut.",
+    "advancedAssetsNameError": "Der Dateiname darf nicht leer sein.",
+    "longDescriptionLabel": "AusfÃ¼hrliche Beschreibung",
+    "longDescriptionHint": "Schreibe mindestens {min} Zeichen, damit der Eintrag genug Kontext bietet.",
+    "longDescriptionPlaceholder": "ErzÃ¤hle die Geschichte, Funktionen und Vorteile deiner App...",
+    "longDescriptionCounter": "{used}/{limit} Zeichen",
+    "longDescriptionTooShort": "Die ausfÃ¼hrliche Beschreibung muss mindestens {min} Zeichen haben.",
+    "screenshotsLabel": "Screenshots",
+    "screenshotsHint": "Lade bis zu zwei Screenshots hoch (PNG/JPG/WebP, max. {size}MB).",
+    "screenshotsPreviewAlt": "Screenshot {index}",
+    "screenshotsFileHint": "PNG/JPG/WebP bis {size}MB.",
+    "screenshotsUploadButton": "Screenshot hochladen",
+    "screenshotsReplaceButton": "Screenshot ersetzen",
+    "screenshotsRemoveButton": "Entfernen",
+    "screenshotsEmptyPlaceholder": "Screenshot hochladen",
+    "screenshotsTooLarge": "Screenshot darf hÃ¶chstens {size}MB groÃŸ sein.",
+    "screenshotsRequired": "FÃ¼ge mindestens einen Screenshot hinzu, bevor du verÃ¶ffentlichst.",
+    "metadataSyncFailed": "Der Build wurde verÃ¶ffentlicht, aber die ausfÃ¼hrliche Beschreibung oder Screenshots konnten nicht gespeichert werden. Ã–ffne die Detailseite und versuche es erneut.",
+    "back": "ZurÃ¢â€Å“Ã¢â€¢Âck",
+    "next": "Weiter",
+    "publish": "VerÃ¢â€Å“Ã¢â€¢Â¢ffentlichen",
+    "mustSignIn": "Bitte zuerst anmelden, um zu verÃ¢â€Å“Ã¢â€¢Â¢ffentlichen.",
+    "login": "Anmelden"
+  },
+  "App": {
+    "notFound": "App nicht gefunden",
+    "backToMarketplace": "ZurÃ¢â€Å“Ã¢â€¢Âck zum Marktplatz",
+    "playNow": "Jetzt spielen",
+    "playInNewTab": "In neuem Tab spielen",
+    "about": "Ã¢â€Å“Ã‚Â£ber",
+    "noDescription": "Keine Beschreibung vorhanden.",
+    "previewGraphic": "App-Grafik",
+    "previewGraphicHint": "WÃ¢â€Å“ÃƒÂ±hle eine Vorlage oder lade dein eigenes Bild hoch (max. 1 MB).",
+    "previewOverlayPlaceholder": "App-Titel",
+    "previewTitleLabel": "Titel auf der Grafik",
+    "characters": "Zeichen",
+    "previewTitlePlaceholder": "Titel fÃ¢â€Å“Ã¢â€¢Âr die Ã¢â€Å“Ã‚Â£berlagerung eingeben",
+    "previewTitleHint": "Wird auf einem halbtransparenten Banner Ã¢â€Å“Ã¢â€¢Âber der ausgewÃ¢â€Å“ÃƒÂ±hlten Grafik angezeigt.",
+    "chooseCustomGraphic": "Eigene Grafik auswÃ¢â€Å“ÃƒÂ±hlen",
+    "removeCustomGraphic": "Zur Vorlage zurÃ¢â€Å“Ã¢â€¢Âckkehren",
+    "customGraphicHint": "PNG oder JPG bis",
+    "previewUploading": "Grafik wird gespeichertÃ¢â‚¬Â¦",
+    "previewUploadSuccess": "Grafik gespeichert.",
+    "previewUploadFailed": "Grafik konnte nicht gespeichert werden. Bitte erneut versuchen.",
+    "previewFileTooLarge": "Bild muss kleiner sein als",
+    "previewFileReadFailed": "Die ausgewÃƒÂ¤hlte Datei konnte nicht gelesen werden.",
+    "previewSelectFileFirst": "Bitte zuerst eine Grafik auswÃƒÂ¤hlen.",
+    "saveGraphic": "Grafik speichern",
+    "savingGraphic": "Wird gespeichertÃ¢â‚¬Â¦",
+    "creator": {
+      "longDescriptionLabel": "AusfÃƒÂ¼hrliche Beschreibung",
+      "longDescriptionHelper": "Schreibe mindestens {min} Zeichen, damit der Eintrag genug Kontext bietet.",
+      "longDescriptionPlaceholder": "ErzÃƒÂ¤hle die Geschichte, Funktionen und Vorteile deiner App...",
+      "longDescriptionCounter": "{used}/{limit} Zeichen",
+      "longDescriptionTooShort": "Die ausfÃƒÂ¼hrliche Beschreibung muss mindestens {min} Zeichen haben.",
+      "screenshotsLabel": "Screenshots",
+      "screenshotsHint": "Lade bis zu zwei Screenshots hoch (PNG/JPG/WebP, max. 1 MB). Sie erscheinen neben der Hero-Grafik im Ã¶ffentlichen Listing.",
+      "screenshotsPlaceholder": "https://beispiel.de/screenshot.jpg",
+      "screenshotsInvalid": "Gib eine gÃƒÂ¼ltige https://-Adresse ein.",
+      "screenshotsInvalidToast": "Bitte prÃƒÂ¼fe, ob die Screenshot-Links mit https:// beginnen, und versuche es erneut.",
+      "screenshotsPreviewAlt": "Screenshot {index}",
+      "screenshotsFileHint": "PNG/JPG/WebP bis {size}MB.",
+      "screenshotsUploadButton": "Screenshot hochladen",
+      "screenshotsReplaceButton": "Screenshot ersetzen",
+      "screenshotsRemoveButton": "Entfernen",
+      "screenshotsUploading": "Wird hochgeladen...",
+      "screenshotsEmptyPlaceholder": "Screenshot hochladen",
+      "screenshotsUploadSuccess": "Screenshot gespeichert.",
+      "screenshotsUploadFailed": "Screenshot konnte nicht hochgeladen werden. Bitte versuch es erneut.",
+      "screenshotsDeleteFailed": "Screenshot konnte nicht entfernt werden. Bitte versuch es erneut.",
+      "screenshotsRemoveSuccess": "Screenshot entfernt.",
+      "screenshotsTooLarge": "Screenshot darf hÃ¶chstens {size}MB groÃŸ sein."
+    },
+    "viewer": {
+      "play": {
+        "default": "App starten",
+        "login": "Anmelden und starten",
+        "pay": "Zugang freischalten"
+      },
+      "tagline": "Empfohlene App",
+      "added": "HinzugefÃƒÂ¼gt {time}",
+      "author": {
+        "unknown": "Anonymer Creator"
+      },
+      "status": {
+        "active": "Aktiv",
+        "inactive": "Pausiert"
+      },
+      "badges": {
+        "new": "Neu",
+        "paused": "Pausiert",
+        "public": "Ãƒâ€“ffentlich",
+        "unlisted": "Nicht gelistet"
+      },
+      "banner": {
+        "pending": "Diese App wartet auf Freigabe. Nur der Creator und Moderatoren kÃƒÂ¶nnen sie momentan sehen.",
+        "private": "Diese App ist noch nicht ÃƒÂ¶ffentlich. Du siehst sie, weil du erhÃƒÂ¶hte Rechte hast."
+      },
+      "actions": {
+        "copied": "Link kopiert",
+        "copy": "Link kopieren",
+        "like": "GefÃƒÂ¤llt mir",
+        "liked": "Gespeichert"
+      },
+      "stats": {
+        "likes": "Likes",
+        "plays": "Plays",
+        "price": "Preis",
+        "status": "Status"
+      },
+      "description": {
+        "title": "Das bekommst du",
+        "empty": "Der Creator ergÃƒÂ¤nzt die Details bald."
+      },
+      "gallery": {
+        "title": "Screenshots",
+        "empty": "Screenshots erscheinen, sobald der Creator welche hochlÃƒÂ¤dt.",
+        "alt": "Screenshot {index}"
+      },
+      "preview": {
+        "title": "Live-Vorschau",
+        "fallback": "Die Vorschau erscheint, sobald der Creator eine Grafik hochlÃƒÂ¤dt."
+      },
+      "securityTitle": "Sicherheits-Badges",
+      "identity": {
+        "missing": "Gastbenutzer"
+      },
+      "report": {
+        "title": "Inhalt melden",
+        "link": "Inhalt melden",
+        "hide": "Formular ausblenden",
+        "identityLabel": "Dein Profil",
+        "identityHint": "Wird automatisch ausgefÃƒÂ¼llt, damit sich Moderatoren bei Bedarf melden kÃƒÂ¶nnen.",
+        "reasonLabel": "Grund",
+        "reasonPlaceholder": "ErklÃƒÂ¤re, was problematisch istÃ¢â‚¬Â¦",
+        "reasonHint": "Mindestens 10 Zeichen. Wir leiten die Nachricht direkt an Moderatoren weiter.",
+        "cancel": "Abbrechen",
+        "submit": "Meldung senden",
+        "busy": "Wird gesendetÃ¢â‚¬Â¦"
+      }
+    },
+    "reviews": {
+      "title": "Bewertungen",
+      "subtitle": "{count} Bewertungen",
+      "averageLabel": "Durchschnittsbewertung",
+      "breakdown": "Verteilung der Sterne",
+      "ratingLabel": "Bewertung",
+      "commentLabel": "Kommentar",
+      "commentPlaceholder": "Was hat dir gefallen? Was kÃƒÂ¶nnten wir verbessern?",
+      "leaveReview": "Teile deine Erfahrung",
+      "loginHint": "Melde dich an, um eine Bewertung zu schreiben.",
+      "loginRequired": "Melde dich an, um eine Bewertung zu schreiben.",
+      "requirePurchase": "Nur Nutzer, die die App ausprobiert haben, dÃƒÂ¼rfen bewerten.",
+      "requirePurchaseHint": "Nur Nutzer, die die App ausprobiert haben, dÃƒÂ¼rfen bewerten.",
+      "tooShort": "Die Nachricht muss mindestens 10 Zeichen enthalten.",
+      "loading": "Bewertungen werden geladen...",
+      "empty": "Noch keine Bewertungen.",
+      "submit": "Bewertung senden",
+      "submitting": "Wird gesendet...",
+      "sent": "Danke! Deine Bewertung ist eingegangen.",
+      "error": "Die Bewertung konnte nicht gespeichert werden. Bitte versuche es erneut."
+    }
+  },
+  "Rooms": {
+    "headerActiveLabel": "Aktiver Raum",
+    "panelLabel": "Raum-Panel",
+    "defaultRoomName": "Ã¢â€Å“ÃƒÂ»ffentlicher Demo-Raum (PIN 1111)",
+    "descriptionDemoCompact": "Der Demo-Raum ist Ã¢â€Å“Ã¢â€¢Â¢ffentlich und zum Testen gedacht. Alle Nutzer teilen dieselben Daten.",
+    "descriptionPrivateCompact": "Dieser Raum hat einen privaten Speicher, den nur Mitglieder mit demselben PIN teilen.",
+    "descriptionDemoFull": "Dieser Demo-Raum ist Ã¢â€Å“Ã¢â€¢Â¢ffentlich und zeigt die App. Erstelle deinen eigenen Raum und PIN fÃ¢â€Å“Ã¢â€¢Âr privaten Speicher.",
+    "descriptionPrivateFull": "Der von dir gewÃ¢â€Å“ÃƒÂ±hlte Raum verfÃ¢â€Å“Ã¢â€¢Âgt Ã¢â€Å“Ã¢â€¢Âber privaten Speicher, der fÃ¢â€Å“Ã¢â€¢Âr alle zugÃ¢â€Å“ÃƒÂ±nglich ist, die Raumname und PIN kennen.",
+    "roomLabel": "Raumname",
+    "pinLabel": "PIN",
+    "roomPlaceholder": "Raumname (z. B. KÃ¢â€Å“Ã¢â€¢Âche)",
+    "pinPlaceholder": "PIN (4-8 Ziffern)",
+    "modeHint": "FÃ¢â€Å“Ã¢â€¢Âr dauerhaften privaten Speicher erstelle deinen eigenen Raum und PIN.",
+    "toggleLabel": "Raum-Panel umschalten",
+    "createButton": "Neuen Raum erstellen",
+    "joinButton": "Bestehenden Raum betreten",
+    "demoButton": "Zum Demo-Raum zurÃ¢â€Å“Ã¢â€¢Âckkehren (PIN 1111)",
+    "errors": {
+      "missingCredentials": "Gib einen Raumnamen und PIN an.",
+      "generic": "Die Arbeit mit RÃ¢â€Å“ÃƒÂ±umen ist derzeit nicht mÃ¢â€Å“Ã¢â€¢Â¢glich."
+    }
+  },
+  "MyProjectsPage": {
+    "congrats": {
+      "title": "GlÃ¼ckwunsch!",
+      "message": "Warten Sie nun einfach, bis wir Ihre App verÃ¶ffentlichen. Viel Erfolg!",
+      "confirm": "OK"
+    }
+  },
+  "GoldenBookPage": {
+    "title": "Golden Book der UnterstÃƒÂ¼tzer",
+    "heroTitle": "Hilf uns, aus der Garage herauszukommen und verewige deinen Beitrag im Goldenen Buch und werde Teil der Geschichte!",
+    "subtitle": "Jede Spende hÃƒÂ¤lt Thesara online und unabhÃƒÂ¤ngig. Alle Namen bleiben dauerhaft sichtbar.",
+    "activeWindow": "Spenden sind von {start} bis {end} mÃƒÂ¶glich.",
+    "alwaysOpen": "Spenden sind wÃƒÂ¤hrend dieses 90-Tage-Zeitraums geÃƒÂ¶ffnet.",
+    "closedWindow": "Spenden sind derzeit geschlossen, aber das Golden Book bleibt ÃƒÂ¶ffentlich.",
+    "listTitle": "Spender",
+    "empty": "Noch keine ÃƒÂ¶ffentlichen Spender. Sei der Erste!",
+    "pendingBadge": "Alias ausstehend",
+    "cta": "Jetzt spenden",
+    "ctaClosed": "Spenden geschlossen",
+    "permanentNote": "Jeder Eintrag bleibt auch nach Ende der Kampagne sichtbar.",
+    "highlightToast": "Dein Name wurde gerade hinzugefÃƒÂ¼gt!"
+  },
+  "DonateThankYou": {
+    "title": "Danke fÃƒÂ¼r deine UnterstÃƒÂ¼tzung",
+    "celebrationKicker": "Du machst den Unterschied",
+    "celebrationBody": "Deine Spende hÃƒÂ¤lt Thesara unabhÃƒÂ¤ngig. Bestimme deinen Eintrag und wir feiern dich im Golden Book.",
+    "stepOne": "Anzeigename eintragen",
+    "stepTwo": "Golden Book anzeigen",
+    "aliasTitle": "Wie sollen wir dich nennen?",
+    "intro": "Bestimme, welcher Name im Golden Book steht. Lass das Feld leer, wenn du anonym bleiben mÃƒÂ¶chtest.",
+    "missingPaymentIntent": "Wir konnten keine Zahlungsreferenz finden. Ãƒâ€“ffne den Link aus der Stripe-E-Mail oder kontaktiere den Support.",
+    "notFound": "Spende nicht gefunden. Bitte aktualisiere die Seite oder melde dich beim Support.",
+    "aliasLabel": "Anzeigename",
+    "aliasPlaceholder": "z.B. Thesara Fan, Studio KaktusÃ¢â‚¬Â¦",
+    "aliasOptional": "Wenn das Feld leer bleibt, erscheint Ã¢â‚¬Å“Anonymer SpenderÃ¢â‚¬Â.",
+    "submit": "Name speichern",
+    "saving": "SpeichereÃ¢â‚¬Â¦",
+    "success": "Alias gespeichert! Du bist jetzt im Golden Book.",
+    "alreadySet": "Alias bereits gespeichert. Danke!",
+    "alreadySetHint": "Bereits einen Namen eingetragen? Du kannst ihn jederzeit anpassen und erneut speichern.",
+    "errorGeneric": "Wir konnten den Alias nicht speichern. Bitte versuche es erneut.",
+    "goToGoldenBook": "Golden Book ÃƒÂ¶ffnen",
+    "backHome": "Zur Startseite",
+    "redirecting": "Weiterleitung zum Golden BookÃ¢â‚¬Â¦"
+  }
+}
+
+
+

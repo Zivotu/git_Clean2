@@ -198,6 +198,29 @@ export default function AdminDashboard() {
     [tAdmin],
   );
 
+  const formatActionError = (err: unknown): string => {
+    if (err instanceof ApiError) {
+      return err.message || err.code || '';
+    }
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
+    if (typeof err === 'string') {
+      return err;
+    }
+    return '';
+  };
+
+  const showAdminErrorAlert = (key: string, err: unknown) => {
+    const detail = formatActionError(err);
+    const base = tAdmin(key);
+    if (detail && detail !== base) {
+      alert(`${base}\n\n${detail}`);
+    } else {
+      alert(base);
+    }
+  };
+
   const adminTabs = useMemo(
     () => [
       { id: 'apps', label: tAdmin('tabs.apps') },
@@ -606,12 +629,17 @@ export default function AdminDashboard() {
       showAdminAlert('alerts.noBuildApprove');
       return;
     }
-    await apiPost(`/review/approve/${target}`, {}, { auth: true });
-    setItems((prev) => prev.filter((it) => it.id !== item.id));
-    showAdminAlert('alerts.approveSuccess');
-    setTab('approved');
-    if (items.length === 1 && nextCursor) {
-      await load(nextCursor);
+    try {
+      await apiPost(`/review/approve/${target}`, {}, { auth: true });
+      setItems((prev) => prev.filter((it) => it.id !== item.id));
+      showAdminAlert('alerts.approveSuccess');
+      setTab('approved');
+      if (items.length === 1 && nextCursor) {
+        await load(nextCursor);
+      }
+    } catch (err) {
+      console.error('admin_approve_failed', err);
+      showAdminErrorAlert('alerts.approveFailed', err);
     }
   };
 
@@ -621,9 +649,14 @@ export default function AdminDashboard() {
       showAdminAlert('alerts.noBuildApprove');
       return;
     }
-    await apiPost(`/review/refresh/${target}`, {}, { auth: true });
-    showAdminAlert('alerts.refreshSuccess');
-    await load();
+    try {
+      await apiPost(`/review/refresh/${target}`, {}, { auth: true });
+      showAdminAlert('alerts.refreshSuccess');
+      await load();
+    } catch (err) {
+      console.error('admin_refresh_failed', err);
+      showAdminErrorAlert('alerts.refreshFailed', err);
+    }
   };
 
   const reject = async (item: ReviewItem, reason: string) => {
@@ -632,9 +665,14 @@ export default function AdminDashboard() {
       showAdminAlert('alerts.noBuildReject');
       return;
     }
-    await apiPost(`/review/reject/${target}`, { reason }, { auth: true });
-    showAdminAlert('alerts.rejectSuccess');
-    await load();
+    try {
+      await apiPost(`/review/reject/${target}`, { reason }, { auth: true });
+      showAdminAlert('alerts.rejectSuccess');
+      await load();
+    } catch (err) {
+      console.error('admin_reject_failed', err);
+      showAdminErrorAlert('alerts.rejectFailed', err);
+    }
   };
 
   const deleteApp = async (item: ReviewItem) => {

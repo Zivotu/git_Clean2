@@ -21,7 +21,7 @@ export default function PolitikaPrivatnostiPage() {
   ];
 
   return (
-    <main className="max-w-3xl mx-auto p-6">
+    <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <div className="space-y-8 text-sm leading-relaxed text-gray-700">
         {sections.map((section) => (
@@ -33,6 +33,6 @@ export default function PolitikaPrivatnostiPage() {
           </section>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

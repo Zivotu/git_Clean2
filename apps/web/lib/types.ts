@@ -91,6 +91,7 @@ export interface AppRecord {
   domainsSeen?: string[];
   version?: number;
   archivedVersions?: ArchivedVersion[];
+  price?: number | null;
   [key: string]: any;
 }
 
@@ -121,4 +122,5 @@ export type Listing = Pick<
   // (opcionalno korisno, ako se negdje koristi)
   updatedAt?: number | string | Date;
   likedByMe?: boolean;
+  price?: number | null;
 };

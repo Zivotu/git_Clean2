@@ -20,6 +20,9 @@ import {
 import { playHref, appDetailsHref } from '@/lib/urls';
 import { getPlayUrl } from '@/lib/play';
 import CongratsModal from '@/components/CongratsModal';
+import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
+
+import { useTheme } from '@/components/ThemeProvider';
 
 // ————————————————————————————————————————
 // Types
@@ -174,10 +177,10 @@ export default function MyProjectsPage() {
           prev.map((it) =>
             it.slug === slug
               ? {
-                  ...it,
-                  likedByMe: like,
-                  likesCount: Math.max(0, (it.likesCount || 0) + (like ? 1 : -1)),
-                }
+                ...it,
+                likedByMe: like,
+                likesCount: Math.max(0, (it.likesCount || 0) + (like ? 1 : -1)),
+              }
               : it
           )
         );
@@ -217,22 +220,22 @@ export default function MyProjectsPage() {
         setBusy((prev) => ({ ...prev, [item.slug]: false }));
       }
     },
-      [busy]
-    );
+    [busy]
+  );
 
-const handlePlayClick = useCallback(
-  async (e: React.MouseEvent, item: Listing & { status?: string }) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (item.status !== 'published') {
-      setToast({ message: 'App must be approved before it can run.', type: 'info' });
-      return;
-    }
-    const dest = await getPlayUrl(item.id);
-    window.open(dest, '_blank', 'noopener,noreferrer');
-  },
-  [setToast]
-);
+  const handlePlayClick = useCallback(
+    async (e: React.MouseEvent, item: Listing & { status?: string }) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (item.status !== 'published') {
+        setToast({ message: 'App must be approved before it can run.', type: 'info' });
+        return;
+      }
+      const dest = await getPlayUrl(item.id);
+      window.open(dest, '_blank', 'noopener,noreferrer');
+    },
+    [setToast]
+  );
 
   // — Load my listings (localized)
   useEffect(() => {
@@ -400,12 +403,14 @@ const handlePlayClick = useCallback(
     });
   };
 
+  const { isDark } = useTheme();
+
   if (!user) {
     return (
       <div className="min-h-screen grid place-items-center bg-gradient-to-br from-white via-emerald-50/30 to-white text-gray-900">
-        <div className="bg-white border rounded-2xl shadow-md p-8 text-center max-w-md">
+        <div className={`p-8 text-center max-w-md rounded-2xl ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-100' : 'bg-white border shadow-md text-gray-900'}`}>
           <h1 className="text-2xl font-bold mb-2">My Projects</h1>
-          <p className="text-gray-700 mb-6">Sign in to manage and view your created projects.</p>
+          <p className="mb-6">Sign in to manage and view your created projects.</p>
           <Link href="/login" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title="Go to login">Go to Login</Link>
         </div>
       </div>
@@ -413,12 +418,22 @@ const handlePlayClick = useCallback(
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white text-gray-900">
+    <div className={`min-h-screen ${isDark ? 'bg-gradient-to-br from-[#020617] via-[#0B0B10] to-[#0B0B10] text-zinc-100' : 'bg-gradient-to-br from-white via-emerald-50/30 to-white text-gray-900'}`}>
       {/* Decorative blobs */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-100/40 via-white to-white" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl" />
+        {isDark ? (
+          <>
+            <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0B0B10] to-[#0B0B10]" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-900/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-slate-900/20 rounded-full blur-3xl" />
+          </>
+        ) : (
+          <>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-100/40 via-white to-white" />
+            <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl" />
+          </>
+        )}
       </div>
 
       {/* Header */}
@@ -434,8 +449,8 @@ const handlePlayClick = useCallback(
         {/* Title + Actions */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black">My Projects</h1>
-            <p className="text-sm text-gray-700 mt-1">
+            <h1 className={`text-3xl md:text-4xl font-black ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>My Projects</h1>
+            <p className={`text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-gray-700'}`}>
               {items.length} total · {items.filter(i => i.visibility === 'public').length} public · {items.filter(i => i.visibility === 'unlisted').length} unlisted
             </p>
           </div>
@@ -443,7 +458,7 @@ const handlePlayClick = useCallback(
             {handle && (
               <Link
                 href={`/u/${handle}/finances`}
-                className="px-5 py-2.5 rounded-full border border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-50 transition shadow-sm"
+                className={`px-5 py-2.5 rounded-full border font-medium transition shadow-sm ${isDark ? 'border-emerald-700 text-emerald-400 bg-emerald-950/50 hover:bg-emerald-900/50' : 'border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-50'}`}
                 title="Pregled financija"
               >
                 Financije
@@ -461,25 +476,25 @@ const handlePlayClick = useCallback(
 
         {/* Handle setup if missing */}
         {!handle && (
-          <section className="mb-6 p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <h2 className="text-lg font-semibold mb-1">Postavi korisničko ime (handle)</h2>
-            <p className="text-sm text-gray-600 mb-3">Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.</p>
+          <section className={`mb-6 p-4 rounded-xl border shadow-sm ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`}>
+            <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>Postavi korisničko ime (handle)</h2>
+            <p className={`text-sm mb-3 ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.</p>
             <HandleForm onSuccess={(h) => setHandle(h)} />
           </section>
         )}
 
         {/* Repo-level price */}
         {handle && (
-          <section className="mb-6 p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2">Cijena repozitorija</h2>
+          <section className={`mb-6 p-4 rounded-xl border shadow-sm ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`}>
+            <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>Cijena repozitorija</h2>
             {!canMonetize && (
-              <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm mb-2">
+              <div className={`mb-3 p-3 border rounded ${isDark ? 'border-blue-800 bg-blue-950/50' : 'border-blue-200 bg-blue-50'}`}>
+                <p className={`text-sm mb-2 ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>
                   Postavljanje cijena je zaključano dok ne dovršiš Stripe onboarding.
                 </p>
                 <button
                   onClick={() => startStripeOnboarding(user!.uid, handle)}
-                  className="px-3 py-1 bg-blue-600 text-white rounded"
+                  className={`px-3 py-1 rounded ${isDark ? 'bg-blue-700 text-white hover:bg-blue-600' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >
                   Podesi isplate (Stripe)
                 </button>
@@ -489,7 +504,7 @@ const handlePlayClick = useCallback(
               <div className="flex items-center justify-between">
                 <div className="text-gray-900">
                   <span className="inline-block px-3 py-1 rounded-full bg-emerald-600 text-white font-semibold">
-                    All‑Access {new Intl.NumberFormat('en-US', { style:'currency', currency:'USD' }).format(Number(allAccessPrice))}/mo
+                    All‑Access {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(allAccessPrice))}/mo
                   </span>
                   {repoPriceUpdatedAt && (
                     <span className="ml-3 text-sm text-gray-500">Zadnja promjena: {new Date(repoPriceUpdatedAt).toLocaleString()}</span>
@@ -545,29 +560,29 @@ const handlePlayClick = useCallback(
         {/* Filters */}
         <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2.5">
-              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`}>
+              <svg className={`w-5 h-5 ${isDark ? 'text-zinc-500' : 'text-gray-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z" />
               </svg>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by title, tag, description..."
-                className="w-full outline-none bg-transparent text-sm text-gray-900 placeholder:text-gray-500"
+                className={`w-full outline-none bg-transparent text-sm placeholder:text-gray-500 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {(['all','public','unlisted'] as const).map(v => (
+            {(['all', 'public', 'unlisted'] as const).map(v => (
               <button
                 key={v}
                 onClick={() => setVisibilityFilter(v)}
                 className={cn(
                   'flex-1 py-2.5 px-3 rounded-lg text-sm font-medium border transition-all duration-200',
                   visibilityFilter === v
-                    ? 'bg-white border-emerald-400 text-emerald-700 shadow-sm'
-                    : 'bg-white border-gray-200 text-gray-800 hover:border-gray-300'
+                    ? `${isDark ? 'bg-emerald-950/50 border-emerald-700 text-emerald-400' : 'bg-white border-emerald-400 text-emerald-700'} shadow-sm`
+                    : `${isDark ? 'bg-[#18181B] border-[#27272A] text-zinc-400 hover:border-zinc-600' : 'bg-white border-gray-200 text-gray-800 hover:border-gray-300'}`
                 )}
               >
                 {v === 'all' ? 'All' : v === 'public' ? 'Public' : 'Unlisted'}
@@ -576,11 +591,11 @@ const handlePlayClick = useCallback(
           </div>
 
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-700">Sort</label>
+            <label className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-700'}`}>Sort</label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
-              className="flex-1 py-2.5 px-3 rounded-lg text-sm border border-gray-200 bg-white text-gray-900"
+              className={`flex-1 py-2.5 px-3 rounded-lg text-sm border transition-shadow ${isDark ? 'border-[#27272A] bg-zinc-800/70 text-zinc-100 shadow-sm' : 'border-gray-200 bg-white text-gray-900'}`}
             >
               <option value="newest">Newest</option>
               <option value="likes">Most liked</option>
@@ -593,228 +608,101 @@ const handlePlayClick = useCallback(
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden animate-pulse">
-                <div className="aspect-video bg-gray-200" />
+              <div key={i} className={`rounded-2xl border overflow-hidden animate-pulse ${isDark ? 'bg-[#18181B] border-[#27272A]' : 'bg-white border-gray-200 shadow-md'}`}>
+                <div className={`aspect-video ${isDark ? 'bg-zinc-800' : 'bg-gray-200'}`} />
                 <div className="p-4">
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
-                  <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className={`${isDark ? 'bg-zinc-700' : 'bg-gray-200'} h-6 rounded w-3/4 mb-2`} />
+                  <div className={`${isDark ? 'bg-zinc-700' : 'bg-gray-200'} h-4 rounded w-full mb-2`} />
+                  <div className={`${isDark ? 'bg-zinc-700' : 'bg-gray-200'} h-4 rounded w-1/2`} />
                 </div>
               </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center text-gray-700 py-16">
+          <div className={`text-center py-16 ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>
             <p className="text-lg mb-4">No matching projects. Try adjusting filters.</p>
             <Link href="/create" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title="Create your first project">Create Your First Project</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((it) => {
-              const likeDisplay = it.likesCount ?? 0;
-              const isNew = it.createdAt && Date.now() - it.createdAt < 1000 * 60 * 60 * 24 * 7;
-              const img = imgSrc(it);
-              const hasPreview = Boolean(img);
+              // Map to BetaApp format
+              const gradientPalette = [
+                'from-purple-700 via-fuchsia-600 to-indigo-700',
+                'from-pink-500 via-fuchsia-500 to-indigo-500',
+                'from-sky-500 via-cyan-500 to-emerald-500',
+                'from-amber-500 via-orange-500 to-rose-500',
+                'from-slate-800 via-slate-700 to-slate-900',
+                'from-emerald-500 via-teal-500 to-cyan-600',
+                'from-indigo-500 via-violet-500 to-purple-600',
+                'from-rose-500 via-pink-500 to-orange-500',
+                'from-blue-500 via-sky-500 to-cyan-400',
+                'from-lime-500 via-emerald-500 to-teal-500',
+              ];
+
+              // Deterministic gradient based on ID
+              const gradientIndex = it.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % gradientPalette.length;
+
+              const betaApp: BetaApp = {
+                id: it.id,
+                slug: it.slug,
+                name: it.title,
+                description: it.description || '',
+                category: 'App', // Default category
+                authorName: it.author?.name || 'Anonymous',
+                authorInitials: (it.author?.name || 'A').slice(0, 2).toUpperCase(),
+                authorPhoto: it.author?.photo,
+                playsCount: it.playCount || 0,
+                likesCount: it.likesCount || 0,
+                usersLabel: (it.playCount || 0).toString(),
+                likesLabel: (it.likesCount || 0).toString(),
+                price: (it as any).price,
+                previewUrl: it.previewUrl || null,
+                gradientClass: gradientPalette[gradientIndex],
+                tags: it.tags || [],
+                createdAt: it.createdAt || Date.now(),
+              };
+
+              const labels: ListingLabels = {
+                free: 'FREE',
+                creator: 'CREATOR',
+                play: 'Play',
+                details: 'Details',
+                trending: 'Trending',
+              };
 
               return (
-                <article
+                <BetaAppCard
                   key={it.slug}
-                  className="group bg-white border border-gray-200 rounded-2xl shadow-md overflow-hidden flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
-                >
-                  <div className="relative">
-                    <Link href={appDetailsHref(it.slug)} title={it.title}>
-                      {hasPreview ? (
-                        <Image
-                          src={img}
-                          alt={it.title}
-                          width={400}
-                          height={225}
-                          className="w-full aspect-video object-cover"
-                        />
-                      ) : (
-                        <div className="w-full aspect-video bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-medium">
-                          Bez grafike
-                        </div>
-                      )}
-                    </Link>
-
-                    {/* Badges */}
-                    <div className="absolute top-3 left-3 flex items-center gap-2">
-                    {isNew && (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-bold shadow">NEW</span>
-                    )}
-                    {it.state === 'inactive' && (
-                      <span className="px-2.5 py-1 rounded-full bg-red-600 text-white text-[11px] font-bold shadow">INACTIVE</span>
-                    )}
-                    {it.status === 'pending-review' && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-500 text-white text-[11px] font-bold shadow">NA ČEKANJU</span>
-                    )}
-                    {it.status === 'rejected' && (
-                      <span className="px-2.5 py-1 rounded-full bg-red-700 text-white text-[11px] font-bold shadow">ODBIJENO</span>
-                    )}
-                    <span
-                      className={cn(
-                        'px-2.5 py-1 rounded-full text-[11px] font-bold shadow',
-                        it.visibility === 'public'
-                          ? 'bg-gray-900 text-white'
-                          : 'bg-gray-200 text-gray-900'
-                        )}
-                      >
-                        {(it.visibility ?? 'public').toUpperCase()}
-                      </span>
-                    {/* Price badge */}
-                    <span className="px-2.5 py-1 rounded-full bg-gray-900/90 text-white text-[11px] font-bold shadow">
-                      {typeof (it as any).price === 'number' && (it as any).price > 0
-                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format((it as any).price) + '/mo'
-                        : 'FREE'}
-                    </span>
-                    </div>
-
-                    {/* Hover CTA */}
-                      {it.status === 'published' && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
-                          <button
-                            type="button"
-                            onClick={(e) => handlePlayClick(e, it)}
-                            className="px-4 py-2 rounded-full bg-white/95 backdrop-blur text-gray-900 text-sm font-medium shadow-lg hover:bg-white transform hover:scale-105 transition"
-                            title="Play in new tab"
-                          >
-                            ▶ Play in New Tab
-                          </button>
-                        </div>
-                      )}
-                  </div>
-
-                  <div className="p-4 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <h2 className="font-semibold text-lg text-gray-900 line-clamp-1">{it.title}</h2>
-                      <button
-                        id={`like-${it.slug}`}
-                        type="button"
-                        onClick={() => toggleLike(it.slug)}
-                        className={cn(
-                          'flex items-center gap-1 px-2 py-1 rounded-full border text-sm transition-all duration-200',
-                          it.likedByMe
-                            ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100'
-                            : 'bg-white border-gray-300 text-gray-800 hover:bg-gray-50',
-                          busy[it.slug] && 'opacity-50 cursor-not-allowed'
-                        )}
-                        title="Like"
-                        aria-label={it.likedByMe ? 'Unlike' : 'Like'}
-                        aria-pressed={!!it.likedByMe}
-                        disabled={busy[it.slug]}
-                      >
-                        <svg className="w-4 h-4" fill={it.likedByMe ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        <span className="font-medium">{likeDisplay}</span>
-                      </button>
-                    </div>
-
-                    {it.description && (
-                      <p className="text-sm text-gray-700 mt-1 line-clamp-2">{it.description}</p>
-                    )}
-                    {(it.status === 'pending-review' || it.status === 'rejected') && (
-                      <p
-                        className={`text-xs mt-1 ${
-                          it.status === 'rejected' ? 'text-red-600' : 'text-amber-600'
-                        }`}
-                      >
-                        {it.status === 'rejected' ? 'Odbijeno' : 'Čeka odobrenje'}
-                        {it.moderation?.reasons?.length
-                          ? `: ${it.moderation.reasons
-                              .map((r) => translateReason(r))
-                              .join(', ')}`
-                          : ''}
-                      </p>
-                    )}
-
-                    {it.tags?.length ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {it.tags.map((t) => (
-                          <Link
-                            key={t}
-                            href={`/?tag=${t}`}
-                            className="text-[11px] px-2 py-1 rounded-full bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-300 font-medium text-gray-800 hover:from-emerald-50 hover:to-green-50 hover:border-emerald-400 hover:text-emerald-700 transition-all duration-200"
-                            title={`Tag: ${t}`}
-                          >
-                            #{t}
-                          </Link>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    <div className="mt-3 flex items-center justify-between text-xs text-gray-600">
-                      <span title={it.createdAt ? new Date(it.createdAt).toLocaleString() : ''}>
-                        <RelativeTime ts={it.createdAt} />
-                      </span>
-                      <div className="flex items-center gap-3">
-                        {typeof it.playCount === 'number' && (
-                          <span className="inline-flex items-center gap-1" title="Times played">
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                            {it.playCount}
-                          </span>
-                        )}
-                        <button
-                          onClick={() => copyLink(it)}
-                          className="inline-flex items-center gap-1 text-gray-800 hover:text-gray-900 transition"
-                          title="Copy play link"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          Copy
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                    <div className="p-4 border-t bg-gray-50/60 flex gap-2 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={(e) => handlePlayClick(e, it)}
-                        className="flex-1 text-center px-4 py-2 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition shadow-sm hover:shadow"
-                        title="Play app"
-                      >
-                        Play
-                      </button>
-                      <button
-                        onClick={() => router.push(appDetailsHref(it.slug))}
-                        className={cn(
-                          'flex-1 text-center px-4 py-2 rounded-full border text-sm font-medium transition',
-                          busy[it.slug]
-                            ? 'border-gray-300 text-gray-400 cursor-not-allowed'
-                          : 'border-gray-300 text-gray-800 hover:bg-white'
-                      )}
-                      disabled={busy[it.slug]}
-                      title="Edit details"
-                    >
-                      Edit
-                    </button>
-                    {/* Delete action removed on My Projects page; available in app details */}
-                  </div>
-                </article>
+                  app={betaApp}
+                  isDark={isDark}
+                  view="grid"
+                  labels={labels}
+                />
               );
             })}
           </div>
         )}
-      </main>
+
+      </main >
 
       {/* Toast */}
-      {showCongrats && (
-        <CongratsModal
-          title={t('congrats.title')}
-          message={t('congrats.message')}
-          confirmLabel={t('congrats.confirm')}
-          onClose={() => {
-            setShowCongrats(false);
-            // remove the submitted flag from the URL by replacing the route
-            router.replace('/my');
-          }}
-        />
-      )}
+      {
+        showCongrats && (
+          <CongratsModal
+            title={t('congrats.title')}
+            message={t('congrats.message')}
+            confirmLabel={t('congrats.confirm')}
+            onClose={() => {
+              setShowCongrats(false);
+              // remove the submitted flag from the URL by replacing the route
+              router.replace('/my');
+            }}
+          />
+        )
+      }
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast ? <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} /> : null}
 
       {/* Animations */}
       <style jsx global>{`
@@ -825,7 +713,7 @@ const handlePlayClick = useCallback(
         .animate-slideUp { animation: slideUp 0.3s ease-out; }
         .animate-slideInRight { animation: slideInRight 0.3s ease-out; }
       `}</style>
-    </div>
+    </div >
   );
 }
 

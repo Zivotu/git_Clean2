@@ -78,12 +78,32 @@ type Listing = {
   moderation?: { status?: string; reasons?: string[] };
   translations?: Record<string, { title?: string; description?: string }>;
   capabilities?: { storage?: { roomsMode?: RoomsMode } };
+  customAssets?: CustomAssetRecord[];
 };
 
 type ScreenshotSlotState = {
   uploading: boolean;
   error: string;
 };
+
+type CustomAssetRecord = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+  updatedAt: number;
+};
+
+type CustomAssetDraft = CustomAssetRecord & {
+  localId: string;
+  isNew?: boolean;
+  hasLocalData?: boolean;
+};
+
+const MAX_CUSTOM_ASSET_COUNT = 30;
+const MAX_CUSTOM_ASSET_BYTES = 100 * 1024;
+const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
 // ------------------------------------------------------------------
 // Helpers
@@ -105,6 +125,19 @@ function timeSince(ts: number) {
   if (mo < 12) return `${mo}mo ago`;
   const y = Math.floor(mo / 12);
   return `${y}y ago`;
+}
+
+function createLocalId() {
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeAssetName(input: string) {
+  const trimmed = (input || '').replace(/[\r\n]/g, '').trim();
+  const sanitized = trimmed.replace(/[\\/]+/g, '-').slice(0, 160);
+  return sanitized || `custom-${Date.now()}.png`;
 }
 
 // â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
@@ -385,11 +418,19 @@ function AppDetailClient() {
   const [screenshotVersions, setScreenshotVersions] = useState<number[]>(
     () => Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => 0),
   );
+  const customAssetInputRef = useRef<HTMLInputElement | null>(null);
+  const assetFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [customAssetDrafts, setCustomAssetDrafts] = useState<CustomAssetDraft[]>([]);
+  const [serverCustomAssets, setServerCustomAssets] = useState<CustomAssetRecord[]>([]);
+  const [customAssetLoading, setCustomAssetLoading] = useState(false);
+  const [customAssetError, setCustomAssetError] = useState<string | null>(null);
+  const [customAssetSaving, setCustomAssetSaving] = useState(false);
+  const [customAssetProgress, setCustomAssetProgress] = useState(0);
   // Optional manual translations for UI editing
   const [trEn, setTrEn] = useState({ title: '', description: '' });
   const [trDe, setTrDe] = useState({ title: '', description: '' });
   const [trHr, setTrHr] = useState({ title: '', description: '' });
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [price, setPrice] = useState('');
   const [priceMin, setPriceMin] = useState(0.5);
   const [priceMax, setPriceMax] = useState(1000);
@@ -427,6 +468,10 @@ function AppDetailClient() {
   );
   const screenshotMaxMb = useMemo(
     () => Math.round((MAX_SCREENSHOT_SIZE_BYTES / (1024 * 1024)) * 10) / 10,
+    []
+  );
+  const maxCustomAssetKb = useMemo(
+    () => Math.round(MAX_CUSTOM_ASSET_BYTES / 1024),
     []
   );
   const [previewChoice, setPreviewChoice] = useState<'preset' | 'custom'>('preset');
@@ -647,6 +692,18 @@ useEffect(() => {
     );
     setScreenshotVersions(Array.from({ length: SCREENSHOT_FIELD_COUNT }, () => 0));
   }, [item?.slug]);
+  const hydrateCustomAssetState = useCallback((incoming?: CustomAssetRecord[] | null) => {
+    const normalized = Array.isArray(incoming) ? incoming : [];
+    setServerCustomAssets(normalized);
+    setCustomAssetDrafts(
+      normalized.map((asset) => ({
+        ...asset,
+        localId: asset.id,
+        isNew: false,
+        hasLocalData: false,
+      })),
+    );
+  }, []);
 
   // Build headers for API requests
   const buildHeaders = useCallback(
@@ -665,6 +722,61 @@ useEffect(() => {
     },
     [user]
   );
+
+  const loadCustomAssets = useCallback(async () => {
+    if (!item?.slug || !canEdit) return;
+    setCustomAssetLoading(true);
+    setCustomAssetError(null);
+    try {
+      const res = await fetch(
+        `${PUBLIC_API_URL}/listing/${encodeURIComponent(item.slug)}/custom-assets`,
+        {
+          credentials: 'include',
+          headers: await buildHeaders(false),
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`GET custom assets failed ${res.status}: ${text}`);
+      }
+      const json = await res.json();
+      hydrateCustomAssetState(Array.isArray(json?.assets) ? json.assets : []);
+    } catch (err) {
+      handleFetchError(err, 'Failed to load custom assets');
+      setCustomAssetError(
+        tApp(
+          'customAssets.loadFailed',
+          undefined,
+          'Failed to load custom graphics. Please try again.',
+        ),
+      );
+    } finally {
+      setCustomAssetLoading(false);
+    }
+  }, [item?.slug, canEdit, buildHeaders, hydrateCustomAssetState, tApp]);
+
+  useEffect(() => {
+    if (!item || !canEdit) return;
+    hydrateCustomAssetState(item.customAssets ?? []);
+  }, [item, canEdit, hydrateCustomAssetState]);
+
+  useEffect(() => {
+    if (!item?.slug || !canEdit) return;
+    loadCustomAssets();
+  }, [item?.slug, canEdit, loadCustomAssets]);
+
+  useEffect(() => {
+    if (!customAssetSaving) return;
+    setCustomAssetProgress((prev) => (prev < 10 ? 10 : prev));
+    const timer = setInterval(() => {
+      setCustomAssetProgress((prev) => {
+        if (prev >= 90) return prev;
+        const next = prev + 5 + Math.random() * 10;
+        return next > 90 ? 90 : next;
+      });
+    }, 400);
+    return () => clearInterval(timer);
+  }, [customAssetSaving]);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -907,7 +1019,10 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
 
   const isValidScreenshotUrl = useCallback((value: string) => {
     if (!value) return true;
-    return /^https?:\/\//i.test(value);
+    // Accept absolute http(s) URLs and also allow relative paths (e.g. '/uploads/...')
+    // normalizeScreenshotInput may leave leading '/' for local uploads, so treat
+    // those as valid when saving edits to avoid blocking simple updates.
+    return /^https?:\/\//i.test(value) || value.startsWith('/');
   }, []);
 
   const updateScreenshotSlotState = useCallback(
@@ -1024,6 +1139,259 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
       setToast,
     ],
   );
+
+  const hasCustomAssetChanges = useMemo(() => {
+    if (customAssetDrafts.length !== serverCustomAssets.length) return true;
+    for (let i = 0; i < customAssetDrafts.length; i += 1) {
+      const draft = customAssetDrafts[i];
+      const base = serverCustomAssets[i];
+      if (!base) return true;
+      if (draft.id !== base.id) return true;
+      if ((draft.name || '').trim() !== (base.name || '').trim()) return true;
+      if (draft.hasLocalData) return true;
+    }
+    return false;
+  }, [customAssetDrafts, serverCustomAssets]);
+
+  const handleCustomAssetInput = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      if (!canEdit) return;
+      const files = Array.from(event.target.files || []);
+      event.target.value = '';
+      if (!files.length) return;
+      setCustomAssetError(null);
+      const existingNames = new Set(
+        customAssetDrafts
+          .map((asset) => asset.name?.trim().toLowerCase())
+          .filter((name): name is string => Boolean(name)),
+      );
+      const additions: CustomAssetDraft[] = [];
+      for (const file of files) {
+        if (customAssetDrafts.length + additions.length >= MAX_CUSTOM_ASSET_COUNT) {
+          setCustomAssetError(
+            tApp(
+              'customAssets.limitError',
+              { limit: MAX_CUSTOM_ASSET_COUNT },
+              `You can upload up to ${MAX_CUSTOM_ASSET_COUNT} graphics.`,
+            ),
+          );
+          break;
+        }
+        const mime = (file.type || '').toLowerCase();
+        if (!ALLOWED_CUSTOM_ASSET_TYPES.includes(mime)) {
+          setCustomAssetError(
+            tApp(
+              'customAssets.typeError',
+              undefined,
+              'Only PNG, JPG or GIF files are allowed.',
+            ),
+          );
+          continue;
+        }
+        if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+          setCustomAssetError(
+            tApp(
+              'customAssets.sizeError',
+              { size: maxCustomAssetKb },
+              `Each file must be ${maxCustomAssetKb}KB or smaller.`,
+            ),
+          );
+          continue;
+        }
+        const normalizedName = normalizeAssetName(file.name);
+        const lower = normalizedName.toLowerCase();
+        if (existingNames.has(lower)) {
+          setCustomAssetError(
+            tApp('customAssets.duplicateError', undefined, 'Use unique filenames.'),
+          );
+          continue;
+        }
+        existingNames.add(lower);
+        try {
+          const dataUrl = await readFileAsDataUrl(file);
+          const localId = createLocalId();
+          additions.push({
+            id: `local-${localId}`,
+            localId,
+            name: normalizedName,
+            mimeType: mime,
+            size: file.size,
+            dataUrl,
+            updatedAt: Date.now(),
+            isNew: true,
+            hasLocalData: true,
+          });
+        } catch {
+          setCustomAssetError(
+            tApp('customAssets.readError', undefined, 'Failed to read the selected files.'),
+          );
+          break;
+        }
+      }
+      if (additions.length) {
+        setCustomAssetDrafts((prev) => [...prev, ...additions]);
+      }
+    },
+    [canEdit, customAssetDrafts, maxCustomAssetKb, tApp],
+  );
+
+  const handleCustomAssetRemove = useCallback((localId: string) => {
+    setCustomAssetDrafts((prev) => prev.filter((asset) => asset.localId !== localId));
+    if (assetFileInputRefs.current[localId]) {
+      assetFileInputRefs.current[localId] = null;
+    }
+  }, []);
+
+  const handleCustomAssetNameChange = useCallback((localId: string, value: string) => {
+    setCustomAssetDrafts((prev) =>
+      prev.map((asset) => (asset.localId === localId ? { ...asset, name: value } : asset)),
+    );
+  }, []);
+
+  const handleCustomAssetReplace = useCallback(
+    async (localId: string, files: FileList | null) => {
+      if (!canEdit) return;
+      const file = files?.[0];
+      if (assetFileInputRefs.current[localId]) {
+        assetFileInputRefs.current[localId]!.value = '';
+      }
+      if (!file) return;
+      setCustomAssetError(null);
+      const mime = (file.type || '').toLowerCase();
+      if (!ALLOWED_CUSTOM_ASSET_TYPES.includes(mime)) {
+        setCustomAssetError(
+          tApp('customAssets.typeError', undefined, 'Only PNG, JPG or GIF files are allowed.'),
+        );
+        return;
+      }
+      if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+        setCustomAssetError(
+          tApp(
+            'customAssets.sizeError',
+            { size: maxCustomAssetKb },
+            `Each file must be ${maxCustomAssetKb}KB or smaller.`,
+          ),
+        );
+        return;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        const nextName = normalizeAssetName(file.name);
+        setCustomAssetDrafts((prev) => {
+          const hasDuplicate = prev.some(
+            (asset) =>
+              asset.localId !== localId &&
+              asset.name?.trim().toLowerCase() === nextName.toLowerCase(),
+          );
+          if (hasDuplicate) {
+            setCustomAssetError(
+              tApp('customAssets.duplicateError', undefined, 'Use unique filenames.'),
+            );
+            return prev;
+          }
+          return prev.map((asset) => {
+            if (asset.localId !== localId) return asset;
+            return {
+              ...asset,
+              name: nextName,
+              mimeType: mime,
+              size: file.size,
+              dataUrl,
+              updatedAt: Date.now(),
+              hasLocalData: true,
+            };
+          });
+        });
+      } catch {
+        setCustomAssetError(
+          tApp('customAssets.readError', undefined, 'Failed to read the selected files.'),
+        );
+      }
+    },
+    [canEdit, maxCustomAssetKb, tApp],
+  );
+
+  const resetCustomAssets = useCallback(() => {
+    hydrateCustomAssetState(serverCustomAssets);
+    setCustomAssetError(null);
+  }, [hydrateCustomAssetState, serverCustomAssets]);
+
+  const handleCustomAssetSave = useCallback(async () => {
+    if (!item || !canEdit || customAssetSaving || !hasCustomAssetChanges) return;
+    setCustomAssetSaving(true);
+    setCustomAssetError(null);
+    const payload: Array<{ id?: string; name: string; dataUrl?: string }> = [];
+    const usedNames = new Set<string>();
+    for (const asset of customAssetDrafts) {
+      const cleanName = normalizeAssetName(asset.name);
+      const lower = cleanName.toLowerCase();
+      if (usedNames.has(lower)) {
+        setCustomAssetError(
+          tApp('customAssets.duplicateError', undefined, 'Use unique filenames.'),
+        );
+        setCustomAssetSaving(false);
+        return;
+      }
+      usedNames.add(lower);
+      if (asset.hasLocalData || asset.isNew) {
+        if (!asset.dataUrl) {
+          setCustomAssetError(
+            tApp('customAssets.readError', undefined, 'Failed to read the selected files.'),
+          );
+          setCustomAssetSaving(false);
+          return;
+        }
+        payload.push({ name: cleanName, dataUrl: asset.dataUrl });
+      } else {
+        payload.push({ id: asset.id, name: cleanName });
+      }
+    }
+    try {
+      const res = await fetch(`${PUBLIC_API_URL}/listing/${item.slug}/custom-assets`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: await buildHeaders(true),
+        body: JSON.stringify({ assets: payload }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) {
+        throw new Error(json?.error || `PATCH failed ${res.status}`);
+      }
+      hydrateCustomAssetState(Array.isArray(json.assets) ? json.assets : []);
+      setToast({
+        message: tApp(
+          'customAssets.savedToast',
+          undefined,
+          'Graphics saved. Rebuilding your app now.',
+        ),
+        type: 'success',
+      });
+      setCustomAssetProgress(100);
+      setTimeout(() => setCustomAssetProgress(0), 800);
+    } catch (err) {
+      handleFetchError(err, 'Failed to save custom graphics');
+      const message = tApp(
+        'customAssets.saveFailed',
+        undefined,
+        'Failed to save custom graphics. Please try again.',
+      );
+      setCustomAssetError(message);
+      setToast({ message, type: 'error' });
+      setCustomAssetProgress(0);
+    } finally {
+      setCustomAssetSaving(false);
+    }
+  }, [
+    item,
+    canEdit,
+    customAssetSaving,
+    hasCustomAssetChanges,
+    customAssetDrafts,
+    buildHeaders,
+    hydrateCustomAssetState,
+    tApp,
+    setToast,
+  ]);
 
   useEffect(() => {
     if (useEditorPreview) {
@@ -1204,7 +1572,7 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
       description,
       longDescription: trimmedLongDescription,
       screenshotUrls: normalizedScreens,
-      tags: parsedTags,
+      tags: tags,
       visibility,
       accessMode,
       maxConcurrentPins: maxPins,
@@ -2174,6 +2542,195 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                {/* Custom graphics */}
+                <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">
+                        {tApp('customAssets.title', undefined, 'Custom graphics')}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {tApp(
+                          'customAssets.subtitle',
+                          { size: maxCustomAssetKb },
+                          `Upload PNG/JPG/GIF up to ${maxCustomAssetKb}KB each. We rebuild automatically without extra approval.`,
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {tApp(
+                          'customAssets.countLabel',
+                          { used: customAssetDrafts.length, limit: MAX_CUSTOM_ASSET_COUNT },
+                          `${customAssetDrafts.length}/${MAX_CUSTOM_ASSET_COUNT} used`,
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => customAssetInputRef.current?.click()}
+                        disabled={
+                          customAssetSaving || customAssetDrafts.length >= MAX_CUSTOM_ASSET_COUNT
+                        }
+                        className={cn(
+                          'px-4 py-2 rounded-lg text-sm font-semibold text-white transition',
+                          customAssetDrafts.length >= MAX_CUSTOM_ASSET_COUNT
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-emerald-600 hover:bg-emerald-700',
+                        )}
+                      >
+                        {tApp('customAssets.add', undefined, 'Upload graphics')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={loadCustomAssets}
+                        disabled={customAssetLoading || customAssetSaving}
+                        className="text-sm text-gray-500 underline decoration-dotted disabled:opacity-50"
+                      >
+                        {tApp('customAssets.refresh', undefined, 'Refresh')}
+                      </button>
+                    </div>
+                  </div>
+                  <input
+                    ref={customAssetInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/gif"
+                    className="hidden"
+                    multiple
+                    onChange={handleCustomAssetInput}
+                  />
+                  {customAssetLoading ? (
+                    <p className="mt-4 text-sm text-gray-500">
+                      {tApp('customAssets.loading', undefined, 'Loading custom graphics…')}
+                    </p>
+                  ) : customAssetDrafts.length ? (
+                    <div className="mt-4 grid gap-4">
+                      {customAssetDrafts.map((asset) => (
+                        <div key={asset.localId} className="rounded-xl border border-gray-200 p-4">
+                          <div className="flex flex-wrap gap-4">
+                            <div className="h-16 w-16 overflow-hidden rounded-lg border bg-gray-50">
+                              {asset.dataUrl ? (
+                                <Image
+                                  src={asset.dataUrl}
+                                  alt={tApp(
+                                    'customAssets.previewAlt',
+                                    { name: asset.name },
+                                    `Custom asset ${asset.name}`,
+                                  )}
+                                  width={64}
+                                  height={64}
+                                  className="h-full w-full object-cover"
+                                  unoptimized
+                                />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-[11px] text-gray-400">
+                                  N/A
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <label className="text-xs font-semibold text-gray-600">
+                                {tApp('customAssets.nameLabel', undefined, 'Filename')}
+                              </label>
+                              <input
+                                value={asset.name}
+                                onChange={(e) =>
+                                  handleCustomAssetNameChange(asset.localId, e.target.value)
+                                }
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                                disabled={customAssetSaving}
+                              />
+                              <p className="text-xs text-gray-500">
+                                {Math.round(asset.size / 1024)}KB • {asset.mimeType}
+                                {asset.hasLocalData && (
+                                  <span className="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                    {tApp('customAssets.pendingBadge', undefined, 'Pending upload')}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleCustomAssetRemove(asset.localId)}
+                              className="text-sm font-semibold text-rose-600 hover:text-rose-700"
+                              disabled={customAssetSaving}
+                            >
+                              {tApp('customAssets.remove', undefined, 'Remove')}
+                            </button>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            <button
+                              type="button"
+                              onClick={() => assetFileInputRefs.current[asset.localId]?.click()}
+                              className="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+                              disabled={customAssetSaving}
+                            >
+                              {tApp('customAssets.replace', undefined, 'Replace')}
+                            </button>
+                          </div>
+                          <input
+                            ref={(el) => {
+                              assetFileInputRefs.current[asset.localId] = el;
+                            }}
+                            type="file"
+                            className="hidden"
+                            accept="image/png,image/jpeg,image/jpg,image/gif"
+                            onChange={(e) => handleCustomAssetReplace(asset.localId, e.target.files)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-sm text-gray-500">
+                      {tApp('customAssets.empty', undefined, 'No custom graphics yet.')}
+                    </p>
+                  )}
+                  {customAssetError && (
+                    <p className="mt-3 text-sm text-red-600">{customAssetError}</p>
+                  )}
+                  {(customAssetSaving || customAssetProgress > 0) && (
+                    <div className="mt-4">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className="h-full bg-emerald-500 transition-all duration-300"
+                          style={{ width: `${Math.min(customAssetProgress, 100)}%` }}
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        {tApp(
+                          'customAssets.progressNote',
+                          undefined,
+                          'Hang tight—processing takes a few seconds.',
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCustomAssetSave}
+                      disabled={customAssetSaving || !hasCustomAssetChanges}
+                      className={cn(
+                        'px-4 py-2 rounded-lg text-sm font-semibold text-white transition',
+                        customAssetSaving || !hasCustomAssetChanges
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-emerald-600 hover:bg-emerald-700',
+                      )}
+                    >
+                      {customAssetSaving
+                        ? tApp('customAssets.saving', undefined, 'Saving…')
+                        : tApp('customAssets.save', undefined, 'Save graphics')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetCustomAssets}
+                      disabled={customAssetSaving || (!hasCustomAssetChanges && !customAssetError)}
+                      className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {tApp('customAssets.reset', undefined, 'Reset changes')}
+                    </button>
                   </div>
                 </div>
 

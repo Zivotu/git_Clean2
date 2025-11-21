@@ -13,6 +13,11 @@ import { computeNextVersion } from '../lib/versioning.js';
 import { ensureListingPreview, saveListingPreviewFile, pickRandomPreviewPreset } from '../lib/preview.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
+import {
+  materializeCustomAssets,
+  normalizeCustomAssetList,
+} from '../lib/customAssets.js';
+import type { CustomAsset } from '../types.js';
 
 const AI_MARKERS = [
   'generativelanguage.googleapis.com',
@@ -156,8 +161,10 @@ async function resolveAuthorMetadata(opts: {
   req: FastifyRequest;
 }): Promise<{ uid: string; name?: string; photo?: string; handle?: string }> {
   const { uid, existing, req } = opts;
-  const author: Record<string, any> = { ...(existing || {}) };
-  author.uid = uid;
+  const author: { uid: string; name?: string; photo?: string; handle?: string } = {
+    ...(existing || {}),
+    uid,
+  };
 
   const assign = (key: 'name' | 'photo' | 'handle', value?: unknown) => {
     if (author[key]) return;
@@ -193,6 +200,28 @@ async function resolveAuthorMetadata(opts: {
   }
 
   return author;
+}
+
+function parseDataUrlValue(
+  dataUrl: string | null | undefined,
+): { buffer: Buffer; mimeType: string } | null {
+  if (!dataUrl || !dataUrl.startsWith('data:')) {
+    return null;
+  }
+
+  const match = dataUrl.match(/^data:(.+?);base64,(.+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, mimeType, base64Data] = match;
+
+  if (!mimeType || !base64Data) {
+    return null;
+  }
+
+  const buffer = Buffer.from(base64Data, 'base64');
+  return { buffer, mimeType };
 }
 
 export default async function publishBundleRoutes(app: FastifyInstance) {
@@ -263,6 +292,27 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     await fs.writeFile(zipPath, await data.toBuffer());
     req.log.info({ buildId, zipPath }, 'publish-bundle:zip_saved');
 
+    let customAssetFiles: { name: string; path: string }[] = [];
+    let storedCustomAssets: CustomAsset[] = [];
+    const customAssetsField = (data.fields.customAssets as any)?.value;
+    if (typeof customAssetsField === 'string' && customAssetsField.trim()) {
+      try {
+        const parsed = JSON.parse(customAssetsField);
+        storedCustomAssets = normalizeCustomAssetList(parsed);
+        customAssetFiles = await materializeCustomAssets(
+          storedCustomAssets,
+          path.join(tempDir, 'assets'),
+        );
+      } catch (err: any) {
+        await fs.rm(tempDir, { recursive: true, force: true });
+        return reply.code(400).send({
+          ok: false,
+          error: 'invalid_custom_assets',
+          message: err?.message || 'Invalid custom assets payload.',
+        });
+      }
+    }
+
     if (!llmApiKey) {
       const marker = await detectAiMarkers(zipPath, tempDir, req.log);
       if (marker) {
@@ -312,7 +362,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       req.log?.warn?.({ err, buildId }, 'publish-bundle:build_info_write_failed');
     }
 
-    await enqueueBundleBuild(buildId, zipPath, { llmApiKey });
+    await enqueueBundleBuild(buildId, zipPath, { llmApiKey, customAssets: customAssetFiles });
     req.log.info({ buildId }, 'publish-bundle:build_enqueued');
 
     // 7. Create slug, version, and update app record
@@ -330,20 +380,9 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
 
       const { version, archivedVersions } = computeNextVersion(existing, now);
       
-      // This is a new helper function that needs to be added
-      const parseDataUrl = (input: string | undefined): { mimeType: string; buffer: Buffer } | null => {
-        if (!input) return null;
-        const match = /^data:([^;]+);base64,(.+)$/i.exec(input.trim());
-        if (!match) return null;
-        try {
-          const buffer = Buffer.from(match[2], 'base64');
-          return { mimeType: match[1] || 'image/png', buffer };
-        } catch { return null; }
-      };
-
       let payloadPreviewUrl: string | undefined = existing?.previewUrl ?? undefined;
       const previewDataUrl = (data.fields.preview as any)?.value;
-      const parsedPreview = parseDataUrl(previewDataUrl);
+      const parsedPreview = parseDataUrlValue(previewDataUrl);
       if (parsedPreview) {
         payloadPreviewUrl = await saveListingPreviewFile({
           listingId: String(listingId),
@@ -374,6 +413,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
           pendingBuildId: buildId,
           pendingVersion: version,
           previewUrl: payloadPreviewUrl ?? existing.previewUrl,
+          customAssets: storedCustomAssets.length ? storedCustomAssets : undefined,
         };
         const { next } = ensureListingPreview(base);
         apps[idx] = next;
@@ -396,6 +436,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
           version,
           archivedVersions,
           previewUrl: payloadPreviewUrl,
+          customAssets: storedCustomAssets.length ? storedCustomAssets : undefined,
         };
         const { next } = ensureListingPreview(base);
         apps.push(next);

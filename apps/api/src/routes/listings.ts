@@ -18,6 +18,8 @@ import { getBuildDir } from '../paths.js';
 import { getBucket } from '../storage.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { ensureListingPreview, saveListingPreviewFile, removeExistingPreviewFile } from '../lib/preview.js';
+import { normalizeCustomAssetList, applyCustomAssetsToBuild } from '../lib/customAssets.js';
+import type { CustomAsset } from '../types.js';
 import { normalizeRoomsMode } from '../lib/rooms.js';
 
 const SUPPORTED_LOCALES = ['en', 'hr', 'de'] as const;
@@ -351,6 +353,91 @@ export default async function listingsRoutes(app: FastifyInstance) {
       return reply.code(500).send({ ok: false, error: 'preview_failed' });
     }
   };
+
+  // Manage custom graphics (owner or admin)
+  const customAssetsGetHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const slug = String((req.params as any).slug);
+    const apps = await readApps();
+    const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
+    if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
+    const item = apps[idx];
+    if (item.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
+    const uid = req.authUser?.uid;
+    const ownerUid = item.author?.uid || (item as any).ownerUid;
+    const isOwner = Boolean(uid && uid === ownerUid);
+    const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
+    if (!isOwner && !isAdmin) {
+      return reply.code(403).send({ ok: false, error: 'not_owner' });
+    }
+    return reply.send({ ok: true, assets: item.customAssets ?? [] });
+  };
+  app.get('/listing/:slug/custom-assets', customAssetsGetHandler);
+  app.get('/api/listing/:slug/custom-assets', customAssetsGetHandler);
+
+  const customAssetsUpdateHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const slug = String((req.params as any).slug);
+    const apps = await readApps();
+    const idx = apps.findIndex((a) => a.slug === slug || String(a.id) === slug);
+    if (idx < 0) return reply.code(404).send({ ok: false, error: 'not_found' });
+    const item = apps[idx];
+    if (item.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
+    const uid = req.authUser?.uid;
+    const ownerUid = item.author?.uid || (item as any).ownerUid;
+    const isOwner = Boolean(uid && uid === ownerUid);
+    const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
+    if (!isOwner && !isAdmin) {
+      return reply.code(403).send({ ok: false, error: 'not_owner' });
+    }
+
+    const body = (req.body ?? {}) as any;
+    const rawAssets = Array.isArray(body?.assets)
+      ? body.assets
+      : Array.isArray(body)
+      ? body
+      : [];
+    if (!Array.isArray(rawAssets)) {
+      return reply.code(400).send({ ok: false, error: 'invalid_payload' });
+    }
+
+    let nextAssets: CustomAsset[] = [];
+    try {
+      nextAssets = normalizeCustomAssetList(rawAssets, item.customAssets || []);
+    } catch (err: any) {
+      return reply.code(400).send({
+        ok: false,
+        error: 'invalid_custom_assets',
+        message: err?.message || 'Invalid custom assets payload.',
+      });
+    }
+
+    const previousAssets = item.customAssets || [];
+    const next: AppRecord = {
+      ...item,
+      customAssets: nextAssets.length ? nextAssets : undefined,
+      updatedAt: Date.now(),
+    };
+    apps[idx] = next;
+    await writeApps(apps);
+
+    if (!next.buildId) {
+      return reply.send({
+        ok: true,
+        assets: nextAssets,
+        applied: false,
+        message: 'build_missing',
+      });
+    }
+
+    try {
+      await applyCustomAssetsToBuild(next.buildId, nextAssets, previousAssets);
+      return reply.send({ ok: true, assets: nextAssets, applied: true, buildId: next.buildId });
+    } catch (err) {
+      req.log?.error?.({ err, slug, buildId: next.buildId }, 'custom_assets_apply_failed');
+      return reply.code(500).send({ ok: false, error: 'custom_assets_apply_failed' });
+    }
+  };
+  app.patch('/listing/:slug/custom-assets', customAssetsUpdateHandler);
+  app.patch('/api/listing/:slug/custom-assets', customAssetsUpdateHandler);
 
   // Delete listing (owner or admin). Supports soft delete (default) and hard delete via ?hard=true
   const deleteListingHandler = async (req: FastifyRequest, reply: FastifyReply) => {

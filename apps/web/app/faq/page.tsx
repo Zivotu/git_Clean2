@@ -26,7 +26,7 @@ export default function FaqPage() {
   );
 
   return (
-    <main className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <Logo />
         <Link href="/" className="text-sm text-gray-600 hover:text-emerald-700">
@@ -68,6 +68,6 @@ export default function FaqPage() {
           </section>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

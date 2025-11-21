@@ -23,12 +23,11 @@ import { AD_SLOT_IDS } from '@/config/ads';
 import type { Listing as ApiListing } from '@/lib/types';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { playHref, appDetailsHref } from '@/lib/urls';
-import SplashScreen from '@/components/layout/SplashScreen';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 import AdminAccessTrigger from '@/components/AdminAccessTrigger';
 import PartnershipModal from '@/components/PartnershipModal';
 import { useBugGuardian } from '@/components/BugGuardian/BugGuardianProvider';
-export {};
+export { };
 type HomeClientProps = {
   initialItems?: ApiListing[];
 };
@@ -42,14 +41,14 @@ function toCardListing(item: ApiListing): Listing {
   const createdAt = typeof rawCreated === 'number'
     ? rawCreated
     : rawCreated
-    ? new Date(rawCreated).getTime()
-    : Date.now();
+      ? new Date(rawCreated).getTime()
+      : Date.now();
 
   const tags = Array.isArray(item.tags)
     ? item.tags
     : item.tags
-    ? [String(item.tags)]
-    : [];
+      ? [String(item.tags)]
+      : [];
 
   const likesCount = (item as any).likesCount;
   const playsCount = (item as any).playsCount;
@@ -88,233 +87,6 @@ type TrendingCarouselProps = {
   countLabel: string;
   onOpen: (slug: string) => void;
 };
-
-type LeftPanelContent = {
-  title: string;
-  subtitle: string;
-  llmLabel: string;
-  steps: Array<{ title: string; text: string }>;
-  storage: {
-    title: string;
-    tag: string;
-    shared: { title: string; text: string };
-    rooms: { title: string; text: string };
-  };
-  footer: string;
-  footerHighlight: string;
-};
-
-const leftPanelLinks = [
-  { label: 'ChatGPT', href: 'https://chatgpt.com' },
-  { label: 'Claude', href: 'https://claude.ai' },
-  { label: 'Gemini', href: 'https://gemini.google.com' },
-  { label: 'Perplexity', href: 'https://www.perplexity.ai' },
-  { label: 'Copilot', href: 'https://copilot.microsoft.com' },
-  { label: 'Kimi', href: 'https://kimi.com' },
-] as const;
-
-function LeftInfoPanel({
-  content,
-  className,
-  fullHeight = false,
-  density = 'default',
-}: {
-  content: LeftPanelContent;
-  className?: string;
-  fullHeight?: boolean;
-  density?: 'default' | 'compact';
-}) {
-  const isCompact = density === 'compact';
-  const paddingClass = isCompact ? 'p-4 sm:p-5 lg:p-6' : 'p-5 sm:p-6 lg:p-7';
-  const rootStyle: React.CSSProperties = {
-    background: 'radial-gradient(circle at 0% 0%, #f1f5f9, #ffffff 55%, #f9fafb 100%)',
-    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  };
-  if (fullHeight) {
-    rootStyle.maxHeight = 'calc(100vh - 64px)';
-    rootStyle.height = '100%';
-  }
-  const innerStyle: React.CSSProperties | undefined = fullHeight
-    ? { maxHeight: 'calc(100vh - 100px)' }
-    : undefined;
-
-  return (
-    <div
-      className={cn(
-        'relative flex w-full max-w-full flex-col overflow-hidden rounded-2xl border border-slate-300/60 bg-white text-left shadow-[0_16px_30px_rgba(15,23,42,0.08)] lg:rounded-[24px]',
-        paddingClass,
-        fullHeight && 'h-full',
-        className,
-      )}
-      style={rootStyle}
-    >
-      <div
-        className="pointer-events-none absolute inset-[-40%] opacity-90"
-        aria-hidden
-        style={{
-          background:
-            'radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.18), transparent 60%), radial-gradient(circle at 100% 0%, rgba(244, 114, 182, 0.15), transparent 60%)',
-        }}
-      />
-      <div
-        className={cn(
-          'relative z-10 flex flex-col',
-          fullHeight && 'overflow-y-auto pr-1 sm:pr-2',
-        )}
-        style={innerStyle}
-      >
-        <h2
-          className={cn(
-            'mt-1 font-bold leading-tight tracking-tight text-slate-950',
-            isCompact
-              ? 'text-[22px] sm:text-[24px] lg:text-[26px]'
-              : 'text-2xl sm:text-[28px] lg:text-[32px]',
-          )}
-        >
-          {content.title}
-        </h2>
-        <p
-          className={cn(
-            'mt-3 leading-relaxed text-gray-600',
-            isCompact ? 'text-[13px] sm:text-sm' : 'text-sm sm:text-base',
-          )}
-        >
-          {content.subtitle}
-        </p>
-        {content.llmLabel && (
-          <p
-            className={cn(
-              'mt-4 font-semibold uppercase text-gray-500',
-              isCompact ? 'text-[10px] tracking-[0.22em]' : 'text-[12px] tracking-[0.18em]',
-            )}
-          >
-            {content.llmLabel}
-          </p>
-        )}
-        <div className={cn('flex flex-wrap gap-2', isCompact ? 'mt-2' : 'mt-3')}>
-          {leftPanelLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={cn(
-                'font-semibold text-slate-900',
-                isCompact ? 'text-[11px]' : 'text-[12px] sm:text-sm',
-              )}
-            >
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full border border-gray-200 bg-gray-50 transition hover:-translate-y-0.5 hover:border-blue-300 hover:text-slate-900 hover:shadow-md',
-                  isCompact ? 'px-3 py-1' : 'px-3 py-1.5',
-                )}
-              >
-                {link.label}
-              </span>
-            </a>
-          ))}
-        </div>
-        {content.steps.length > 0 && (
-          <ol
-            className={cn(
-              'flex flex-col text-slate-600',
-              isCompact ? 'mt-4 gap-2 text-[13px]' : 'mt-6 gap-3 text-sm sm:text-[15px]',
-            )}
-          >
-            {content.steps.map((step, idx) => (
-              <li key={idx} className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                <span className="flex h-6 w-6 items-center justify-center rounded-xl border border-indigo-300 bg-gradient-to-br from-blue-100 to-indigo-100 text-[11px] font-semibold text-slate-700 shadow-[0_0_0_1px_rgba(255,255,255,0.9),0_0_10px_rgba(129,140,248,0.55)]">
-                  {idx + 1}
-                </span>
-                <div
-                  className={cn(
-                    'text-slate-900',
-                    isCompact ? 'text-sm font-semibold' : 'text-sm font-semibold sm:text-base',
-                  )}
-                >
-                  {step.title}
-                </div>
-                <p
-                  className={cn(
-                    'col-start-2 text-slate-600',
-                    isCompact ? 'text-xs leading-snug' : 'text-[13px] leading-relaxed sm:text-sm',
-                  )}
-                >
-                  {step.text}
-                </p>
-              </li>
-            ))}
-          </ol>
-        )}
-        <div
-          className={cn(
-            'rounded-2xl border border-gray-200 bg-slate-50',
-            isCompact ? 'mt-4 p-3' : 'mt-5 p-4',
-          )}
-        >
-          <div
-            className={cn(
-              'flex flex-wrap items-center gap-2 font-semibold text-slate-900',
-              isCompact ? 'text-sm' : 'text-sm sm:text-base',
-            )}
-          >
-            <span>{content.storage.title}</span>
-            {content.storage.tag && (
-              <span
-                className={cn(
-                  'font-semibold uppercase text-emerald-700',
-                  isCompact ? 'text-[9px] tracking-[0.18em]' : 'text-[11px] tracking-[0.15em]',
-                )}
-              >
-                {content.storage.tag}
-              </span>
-            )}
-          </div>
-          <div
-            className={cn(
-              'text-slate-600',
-              isCompact
-                ? 'mt-2 space-y-2 text-[12px] leading-snug'
-                : 'mt-3 space-y-4 text-[13px] leading-relaxed sm:text-sm',
-            )}
-          >
-            <div>
-              <div
-                className={cn(
-                  'font-semibold text-slate-900',
-                  isCompact ? 'text-sm' : 'sm:text-base',
-                )}
-              >
-                {content.storage.shared.title}
-              </div>
-              <p>{content.storage.shared.text}</p>
-            </div>
-            <div>
-              <div
-                className={cn(
-                  'font-semibold text-slate-900',
-                  isCompact ? 'text-sm' : 'sm:text-base',
-                )}
-              >
-                {content.storage.rooms.title}
-              </div>
-              <p>{content.storage.rooms.text}</p>
-            </div>
-          </div>
-        </div>
-        <p
-          className={cn(
-            'text-slate-600',
-            isCompact ? 'mt-4 text-[12px] leading-snug' : 'mt-5 text-[13px] leading-relaxed sm:text-sm',
-          )}
-        >
-          {content.footer}{' '}
-          {content.footerHighlight && <strong className="text-blue-600">{content.footerHighlight}</strong>}
-        </p>
-      </div>
-    </div>
-  );
-}
 
 function TrendingCarousel({ items, title, countLabel, onOpen }: TrendingCarouselProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
@@ -679,7 +451,7 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
         const { getListingBySlug } = await import('@/lib/loaders');
         const detail = await getListingBySlug(item.slug, { locale });
         if (!cancelled && detail) setFull({ ...item, ...toCardListing(detail) });
-      } catch {}
+      } catch { }
     })();
     return () => { cancelled = true; };
   }, [open, item?.slug, locale, item]);
@@ -1223,7 +995,7 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
           el.classList.add('animate-bounce');
           setTimeout(() => el.classList.remove('animate-bounce'), 500);
         }
-  if (like) triggerHearts();
+        if (like) triggerHearts();
       } catch (e) {
         handleFetchError(e, 'Failed to toggle like');
         setToast({ message: tToast('likeError'), type: 'error' });
@@ -1444,253 +1216,44 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
   ] as const;
   const sidePanelsTop = Math.max(0, ctaTopOffset) + 16;
   const heroFrameClass = 'w-full max-w-none';
-  const leftPanelContent: LeftPanelContent = {
-    title: tHome('leftPanel.title'),
-    subtitle: tHome('leftPanel.subtitle'),
-    llmLabel: tHome('leftPanel.llmLabel'),
-    steps: [1, 2, 3].map((idx) => ({
-      title: tHome(`leftPanel.steps.${idx}.title`),
-      text: tHome(`leftPanel.steps.${idx}.text`),
-    })),
-    storage: {
-      title: tHome('leftPanel.storage.title'),
-      tag: tHome('leftPanel.storage.tag'),
-      shared: {
-        title: tHome('leftPanel.storage.shared.title'),
-        text: tHome('leftPanel.storage.shared.text'),
-      },
-      rooms: {
-        title: tHome('leftPanel.storage.rooms.title'),
-        text: tHome('leftPanel.storage.rooms.text'),
-      },
-    },
-    footer: tHome('leftPanel.footer'),
-    footerHighlight: tHome('leftPanel.footerHighlight'),
-  };
 
   return (
-    <div className="min-h-screen text-gray-900 bg-white">
-      <SplashScreen />
+    <>
       <SpiderOverlay />
-      <section className="pt-10 pb-4 relative">
-        <div
-          className={`${heroFrameClass} hidden 2xl:grid grid-cols-[minmax(320px,380px)_minmax(0,1fr)_minmax(220px,280px)] gap-8 items-start`}
-        >
-          {showHomeCtaBanner ? (
-            <div
-              className="sticky pr-4"
-              style={{
-                top: `${sidePanelsTop}px`,
-                maxHeight: `calc(100vh - ${sidePanelsTop}px)`,
-                overflowY: 'auto',
-              }}
-            >
-              <LeftInfoPanel content={leftPanelContent} fullHeight density={leftPanelDensity} />
-            </div>
-          ) : (
-            <div />
-          )}
-          <div
-            className="flex flex-col"
-            style={{
-              maxHeight: `calc(100vh - ${sidePanelsTop}px)`,
-              overflowY: 'auto',
-              paddingRight: '1rem',
-            }}
-          >
-            <div className="flex flex-col items-center text-center">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
-                {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
-              </h1>
-              <p className="mt-2 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
-            </div>
-            <div className="w-full mt-6">
-              <TrendingCarousel
-                items={topLiked}
-                title={tHome('trending')}
-                countLabel={tHome('appsCount', { count: topLiked.length })}
-                onOpen={(slug) => router.push(appDetailsHref(slug))}
-              />
-            </div>
-            {renderSearchAndStats('w-full mt-6')}
-            {renderListings('w-full mt-4 pb-4', { hideRails: true })}
+      <div className="px-4 pt-6 2xl:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+          <div className="flex-1 text-left">
+            <p className="font-semibold">Preview a brand new Thesara home experience.</p>
+            <p className="text-xs text-emerald-800/90">Switch to the BetaNewDesign to explore the redesign without affecting the live page.</p>
           </div>
-          {showHomeCtaBanner ? (
-            <div
-              className="sticky w-full pl-4"
-              style={{
-                top: `${sidePanelsTop}px`,
-                maxHeight: `calc(100vh - ${sidePanelsTop}px)`,
-                overflowY: 'auto',
-              }}
-            >
-              <div className="grid gap-3 auto-rows-fr">
-                {stackedHomeCtaImages.map((src, index) => (
-                  <Link
-                    key={src}
-                    href="/jednostavne-upute"
-                    className="block w-full h-full"
-                    style={{ width: '95%' }}
-                  >
-                    <img
-                      src={src}
-                      alt={`${homeCtaBannerAlt} ${index + 1}`}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div />
-          )}
+          <Link
+            href="/beta-home"
+            className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+          >
+            BetaNewDesign
+          </Link>
         </div>
-        <div className="w-full px-4 2xl:px-6 2xl:hidden">
+      </div>
+      <section className="pt-10 pb-4 relative">
+        <div className="mx-auto w-full max-w-5xl">
           <div className="flex flex-col items-center text-center">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
               {tHome('headline.one')} <span className="text-emerald-600">{tHome('headline.two')}</span>
             </h1>
             <p className="mt-2 text-lg text-gray-500 max-w-2xl">{tHome('tagline')}</p>
-            <div className="mt-8 w-full max-w-3xl">
-              <LeftInfoPanel
-                content={leftPanelContent}
-                density={leftPanelDensity}
-                className="w-full"
-              />
-            </div>
-            <div className="w-full mt-6">
-              <TrendingCarousel
-                items={topLiked}
-                title={tHome('trending')}
-                countLabel={tHome('appsCount', { count: topLiked.length })}
-                onOpen={(slug) => router.push(appDetailsHref(slug))}
-              />
-            </div>
           </div>
+          <div className="w-full mt-6">
+            <TrendingCarousel
+              items={topLiked}
+              title={tHome('trending')}
+              countLabel={tHome('appsCount', { count: topLiked.length })}
+              onOpen={(slug) => router.push(appDetailsHref(slug))}
+            />
+          </div>
+          {renderSearchAndStats('w-full mt-6')}
+          {renderListings('w-full mt-4 pb-4', { hideRails: true })}
         </div>
       </section>
-      {renderSearchAndStats("w-full px-4 2xl:px-6 pb-4 2xl:hidden")}
-      {renderListings("w-full px-4 2xl:px-6 pb-12 2xl:hidden")}
-      {showEarlyAccessPopup && earlyAccessCampaign?.isActive && (
-        <div className="fixed bottom-6 right-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-2xl backdrop-blur text-white">
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <p className="text-base font-semibold">{popupTitle}</p>
-              <p className="mt-2 text-sm text-slate-300">{popupBody}</p>
-              <div className="mt-4 flex items-center gap-3">
-                <Link
-                  prefetch={false}
-                  href={primaryHref}
-                  onClick={() => {
-                    dismissEarlyAccessPopup();
-                    if (user) {
-                      handlePublishClick();
-                    }
-                  }}
-                  className="px-4 py-1.5 rounded-lg bg-white text-sm font-semibold text-slate-900 hover:bg-slate-100"
-                >
-                  {primaryCtaLabel}
-                </Link>
-                <button
-                  type="button"
-                  onClick={dismissEarlyAccessPopup}
-                  className="text-sm text-slate-300 hover:text-white"
-                >
-                  {popupDismiss}
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={dismissEarlyAccessPopup}
-              className="text-slate-500 hover:text-white"
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-      <footer className="border-t bg-white">
-        <div className="relative max-w-7xl mx-auto px-4 py-12 text-sm text-gray-500">
-          <div className="flex flex-col md:flex-row justify-between gap-8">
-            <div>
-              <Logo className="mb-4" />
-              <p className="text-gray-600">{tFooter('slogan')}</p>
-            </div>
-            <div className="flex gap-12">
-              <div>
-                <h4 className="font-medium mb-3 text-gray-900">{tNav('platform')}</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/create" className="hover:text-emerald-600 transition">{tNav('publishApp')}</Link></li>
-                  <li><Link href="/my" className="hover:text-emerald-600 transition">{tNav('myProjects')}</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-medium mb-3 text-gray-900">{tNav('resources')}</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/faq" className="hover:text-emerald-600 transition">{tNav('faq')}</Link></li>
-                  <li>
-                    <a href="/docs" className="hover:text-emerald-600 transition">
-                      {tNav('docs')}
-                    </a>
-                  </li>
-                  <li>
-                    <a href="/ThesaraMediaBundle.7z" className="hover:text-emerald-600 transition" download>
-                      Thesara Media Bundle
-                    </a>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-medium mb-3 text-gray-900">{tNav('company')}</h4>
-                <ul className="space-y-2">
-                  <li><Link href="/about" prefetch={false} className="hover:text-emerald-600 transition">{tNav('about')}</Link></li>
-                  <li><Link href="/docs/thesara_terms.html" prefetch={false} className="hover:text-emerald-600 transition">{tNav('terms')}</Link></li>
-                  <li><Link href="/privacy" prefetch={false} className="hover:text-emerald-600 transition">{tNav('privacy')}</Link></li>
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => setShowPartnership(true)}
-                      className="hover:text-emerald-600 transition"
-                    >
-                      {tFooter('partnershipLink')}
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t text-center">&copy; 2025 {SITE_NAME}. {tFooter('allRights')}</div>
-          <AdminAccessTrigger className="absolute bottom-6 right-4 md:right-0" />
-        </div>
-      </footer>
-      {toast && (<Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />)}
-      <DetailsModal open={!!detailsItem} item={detailsItem} onClose={closeDetails} />
-      <PartnershipModal open={showPartnership} onClose={() => setShowPartnership(false)} />
-    </div>
+    </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

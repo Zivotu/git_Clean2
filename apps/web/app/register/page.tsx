@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, ChangeEvent, FormEvent, useEffect } from "react";
+import Image from 'next/image';
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -215,11 +216,9 @@ export default function RegisterPage() {
             className="w-full text-sm"
           />
           {photoPreview && (
-            <img
-              src={photoPreview}
-              alt="Preview"
-              className="mt-2 h-16 w-16 rounded-full object-cover"
-            />
+            <div className="mt-2 h-16 w-16 rounded-full overflow-hidden">
+              <Image src={photoPreview} alt="Preview" width={64} height={64} className="object-cover h-full w-full" />
+            </div>
           )}
         </div>
         {error && <p className="text-red-500 text-sm">{error}</p>}

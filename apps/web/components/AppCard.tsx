@@ -18,6 +18,8 @@ import { useI18n } from '@/lib/i18n-provider';
 import { useRelativeTime } from '@/hooks/useRelativeTime';
 import { appDetailsHref, playHref } from '@/lib/urls';
 
+import { useTheme } from '@/components/ThemeProvider';
+
 // Types
 export type Listing = {
   id: string;
@@ -144,6 +146,8 @@ const AppCard = React.memo(
     const activeUid = user?.uid || auth?.currentUser?.uid || null;
     const isCreator = !!activeUid && !!item.author?.uid && activeUid === item.author.uid;
     const relativeCreated = useRelativeTime(item.createdAt, timeSince);
+
+    const { isDark } = useTheme();
 
     const handleDetailsClick = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -561,8 +565,10 @@ const AppCard = React.memo(
         onClick={goToDetails}
         onKeyDown={onKey}
         className={cn(
-          'group bg-white rounded-2xl flex flex-col transition-all duration-300 hover:shadow-md cursor-pointer animate-fadeIn',
-          item.isSubscribed ? 'border border-emerald-300 ring-1 ring-emerald-200' : 'border border-gray-200'
+          'group rounded-3xl flex flex-col transition-all duration-300 hover:shadow-md cursor-pointer animate-fadeIn',
+          item.isSubscribed
+            ? `border ring-1 ${isDark ? 'border-emerald-700 ring-emerald-800 bg-[#18181B]' : 'border-emerald-300 ring-emerald-200 bg-white'}`
+            : `border ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`
         )}
         aria-label={`Open details for ${item.title}`}
       >
@@ -577,7 +583,7 @@ const AppCard = React.memo(
               {...imgProps}
             />
           ) : (
-            <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-medium">
+            <div className={`w-full h-full flex items-center justify-center text-xs font-medium ${isDark ? 'bg-[#09090B] text-zinc-600' : 'bg-slate-100 text-slate-500'}`}>
               Bez grafike
             </div>
           )}
@@ -608,13 +614,13 @@ const AppCard = React.memo(
         </div>
         <div className="p-4 flex flex-col flex-1">
           <AuthorLink />
-          <h2 className="mt-1 text-xl font-semibold text-gray-900 group-hover:text-emerald-600 transition line-clamp-1">{item.title}
+          <h2 className={`mt-1 text-xl font-semibold transition line-clamp-1 ${isDark ? 'text-zinc-100 group-hover:text-emerald-400' : 'text-gray-900 group-hover:text-emerald-600'}`}>{item.title}
             {item.isSubscribed && (
               <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">{subscribedLabel}</span>
             )}
           </h2>
           {item.description && (
-            <p className="mt-1 text-sm text-gray-500 line-clamp-3 break-words">{item.description}</p>
+            <p className={`mt-1 text-sm line-clamp-3 break-words ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>{item.description}</p>
           )}
           {!!item.tags?.length && (
             <div className="mt-2 flex flex-wrap gap-1">

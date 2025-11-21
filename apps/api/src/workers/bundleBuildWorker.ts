@@ -42,6 +42,68 @@ async function copyDir(src: string, dest: string) {
   }
 }
 
+async function applyCustomAssets(
+  projectDir: string,
+  assets: { name: string; path: string }[] | undefined,
+  preferPublic: boolean,
+) {
+  if (!assets?.length) return;
+  const targetDir = preferPublic ? path.join(projectDir, 'public') : projectDir;
+  await fs.mkdir(targetDir, { recursive: true });
+  for (const asset of assets) {
+    const safeName = path.basename(asset.name || '');
+    const dest = path.join(targetDir, safeName || `asset-${Date.now()}`);
+    await fs.copyFile(asset.path, dest);
+  }
+  console.log(
+    `[bundle-worker] Added ${assets.length} custom asset(s) to ${preferPublic ? 'public/' : 'project root'}.`,
+  );
+}
+
+function isIgnorableUnzipEntry(name: string): boolean {
+  const lowered = name.toLowerCase();
+  if (lowered === '__macosx' || lowered.startsWith('__macosx/')) return true;
+  if (lowered === '.ds_store') return true;
+  if (name.startsWith('._')) return true;
+  return false;
+}
+
+async function findLikelyProjectDir(workspaceDir: string): Promise<string> {
+  const entries = await fs.readdir(workspaceDir, { withFileTypes: true });
+  const meaningful = entries.filter((entry) => !isIgnorableUnzipEntry(entry.name));
+
+  const hasRootPackage = await fileExists(path.join(workspaceDir, 'package.json'));
+  const hasRootIndex = await fileExists(path.join(workspaceDir, 'index.html'));
+  if (hasRootPackage || hasRootIndex) {
+    return workspaceDir;
+  }
+
+  const dirs = meaningful.filter((entry) => entry.isDirectory());
+  if (dirs.length === 0) {
+    return workspaceDir;
+  }
+  if (dirs.length === 1) {
+    return path.join(workspaceDir, dirs[0].name);
+  }
+
+  const scored = await Promise.all(
+    dirs.map(async (entry) => {
+      const dirPath = path.join(workspaceDir, entry.name);
+      let score = 0;
+      if (await fileExists(path.join(dirPath, 'package.json'))) score += 4;
+      if (await fileExists(path.join(dirPath, 'index.html'))) score += 2;
+      if (await fileExists(path.join(dirPath, 'dist', 'index.html'))) score += 1;
+      if (await fileExists(path.join(dirPath, 'app.js'))) score += 1;
+      return { dirPath, score };
+    }),
+  );
+
+  scored.sort((a, b) => b.score - a.score);
+  const winner = scored.find((entry) => entry.score > 0);
+  if (winner) return winner.dirPath;
+  return scored[0]?.dirPath ?? workspaceDir;
+}
+
 function injectBaseHref(html: string, baseHref: string): string {
   const baseRegex = /<base\s+[^>]*href\s*=\s*["'][^"']*["'][^>]*>/i;
   const baseTag = `<base href="${baseHref}">`;
@@ -442,7 +504,7 @@ async function ensureQueue(): Promise<Queue | null> {
 export async function enqueueBundleBuild(
   buildId: string,
   zipPath: string,
-  opts?: { llmApiKey?: string },
+  opts?: { llmApiKey?: string; customAssets?: { name: string; path: string }[] },
 ): Promise<string> {
   if (process.env.CREATEX_WORKER_ENABLED !== 'true') {
     // Assuming same env var controls this worker
@@ -454,7 +516,7 @@ export async function enqueueBundleBuild(
   }
   await queue.add(
     'build-bundle',
-    { buildId, zipPath, llmApiKey: opts?.llmApiKey },
+    { buildId, zipPath, llmApiKey: opts?.llmApiKey, customAssets: opts?.customAssets || [] },
     { removeOnComplete: true, removeOnFail: 1000 },
   );
   return buildId;
@@ -463,12 +525,13 @@ export async function enqueueBundleBuild(
 async function runBundleBuildProcess(
   buildId: string,
   zipPath: string,
-  options?: { llmApiKey?: string },
+  options?: { llmApiKey?: string; customAssets?: { name: string; path: string }[] },
 ): Promise<void> {
   const llmApiKey = options?.llmApiKey?.trim() ? options.llmApiKey.trim() : undefined;
   const baseDir = getBuildDir(buildId);
   const workspaceDir = path.join(baseDir, 'workspace');
   const buildDir = path.join(baseDir, 'build');
+  const uploadRoot = path.dirname(zipPath);
   const buildMeta = await getBuildData(buildId);
   const listingId = buildMeta?.listingId;
 
@@ -489,19 +552,25 @@ async function runBundleBuildProcess(
     console.log(`[bundle-worker] Unzip complete.`);
 
     // Handle nested directory in zip
-    let projectDir = workspaceDir;
-    const workspaceContents = await fs.readdir(workspaceDir);
-    if (workspaceContents.length === 1) {
-      const nestedPath = path.join(workspaceDir, workspaceContents[0]);
-      const stats = await fs.stat(nestedPath);
-      if (stats.isDirectory()) {
-        projectDir = nestedPath;
-      }
+    let projectDir = await findLikelyProjectDir(workspaceDir);
+    if (projectDir !== workspaceDir) {
+      console.log(`[bundle-worker] Using nested project directory: ${path.relative(workspaceDir, projectDir) || '.'}`);
     }
 
     // If package.json exists, attempt dependency install + build
     const packageJsonPath = path.join(projectDir, 'package.json');
-    if (await fileExists(packageJsonPath)) {
+    const hasPackageJson = await fileExists(packageJsonPath);
+
+    if (options?.customAssets?.length) {
+      try {
+        await applyCustomAssets(projectDir, options.customAssets, hasPackageJson);
+      } catch (err) {
+        console.warn('[bundle-worker] Failed to apply custom assets.', err);
+        throw err;
+      }
+    }
+
+    if (hasPackageJson) {
       console.log(`[bundle-worker] Detected package.json - running dependency install/build...`);
       let packageJson: any = {};
       try {
@@ -733,6 +802,7 @@ async function runBundleBuildProcess(
       await fs.rm(zipPath, { force: true });
       await fs.rm(npmCacheDir, { recursive: true, force: true });
       await fs.rm(workspaceDir, { recursive: true, force: true });
+      await fs.rm(uploadRoot, { recursive: true, force: true });
       console.log('[bundle-worker] Cleaned up temporary zip file and workspace.');
     }
   }
@@ -755,17 +825,18 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
     const worker = new Worker(
       BUNDLE_BUILD_QUEUE_NAME,
       async (job) => {
-        const { buildId, zipPath, llmApiKey } = job.data as {
+        const { buildId, zipPath, llmApiKey, customAssets } = job.data as {
           buildId: string;
           zipPath: string;
           llmApiKey?: string;
+          customAssets?: { name: string; path: string }[];
         };
         console.log(`[bundle-worker] Processing job: ${buildId}`);
         try {
           sseEmitter.emit(buildId, 'status', { status: 'bundling' });
           await updateBuild(buildId, { state: 'build', progress: 20, error: undefined });
 
-          await runBundleBuildProcess(buildId, zipPath, { llmApiKey });
+          await runBundleBuildProcess(buildId, zipPath, { llmApiKey, customAssets });
 
           await updateBuild(buildId, { state: 'pending_review', progress: 100 });
           

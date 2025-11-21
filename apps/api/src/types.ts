@@ -62,6 +62,7 @@ export interface AppRecord {
   screenshotUrls?: string[];
   likesCount?: number;
   playsCount?: number;
+  customAssets?: CustomAsset[];
   // Localized fields stored per locale: { [locale]: { title, description } }
   translations?: Record<string, { title?: string; description?: string }>;
   status?: 'draft' | 'published' | 'pending-review' | 'rejected';
@@ -73,6 +74,15 @@ export interface AppRecord {
   version?: number;
   archivedVersions?: ArchivedVersion[];
   [key: string]: any;
+}
+
+export interface CustomAsset {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+  updatedAt: number;
 }
 
 export interface AppSecurityPolicy {

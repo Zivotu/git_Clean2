@@ -5,6 +5,8 @@ import './globals.css';
 import Script from 'next/script';
 
 import Header from '@/components/Header';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { GOLDEN_BOOK, isGoldenBookCampaignActive, getGoldenBookCountdown } from '@/lib/config';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
 import { AuthProvider } from '@/lib/auth';
 import I18nRootProvider from '@/components/I18nRootProvider';
@@ -15,6 +17,7 @@ import { TermsProvider } from '@/components/terms/TermsProvider';
 import { messages as ALL_MESSAGES, type Locale, defaultLocale } from '@/i18n/config';
 import { getServerLocale } from '@/lib/locale';
 import { BugGuardianProvider } from '@/components/BugGuardian/BugGuardianProvider';
+import GlobalShell from '@/components/GlobalShell';
 
 export const metadata = {
   title: 'Thesara',
@@ -24,7 +27,7 @@ export const metadata = {
 // Firebase/Firestore se ne inicijalizira u parentu radi sigurnosnog modela.
 // Ako je potrebno za dev debug, postavi NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE=1 i učitaj uvjetno:
 if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1') {
-  import('@/lib/firebase').catch(() => {}) // Uvoz modula će pokrenuti njegovu inicijalizaciju
+  import('@/lib/firebase').catch(() => { }) // Uvoz modula će pokrenuti njegovu inicijalizaciju
 }
 
 if (typeof window !== 'undefined') {
@@ -37,6 +40,13 @@ if (typeof window !== 'undefined') {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const locale: Locale = await getServerLocale(defaultLocale);
   const messages = ALL_MESSAGES[locale] || ALL_MESSAGES[defaultLocale];
+
+  // Compute donate countdown label (Golden Book) for the donation button
+  const _goldenCountdown = getGoldenBookCountdown();
+  const donateCountdownLabel =
+    isGoldenBookCampaignActive() && _goldenCountdown && _goldenCountdown.daysRemaining > 0
+      ? (messages['Nav.donateCountdown'] || '{days} days').replace('{days}', String(_goldenCountdown.daysRemaining))
+      : null;
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -60,7 +70,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         </Script>
       </head>
       <body className="min-h-screen bg-white text-gray-900">
-
+        <ThemeProvider>
         <ChunkErrorBoundary>
           <AuthProvider>
             <TermsProvider>
@@ -69,14 +79,46 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   <BugGuardianProvider>
                     <AdScriptLoader />
                     <AdsConsentBanner />
-                    <Header />
-                    {children}
+                    {/* Render global header with beta-like defaults so it matches beta-home */}
+                    <Header
+                      // Banner / early access
+                      showTopBanner={isGoldenBookCampaignActive()}
+                      topBannerCtaLabel={messages['Nav.subscribeEarlyAccess'] ?? 'Subscribe for early access'}
+                      topBannerSubtitle={messages['Nav.earlyAccessSubtitle'] ?? 'Turn AI chats into mini apps.'}
+                      earlyAccessRibbonLabel={messages['Nav.earlyAccessRibbon'] ?? 'EARLY ACCESS'}
+                      earlyAccessBadgeText={messages['Nav.earlyAccessBadge'] ?? '30 dana potpuno besplatnih usluga!'}
+                      earlyAccessCountdownLabel={messages['Nav.earlyAccessCountdownLabel'] ?? 'Countdown'}
+                      earlyAccessCountdownUnit={messages['Nav.earlyAccessCountdownUnit'] ?? 'days'}
+                      // Do not pass Golden Book countdown into early-access banner (they are different campaigns)
+                      earlyAccessRemainingDays={null}
+                      // Donate / golden book
+                      donateEnabled={GOLDEN_BOOK.enabled && Boolean(GOLDEN_BOOK.paymentLink)}
+                      donateLabel={messages['Nav.donate'] ?? 'Donate'}
+                      donateActive={isGoldenBookCampaignActive()}
+                      donateLink={GOLDEN_BOOK.paymentLink}
+                      donateCountdownLabel={donateCountdownLabel}
+                      // Beta-like header labels & CTA so global header matches beta-home
+                      headerLabels={{
+                        homeAria: (messages['BetaHome.header.homeAria'] as string) ?? 'Thesara home',
+                        liveIndicator: (messages['BetaHome.header.liveBadge'] as string) ?? 'Live now',
+                        themeToggle: (messages['BetaHome.header.themeToggle'] as string) ?? 'Toggle theme',
+                        backLink: (messages['BetaHome.header.backLink'] as string) ?? '← Back to live',
+                        backLinkMobile: (messages['BetaHome.header.backLinkMobile'] as string) ?? '← Back',
+                      }}
+                      shortVideoUrl={''}
+                      shortVideoLabel={(messages['Nav.shortVideo'] as string) ?? 'Video'}
+                      heroSubmitLabel={(messages['BetaHome.hero.actions.submit'] as string) ?? 'Submit App'}
+                    />
+                    <GlobalShell>
+                      {children}
+                    </GlobalShell>
                   </BugGuardianProvider>
                 </I18nRootProvider>
               </AdsProvider>
             </TermsProvider>
           </AuthProvider>
         </ChunkErrorBoundary>
+        </ThemeProvider>
       </body>
     </html>
   );

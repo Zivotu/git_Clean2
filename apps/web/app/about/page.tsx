@@ -11,7 +11,7 @@ export default function AboutPage() {
   );
 
   return (
-    <main className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto p-6 space-y-6">
       <header>
         <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-gray-600 mt-2">{t("subtitle")}</p>
@@ -21,7 +21,7 @@ export default function AboutPage() {
         <p className="text-gray-700">{t("garageBody")}</p>
         <p className="text-sm text-gray-500">{t("comingSoon")}</p>
       </section>
-    </main>
+    </div>
   );
 }
 
