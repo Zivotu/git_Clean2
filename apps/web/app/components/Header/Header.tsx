@@ -18,6 +18,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
+import { useI18n } from '@/lib/i18n-provider';
 
 import GoldenBookIcon from '../../../../../assets/GoldenBook_Icon_1.png';
 
@@ -171,6 +172,13 @@ export default function Header({
   onSubscribe = () => { },
 }: HeaderProps) {
   const { isDark, toggleTheme } = useTheme();
+  const { messages } = useI18n();
+  const topBannerCtaLabelLocal = (messages && messages['Nav.subscribeEarlyAccess']) ?? topBannerCtaLabel;
+  const topBannerSubtitleLocal = (messages && messages['Nav.earlyAccessSubtitle']) ?? topBannerSubtitle;
+  const earlyAccessRibbonLabelLocal = (messages && messages['Nav.earlyAccessRibbon']) ?? earlyAccessRibbonLabel;
+  const earlyAccessBadgeTextLocal = (messages && messages['Nav.earlyAccessBadge']) ?? earlyAccessBadgeText;
+  const earlyAccessCountdownLabelLocal = (messages && messages['Nav.earlyAccessCountdownLabel']) ?? earlyAccessCountdownLabel;
+  const earlyAccessCountdownUnitLocal = (messages && messages['Nav.earlyAccessCountdownUnit']) ?? earlyAccessCountdownUnit;
   // If a page didn't pass a profileSection, build a default one using auth
   const authCtx = useAuth?.();
   const user = authCtx?.user ?? null;
@@ -209,11 +217,11 @@ export default function Header({
                 disabled={subscribeStatus === 'loading'}
                 className="rounded-full bg-black/20 px-2 py-1 font-semibold uppercase tracking-wide transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {topBannerCtaLabel}
+                {topBannerCtaLabelLocal}
               </button>
               <span className="hidden items-center gap-1 md:inline-flex">
-                <span className="font-semibold">{earlyAccessRibbonLabel}</span>
-                <span className="opacity-80">— {topBannerSubtitle}</span>
+                <span className="font-semibold">{earlyAccessRibbonLabelLocal}</span>
+                <span className="opacity-80">— {topBannerSubtitleLocal}</span>
               </span>
               {subscribeMessage && (
                 <span className="text-[10px] font-normal text-emerald-200 sm:text-xs">{subscribeMessage}</span>
@@ -222,13 +230,13 @@ export default function Header({
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-black/20 px-2 py-1 font-semibold">
                 <span className="text-[9px]">✨</span>
-                <span>{earlyAccessBadgeText}</span>
+                <span>{earlyAccessBadgeTextLocal}</span>
               </span>
               {earlyAccessRemainingDays !== null && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
-                  <span className="uppercase tracking-wide">{earlyAccessCountdownLabel}</span>
+                  <span className="uppercase tracking-wide">{earlyAccessCountdownLabelLocal}</span>
                   <span className="rounded-full bg-black/30 px-2 py-0.5 text-[10px] font-mono">
-                    {earlyAccessRemainingDays} {earlyAccessCountdownUnit}
+                    {earlyAccessRemainingDays} {earlyAccessCountdownUnitLocal}
                   </span>
                 </span>
               )}

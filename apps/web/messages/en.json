@@ -25,6 +25,7 @@
     "earlyAccessDays": "{days} days left",
     "earlyAccessTooltip": "Sign up today and get 30 free days of Gold + No Ads. No tricks, just launch your app while everything is unlocked.",
     "earlyAccessCountdownUnit": "days",
+    "earlyAccessCountdownLabel": "Countdown",
     "goldBadge": "Gold member",
     "noAdsBadge": "No Ads",
     "subscribeEarlyAccess": "Subscribe for early access",

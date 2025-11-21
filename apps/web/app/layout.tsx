@@ -5,6 +5,7 @@ import './globals.css';
 import Script from 'next/script';
 
 import Header from '@/components/Header';
+import { API_URL } from '@/lib/apiBase';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { GOLDEN_BOOK, isGoldenBookCampaignActive, getGoldenBookCountdown } from '@/lib/config';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
@@ -81,7 +82,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                     <AdsConsentBanner />
                     {/* Render global header with beta-like defaults so it matches beta-home */}
                     <Header
-                      // Banner / early access
+                      // Banner / early access — compute remaining days server-side so banner can show
                       showTopBanner={isGoldenBookCampaignActive()}
                       topBannerCtaLabel={messages['Nav.subscribeEarlyAccess'] ?? 'Subscribe for early access'}
                       topBannerSubtitle={messages['Nav.earlyAccessSubtitle'] ?? 'Turn AI chats into mini apps.'}
@@ -89,8 +90,25 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                       earlyAccessBadgeText={messages['Nav.earlyAccessBadge'] ?? '30 dana potpuno besplatnih usluga!'}
                       earlyAccessCountdownLabel={messages['Nav.earlyAccessCountdownLabel'] ?? 'Countdown'}
                       earlyAccessCountdownUnit={messages['Nav.earlyAccessCountdownUnit'] ?? 'days'}
-                      // Do not pass Golden Book countdown into early-access banner (they are different campaigns)
-                      earlyAccessRemainingDays={null}
+                      // Compute early access remaining days by fetching the internal API on server
+                      earlyAccessRemainingDays={await (async () => {
+                        try {
+                          const res = await fetch(`${API_URL.replace(/\/+$/,'')}/early-access`, { cache: 'no-store' });
+                          if (!res.ok) return null;
+                          const json = await res.json();
+                          const settings = json?.settings ?? null;
+                          if (!settings || !settings.isActive) return null;
+                          const DAY_MS = 24 * 60 * 60 * 1000;
+                          const duration = settings.durationDays ?? settings.perUserDurationDays;
+                          if (!duration || duration <= 0) return null;
+                          const start = typeof settings.startsAt === 'number' && settings.startsAt > 0 ? settings.startsAt : Date.now();
+                          const end = start + duration * DAY_MS;
+                          const remaining = end - Date.now();
+                          return remaining > 0 ? Math.max(0, Math.ceil(remaining / DAY_MS)) : 0;
+                        } catch (e) {
+                          return null;
+                        }
+                      })()}
                       // Donate / golden book
                       donateEnabled={GOLDEN_BOOK.enabled && Boolean(GOLDEN_BOOK.paymentLink)}
                       donateLabel={messages['Nav.donate'] ?? 'Donate'}

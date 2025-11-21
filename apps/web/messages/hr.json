@@ -25,6 +25,7 @@
     "earlyAccessDays": "još {days} dana",
     "earlyAccessTooltip": "Registracijom dobivas 30 dana Gold + Bez oglasa paketa bez trikova. Sve je otkljucano kako bi odmah objavio svoju aplikaciju.",
     "earlyAccessCountdownUnit": "dana",
+    "earlyAccessCountdownLabel": "Odbrojavanje",
     "goldBadge": "Gold korisnik",
     "noAdsBadge": "Bez oglasa",
     "subscribeEarlyAccess": "Zabilježi se za Early Access",
