@@ -1246,17 +1246,18 @@ function TrendingCard({ app, isDark, labels }: { app: BetaApp; isDark: boolean; 
         }`}
     >
       <div className="relative h-28 w-full overflow-hidden rounded-b-none">
-        <div className={`h-full w-full bg-gradient-to-br ${app.gradientClass}`} />
-        {app.previewUrl && (
+        {app.previewUrl ? (
           <Image
             src={app.previewUrl}
             alt={app.name}
             fill
-            className="object-cover opacity-75"
+            className="object-cover"
             sizes="(max-width: 768px) 100vw, 320px"
             loading="lazy"
             unoptimized
           />
+        ) : (
+          <div className={`h-full w-full bg-gradient-to-br ${app.gradientClass}`} />
         )}
         <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white">
           <span className="rounded-full bg-black/40 px-1 text-[9px] font-semibold">{labels.free}</span>
@@ -1355,17 +1356,18 @@ function BetaDetailsModal({
         </button>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="relative h-56 overflow-hidden rounded-[28px]">
-            <div className={`absolute inset-0 bg-gradient-to-br ${app.gradientClass}`} />
-            {app.previewUrl && (
+            {app.previewUrl ? (
               <Image
                 src={app.previewUrl}
                 alt={app.name}
                 fill
                 loading="lazy"
-                className="object-cover opacity-70"
+                className="object-cover"
                 sizes="(max-width: 768px) 100vw, 320px"
                 unoptimized
               />
+            ) : (
+              <div className={`absolute inset-0 bg-gradient-to-br ${app.gradientClass}`} />
             )}
           </div>
           <div className="flex flex-col gap-4">
