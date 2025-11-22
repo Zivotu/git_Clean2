@@ -698,6 +698,23 @@
       "entertainment": "Entertainment",
       "other": "Other"
     }
+    ,
+    "listing": {
+      "badge": {
+        "free": "FREE"
+      },
+      "label": {
+        "creator": "Creator"
+      },
+      "actions": {
+        "play": "Play",
+        "fullDetails": "Full details",
+        "edit": "Edit"
+      },
+      "tag": {
+        "trending": "Trending"
+      }
+    }
   },
   "Toasts": {
     "welcome": "Welcome to Thesara!",
@@ -741,7 +758,7 @@
     "recommended": "Recommended",
     "loading": "Loading…",
     "subscribed": "Subscribed",
-    "selectPackage": "Select package",
+  
     "noPackagesTitle": "No packages available",
     "noPackagesText": "Packages will be available soon",
     "loadError": "Failed to load packages. Please try again.",

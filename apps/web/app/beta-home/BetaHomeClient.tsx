@@ -353,7 +353,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     free: tBeta('listing.badge.free', 'FREE'),
     creator: tBeta('listing.label.creator', 'Creator'),
     play: tBeta('listing.actions.play', 'Play'),
-    details: tBeta('listing.actions.details', 'Details'),
+    details: tBeta('listing.actions.fullDetails', 'Full details'),
     trending: tBeta('listing.tag.trending', 'Trending'),
   };
 
@@ -1413,6 +1413,14 @@ function BetaDetailsModal({
 
 function DetailsButton({ app, onClose, isDark, labels }: { app: BetaApp; onClose: () => void; isDark: boolean; labels: ListingLabels }) {
   const router = useRouter();
+  const { user } = useAuth();
+  const { messages } = useI18n();
+
+  // Always show the details label here so the button reliably opens the details
+  // view. Falling back to the localized "full details" label keeps behaviour
+  // consistent and avoids routing creators to an edit URL that may 404.
+  const actionLabel = labels.details;
+
   return (
     <button
       type="button"
@@ -1427,7 +1435,7 @@ function DetailsButton({ app, onClose, isDark, labels }: { app: BetaApp; onClose
       }}
       className={`inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDark ? 'border-[#27272A] text-zinc-100 hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
     >
-      {labels.details}
+      {actionLabel}
       <ArrowRight className="h-4 w-4" />
     </button>
   );
