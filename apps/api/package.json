@@ -19,7 +19,7 @@
     "prisma:dev:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:seed": "prisma db seed",
-    "postinstall": "prisma generate",
+    "postinstall": "node ./scripts/postinstall-prisma.js",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "prestart": "pnpm run build",
     "createx:build": "node -e \"console.log('createx:build placeholder')\""

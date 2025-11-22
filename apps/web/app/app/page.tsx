@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useRouteParam } from '@/hooks/useRouteParam';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PUBLIC_API_URL } from '@/lib/config';
+import { PUBLIC_API_URL, PUBLIC_APPS_HOST } from '@/lib/config';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -1800,6 +1800,27 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
   }, [item, viewerUid, contentReportText, buildHeaders]);
 
   // Loading state
+  useEffect(() => {
+    // If we've finished fetching and there's no local item, redirect to the public marketplace
+    try {
+      if (
+        !hasFetched ||
+        item !== null ||
+        !normalizedSlug ||
+        !PUBLIC_APPS_HOST ||
+        !/^https?:\/\//i.test(String(PUBLIC_APPS_HOST))
+      ) {
+        return;
+      }
+      const dest = `${String(PUBLIC_APPS_HOST).replace(/\/+$/, '')}/apps/${encodeURIComponent(normalizedSlug)}`;
+      // Use replace so back-button doesn't keep the missing local page
+      if (typeof window !== 'undefined') {
+        window.location.replace(dest);
+      }
+    } catch (e) {
+      // ignore redirect errors in tests or non-browser envs
+    }
+  }, [hasFetched, item, normalizedSlug]);
   if (!hasFetched || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-white">
@@ -1841,6 +1862,20 @@ const normalizeScreenshotInput = useCallback((raw: string) => {
       </div>
     );
   }
+
+  // Debug overlay to surface build IDs and computed URLs when developing locally.
+  const isLocalHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const manifestUrl = (item && (item as any).buildId) ? `${PUBLIC_API_URL}/builds/${encodeURIComponent((item as any).buildId)}/build/manifest_v1.json` : null;
+  const publicBundleUrl = (item && (item as any).bundlePublicUrl) ?? null;
+  const debugOverlay = isLocalHost ? (
+    <div className="fixed top-20 right-4 z-[9999] w-80 p-3 bg-white border border-gray-200 rounded-lg shadow-lg text-xs text-gray-700">
+      <div className="font-semibold mb-1">Debug (dev only)</div>
+      <div><strong>slug:</strong> {item.slug}</div>
+      <div><strong>buildId:</strong> {String(((item as any)?.buildId) ?? '—')}</div>
+      <div className="break-words"><strong>bundlePublicUrl:</strong> {String(publicBundleUrl ?? '—')}</div>
+      <div className="break-words"><strong>manifestUrl:</strong> {String(manifestUrl ?? '—')}</div>
+    </div>
+  ) : null;
 
   const isNew = !!item && Date.now() - (item?.createdAt ?? 0) < 1000 * 60 * 60 * 24 * 7;
   const isHot = likeCount > 100;

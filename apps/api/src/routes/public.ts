@@ -61,6 +61,8 @@ export default async function publicRoutes(app: FastifyInstance) {
     }
   });
 
+  // Diagnostic hook removed — keep server logs minimal in normal runs.
+
   const encSeg = (s: string) => encodeURIComponent(String(s));
   const encRest = (p: string) =>
     String(p || '')
@@ -494,10 +496,6 @@ export default async function publicRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     try {
       const apps = (await readApps()).filter((a) => !a.deletedAt);
-      // Debug: log all app ids and slugs
-      const allIds = apps.map(a => a.id);
-      const allSlugs = apps.map(a => a.slug);
-      req.log.info({ requested: id, allIds, allSlugs }, 'app-meta-debug');
       const item = apps.find((a) => a.slug === id || String(a.id) === id);
       if (item) {
         req.log.info({ found: item.id, slug: item.slug }, 'app-meta-found');

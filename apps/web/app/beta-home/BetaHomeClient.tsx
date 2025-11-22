@@ -1401,20 +1401,35 @@ function BetaDetailsModal({
                 <Play className="h-4 w-4" />
                 <span>{labels.play}</span>
               </Link>
-              <Link
-                prefetch={false}
-                href={appDetailsHref(app.slug)}
-                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDark ? 'border-[#27272A] text-zinc-100 hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                  }`}
-              >
-                {labels.details}
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              {/* Use programmatic navigation from inside modal to avoid relative-resolution bugs */}
+              <DetailsButton app={app} onClose={onClose} isDark={isDark} labels={labels} />
             </div>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function DetailsButton({ app, onClose, isDark, labels }: { app: BetaApp; onClose: () => void; isDark: boolean; labels: ListingLabels }) {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        try {
+          const href = appDetailsHref(app.slug);
+          onClose();
+          router.push(href);
+        } catch {
+          // navigation failed — swallow error in UI
+        }
+      }}
+      className={`inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDark ? 'border-[#27272A] text-zinc-100 hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+    >
+      {labels.details}
+      <ArrowRight className="h-4 w-4" />
+    </button>
   );
 }
 

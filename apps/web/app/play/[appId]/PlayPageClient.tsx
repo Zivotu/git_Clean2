@@ -576,6 +576,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     }
   }, [activeNamespace, bootstrap])
 
+  // debug logs removed
+
   const projectSnapshot = useCallback(
     (batch: BatchItem[]) => applyBatchOperations(snapshotRef.current, batch),
     [],

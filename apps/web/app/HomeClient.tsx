@@ -438,6 +438,7 @@ function Toast({
 function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | null; onClose: () => void }) {
   const [full, setFull] = useState<Listing | null>(null);
   const { messages, locale } = useI18n();
+  const router = useRouter();
   const tHome = (k: string, params?: Record<string, any>) => {
     let s = messages[`Home.${k}`] || '';
     if (params) for (const [pk, pv] of Object.entries(params)) s = s.replaceAll(`{${pk}}`, String(pv));
@@ -507,7 +508,23 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
             >
               Play
             </Link>
-            <Link href={appDetailsHref(data.slug)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={onClose}>Full Details</Link>
+            {/* Use router.push instead of Link to avoid relative-anchor resolution issues from inside modal.
+                Also log slug and resolved href to console for debugging when reproducing the problem. */}
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const href = appDetailsHref(data.slug);
+                  onClose();
+                  router.push(href);
+                } catch {
+                  // swallow navigation errors
+                }
+              }}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Full Details
+            </button>
           </div>
         </div>
       </div>

@@ -508,7 +508,7 @@ function DetailsModal({ open, item, onClose }: { open: boolean; item: Listing | 
             >
               Play
             </Link>
-            <Link href={appDetailsHref(data.slug)} className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50" onClick={onClose}>Full Details</Link>
+                    <DetailsButtonLegacy data={data} onClose={onClose} />
           </div>
         </div>
       </div>
@@ -1256,6 +1256,27 @@ export default function HomeClient({ initialItems = [] }: HomeClientProps) {
         </div>
       </section>
     </>
+  );
+}
+
+function DetailsButtonLegacy({ data, onClose }: { data: Listing; onClose: () => void }) {
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        try {
+          const href = appDetailsHref(data.slug);
+          onClose();
+          router.push(href);
+        } catch {
+          // swallow navigation errors in modal
+        }
+      }}
+      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+    >
+      Full Details
+    </button>
   );
 }
 
