@@ -84,7 +84,7 @@ export function BetaAppCard({
             };
             fetchProfile();
         }
-    }, [app.authorId]);
+    }, [app.authorId, app.authorName, app.authorPhoto]);
 
     const handleLike = async (e: React.MouseEvent) => {
         e.preventDefault();

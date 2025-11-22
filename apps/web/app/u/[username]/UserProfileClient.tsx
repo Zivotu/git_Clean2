@@ -107,7 +107,7 @@ export default function UserProfileClient({ username }: { username: string }) {
       </div>
 
       <div className="mt-12 w-full max-w-4xl">
-        <h2 className="text-2xl font-bold mb-6 text-left">Creator's Applications</h2>
+        <h2 className="text-2xl font-bold mb-6 text-left">Creator&apos;s Applications</h2>
         {loadingApps ? (
           <div className="text-gray-500 text-center">Loading applications...</div>
         ) : userApps.length > 0 ? (

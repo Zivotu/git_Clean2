@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Avatar from '@/components/Avatar';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { updateProfile } from 'firebase/auth';
 import { db, storage } from '@/lib/firebase';
-import { doc, updateDoc, getDoc } from 'firebase/firestore'; // Added getDoc
+import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'; // Added getDoc, collection, query, where, getDocs
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PUBLIC_API_URL } from '@/lib/config';
 
@@ -170,6 +171,16 @@ export default function SettingsPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const loadVersions = async () => {
+    // TODO: Implement version loading logic
+    console.log('loadVersions called');
+  };
+
+  const restoreVersion = async (buildId: string) => {
+    // TODO: Implement version restore logic
+    console.log('restoreVersion called', buildId);
   };
 
   const timeRemainingForChange = lastChangeTimestamp

@@ -10,6 +10,7 @@ import {
   type SetStateAction,
 } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Avatar from '@/components/Avatar';
 import AdSlot from '@/components/AdSlot';
 import { PUBLIC_API_URL } from '@/lib/config';
@@ -540,8 +541,8 @@ function PublicAppViewComponent({
             </section>
 
             <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
-                ? 'border-[#27272A] bg-[#18181B]/95'
-                : 'border-gray-100 bg-white/95'
+              ? 'border-[#27272A] bg-[#18181B]/95'
+              : 'border-gray-100 bg-white/95'
               }`}>
               <div className="flex items-center justify-between gap-4">
                 <h2 className={`text-xl font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
@@ -563,8 +564,8 @@ function PublicAppViewComponent({
             </section>
 
             <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
-                ? 'border-[#27272A] bg-[#18181B]/95'
-                : 'border-gray-100 bg-white/95'
+              ? 'border-[#27272A] bg-[#18181B]/95'
+              : 'border-gray-100 bg-white/95'
               }`}>
               <div className="flex items-center justify-between gap-4">
                 <h2 className={`text-xl font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
@@ -573,11 +574,11 @@ function PublicAppViewComponent({
               {gallery.length ? (
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   {gallery.map((url, index) => (
-                    <figure key={url + index} className={`overflow-hidden rounded-2xl border transition-colors duration-300 ${isDark
+                    <figure key={url + index} className={`relative h-60 w-full overflow-hidden rounded-2xl border transition-colors duration-300 ${isDark
                       ? 'border-[#27272A] bg-[#18181B]'
                       : 'border-gray-100 bg-gray-50'
                       }`}>
-                      <img src={url} alt={galleryAlt(index)} loading="lazy" className="h-60 w-full object-cover" />
+                      <Image src={url} alt={galleryAlt(index)} fill className="object-cover" unoptimized />
                     </figure>
                   ))}
                 </div>
@@ -636,10 +637,10 @@ function PublicAppViewComponent({
                     }`}>{tApp('reviews.loginHint', undefined, 'Prijavi se kako bi ostavio recenziju.')}</p>}
                   {user && !canReview && (
                     <p className={`mt-2 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'
-                    }`}>{userHasReviewed
-                      ? tApp('reviews.alreadyReviewed', undefined, 'You already left a review for this app.')
-                      : tApp('reviews.requirePurchaseHint', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.')
-                    }</p>
+                      }`}>{userHasReviewed
+                        ? tApp('reviews.alreadyReviewed', undefined, 'You already left a review for this app.')
+                        : tApp('reviews.requirePurchaseHint', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.')
+                      }</p>
                   )}
                   <form className="mt-3 space-y-3" onSubmit={handleReviewSubmit}>
                     <label className={`block text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'
@@ -762,12 +763,16 @@ function PublicAppViewComponent({
                 </span>
               </div>
               {previewSrc && !previewFailed ? (
-                <img
-                  src={previewSrc}
-                  alt={item.title}
-                  className="mt-4 h-64 w-full rounded-2xl object-cover"
-                  onError={handlePreviewError}
-                />
+                <div className="relative mt-4 h-64 w-full rounded-2xl overflow-hidden">
+                  <Image
+                    src={previewSrc}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                    onError={handlePreviewError}
+                    unoptimized
+                  />
+                </div>
               ) : (
                 <div className={`mt-4 flex h-64 items-center justify-center rounded-2xl text-sm transition-colors duration-300 ${isDark
                   ? 'bg-zinc-800 text-zinc-500'

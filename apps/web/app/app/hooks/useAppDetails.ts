@@ -66,6 +66,7 @@ export type Listing = {
     customAssets?: CustomAssetRecord[];
     buildId?: string;
     bundlePublicUrl?: string;
+    apiKey?: string;
 };
 
 export type ScreenshotSlotState = {
@@ -207,7 +208,7 @@ export function useAppDetails() {
     const [trEn, setTrEn] = useState({ title: '', description: '' });
     const [trDe, setTrDe] = useState({ title: '', description: '' });
     const [trHr, setTrHr] = useState({ title: '', description: '' });
-    const [tags, setTags] = useState<string>('');
+    const [tags, setTags] = useState<string[]>([]);
     const [price, setPrice] = useState('');
     const [priceMin, setPriceMin] = useState(0.5);
     const [priceMax, setPriceMax] = useState(1000);
@@ -221,6 +222,7 @@ export function useAppDetails() {
     const [refreshingSessions, setRefreshingSessions] = useState(false);
     const [lastSessionsRefresh, setLastSessionsRefresh] = useState<number | null>(null);
     const [rotatingPin, setRotatingPin] = useState(false);
+    const [apiKey, setApiKey] = useState('');
 
     const [showSoftDialog, setShowSoftDialog] = useState(false);
     const [showHardDialog, setShowHardDialog] = useState(false);
@@ -717,7 +719,7 @@ export function useAppDetails() {
                         setTrDe({ title: tr?.de?.title || '', description: tr?.de?.description || '' });
                         setTrHr({ title: tr?.hr?.title || '', description: tr?.hr?.description || '' });
                     } catch { }
-                    setTags((it.tags ?? []).join(', '));
+                    setTags(it.tags ?? []);
                     setPrice(typeof it.price === 'number' ? String(it.price) : '');
                     setVisibility((it.visibility as any) ?? 'public');
                     setAccessMode((it.accessMode as any) ?? 'public');
@@ -727,6 +729,7 @@ export function useAppDetails() {
                     setRoomsMode(
                         ((it as any).capabilities?.storage?.roomsMode as RoomsMode | undefined) ?? 'off',
                     );
+                    setApiKey(it.apiKey ?? '');
                 } else {
                     setItem(null);
                 }
@@ -1256,6 +1259,7 @@ export function useAppDetails() {
                 | 'price'
                 | 'longDescription'
                 | 'screenshotUrls'
+                | 'apiKey'
             >
         > & { pin?: string | null; maxConcurrentPins?: number } = {}
     ) => {
@@ -1263,12 +1267,11 @@ export function useAppDetails() {
 
         setSaving(true);
         const parsedTags =
-            typeof overrides.tags === 'string'
-                ? (overrides.tags as unknown as string)
-                    .split(',')
-                    .map((t) => t.trim())
-                    .filter(Boolean)
-                : tags.split(',').map((t) => t.trim()).filter(Boolean);
+            Array.isArray(overrides.tags)
+                ? overrides.tags
+                : typeof overrides.tags === 'string'
+                    ? (overrides.tags as unknown as string).split(',').map(t => t.trim()).filter(Boolean)
+                    : tags;
 
         const norm = (s: string) => s.trim();
         const translations: Record<string, { title?: string; description?: string }> = {};
@@ -1340,7 +1343,9 @@ export function useAppDetails() {
                 storage: { roomsMode },
             },
             ...overrides,
+            ...overrides,
             ...(Object.keys(translations).length ? { translations } : {}),
+            apiKey,
         };
         const parsedPrice =
             typeof overrides.price === 'number' ? overrides.price : Number(price);
@@ -1380,11 +1385,12 @@ export function useAppDetails() {
                 setScreenshotUrls(normalizeScreenshotState(updatedScreens));
                 if (typeof overrides.title === 'string') setTitle(overrides.title);
                 if (typeof overrides.description === 'string') setDescription(overrides.description);
-                if (Array.isArray(overrides.tags)) setTags(overrides.tags.join(', '));
+                if (Array.isArray(overrides.tags)) setTags(overrides.tags);
                 if (typeof overrides.maxConcurrentPins === 'number') setMaxPins(overrides.maxConcurrentPins);
                 const updatedRoomsMode =
                     (json.item?.capabilities?.storage?.roomsMode as RoomsMode | undefined) ?? roomsMode;
                 setRoomsMode(updatedRoomsMode);
+                if (typeof overrides.apiKey === 'string') setApiKey(overrides.apiKey);
                 setToast({ message: 'Changes saved successfully!', type: 'success' });
             } else {
                 throw new Error(json?.error || 'Failed to save changes');
@@ -1690,5 +1696,8 @@ export function useAppDetails() {
         user,
         router,
         startStripeOnboarding,
+        apiKey,
+        setApiKey,
+        previewDisplayUrl,
     };
 }

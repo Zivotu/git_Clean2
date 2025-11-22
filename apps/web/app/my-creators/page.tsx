@@ -124,7 +124,7 @@ export default function MyCreatorsPage() {
       return (
         <div className={`text-center ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
           <p>Još nemate favorita.</p>
-          <p className="mt-2">Posjetite profil kreatora i kliknite "Dodaj u favorite".</p>
+          <p className="mt-2">Posjetite profil kreatora i kliknite &quot;Dodaj u favorite&quot;.</p>
         </div>
       );
     }
