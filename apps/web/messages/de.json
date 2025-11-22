@@ -734,6 +734,120 @@
       "tag": {
         "trending": "Trend"
       }
+    },
+    "sidebar": {
+      "title": "Thesara Space v2.0",
+      "subtitle": "Vom AI-Chat zu deiner Mini-App.",
+      "nav": {
+        "discover": "Entdecken",
+        "games": "Spiele",
+        "productivity": "Produktivität",
+        "myApps": "Meine Apps",
+        "paidApps": "Bezahlte Apps",
+        "myProjects": "Projekte",
+        "myCreators": "Creators",
+        "feelingLucky": "Auf gut Glück"
+      },
+      "creatorMode": {
+        "badge": "Creator-Modus",
+        "title": "Vom AI-Chat zu deiner Mini-App",
+        "description": "Erstelle ein Spiel oder Tool, lade es hoch und teile es mit der ganzen Community.",
+        "steps": {
+          "0": {
+            "title": "Chatte mit deiner AI",
+            "text": "Bitte den Assistenten, eine Mini-App zu erstellen."
+          },
+          "1": {
+            "title": "Lade den Code herunter",
+            "text": "Du erhältst ein fertiges Bundle zum Hochladen."
+          },
+          "2": {
+            "title": "Veröffentliche auf Thesara",
+            "text": "Hochladen, bestätigen und auf Play klicken."
+          }
+        },
+        "memory": {
+          "title": "Memory & Rooms",
+          "detail1": "Zusätzlicher Speicher, den LLMs nicht haben.",
+          "detail2": "Aktiviere Räume, wenn du mehrere Nutzer mit dauerhaften Zuständen möchtest."
+        },
+        "cta": "Veröffentliche deine App"
+      }
+    },
+    "hero": {
+      "badge": "Entdecke großartige Mini-Apps und Spiele",
+      "random": {
+        "label": "Zufällige Auswahl",
+        "details": "Details ansehen"
+      },
+      "actions": {
+        "submit": "App veröffentlichen"
+      },
+      "badges": {
+        "curated": "Kuratiert"
+      },
+      "card": {
+        "description": "Erstelle Sammlungen von AI-Erlebnissen und teile sie per Link.",
+        "stats": {
+          "apps": "{count}+ Mini-Apps",
+          "favorites": "{count} Favoriten"
+        }
+      }
+    },
+    "promo": {
+      "featuredLabel": "Empfohlen",
+      "learnMore": "Mehr erfahren"
+    },
+    "view": {
+      "gridLabel": "Raster",
+      "decreaseGrid": "Weniger Karten pro Zeile anzeigen",
+      "increaseGrid": "Mehr Karten pro Zeile anzeigen"
+    },
+    "sort": {
+      "newest": "Neueste",
+      "popular": "Beliebteste",
+      "alpha": "Alphabetisch",
+      "label": "Sortieren nach"
+    },
+    "metrics": {
+      "liveUsage": "Live-Nutzung",
+      "apps": "Veröffentlichte Apps",
+      "members": "Community-Mitglieder",
+      "runs": "Gesamte Starts"
+    },
+    "empty": {
+      "noResults": "Keine Ergebnisse für diese Anfrage. Versuche die Filter zu ändern.",
+      "tryAdjust": "Versuche Tags oder Suche anzupassen.",
+      "beFirst": "Sei der Erste, der eine Mini-App veröffentlicht."
+    },
+    "filters": {
+      "tagsHeading": "Beliebte Tags",
+      "clear": "Filter zurücksetzen",
+      "all": "Alle",
+      "trending": "Trending"
+    },
+    "actions": {
+      "refresh": "Aktualisieren",
+      "retry": "Erneut versuchen"
+    },
+    "errors": {
+      "listings": "Feed kann nicht aktualisiert werden. Bitte versuche es erneut."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} Apps"
+      }
+    },
+    "search": {
+      "liveStats": "{apps} aktive Apps · {plays} Starts",
+      "placeholder": "Apps, Creators oder Prompts suchen..."
+    },
+    "header": {
+      "homeAria": "Thesara Startseite",
+      "liveBadge": "Live",
+      "themeToggle": "Theme wechseln",
+      "backLink": "← Zurück zu Live",
+      "backLinkMobile": "← Zurück"
     }
   },
   "Toasts": {
