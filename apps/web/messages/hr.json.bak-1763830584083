@@ -5,8 +5,6 @@
     "myProjects": "My Projects",
     "myCreators": "My Creators",
     "goPro": "Go Pro",
-    "adsOff": "AdsOff",
-    "goGold": "Go Gold",
     "browseApps": "Browse Apps",
     "login": "Sign In",
     "logout": "Sign Out",
@@ -31,7 +29,7 @@
     "goldBadge": "Gold member",
     "noAdsBadge": "No Ads",
     "subscribeEarlyAccess": "Subscribe for early access",
-    "earlyAccessSubscribed": "You'll get 50% off the first month.",
+    "earlyAccessSubscribed": "You’ll get 50% off the first month.",
     "earlyAccessSubscribeError": "Subscription failed. Please try again.",
     "feedback": "Feedback",
     "docs": "Documentation",
@@ -42,25 +40,24 @@
   },
   "Feedback": {
     "title": "Feedback",
-    "description": "Share your suggestions and feedback with us.",
-    "nameLabel": "Your name",
+    "description": "Podijelite svoje prijedloge i povratne informacije s nama.",
+    "nameLabel": "Vaše ime",
     "emailLabel": "Email",
-    "messageLabel": "Your message",
-    "messagePlaceholder": "Share your thoughts...",
+    "messageLabel": "Vaša poruka",
+    "messagePlaceholder": "Podijelite svoje misli...",
     "send": "Send",
-    "sending": "Sending...",
-    "cancel": "Cancel",
-    "successMessage": "Thank you! We will review your feedback.",
-    "errorMessage": "Message is too short (minimum 5 characters).",
-    "errorGeneric": "We could not send the request. Please try again."
+    "sending": "Šalje se...",
+    "cancel": "Odustani",
+    "successMessage": "Hvala! Razmotriti ćemo vaš feedback.",
+    "errorMessage": "Poruka je prekratka (najmanje 5 znakova).",
+    "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo."
   },
   "BugGuardian": {
     "title": "Hello! I'm the spider guardian of Thesara.space. 🕷",
     "line1": "We're currently in the testing phase, so my tiny bug buddies and I sneak around and hide from the developers.",
     "line2": "If you notice a weird jump, text or a button that doesn't work, one of the bugs probably escaped.",
     "line3": "Feel free to report us to the team; it helps them make the site even better.",
-    "thanks": "Thanks for testing with us!",
-    "tooltip": "I'm playing hide and seek with the developers 🙂"
+    "thanks": "Thanks for testing with us!"
   },
   "About": {
     "title": "About Thesara",
@@ -703,13 +700,14 @@
       },
       "footer": "AI enthusiasts - imagine it, chat with your model, publish here and let others play.",
       "footerHighlight": "Good luck with your first Thesara app!"
-    },
-    "noGraphic": "No graphic",
-    "priceLabel": "Price",
-    "play": "Play",
-    "fullDetails": "Full Details"
+    }
   },
   "BetaHome": {
+    "header": {
+      "backLinkMobile": "Nazad",
+      "homeAria": "Thesara početna",
+      "backLink": "← Natrag"
+    },
     "tags": {
       "games": "Games",
       "quiz": "Quizzes",
@@ -733,6 +731,28 @@
       },
       "tag": {
         "trending": "Trending"
+      }
+    }
+    ,
+    "trending": {
+      "empty": "Trenutno nema popularnih aplikacija."
+    },
+    "modal": {
+      "close": "Zatvori detalje"
+    }
+  },
+    "BetaHome.video": {
+      "close": "Zatvori video"
+    },
+  "promo": {
+    "banners": {
+      "0": {
+        "title": "Jednostavne upute",
+        "subtitle": "Kako iz razgovora s AI-jem doći do objave na Thesari."
+      },
+      "1": {
+        "title": "Pravila objave",
+        "subtitle": "Sve o monetizaciji, licencama i uvjetima."
       }
     }
   },
@@ -903,14 +923,7 @@
     "publish": "Publish",
     "shortVideoButton": "Thesara Short Video",
     "mustSignIn": "Please sign in first to publish.",
-    "login": "Sign in",
-    "tag_Igre": "Games",
-    "tag_Kvizovi": "Quizzes",
-    "tag_Učenje": "Learning",
-    "tag_Alati": "Tools",
-    "tag_Business": "Business",
-    "tag_Zabava": "Entertainment",
-    "tag_Ostalo": "Other"
+    "login": "Sign in"
   },
   "App": {
     "notFound": "App not found",

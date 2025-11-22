@@ -193,6 +193,7 @@ function mapListings(
       gradientClass: gradientPalette[index % gradientPalette.length],
       tags,
       createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
+      likedByMe: (item as any).likedByMe,
     };
   });
 }
@@ -810,7 +811,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                   href="/"
                   className="rounded-full border px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
-                  Back
+                  {messages['BetaHome.header.backLinkMobile'] ?? 'Back'}
                 </Link>
               </div>
             </div>
@@ -1142,7 +1143,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                 </div>
               ))}
               {!trendingSlides.length && (
-                <div className="text-sm text-center text-zinc-500">No trending apps yet.</div>
+                <div className="text-sm text-center text-zinc-500">{tBeta('trending.empty', 'No trending apps yet.')}</div>
               )}
             </div>
           </section>
@@ -1228,7 +1229,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
               type="button"
               onClick={dismissEarlyAccessPopup}
               className={`text-lg ${isDark ? 'text-zinc-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
-              aria-label="Close early access popup"
+              aria-label={popupDismiss}
             >
               <span aria-hidden="true">&times;</span>
             </button>
@@ -1320,6 +1321,7 @@ function BetaDetailsModal({
   isDark: boolean;
   labels: ListingLabels;
 }) {
+  const { messages } = useI18n();
   useEffect(() => {
     if (!app) return;
     const handleKey = (event: KeyboardEvent) => {
@@ -1351,7 +1353,7 @@ function BetaDetailsModal({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close details"
+          aria-label={messages['BetaHome.modal.close'] ?? 'Close details'}
           className={`absolute right-4 top-4 rounded-full border p-2 transition ${isDark ? 'border-[#27272A] text-zinc-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-900'
             }`}
         >

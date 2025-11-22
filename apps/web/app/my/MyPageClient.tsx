@@ -662,6 +662,7 @@ export default function MyProjectsPage() {
                 gradientClass: gradientPalette[gradientIndex],
                 tags: it.tags || [],
                 createdAt: it.createdAt || Date.now(),
+                likedByMe: it.likedByMe,
               };
 
               const labels: ListingLabels = {

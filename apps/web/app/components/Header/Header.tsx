@@ -349,7 +349,7 @@ export default function Header({
             <button
               onClick={() => setShowVideoPopup(false)}
               className="absolute -top-10 right-0 text-white hover:text-gray-300 transition"
-              aria-label="Close video"
+              aria-label={messages['BetaHome.video.close'] ?? 'Close video'}
             >
               <X className="h-8 w-8" />
             </button>
@@ -357,7 +357,7 @@ export default function Header({
               <iframe
                 className="absolute top-0 left-0 w-full h-full"
                 src={shortVideoUrl.replace('youtube.com/shorts/', 'youtube.com/embed/')}
-                title="Thesara Short Video"
+                title={shortVideoLabel || (messages['Nav.shortVideo'] as string) || 'Short video'}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen

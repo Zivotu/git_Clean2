@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Play, Heart, ArrowRight } from 'lucide-react';
 import { playHref, appDetailsHref } from '@/lib/urls';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export type BetaApp = {
     id: string;
@@ -30,6 +30,7 @@ export type BetaApp = {
     gradientClass: string;
     tags: string[];
     createdAt: number;
+    likedByMe?: boolean;
 };
 
 export type ListingLabels = {
@@ -54,6 +55,14 @@ export function BetaAppCard({
     onDetails?: (app: BetaApp) => void;
 }) {
     const [authorProfile, setAuthorProfile] = useState<{ name: string; handle?: string; photo?: string } | null>(null);
+    const [liked, setLiked] = useState(!!app.likedByMe);
+    const [likesCount, setLikesCount] = useState(app.likesCount);
+    const [showExplosion, setShowExplosion] = useState(false);
+
+    useEffect(() => {
+        setLiked(!!app.likedByMe);
+        setLikesCount(app.likesCount);
+    }, [app.likedByMe, app.likesCount]);
 
     useEffect(() => {
         if (app.authorId) {
@@ -76,6 +85,32 @@ export function BetaAppCard({
             fetchProfile();
         }
     }, [app.authorId]);
+
+    const handleLike = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const newLiked = !liked;
+        setLiked(newLiked);
+        setLikesCount(prev => newLiked ? prev + 1 : prev - 1);
+
+        if (newLiked) {
+            setShowExplosion(true);
+            setTimeout(() => setShowExplosion(false), 1000);
+        }
+
+        try {
+            await fetch(`/api/listing/${app.slug}/like`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ like: newLiked })
+            });
+        } catch (err) {
+            // Revert on error
+            setLiked(!newLiked);
+            setLikesCount(prev => !newLiked ? prev + 1 : prev - 1);
+        }
+    };
 
     const displayAuthorName = authorProfile?.name || app.authorName;
     const displayAuthorHandle = authorProfile?.handle || app.authorHandle;
@@ -199,10 +234,39 @@ export function BetaAppCard({
                     </div>
                     <div className="flex flex-1 flex-wrap items-center justify-between gap-4 md:justify-end">
                         <div className="flex items-center gap-4 text-sm font-semibold">
-                            <span className="inline-flex items-center gap-2 text-rose-400 text-base">
-                                <Heart className="h-5 w-5" />
-                                {app.likesLabel}
-                            </span>
+                            <button
+                                onClick={handleLike}
+                                className="relative inline-flex items-center gap-2 text-base transition-transform active:scale-95"
+                            >
+                                <Heart
+                                    className={`h-5 w-5 transition-colors ${liked ? 'fill-rose-500 text-rose-500' : 'text-rose-400'}`}
+                                />
+                                <span className={`${liked ? 'text-rose-500' : 'text-rose-400'}`}>
+                                    {likesCount === app.likesCount ? app.likesLabel : likesCount}
+                                </span>
+                                <AnimatePresence>
+                                    {showExplosion && (
+                                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                                            {[...Array(8)].map((_, i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ opacity: 1, scale: 0, x: 0, y: 0 }}
+                                                    animate={{
+                                                        opacity: 0,
+                                                        scale: 1.5,
+                                                        x: Math.cos(i * 45 * (Math.PI / 180)) * 40,
+                                                        y: Math.sin(i * 45 * (Math.PI / 180)) * 40
+                                                    }}
+                                                    exit={{ opacity: 0 }}
+                                                    transition={{ duration: 0.6, ease: "easeOut" }}
+                                                >
+                                                    <Heart className="w-3 h-3 text-rose-500 fill-rose-500" />
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </AnimatePresence>
+                            </button>
                             <span className="inline-flex items-center gap-2 text-emerald-400 text-base">
                                 <Play className="h-5 w-5" />
                                 {app.usersLabel}

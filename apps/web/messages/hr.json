@@ -57,7 +57,8 @@
     "line1": "We're currently in the testing phase, so my tiny bug buddies and I sneak around and hide from the developers.",
     "line2": "If you notice a weird jump, text or a button that doesn't work, one of the bugs probably escaped.",
     "line3": "Feel free to report us to the team; it helps them make the site even better.",
-    "thanks": "Thanks for testing with us!"
+    "thanks": "Thanks for testing with us!",
+    "tooltip": "Igram se skrivača s programerima 🙂"
   },
   "About": {
     "title": "About Thesara",
@@ -640,67 +641,72 @@
   },
   "Home": {
     "headline": {
-      "one": "Discover Amazing",
-      "two": "Mini-Apps & Games"
+      "one": "Otkrijte nevjerojatne",
+      "two": "Mini-aplikacije i igre"
     },
-    "tagline": "Curated marketplace for browser-based experiences. Build, share and explore.",
-    "trending": "Trending now",
-    "appsCount": "{count} apps",
+    "tagline": "Odabrana tržnica za iskustva u pregledniku. Izradite, dijelite i istražujte.",
+    "trending": "Trenutno popularno",
+    "appsCount": "{count} aplikacija",
     "search": {
-      "placeholder": "Search apps, games, or tags..."
+      "placeholder": "Pretraži aplikacije, igre ili oznake..."
     },
-    "appsFound": "{count} apps found",
-    "publishedCount": "{count} published apps",
-    "membersCount": "{count} registered members",
+    "appsFound": "{count} aplikacija pronađeno",
+    "publishedCount": "{count} objavljenih aplikacija",
+    "membersCount": "{count} registriranih članova",
     "sort": {
-      "new": "Newest",
-      "popular": "Popular",
-      "title": "Alphabetical"
+      "new": "Najnovije",
+      "popular": "Popularno",
+      "title": "Abecedno"
     },
-    "clear": "Clear",
-    "noApps": "No apps found",
-    "tryAdjust": "Try adjusting your search or filters.",
-    "beFirst": "Be the first to publish an app!",
-    "publish": "Publish App",
-    "earlyAccessTitle": "Everything is free right now",
-    "earlyAccessBody": "Gold + No Ads are unlocked during Early Access. Publish an app to make the most of the benefits.",
-    "earlyAccessPublish": "Publish now",
-    "earlyAccessSignIn": "Sign in now",
-    "earlyAccessDismiss": "Close",
-    "plays": "{count} plays",
+    "clear": "Očisti",
+    "noApps": "Nema pronađenih aplikacija",
+    "tryAdjust": "Pokušajte prilagoditi pretragu ili filtere.",
+    "beFirst": "Budite prvi koji će objaviti aplikaciju!",
+    "publish": "Objavi aplikaciju",
+    "earlyAccessTitle": "Sve je trenutno besplatno",
+    "earlyAccessBody": "Gold + Bez reklama su otključani tijekom ranog pristupa. Objavite aplikaciju da iskoristite pogodnosti.",
+    "earlyAccessPublish": "Objavi sada",
+    "earlyAccessSignIn": "Prijavi se sada",
+    "earlyAccessDismiss": "Zatvori",
+    "plays": "{count} igranja",
     "leftPanel": {
-      "title": "From AI chats to your mini app",
-      "subtitle": "Thesara is where you turn AI ideas into real apps, games or interactive stories you can share in just a few clicks.",
-      "llmLabel": "Start with your favorite model",
+      "title": "Od AI razgovora do vaše mini aplikacije",
+      "subtitle": "Thesara je mjesto gdje pretvarate AI ideje u stvarne aplikacije, igre ili interaktivne priče koje možete podijeliti u nekoliko klikova.",
+      "llmLabel": "Započnite s vašim omiljenim modelom",
       "steps": {
         "1": {
-          "title": "Chat with your AI",
-          "text": "Ask the model to build you a mini app, game, quiz, simulation or lecture."
+          "title": "Razgovarajte sa svojim AI-jem",
+          "text": "Zatražite od modela da vam izradi mini aplikaciju, igru, kviz, simulaciju ili predavanje."
         },
         "2": {
-          "title": "Grab the generated code or ZIP",
-          "text": "The assistant hands you a finished web app that you download as code or a bundle."
+          "title": "Preuzmite generirani kod ili ZIP",
+          "text": "Asistent vam daje gotovu web aplikaciju koju preuzimate kao kod ili paket."
         },
         "3": {
-          "title": "Publish on Thesara in a few clicks",
-          "text": "Upload, confirm and hit Play - your app lives on Thesara, free or priced by you."
+          "title": "Objavite na Thesari u nekoliko klikova",
+          "text": "Učitajte, potvrdite i pritisnite Igraj - vaša aplikacija živi na Thesari, besplatno ili po cijeni koju odredite."
         }
       },
       "storage": {
-        "title": "A new memory layer LLMs do not ship with",
-        "tag": "Memory & rooms",
+        "title": "Novi sloj memorije koji LLM-ovi nemaju",
+        "tag": "Memorija i sobe",
         "shared": {
-          "title": "Shared memory",
-          "text": "Everyone shares the same state and results (like a global leaderboard) without relying on the chat model."
+          "title": "Dijeljena memorija",
+          "text": "Svi dijele isto stanje i rezultate (poput globalne ljestvice) bez oslanjanja na model razgovora."
         },
         "rooms": {
-          "title": "Rooms",
-          "text": "Enable rooms when you want multiple people to use your app but each in a private session or group."
+          "title": "Sobe",
+          "text": "Omogućite sobe kada želite da više ljudi koristi vašu aplikaciju, ali svatko u privatnoj sesiji ili grupi."
         }
       },
-      "footer": "AI enthusiasts - imagine it, chat with your model, publish here and let others play.",
-      "footerHighlight": "Good luck with your first Thesara app!"
-    }
+      "footer": "AI entuzijasti - zamislite, razgovarajte s modelom, objavite ovdje i pustite druge da se igraju.",
+      "footerHighlight": "Sretno s vašom prvom Thesara aplikacijom!",
+      "loading": "Učitavanje..."
+    },
+    "noGraphic": "Bez grafike",
+    "priceLabel": "Cijena",
+    "play": "Igraj",
+    "fullDetails": "Detalji"
   },
   "BetaHome": {
     "tags": {
@@ -714,51 +720,162 @@
     },
     "listing": {
       "badge": {
-        "free": "FREE"
+        "free": "BESPLATNO"
       },
       "label": {
-        "creator": "Creator"
+        "creator": "Kreator"
       },
       "actions": {
-        "play": "Play",
-        "fullDetails": "Full details",
-        "edit": "Edit"
+        "play": "Igraj",
+        "fullDetails": "Detalji",
+        "edit": "Uredi"
       },
       "tag": {
-        "trending": "Trending"
+        "trending": "Popularno"
       }
+    },
+    "hero": {
+      "badge": "Otkrijte nevjerojatne mini aplikacije i igre",
+      "random": {
+        "label": "Nasumični odabir",
+        "details": "Pogledaj detalje"
+      },
+      "actions": {
+        "submit": "Objavi aplikaciju"
+      },
+      "badges": {
+        "curated": "Odabrano"
+      },
+      "card": {
+        "description": "Izradite kolekcije AI iskustava i podijelite ih putem linka.",
+        "stats": {
+          "apps": "{count}+ Mini aplikacija",
+          "favorites": "{count} favorita"
+        }
+      }
+    },
+    "promo": {
+      "featuredLabel": "Izdvojeno",
+      "learnMore": "Saznaj više"
+    },
+    "view": {
+      "gridLabel": "Mreža",
+      "decreaseGrid": "Prikaži manje kartica po redu",
+      "increaseGrid": "Prikaži više kartica po redu"
+    },
+    "sort": {
+      "newest": "Najnovije",
+      "popular": "Najpopularnije",
+      "alpha": "Abecedno",
+      "label": "Sortiraj po"
+    },
+    "metrics": {
+      "liveUsage": "Korištenje uživo",
+      "apps": "Objavljene aplikacije",
+      "members": "Članova zajednice",
+      "runs": "Ukupno pokretanja"
+    },
+    "empty": {
+      "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
+      "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
+      "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
+    },
+    "filters": {
+      "tagsHeading": "Popularne oznake",
+      "clear": "Poništi filtere"
+    },
+    "actions": {
+      "refresh": "Osvježi",
+      "retry": "Pokušaj ponovo"
+    },
+    "errors": {
+      "listings": "Ne mogu osvježiti feed. Pokušajte ponovo."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} aplikacija"
+      }
+    },
+    "search": {
+      "liveStats": "{apps} aktivnih aplikacija · {plays} igranja"
+    },
+    "sidebar": {
+      "title": "Thesara Space v2.0",
+      "subtitle": "Od AI razgovora do vaše mini aplikacije.",
+      "nav": {
+        "discover": "Otkrij",
+        "games": "Igre",
+        "productivity": "Produktivnost",
+        "myApps": "Moje aplikacije",
+        "paidApps": "Plaćene aplikacije",
+        "myProjects": "Projekti",
+        "myCreators": "Kreatori",
+        "feelingLucky": "Osjećam se sretno"
+      },
+      "creatorMode": {
+        "badge": "Kreatorski način",
+        "title": "Od AI razgovora do vaše mini aplikacije",
+        "description": "Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.",
+        "steps": {
+          "0": {
+            "title": "Razgovaraj s AI-jem",
+            "text": "Zatraži asistenta da isporuči mini aplikaciju."
+          },
+          "1": {
+            "title": "Preuzmi kod",
+            "text": "Dobivaš bundle spreman za upload."
+          },
+          "2": {
+            "title": "Objavi na Thesari",
+            "text": "Upload, potvrdi i klikni Play."
+          }
+        },
+        "memory": {
+          "title": "Memorija i sobe",
+          "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
+          "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
+        },
+        "cta": "Objavi svoju aplikaciju"
+      }
+    },
+    "header": {
+      "homeAria": "Thesara naslovnica",
+      "liveBadge": "Uživo",
+      "themeToggle": "Promijeni temu",
+      "backLink": "← Natrag na uživo",
+      "backLinkMobile": "← Natrag"
     }
   },
   "Toasts": {
-    "welcome": "Welcome to Thesara!",
-    "loginToLike": "Sign in to like apps",
-    "slowDown": "Easy there 🙂",
-    "likeError": "Unable to like the app. Please check the API URL and server status.",
-    "loadError": "Unable to load apps. Please check the API URL and server status.",
-    "retry": "Retry"
+    "welcome": "Dobrodošli na Thesaru!",
+    "loginToLike": "Prijavite se za lajkanje aplikacija",
+    "slowDown": "Polako 🙂",
+    "likeError": "Ne mogu lajkati aplikaciju. Provjerite API URL i status poslužitelja.",
+    "loadError": "Ne mogu učitati aplikacije. Provjerite API URL i status poslužitelja.",
+    "retry": "Pokušaj ponovo"
   },
   "Footer": {
-    "slogan": "The marketplace for browser-based apps and games.",
-    "allRights": "All rights reserved.",
-    "partnershipLink": "Partnership with us"
+    "slogan": "Tržnica za aplikacije i igre u pregledniku.",
+    "allRights": "Sva prava pridržana.",
+    "partnershipLink": "Partnerstvo s nama"
   },
   "Partnership": {
-    "title": "Partnership with us",
-    "description": "Tell us about your organization and the type of collaboration you would like to build.",
-    "nameLabel": "Your name",
-    "companyLabel": "Company or project",
-    "emailLabel": "Business email",
-    "phoneLabel": "Phone (optional)",
-    "messagePlaceholder": "Describe your idea, target audience, timelines, or the value you expect for both sides.",
-    "submit": "Send partnership request",
-    "sending": "Sending…",
-    "cancel": "Cancel",
-    "successMessage": "Thank you! We will reply shortly.",
-    "errorGeneric": "We could not send the request. Please try again.",
-    "errorEmail": "Please enter a valid email.",
-    "errorMessage": "Describe the partnership idea (at least 5 characters).",
-    "footerNote": "You can also email activity(at)thesara.space",
-    "closeLabel": "Close partnership form"
+    "title": "Partnerstvo s nama",
+    "description": "Recite nam nešto o svojoj organizaciji i vrsti suradnje koju želite ostvariti.",
+    "nameLabel": "Vaše ime",
+    "companyLabel": "Tvrtka ili projekt",
+    "emailLabel": "Poslovni email",
+    "phoneLabel": "Telefon (neobavezno)",
+    "messagePlaceholder": "Opišite svoju ideju, ciljanu publiku, rokove ili vrijednost koju očekujete za obje strane.",
+    "submit": "Pošalji zahtjev za partnerstvo",
+    "sending": "Šaljem...",
+    "cancel": "Odustani",
+    "successMessage": "Hvala! Odgovorit ćemo uskoro.",
+    "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo.",
+    "errorEmail": "Unesite valjanu email adresu.",
+    "errorMessage": "Opišite ideju partnerstva (najmanje 5 znakova).",
+    "footerNote": "Također možete poslati email na activity(at)thesara.space",
+    "closeLabel": "Zatvori obrazac za partnerstvo"
   },
   "Pro": {
     "choosePlan": "Choose a plan",
@@ -896,7 +1013,14 @@
     "publish": "Publish",
     "shortVideoButton": "Thesara Short Video",
     "mustSignIn": "Please sign in first to publish.",
-    "login": "Sign in"
+    "login": "Sign in",
+    "tag_Igre": "Igre",
+    "tag_Kvizovi": "Kvizovi",
+    "tag_Učenje": "Učenje",
+    "tag_Alati": "Alati",
+    "tag_Business": "Business",
+    "tag_Zabava": "Zabava",
+    "tag_Ostalo": "Ostalo"
   },
   "App": {
     "notFound": "App not found",
@@ -1111,5 +1235,26 @@
     "errorGeneric": "We could not save your alias. Please try again.",
     "backHome": "Back to home",
     "redirecting": "Redirecting you to the Golden Book…"
+  },
+  "promo": {
+    "banners": {
+      "0": {
+        "title": "Jednostavne upute",
+        "subtitle": "Kako iz razgovora s AI-jem doći do objave na Thesari."
+      },
+      "1": {
+        "title": "Pravila objave",
+        "subtitle": "Sve o monetizaciji, licencama i uvjetima."
+      }
+    }
+  },
+  "Create": {
+    "tag_Igre": "Igre",
+    "tag_Kvizovi": "Kvizovi",
+    "tag_Učenje": "Učenje",
+    "tag_Alati": "Alati",
+    "tag_Business": "Business",
+    "tag_Zabava": "Zabava",
+    "tag_Ostalo": "Ostalo"
   }
 }
