@@ -5,6 +5,8 @@
     "myProjects": "My Projects",
     "myCreators": "My Creators",
     "goPro": "Go Pro",
+    "adsOff": "AdsOff",
+    "goGold": "Go Gold",
     "browseApps": "Browse Apps",
     "login": "Sign In",
     "logout": "Sign Out",
@@ -29,7 +31,7 @@
     "goldBadge": "Gold member",
     "noAdsBadge": "No Ads",
     "subscribeEarlyAccess": "Subscribe for early access",
-    "earlyAccessSubscribed": "You’ll get 50% off the first month.",
+    "earlyAccessSubscribed": "You'll get 50% off the first month.",
     "earlyAccessSubscribeError": "Subscription failed. Please try again.",
     "feedback": "Feedback",
     "docs": "Documentation",
@@ -37,6 +39,20 @@
     "api": "API Reference",
     "language": "Language",
     "admin": "Admin"
+  },
+  "Feedback": {
+    "title": "Feedback",
+    "description": "Share your suggestions and feedback with us.",
+    "nameLabel": "Your name",
+    "emailLabel": "Email",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "Share your thoughts...",
+    "send": "Send",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "successMessage": "Thank you! We will review your feedback.",
+    "errorMessage": "Message is too short (minimum 5 characters).",
+    "errorGeneric": "We could not send the request. Please try again."
   },
   "BugGuardian": {
     "title": "Hello! I'm the spider guardian of Thesara.space. 🕷",
@@ -697,8 +713,7 @@
       "business": "Business",
       "entertainment": "Entertainment",
       "other": "Other"
-    }
-    ,
+    },
     "listing": {
       "badge": {
         "free": "FREE"
@@ -758,7 +773,6 @@
     "recommended": "Recommended",
     "loading": "Loading…",
     "subscribed": "Subscribed",
-  
     "noPackagesTitle": "No packages available",
     "noPackagesText": "Packages will be available soon",
     "loadError": "Failed to load packages. Please try again.",

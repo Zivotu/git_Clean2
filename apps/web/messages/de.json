@@ -4,6 +4,8 @@
     "myProjects": "Meine Projekte",
     "myCreators": "Meine Creators",
     "goPro": "Go Pro",
+    "adsOff": "Werbung Aus",
+    "goGold": "Go Gold",
     "browseApps": "Apps durchsuchen",
     "login": "Anmelden",
     "logout": "Abmelden",
@@ -35,6 +37,20 @@
     "subscribeEarlyAccess": "FÃ¼r Early Access anmelden",
     "earlyAccessSubscribed": "Du erhÃ¤ltst 50 % Rabatt im ersten Monat.",
     "earlyAccessSubscribeError": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "Feedback": {
+    "title": "Feedback",
+    "description": "Teilen Sie Ihre Vorschläge und Ihr Feedback mit uns.",
+    "nameLabel": "Ihr Name",
+    "emailLabel": "E-Mail",
+    "messageLabel": "Ihre Nachricht",
+    "messagePlaceholder": "Teilen Sie Ihre Gedanken...",
+    "send": "Senden",
+    "sending": "Wird gesendet...",
+    "cancel": "Abbrechen",
+    "successMessage": "Vielen Dank! Wir werden Ihr Feedback prüfen.",
+    "errorMessage": "Nachricht ist zu kurz (mindestens 5 Zeichen).",
+    "errorGeneric": "Wir konnten die Anfrage nicht senden. Bitte versuchen Sie es erneut."
   },
   "BetaHome": {
     "filters": {

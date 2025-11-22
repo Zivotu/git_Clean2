@@ -38,6 +38,20 @@
     "language": "Language",
     "admin": "Admin"
   },
+  "Feedback": {
+    "title": "Feedback",
+    "description": "Podijelite svoje prijedloge i povratne informacije s nama.",
+    "nameLabel": "Vaše ime",
+    "emailLabel": "Email",
+    "messageLabel": "Vaša poruka",
+    "messagePlaceholder": "Podijelite svoje misli...",
+    "send": "Send",
+    "sending": "Šalje se...",
+    "cancel": "Odustani",
+    "successMessage": "Hvala! Razmotriti ćemo vaš feedback.",
+    "errorMessage": "Poruka je prekratka (najmanje 5 znakova).",
+    "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo."
+  },
   "BugGuardian": {
     "title": "Hello! I'm the spider guardian of Thesara.space. 🕷",
     "line1": "We're currently in the testing phase, so my tiny bug buddies and I sneak around and hide from the developers.",
@@ -697,8 +711,7 @@
       "business": "Business",
       "entertainment": "Entertainment",
       "other": "Other"
-    }
-    ,
+    },
     "listing": {
       "badge": {
         "free": "FREE"
@@ -758,7 +771,6 @@
     "recommended": "Recommended",
     "loading": "Loading…",
     "subscribed": "Subscribed",
-  
     "noPackagesTitle": "No packages available",
     "noPackagesText": "Packages will be available soon",
     "loadError": "Failed to load packages. Please try again.",

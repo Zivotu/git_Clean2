@@ -3,12 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Avatar from '@/components/Avatar';
+import { Crown } from 'lucide-react';
 
 type ProfileCardProps = {
   user?: any | null;
   displayName: string;
   photo?: string | null;
   isDark?: boolean;
+  showCrown?: boolean;
   onLogout?: () => void;
   loginLabel?: string;
   logoutLabel?: string;
@@ -21,7 +23,8 @@ export default function ProfileCard({
   displayName,
   photo,
   isDark, // kept for compatibility but not required
-  onLogout = () => {},
+  showCrown = false,
+  onLogout = () => { },
   loginLabel = 'Sign in',
   logoutLabel = 'Log out',
   viewProfileLabel = 'View profile',
@@ -37,7 +40,14 @@ export default function ProfileCard({
     return (
       <div className={containerClasses}>
         <Link prefetch={false} href="/profile" className="flex flex-1 items-center gap-3">
-          <Avatar uid={user.uid} src={photo} name={displayName} size={40} className="h-10 w-10 object-cover" />
+          <div className="relative">
+            <Avatar uid={user.uid} src={photo} name={displayName} size={40} className="h-10 w-10 object-cover" />
+            {showCrown && (
+              <div className="absolute -top-1 -right-1 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-500 rounded-full p-1 shadow-lg">
+                <Crown className="h-3 w-3 text-amber-900" fill="currentColor" />
+              </div>
+            )}
+          </div>
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{displayName}</span>
             <span className={subTextClasses}>{viewProfileLabel}</span>

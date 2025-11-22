@@ -16,9 +16,12 @@ import {
   MoonStar,
   Upload,
   Heart,
+  MessageSquare,
+  X,
 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useI18n } from '@/lib/i18n-provider';
+import { useEntitlements } from '@/hooks/useEntitlements';
 
 import GoldenBookIcon from '../../../../../assets/GoldenBook_Icon_1.png';
 
@@ -35,7 +38,10 @@ type HeaderProps = {
   shortVideoUrl?: string;
   shortVideoLabel?: string;
   goProLabel?: string;
+  adsOffLabel?: string;
+  goGoldLabel?: string;
   faqLabel?: string;
+  feedbackLabel?: string;
   donateEnabled?: boolean;
   donateLabel?: string;
   donateActive?: boolean;
@@ -150,7 +156,10 @@ export default function Header({
   shortVideoUrl = '',
   shortVideoLabel = 'Video',
   goProLabel = 'Go Pro',
+  adsOffLabel = 'AdsOff',
+  goGoldLabel = 'Go Gold',
   faqLabel = 'FAQ',
+  feedbackLabel = 'Feedback',
   donateEnabled = false,
   donateLabel = 'Donate',
   donateActive = false,
@@ -173,12 +182,29 @@ export default function Header({
 }: HeaderProps) {
   const { isDark, toggleTheme } = useTheme();
   const { messages } = useI18n();
-  const topBannerCtaLabelLocal = (messages && messages['Nav.subscribeEarlyAccess']) ?? topBannerCtaLabel;
+  const { data: entitlements } = useEntitlements();
+  const [showVideoPopup, setShowVideoPopup] = React.useState(false);
+
+  const topBannerCtaLabelLocal = (messages && messages['Nav.launchBadge']) ?? 'Live since 17.11.2025.';
   const topBannerSubtitleLocal = (messages && messages['Nav.earlyAccessSubtitle']) ?? topBannerSubtitle;
   const earlyAccessRibbonLabelLocal = (messages && messages['Nav.earlyAccessRibbon']) ?? earlyAccessRibbonLabel;
   const earlyAccessBadgeTextLocal = (messages && messages['Nav.earlyAccessBadge']) ?? earlyAccessBadgeText;
   const earlyAccessCountdownLabelLocal = (messages && messages['Nav.earlyAccessCountdownLabel']) ?? earlyAccessCountdownLabel;
   const earlyAccessCountdownUnitLocal = (messages && messages['Nav.earlyAccessCountdownUnit']) ?? earlyAccessCountdownUnit;
+
+  // Determine GoPro link text and visibility based on entitlements
+  const hasGold = entitlements?.gold ?? false;
+  const hasNoAds = entitlements?.noAds ?? false;
+  const showProLink = !hasGold || !hasNoAds;
+  const showCrownInProfile = hasGold && hasNoAds;
+
+  let proLinkText = goProLabel;
+  if (!hasGold && hasNoAds) {
+    proLinkText = goGoldLabel;
+  } else if (hasGold && !hasNoAds) {
+    proLinkText = adsOffLabel;
+  }
+
   // If a page didn't pass a profileSection, build a default one using auth
   const authCtx = useAuth?.();
   const user = authCtx?.user ?? null;
@@ -188,6 +214,7 @@ export default function Header({
       displayName={getDisplayName(user) || 'Guest'}
       photo={(user as any)?.photoURL ?? null}
       isDark={isDark}
+      showCrown={showCrownInProfile}
       onLogout={() => {
         try {
           if (auth) void signOut(auth).catch(() => { });
@@ -211,21 +238,7 @@ export default function Header({
         >
           <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center justify-between gap-2 px-4 py-2 md:flex-row">
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={onSubscribe}
-                disabled={subscribeStatus === 'loading'}
-                className="rounded-full bg-black/20 px-2 py-1 font-semibold uppercase tracking-wide transition hover:bg-black/30 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {topBannerCtaLabelLocal}
-              </button>
-              <span className="hidden items-center gap-1 md:inline-flex">
-                <span className="font-semibold">{earlyAccessRibbonLabelLocal}</span>
-                <span className="opacity-80">— {topBannerSubtitleLocal}</span>
-              </span>
-              {subscribeMessage && (
-                <span className="text-[10px] font-normal text-emerald-200 sm:text-xs">{subscribeMessage}</span>
-              )}
+              <span className="font-semibold">{topBannerCtaLabelLocal}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-black/20 px-2 py-1 font-semibold">
@@ -288,9 +301,12 @@ export default function Header({
           </div>
 
           <nav className="flex flex-1 flex-nowrap items-center gap-3 overflow-x-auto text-base font-medium min-w-max">
-            <HeaderChip icon={Video} label={shortVideoLabel} isDark={isDark} href={shortVideoUrl} external />
-            <HeaderChip icon={Crown} label={goProLabel} isDark={isDark} subtle href="/pro" />
+            <HeaderChip icon={Video} label={shortVideoLabel} isDark={isDark} onClick={() => setShowVideoPopup(true)} />
+            {showProLink && (
+              <HeaderChip icon={Crown} label={proLinkText} isDark={isDark} subtle href="/pro" />
+            )}
             <HeaderChip icon={HelpCircle} label={faqLabel} isDark={isDark} subtle href="/faq" />
+            <HeaderChip icon={MessageSquare} label={feedbackLabel} isDark={isDark} subtle href="/feedback" />
             {donateEnabled && (
               <HeaderDonationButton
                 label={donateLabel}
@@ -325,6 +341,31 @@ export default function Header({
           <div className={`h-1 w-full rounded-b-full bg-gradient-to-r from-[#A855F7] via-[#8B5CF6] to-transparent`} />
         </div>
       </header>
+
+      {/* Video Popup Modal */}
+      {showVideoPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80" onClick={() => setShowVideoPopup(false)}>
+          <div className="relative w-full max-w-4xl mx-4" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowVideoPopup(false)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition"
+              aria-label="Close video"
+            >
+              <X className="h-8 w-8" />
+            </button>
+            <div className="relative pb-[56.25%] h-0 overflow-hidden rounded-lg">
+              <iframe
+                className="absolute top-0 left-0 w-full h-full"
+                src={shortVideoUrl.replace('youtube.com/shorts/', 'youtube.com/embed/')}
+                title="Thesara Short Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
