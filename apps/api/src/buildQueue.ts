@@ -258,8 +258,8 @@ async function runJob(job: Job): Promise<void> {
               },
             };
             await writeJson(path.join(dir, 'artifacts.json'), artifacts);
-            rec = await updateBuild(id, { state: 'bundle_done' });
-            logState(log, id, 'bundle_done');
+            rec = await updateBuild(id, { state: 'bundle' });
+            logState(log, id, 'bundle');
             await emitState(id, rec.state, rec.progress);
           } catch (err: any) {
             throw new Error(`bundle_failed: ${err.message}`);
@@ -286,7 +286,12 @@ async function runJob(job: Job): Promise<void> {
     rec = await updateBuild(id, { state: 'verify', progress: 90 });
     logState(log, id, 'verify');
     await emitState(id, rec.state, rec.progress);
-    const pipeline = new SafePublishPipeline(undefined, log || console);
+    const pipelineLogger = {
+      info: log?.info ?? console.info.bind(console),
+      error: log?.error ?? console.error.bind(console),
+      warn: (log as any)?.warn ?? console.warn.bind(console),
+    };
+    const pipeline = new SafePublishPipeline(undefined, pipelineLogger);
     const result = await pipeline.run(id, path.join(dir, 'bundle'));
     rec = await applyPipelineResult(id, result);
     await saveBuildData(id);
