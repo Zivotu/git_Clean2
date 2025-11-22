@@ -117,7 +117,7 @@ async function runJob(job: Job): Promise<void> {
                 if (el) { const m = el.querySelector('.__msg'); if (m) m.textContent = String(message||'Error'); return; }
                 el = document.createElement('div');
                 el.id = __overlayId;
-                el.style.position = 'fixed'; el.style.inset = '0'; el.style.background = 'rgba(190,18,60,0.10)'; el.style.zIndex = '2147483647';
+                el.style.position = 'fixed'; el.style.inset = '0'; el.style.background = 'transparent'; el.style.zIndex = '2147483647';
                 const box = document.createElement('div'); box.style.position='absolute'; box.style.left='50%'; box.style.top='16px'; box.style.transform='translateX(-50%)'; box.style.maxWidth='90%'; box.style.fontFamily='ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial'; box.style.background='#fee2e2'; box.style.color='#991b1b'; box.style.border='1px solid #fecaca'; box.style.borderRadius='12px'; box.style.padding='12px 14px'; box.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)';
                 const title = document.createElement('div'); title.style.fontWeight='600'; title.style.marginBottom='4px'; title.textContent='App error';
                 const msg = document.createElement('div'); msg.className='__msg'; msg.style.whiteSpace='pre-wrap'; msg.style.fontSize='13px'; msg.textContent=String(message||'Unknown error');
