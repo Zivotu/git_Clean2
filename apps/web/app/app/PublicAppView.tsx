@@ -142,6 +142,7 @@ function PublicAppViewComponent({
   const [averageRating, setAverageRating] = useState(0);
   const [canReview, setCanReview] = useState(false);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const userHasReviewed = Boolean(user && reviews.some((r) => r.korisnik === user.uid));
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -245,7 +246,9 @@ function PublicAppViewComponent({
       if (!canReview) {
         setReviewStatus({
           type: 'error',
-          text: tApp('reviews.requirePurchase', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.'),
+          text: userHasReviewed
+            ? tApp('reviews.alreadyReviewed', undefined, 'You already left a review for this app.')
+            : tApp('reviews.requirePurchase', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.'),
         });
         return;
       }
@@ -292,7 +295,7 @@ function PublicAppViewComponent({
         setReviewSubmitting(false);
       }
     },
-    [listingNumericId, user, canReview, reviewComment, reviewRating, loadReviews, tApp],
+    [listingNumericId, user, canReview, reviewComment, reviewRating, loadReviews, tApp, userHasReviewed],
   );
 
   const formatReviewDate = (value: string) => {
@@ -342,6 +345,7 @@ function PublicAppViewComponent({
 
   const canReportContent = Boolean(user && item.author?.uid !== user?.uid);
   const viewerLabel = viewerIdentity || tApp('viewer.identity.missing', undefined, 'Gost korisnik');
+
 
   const galleryTitle = tApp('viewer.gallery.title', undefined, 'Snimke zaslona');
   const galleryEmpty = tApp('viewer.gallery.empty', undefined, 'Snimke će se pojaviti kada ih kreator doda.');
@@ -630,8 +634,13 @@ function PublicAppViewComponent({
                     }`}>{reviewsFormTitle}</h3>
                   {!user && <p className={`mt-2 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'
                     }`}>{tApp('reviews.loginHint', undefined, 'Prijavi se kako bi ostavio recenziju.')}</p>}
-                  {user && !canReview && <p className={`mt-2 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'
-                    }`}>{tApp('reviews.requirePurchaseHint', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.')}</p>}
+                  {user && !canReview && (
+                    <p className={`mt-2 text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'
+                    }`}>{userHasReviewed
+                      ? tApp('reviews.alreadyReviewed', undefined, 'You already left a review for this app.')
+                      : tApp('reviews.requirePurchaseHint', undefined, 'Recenzije mogu ostaviti samo korisnici koji su isprobali aplikaciju.')
+                    }</p>
+                  )}
                   <form className="mt-3 space-y-3" onSubmit={handleReviewSubmit}>
                     <label className={`block text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'
                       }`}>

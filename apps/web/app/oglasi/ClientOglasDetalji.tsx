@@ -6,10 +6,12 @@ import { useAuth } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n-provider';
 
 interface Recenzija {
+  id?: string;
   korisnik: string;
   ocjena: number;
   komentar: string;
   datum: string;
+  canDelete?: boolean;
 }
 
 export default function OglasDetaljiClient({ id }: { id: string }) {
@@ -31,6 +33,7 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
   const [recenzije, setRecenzije] = useState<Recenzija[]>([]);
   const [prosjek, setProsjek] = useState(0);
   const [canReview, setCanReview] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [ocjena, setOcjena] = useState(5);
   const [komentar, setKomentar] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,7 +47,8 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
       const data = await res.json();
       setRecenzije(data.recenzije || []);
       setProsjek(data.prosjek || 0);
-      setCanReview(!!data.canReview);
+      setCanReview(Boolean(data.canReview));
+      setIsOwner(Boolean(data.isOwner));
     }
   }
 
@@ -69,9 +73,23 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
       });
       setKomentar('');
       setOcjena(5);
-      load();
+      await load();
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function deleteRecenzija(id: string) {
+    if (!id) return;
+    const token = user ? await user.getIdToken() : undefined;
+    try {
+      await fetch(`${PUBLIC_API_URL}/recenzije/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      await load();
+    } catch (e) {
+      // ignore
     }
   }
 
@@ -328,9 +346,20 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
                       <p className="text-sm font-semibold text-slate-900">{r.korisnik || t('reviews.anonymous', undefined, 'Guest')}</p>
                       <p className="text-xs text-slate-400">{formatDate(r.datum)}</p>
                     </div>
-                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      {ratingLabel(r.ocjena)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        {ratingLabel(r.ocjena)}
+                      </span>
+                      {(isOwner || (user && user.uid === r.korisnik)) && r.id && (
+                        <button
+                          type="button"
+                          onClick={() => deleteRecenzija(r.id!)}
+                          className="text-xs text-rose-500 hover:underline"
+                        >
+                          {t('reviews.delete', undefined, 'Obriši')}
+                        </button>
+                      )}
+                    </div>
                   </header>
                   <p className="mt-2 text-sm text-slate-600">{r.komentar}</p>
                 </article>

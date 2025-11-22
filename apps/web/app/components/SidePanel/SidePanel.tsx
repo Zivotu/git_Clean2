@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Gamepad2,
@@ -43,12 +44,14 @@ function SidebarItem({
   active = false,
   isDark = false,
   href,
+  onClick,
 }: {
   label: string;
   icon: any;
   active?: boolean;
   isDark?: boolean;
   href?: string;
+  onClick?: () => void;
 }) {
   const className = `group flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm transition-all duration-300 ${active
     ? isDark
@@ -86,7 +89,7 @@ function SidebarItem({
     );
   }
   return (
-    <button className={className} type="button">
+    <button onClick={onClick} className={className} type="button">
       {content}
     </button>
   );
@@ -120,6 +123,7 @@ export default function SidePanel({
   isDark = false,
 }: SidePanelProps) {
   const { messages } = useI18n();
+  const router = useRouter();
   const tBeta = (key: string, fallback = '', params?: Record<string, string | number>) =>
     formatMessage((messages[`BetaHome.${key}`] as string) ?? fallback, params);
 
@@ -173,7 +177,7 @@ export default function SidePanel({
           'Aktiviraj sobe kad želiš više korisnika s trajnim stanjima.',
         ),
       ],
-      cta: tBeta('sidebar.creatorMode.cta', 'Open Creator Studio'),
+      cta: tBeta('sidebar.creatorMode.cta', 'Publish your App'),
     },
   };
 
@@ -188,6 +192,29 @@ export default function SidePanel({
 
       <nav className="space-y-1 text-base font-semibold">
         <SidebarItem label={sidebarLabels.nav.discover} icon={LayoutDashboard} active isDark={isDark} href="/" />
+        <SidebarItem
+          label={messages['BetaHome.sidebar.nav.feelingLucky'] || 'Feeling lucky'}
+          icon={Gamepad2}
+          isDark={isDark}
+          onClick={async () => {
+            try {
+              const { getListings } = await import('@/lib/loaders');
+              const res = await getListings();
+              const items = Array.isArray(res?.items) ? res.items : [];
+              if (items.length > 0) {
+                const idx = Math.floor(Math.random() * items.length);
+                const item = items[idx];
+                const { playHref } = await import('@/lib/urls');
+                const href = playHref(item.id, { run: 1 });
+                router.push(href);
+                return;
+              }
+            } catch (e) {
+              // ignore and fallthrough to fallback
+            }
+            router.push('/play');
+          }}
+        />
         <SidebarItem label={sidebarLabels.nav.paidApps} icon={DollarSign} isDark={isDark} href="/search?tag=paid" />
         <SidebarItem label={sidebarLabels.nav.myProjects ?? 'Projects'} icon={FolderKanban} isDark={isDark} href="/my" />
         <SidebarItem label={sidebarLabels.nav.myCreators ?? 'Creators'} icon={Users} isDark={isDark} href="/my-creators" />

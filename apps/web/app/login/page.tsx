@@ -14,7 +14,6 @@ import { useAuth, getDisplayName } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { ensureUserDoc } from '@/lib/ensureUserDoc';
 import Link from 'next/link';
-import Logo from '@/components/Logo';
 import { SITE_NAME } from '@/lib/config';
 import { useI18n } from '@/lib/i18n-provider';
 
@@ -101,15 +100,15 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-emerald-50 to-white py-10 px-4">
+    <main className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-emerald-50 to-white dark:from-zinc-900 dark:to-zinc-800 py-10 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
-          <Logo className="h-10" />
-          <Link href="/" className="text-sm text-gray-600 hover:text-emerald-700">{tLogin('backToHome')}</Link>
+          <div />
+          <Link href="/" className="text-sm text-gray-600 hover:text-emerald-700 dark:text-zinc-400 dark:hover:text-emerald-400">{tLogin('backToHome')}</Link>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 items-stretch">
-          <div className="relative hidden md:block rounded-3xl overflow-hidden border border-emerald-100 bg-gradient-to-br from-emerald-600 to-green-700 text-white p-8">
+          <div className="relative hidden md:block rounded-3xl overflow-hidden border border-emerald-100 bg-gradient-to-br from-emerald-600 to-green-700 text-white p-8 dark:border-emerald-900 dark:from-emerald-800 dark:to-emerald-900">
             <div className="absolute -top-16 -right-16 w-64 h-64 bg-emerald-500/30 rounded-full blur-2xl" />
             <div className="relative z-10">
               <h2 className="text-3xl font-black tracking-tight">{tLogin('welcomeTitle', { site: SITE_NAME })}</h2>
@@ -124,16 +123,16 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-6 md:p-8">
-            <h1 className="text-2xl font-bold">{tLogin('title')}</h1>
-            <p className="mt-1 text-gray-500">{tLogin('subtitle')}</p>
+          <div className="bg-white border border-gray-200 rounded-3xl shadow-sm p-6 md:p-8 dark:bg-[#0b0b0b] dark:border-white/5 dark:shadow-none">
+            <h1 className="text-2xl font-bold dark:text-zinc-100">{tLogin('title')}</h1>
+            <p className="mt-1 text-gray-500 dark:text-zinc-400">{tLogin('subtitle')}</p>
 
             <div className="mt-6">
               {loading ? (
-                <div className="text-gray-500">{tLogin('checking')}</div>
+                <div className="text-gray-500 dark:text-zinc-400">{tLogin('checking')}</div>
               ) : user ? (
                 <div className="space-y-4">
-                  <div className="text-gray-700">
+                  <div className="text-gray-700 dark:text-zinc-200">
                     {tLogin('signedInAs')}{' '}
                     <span className="font-mono">
                       {getDisplayName(user) || user.email || user.uid}
@@ -143,7 +142,7 @@ export default function LoginPage() {
                     <Link href="/create" className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">{tLogin('goToCreate')}</Link>
                     <button
                       onClick={logout}
-                      className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+                      className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:border-white/5 dark:hover:bg-white/2"
                     >
                       {tLogin('signOut')}
                     </button>
@@ -153,7 +152,7 @@ export default function LoginPage() {
                 <>
                   <button
                     onClick={login}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2.5"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2.5 dark:border-white/6 dark:bg-zinc-900 dark:hover:bg-zinc-800"
                   >
                     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                       <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12   s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
@@ -164,10 +163,10 @@ export default function LoginPage() {
                     {tLogin('continueWithGoogle')}
                   </button>
 
-                  <div className="my-5 flex items-center gap-3 text-xs text-gray-400">
-                    <div className="flex-1 h-px bg-gray-200" />
+                  <div className="my-5 flex items-center gap-3 text-xs text-gray-400 dark:text-zinc-500">
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-white/5" />
                     <span>{tLogin('or')}</span>
-                    <div className="flex-1 h-px bg-gray-200" />
+                    <div className="flex-1 h-px bg-gray-200 dark:bg-white/5" />
                   </div>
 
                   <form onSubmit={handleEmailLogin} className="space-y-4">
@@ -179,7 +178,7 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@example.com"
                         required
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 dark:border-white/5"
                       />
                     </div>
                     <div>
@@ -190,7 +189,7 @@ export default function LoginPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         required
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500"
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 dark:border-white/5"
                       />
                     </div>
                     {error && <p className="text-red-600 text-sm">{error}</p>}
@@ -204,7 +203,7 @@ export default function LoginPage() {
 
                   <div className="mt-4 text-sm text-gray-500">
                     {tLogin('noAccount')}{' '}
-                    <Link href="/register" className="text-emerald-700 hover:underline">
+                    <Link href="/register" className="text-emerald-700 hover:underline dark:text-emerald-400">
                       {tLogin('register')}
                     </Link>
                   </div>

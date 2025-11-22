@@ -11,7 +11,7 @@ import {
 import type { AppRecord } from '../types.js';
 import { requireRole } from '../middleware/auth.js';
 import { ensureCreatorAllAccessProductPrice } from '../billing/products.js';
-import { getConnectStatus } from '../billing/service.js';
+import { getConnectStatus, getCreatorSubscriptionMetrics } from '../billing/service.js';
 
 function toStringId(value: unknown): string | undefined {
   if (value == null) return undefined;
@@ -312,10 +312,30 @@ export default async function creatorsRoutes(app: FastifyInstance) {
     preHandler: requireRole(['user', 'admin']),
   });
 
+  const metricsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { handle } = req.params as { handle: string };
+    let creator = await getCreatorByHandle(handle);
+    if (!creator) {
+      const creators = await readCreators();
+      creator = creators.find((c) => c.id === handle);
+    }
+    if (!creator) {
+      return reply.code(404).send({ error: 'creator_not_found' });
+    }
+    try {
+      const metrics = await getCreatorSubscriptionMetrics(creator.id);
+      return reply.send({ metrics });
+    } catch (err) {
+      (req.log as any)?.error?.({ err, handle }, 'creator_metrics_failed');
+      return reply.code(500).send({ error: 'creator_metrics_failed' });
+    }
+  };
+
   // Defensive aliases when '/api' prefix stripping isn't applied by upstream proxy
   app.route({ method: ['GET', 'HEAD'], url: '/api/creators/id/:uid', handler: byIdHandler });
   app.route({ method: ['GET', 'HEAD'], url: '/api/creators/:handle/apps', handler: appsHandler });
   app.route({ method: ['GET', 'HEAD'], url: '/api/creators/:handle', handler: byHandleHandler });
+  app.route({ method: ['GET', 'HEAD'], url: '/api/creators/:handle/metrics', handler: metricsHandler });
   app.route({
     method: 'PATCH',
     url: '/api/creators/:handle',
@@ -328,4 +348,7 @@ export default async function creatorsRoutes(app: FastifyInstance) {
     handler: updateMyHandleHandler,
     preHandler: requireRole(['user', 'admin']),
   });
+
+  // Metrics endpoint (defensive alias without /api)
+  app.route({ method: ['GET', 'HEAD'], url: '/creators/:handle/metrics', handler: metricsHandler });
 }
