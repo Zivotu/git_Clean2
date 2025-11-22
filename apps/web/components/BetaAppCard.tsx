@@ -127,17 +127,18 @@ export function BetaAppCard({
                 className={`relative overflow-hidden rounded-[28px] ${isList ? 'h-48 w-72 flex-shrink-0' : 'h-64 w-full'
                     }`}
             >
-                <div className={`h-full w-full bg-gradient-to-br ${app.gradientClass}`} />
-                {app.previewUrl && (
+                {app.previewUrl ? (
                     <Image
                         src={app.previewUrl}
                         alt={app.name}
                         fill
-                        className="object-cover opacity-70"
+                        className="object-cover"
                         sizes="(max-width: 1024px) 100vw, 460px"
                         loading="lazy"
                         unoptimized
                     />
+                ) : (
+                    <div className={`h-full w-full bg-gradient-to-br ${app.gradientClass}`} />
                 )}
                 <div className="absolute inset-0 flex items-start justify-between p-4 text-[11px] text-white">
                     <div className="flex flex-col gap-1.5">
