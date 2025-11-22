@@ -32,7 +32,6 @@ export default function ProPage() {
     </Suspense>
   );
 }
-
 function ProPageClient() {
   const router = useRouter();
   const packageId = useRouteParam('id', (segments) => {
@@ -239,6 +238,30 @@ function ProPageClient() {
     applyPackageCopy(pkg, messages, locale),
   );
 
+  // Filter out deprecated / removed packages we don't offer anymore (for example CreateStudioPro)
+  const visiblePackages = enhancedPackages.filter((pkg) => {
+    const id = String(pkg.id || '').toLowerCase();
+    const name = String(pkg.name || '').toLowerCase();
+    const desc = String(pkg.description || '').toLowerCase();
+    if (id === 'createstudiopro' || name === 'createstudiopro') return false;
+    // catch various name/description variants: "create studio", "creator studio", and compact forms
+    if (
+      name.includes('create studio pro') ||
+      name.includes('createstudio') ||
+      name.includes('creator studio') ||
+      name.includes('creatorstudio')
+    )
+      return false;
+    if (
+      desc.includes('create studio pro') ||
+      desc.includes('createstudio') ||
+      desc.includes('creator studio') ||
+      desc.includes('creatorstudio')
+    )
+      return false;
+    return true;
+  });
+
   return (
     <main className="min-h-screen px-4 py-8">
       <div className="max-w-6xl mx-auto w-full text-zinc-900 dark:text-zinc-100">
@@ -257,7 +280,7 @@ function ProPageClient() {
               className="px-4 py-2 text-sm font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-lg hover:opacity-95 transition-colors shadow-sm"
               onClick={() => {
                 // if a recommended package exists, go to its checkout
-                const pkg = enhancedPackages.find((p) => p.id === recommendedId) || enhancedPackages[0];
+                const pkg = visiblePackages.find((p) => p.id === recommendedId) || visiblePackages[0];
                 if (pkg) goToCheckout(pkg);
               }}
             >
@@ -288,13 +311,13 @@ function ProPageClient() {
 
               <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{recommendedId && enhancedPackages.find((p) => p.id === recommendedId) ? formatPrice((enhancedPackages.find((p) => p.id === recommendedId)!.price ?? 0), (enhancedPackages.find((p) => p.id === recommendedId)!.currency ?? 'EUR')) : ''}</span>
+                  <span className="text-2xl font-bold">{recommendedId && visiblePackages.find((p) => p.id === recommendedId) ? formatPrice((visiblePackages.find((p) => p.id === recommendedId)!.price ?? 0), (visiblePackages.find((p) => p.id === recommendedId)!.currency ?? 'EUR')) : ''}</span>
                   <span className="text-sm text-zinc-500">{pricePeriodLabel}</span>
                 </div>
                 <button
                   className="text-sm font-medium flex items-center gap-2 text-zinc-900 dark:text-white"
                   onClick={() => {
-                    const pkg = enhancedPackages.find((p) => p.id === recommendedId) || enhancedPackages[0];
+                    const pkg = visiblePackages.find((p) => p.id === recommendedId) || visiblePackages[0];
                     if (pkg) goToCheckout(pkg);
                   }}
                 >
@@ -336,7 +359,7 @@ function ProPageClient() {
               <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">{tPro('lastInvoice')}</p>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{tPro('invoiceSampleDate')}</span>
-                <span className="text-zinc-400 text-sm">{formatPrice(enhancedPackages[0]?.price ?? 0, enhancedPackages[0]?.currency ?? 'EUR')}</span>
+                <span className="text-zinc-400 text-sm">{formatPrice(visiblePackages[0]?.price ?? 0, visiblePackages[0]?.currency ?? 'EUR')}</span>
               </div>
               <button className="mt-3 w-full py-1.5 text-xs font-medium text-zinc-500 bg-zinc-900/5 rounded hover:opacity-95 transition-colors">
                 {tPro('downloadPdf')}
@@ -374,22 +397,32 @@ function ProPageClient() {
             </div>
           </div>
 
-          {/* Promo / Upsell */}
-          <div className="md:col-span-2 lg:col-span-2 rounded-3xl p-6 bg-gradient-to-br from-purple-900/8 to-white/2 border border-purple-500/10 relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 h-full">
-              <div>
-                <div className="flex items-center gap-2 text-purple-500 mb-1">
-                  <Zap size={16} />
-                  <span className="text-xs font-bold uppercase tracking-wider">{tPro('earlyAccess')}</span>
-                </div>
-                <h3 className="text-xl font-bold">{tPro('promoTitle')}</h3>
-                <p className="text-sm text-zinc-500 max-w-xs">{tPro('promoText')}</p>
-              </div>
-              <button className="px-5 py-2.5 bg-white text-black font-bold text-sm rounded-xl hover:bg-zinc-100 transition-colors shadow-sm">
-                {tPro('joinWaitlist')}
-              </button>
-            </div>
-          </div>
+                  {/* Promo / Upsell */}
+                  {(() => {
+                    const promoTitle = tPro('promoTitle') || '';
+                    const promoKey = String(promoTitle).toLowerCase();
+                    // hide Creator/Creator Studio promo which is deprecated
+                    if (promoKey.includes('creator studio') || promoKey.includes('createstudio') || promoKey.includes('creatorstudio')) {
+                      return null;
+                    }
+                    return (
+                      <div className="md:col-span-2 lg:col-span-2 rounded-3xl p-6 bg-gradient-to-br from-purple-900/8 to-white/2 border border-purple-500/10 relative overflow-hidden">
+                        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 h-full">
+                          <div>
+                            <div className="flex items-center gap-2 text-purple-500 mb-1">
+                              <Zap size={16} />
+                              <span className="text-xs font-bold uppercase tracking-wider">{tPro('earlyAccess')}</span>
+                            </div>
+                            <h3 className="text-xl font-bold">{promoTitle}</h3>
+                            <p className="text-sm text-zinc-500 max-w-xs">{tPro('promoText')}</p>
+                          </div>
+                          <button className="px-5 py-2.5 bg-white text-black font-bold text-sm rounded-xl hover:bg-zinc-100 transition-colors shadow-sm">
+                            {tPro('joinWaitlist')}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
         </div>
 
@@ -397,7 +430,7 @@ function ProPageClient() {
         <div className="mt-8">
           <h3 className="text-lg font-bold mb-4">{tPro('availablePlans')}</h3>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {enhancedPackages.map((pkg) => {
+            {visiblePackages.map((pkg) => {
               const owned = hasPackage(pkg);
               const recommended = pkg.id === recommendedId;
               const isPackageLoading = checkoutLoading === pkg.id;
@@ -459,7 +492,7 @@ function ProPageClient() {
                   <tr key={i} className="hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4 font-mono text-zinc-500">#INV-2023-00{i}</td>
                     <td className="px-6 py-4 text-zinc-300">{formatSampleDate(i)}</td>
-                    <td className="px-6 py-4 text-white font-medium">{formatPrice(enhancedPackages[0]?.price ?? 0, enhancedPackages[0]?.currency ?? 'EUR')}</td>
+                    <td className="px-6 py-4 text-white font-medium">{formatPrice(visiblePackages[0]?.price ?? 0, visiblePackages[0]?.currency ?? 'EUR')}</td>
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium border border-emerald-500/20">
                         <Check size={10} /> {tPro('paid')}
@@ -480,4 +513,5 @@ function ProPageClient() {
     </main>
   );
 }
+
 

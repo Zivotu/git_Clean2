@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
 import { useI18n } from '@/lib/i18n-provider';
 
 type Props = {
@@ -26,6 +27,7 @@ const defaultState: FormState = {
 
 export default function PartnershipModal({ open, onClose }: Props) {
   const { messages } = useI18n();
+  const { isDark } = useTheme();
   const t = useMemo(() => {
     return (key: string) => messages[`Partnership.${key}`] || key;
   }, [messages]);
@@ -99,39 +101,41 @@ export default function PartnershipModal({ open, onClose }: Props) {
     }
   }
 
+  const inputClass = `rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 ${isDark ? 'border-[#27272A] bg-[#0B0B10] text-zinc-100 focus:ring-emerald-900' : 'border-gray-200 bg-white text-slate-900 focus:ring-emerald-100'}`;
+
   return (
     <div className="fixed inset-0 z-[1200] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <form
         onSubmit={handleSubmit}
-        className="relative w-full max-w-lg mx-4 rounded-2xl bg-white shadow-2xl border border-gray-200 p-6 space-y-4"
+        className={`relative w-full max-w-lg mx-4 rounded-2xl shadow-2xl border p-6 space-y-4 ${isDark ? 'bg-[#09090B] border-[#27272A] text-zinc-100' : 'bg-white border-gray-200 text-slate-900'}`}
         role="dialog"
         aria-modal="true"
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 text-gray-500 hover:text-gray-800 transition"
+          className={`absolute right-4 top-4 ${isDark ? 'text-zinc-400 hover:text-white' : 'text-gray-500 hover:text-gray-800'} transition`}
           aria-label={t('closeLabel')}
         >
           &times;
         </button>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">{t('title')}</h3>
-          <p className="mt-1 text-sm text-gray-600">{t('description')}</p>
+          <h3 className={`text-xl font-semibold ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{t('title')}</h3>
+          <p className={`mt-1 text-sm ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>{t('description')}</p>
         </div>
         <div className="grid gap-3">
           <input
             value={form.fullName}
             onChange={(e) => update('fullName', e.target.value)}
             placeholder={t('nameLabel')}
-            className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className={inputClass}
           />
           <input
             value={form.company}
             onChange={(e) => update('company', e.target.value)}
             placeholder={t('companyLabel')}
-            className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className={inputClass}
           />
           <input
             type="email"
@@ -139,31 +143,31 @@ export default function PartnershipModal({ open, onClose }: Props) {
             onChange={(e) => update('email', e.target.value)}
             placeholder={t('emailLabel')}
             required
-            className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className={inputClass}
           />
           <input
             value={form.phone}
             onChange={(e) => update('phone', e.target.value)}
             placeholder={t('phoneLabel')}
-            className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className={inputClass}
           />
           <textarea
             value={form.message}
             onChange={(e) => update('message', e.target.value)}
             placeholder={t('messagePlaceholder')}
             rows={5}
-            className="rounded-lg border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+            className={inputClass}
           />
         </div>
         {error && <div className="text-sm text-red-600">{error}</div>}
         {success && <div className="text-sm text-green-600">{t('successMessage')}</div>}
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-500">{t('footerNote')}</p>
+          <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-gray-500'}`}>{t('footerNote')}</p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+              className={`px-4 py-2 rounded-lg border ${isDark ? 'border-[#27272A] text-zinc-200 hover:bg-[#0b0b0b]' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
               disabled={loading}
             >
               {t('cancel')}

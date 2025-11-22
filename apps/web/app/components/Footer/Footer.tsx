@@ -26,12 +26,12 @@ export default function Footer({
         <div className="relative mx-auto max-w-7xl px-4 py-12 text-sm text-gray-500">
           <div className="flex flex-col md:flex-row justify-between gap-8">
             <div>
-              <Logo className={`mb-4 h-8 w-auto ${isDark ? 'text-white' : 'text-slate-900'}`} />
+              <Logo isDark={isDark} className="mb-4 h-8 w-auto" />
               <p className={isDark ? 'text-zinc-300' : 'text-gray-600'}>{tFooter('slogan')}</p>
             </div>
             <div className="flex gap-12">
               <div>
-                <h4 className="font-medium mb-3 text-gray-900">{tNav('platform')}</h4>
+                <h4 className={`font-medium mb-3 ${isDark ? 'text-zinc-200' : 'text-gray-900'}`}>{tNav('platform')}</h4>
                 <ul className="space-y-2">
                   <li>
                     <Link href="/create" className="hover:text-emerald-600 transition">
@@ -46,7 +46,7 @@ export default function Footer({
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-3 text-gray-900">{tNav('resources')}</h4>
+                <h4 className={`font-medium mb-3 ${isDark ? 'text-zinc-200' : 'text-gray-900'}`}>{tNav('resources')}</h4>
                 <ul className="space-y-2">
                   <li>
                     <Link href="/faq" className="hover:text-emerald-600 transition">
@@ -66,7 +66,7 @@ export default function Footer({
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-3 text-gray-900">{tNav('company')}</h4>
+                <h4 className={`font-medium mb-3 ${isDark ? 'text-zinc-200' : 'text-gray-900'}`}>{tNav('company')}</h4>
                 <ul className="space-y-2">
                   <li>
                     <Link href="/about" prefetch={false} className="hover:text-emerald-600 transition">
