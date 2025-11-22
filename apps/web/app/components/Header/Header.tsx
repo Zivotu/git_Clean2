@@ -18,6 +18,7 @@ import {
   Heart,
   MessageSquare,
   X,
+  Menu,
 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useI18n } from '@/lib/i18n-provider';
@@ -184,6 +185,7 @@ export default function Header({
   const { messages } = useI18n();
   const { data: entitlements } = useEntitlements();
   const [showVideoPopup, setShowVideoPopup] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const topBannerCtaLabelLocal = (messages && messages['Nav.launchBadge']) ?? 'Live since 17.11.2025.';
   const topBannerSubtitleLocal = (messages && messages['Nav.earlyAccessSubtitle']) ?? topBannerSubtitle;
@@ -223,10 +225,47 @@ export default function Header({
     />
   );
 
+  const mobileProfileSection = (
+    <ProfileCard
+      user={user}
+      displayName={getDisplayName(user) || 'Guest'}
+      photo={(user as any)?.photoURL ?? null}
+      isDark={isDark}
+      showCrown={showCrownInProfile}
+      compact={true}
+      onLogout={() => {
+        try {
+          if (auth) void signOut(auth).catch(() => { });
+        } catch { }
+      }}
+    />
+  );
+
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  const NavLinks = () => (
+    <>
+      <HeaderChip icon={Video} label={shortVideoLabel} isDark={isDark} onClick={() => { setShowVideoPopup(true); setIsMobileMenuOpen(false); }} />
+      {showProLink && (
+        <HeaderChip icon={Crown} label={proLinkText} isDark={isDark} subtle href="/pro" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+      <HeaderChip icon={HelpCircle} label={faqLabel} isDark={isDark} subtle href="/faq" onClick={() => setIsMobileMenuOpen(false)} />
+      <HeaderChip icon={MessageSquare} label={feedbackLabel} isDark={isDark} subtle href="/feedback" onClick={() => setIsMobileMenuOpen(false)} />
+      {donateEnabled && (
+        <HeaderDonationButton
+          label={donateLabel}
+          href={donateActive && donateLink ? donateLink : undefined}
+          countdown={donateActive ? donateCountdownLabel ?? undefined : undefined}
+          isDark={isDark}
+          active={Boolean(donateActive && donateLink)}
+        />
+      )}
+    </>
+  );
+
   return (
     <>
       {showTopBanner && (
@@ -262,8 +301,9 @@ export default function Header({
         className={`sticky top-0 z-30 border-b border-transparent ${isDark ? 'bg-[#09090B]/95 backdrop-blur' : 'bg-white/90 backdrop-blur'
           }`}
       >
-        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 pt-5 lg:flex-row lg:items-center lg:justify-between lg:px-10">
-          <div className="flex flex-1 items-center gap-3">
+        <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between px-4 py-3 lg:px-10">
+          {/* Logo Section */}
+          <div className="flex items-center gap-3">
             <Link
               href="/golden-book"
               className="inline-flex items-center justify-center rounded-xl transition hover:-translate-y-0.5"
@@ -279,7 +319,7 @@ export default function Header({
                 className="h-11 w-auto object-contain"
               />
             </Link>
-            <Link href="/" className="flex h-14 w-[220px] items-center gap-2" aria-label={headerLabels.homeAria}>
+            <Link href="/" className="flex h-14 w-[180px] md:w-[220px] items-center gap-2" aria-label={headerLabels.homeAria}>
               <span className="inline-flex h-full w-full items-center">
                 <Image
                   src={isDark ? '/assets/Thesara_Logo_dark.png' : '/assets/Thesara_Logo.png'}
@@ -292,7 +332,7 @@ export default function Header({
                 />
               </span>
             </Link>
-            <span className="inline-flex items-center gap-2" title={headerLabels.liveIndicator} aria-label={headerLabels.liveIndicator}>
+            <span className="hidden md:inline-flex items-center gap-2" title={headerLabels.liveIndicator} aria-label={headerLabels.liveIndicator}>
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-gradient-to-br from-emerald-200 via-emerald-400 to-emerald-600 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
@@ -300,25 +340,13 @@ export default function Header({
             </span>
           </div>
 
-          <nav className="flex flex-1 flex-nowrap items-center gap-3 overflow-x-auto text-base font-medium min-w-max">
-            <HeaderChip icon={Video} label={shortVideoLabel} isDark={isDark} onClick={() => setShowVideoPopup(true)} />
-            {showProLink && (
-              <HeaderChip icon={Crown} label={proLinkText} isDark={isDark} subtle href="/pro" />
-            )}
-            <HeaderChip icon={HelpCircle} label={faqLabel} isDark={isDark} subtle href="/faq" />
-            <HeaderChip icon={MessageSquare} label={feedbackLabel} isDark={isDark} subtle href="/feedback" />
-            {donateEnabled && (
-              <HeaderDonationButton
-                label={donateLabel}
-                href={donateActive && donateLink ? donateLink : undefined}
-                countdown={donateActive ? donateCountdownLabel ?? undefined : undefined}
-                isDark={isDark}
-                active={Boolean(donateActive && donateLink)}
-              />
-            )}
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex flex-1 flex-nowrap items-center justify-center gap-3 overflow-x-auto text-base font-medium min-w-max px-4">
+            <NavLinks />
           </nav>
 
-          <div className="flex flex-1 items-center gap-3">
+          {/* Desktop Actions */}
+          <div className="hidden lg:flex items-center gap-3">
             <div className="flex items-center gap-3">
               <LocaleSwitcher />
               <button
@@ -334,7 +362,45 @@ export default function Header({
               <div className="flex-shrink-0">{profileSection ?? defaultProfileSection}</div>
             </div>
           </div>
+
+          {/* Mobile Actions & Hamburger */}
+          <div className="flex items-center gap-2 lg:hidden">
+            {mobileProfileSection}
+            <button
+              className={`p-2 ${isDark ? 'text-zinc-200' : 'text-slate-700'}`}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className={`absolute top-full left-0 w-full lg:hidden border-b shadow-xl ${isDark ? 'border-[#27272A] bg-[#09090B]' : 'border-slate-200 bg-white'}`}>
+            <div className="flex flex-col gap-4 p-4">
+              <div className="flex flex-col gap-3">
+                <NavLinks />
+              </div>
+              <div className="h-px w-full bg-gray-200 dark:bg-gray-800" />
+
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <HeaderPrimaryButton label={heroSubmitLabel} href="/create" onClick={() => { onSubmitClick(); setIsMobileMenuOpen(false); }} />
+                <div className="flex items-center gap-3">
+                  <LocaleSwitcher />
+                  <button
+                    onClick={toggleTheme}
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-sm transition ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-200' : 'border-slate-200 bg-white text-slate-700'}`}
+                    aria-label={headerLabels.themeToggle}
+                  >
+                    {mounted && isDark ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Decorative purple accent line used on beta */}
         <div className="mx-auto w-full max-w-[1600px] px-4 lg:px-10">

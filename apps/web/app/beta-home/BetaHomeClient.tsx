@@ -799,7 +799,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                 type="button"
                 onClick={handleRefreshClick}
                 disabled={isLoadingListings}
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 font-semibold transition ${isDark ? 'border-[#27272A] text-zinc-300 hover:bg-black/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                className={`hidden md:inline-flex items-center gap-1 rounded-full border px-2 py-1 font-semibold transition ${isDark ? 'border-[#27272A] text-zinc-300 hover:bg-black/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                   } ${isLoadingListings ? 'cursor-not-allowed opacity-60' : ''}`}
               >
                 <RefreshCcw className={`h-3 w-3 ${isLoadingListings ? 'animate-spin' : ''}`} />
@@ -807,12 +807,6 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
               </button>
               <div className="inline-flex items-center gap-2 md:hidden">
                 <LocaleSwitcher />
-                <Link
-                  href="/"
-                  className="rounded-full border px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  {messages['BetaHome.header.backLinkMobile'] ?? 'Back'}
-                </Link>
               </div>
             </div>
           </div>
