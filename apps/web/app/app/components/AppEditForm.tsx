@@ -34,6 +34,7 @@ export default function AppEditForm({ details }: AppEditFormProps) {
         tApp,
         screenshotMaxMb,
         maxCustomAssetKb,
+        apiKey, setApiKey,
     } = details;
 
     if (!item || !canEdit) return null;
@@ -46,8 +47,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
     const screenshotsHint = tApp('creator.screenshotsHint', undefined, 'Upload up to two screenshots (PNG/JPG/WebP, max 1MB each). They appear on the public listing alongside the hero preview.');
 
     const inputClass = `w-full border-2 rounded-lg px-4 py-2.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${isDark
-            ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-emerald-500 placeholder:text-zinc-600'
-            : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500 placeholder:text-gray-400'
+        ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-emerald-500 placeholder:text-zinc-600'
+        : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500 placeholder:text-gray-400'
         } focus:ring-4 focus:ring-emerald-500/10`;
 
     const labelClass = `block text-sm font-semibold mb-2 ${isDark ? 'text-zinc-200' : 'text-gray-900'}`;
@@ -113,6 +114,25 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                         </select>
                         <p className={`mt-1 text-xs font-medium ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>
                             Change the PIN room experience without republishing the bundle. Optional keeps the demo ready; Required forces players to start their own room.
+                        </p>
+                    </div>
+
+                    {/* API Key */}
+                    <div>
+                        <label className={labelClass}>
+                            LLM API Key (Optional)
+                        </label>
+                        <input
+                            type="password"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            className={inputClass}
+                            disabled={!canEdit}
+                            placeholder="sk-..."
+                            autoComplete="new-password"
+                        />
+                        <p className={`mt-1 text-xs font-medium ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>
+                            If your app uses an LLM, you can provide a default API key here. Users can still override this with their own key.
                         </p>
                     </div>
 
@@ -198,8 +218,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                                     screenshotInputRefs.current[index]?.click();
                                                 }}
                                                 className={`px-3 py-1.5 text-sm font-semibold rounded-lg border disabled:opacity-50 disabled:cursor-not-allowed ${isDark
-                                                        ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10'
-                                                        : 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
+                                                    ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10'
+                                                    : 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
                                                     }`}
                                                 disabled={!canEdit || state.uploading}
                                             >
@@ -260,8 +280,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                         customAssetSaving || customAssetDrafts.length >= MAX_CUSTOM_ASSET_COUNT
                                     }
                                     className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition ${customAssetDrafts.length >= MAX_CUSTOM_ASSET_COUNT
-                                            ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-emerald-600 hover:bg-emerald-700'
+                                        ? 'bg-gray-400 cursor-not-allowed'
+                                        : 'bg-emerald-600 hover:bg-emerald-700'
                                         }`}
                                 >
                                     {tApp('customAssets.add', undefined, 'Upload graphics')}
@@ -323,8 +343,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                                         handleCustomAssetNameChange(asset.localId, e.target.value)
                                                     }
                                                     className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${isDark
-                                                            ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-emerald-500 focus:ring-emerald-500/20'
-                                                            : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500 focus:ring-emerald-200'
+                                                        ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-emerald-500 focus:ring-emerald-500/20'
+                                                        : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500 focus:ring-emerald-200'
                                                         }`}
                                                     disabled={customAssetSaving}
                                                 />
@@ -399,8 +419,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                 onClick={handleCustomAssetSave}
                                 disabled={customAssetSaving}
                                 className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition ${customAssetSaving
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-emerald-600 hover:bg-emerald-700'
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-emerald-600 hover:bg-emerald-700'
                                     }`}
                             >
                                 {customAssetSaving
@@ -412,8 +432,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                 onClick={resetCustomAssets}
                                 disabled={customAssetSaving}
                                 className={`px-4 py-2 rounded-lg border text-sm font-semibold disabled:opacity-50 ${isDark
-                                        ? 'border-zinc-600 text-zinc-300 hover:bg-zinc-700'
-                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    ? 'border-zinc-600 text-zinc-300 hover:bg-zinc-700'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 {tApp('customAssets.reset', undefined, 'Reset changes')}
@@ -456,16 +476,39 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                     {/* Tags */}
                     <div>
                         <label className={labelClass}>
-                            Tags <span className={`font-normal ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>(comma-separated)</span>
+                            Tags <span className={`font-normal ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>(max 2)</span>
                         </label>
-                        <input
-                            value={tags}
-                            onChange={(e) => setTags(e.target.value)}
-                            className={inputClass}
-                            disabled={!canEdit}
-                            placeholder="e.g., game, puzzle, education"
-                        />
-                        <p className={`mt-1 text-xs font-medium ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>Add tags to help users discover your app</p>
+                        <div className="flex flex-wrap gap-2">
+                            {['Igre', 'Kvizovi', 'Učenje', 'Alati', 'Business', 'Zabava', 'Ostalo'].map((tag) => {
+                                const isSelected = tags.includes(tag);
+                                return (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        disabled={!canEdit}
+                                        onClick={() => {
+                                            if (isSelected) {
+                                                setTags(tags.filter((t) => t !== tag));
+                                            } else {
+                                                if (tags.length >= 2) return;
+                                                setTags([...tags, tag]);
+                                            }
+                                        }}
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${isSelected
+                                            ? 'bg-emerald-100 border-emerald-500 text-emerald-800'
+                                            : isDark
+                                                ? 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:border-zinc-500'
+                                                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+                                            } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {tag}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <p className={`mt-2 text-xs font-medium ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>
+                            Select up to two tags to help users discover your app.
+                        </p>
                     </div>
 
                     {/* Price */}
@@ -510,8 +553,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                 onClick={() => canEdit && setVisibility('public')}
                                 disabled={!canEdit}
                                 className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-all duration-200 ${visibility === 'public'
-                                        ? 'bg-white text-emerald-700 shadow-sm border-2 border-emerald-500'
-                                        : `text-gray-700 hover:bg-white/50 border border-transparent ${isDark ? 'text-zinc-400 hover:bg-zinc-700' : ''}`
+                                    ? 'bg-white text-emerald-700 shadow-sm border-2 border-emerald-500'
+                                    : `text-gray-700 hover:bg-white/50 border border-transparent ${isDark ? 'text-zinc-400 hover:bg-zinc-700' : ''}`
                                     } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 <span className="flex items-center justify-center gap-2">
@@ -525,8 +568,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                 onClick={() => canEdit && setVisibility('unlisted')}
                                 disabled={!canEdit}
                                 className={`flex-1 py-2.5 px-4 rounded-lg font-medium transition-all duration-200 ${visibility === 'unlisted'
-                                        ? `bg-white text-gray-900 shadow-sm border-2 border-gray-500 ${isDark ? 'bg-zinc-700 text-white border-zinc-500' : ''}`
-                                        : `text-gray-700 hover:bg-white/50 border border-transparent ${isDark ? 'text-zinc-400 hover:bg-zinc-700' : ''}`
+                                    ? `bg-white text-gray-900 shadow-sm border-2 border-gray-500 ${isDark ? 'bg-zinc-700 text-white border-zinc-500' : ''}`
+                                    : `text-gray-700 hover:bg-white/50 border border-transparent ${isDark ? 'text-zinc-400 hover:bg-zinc-700' : ''}`
                                     } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 <span className="flex items-center justify-center gap-2">
@@ -549,8 +592,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                         <button
                             onClick={onToggleVisibility}
                             className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${isDark
-                                    ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             Quick Toggle: {visibility === 'public' ? 'Make Unlisted' : 'Make Public'}
@@ -560,8 +603,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                             onClick={() => onSave()}
                             disabled={saving}
                             className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 shadow-md hover:shadow-lg ${saving
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800'
                                 }`}
                         >
                             {saving ? (
@@ -747,8 +790,8 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                             onClick={() => setShowSoftDialog(true)}
                             disabled={deleting}
                             className={`px-4 py-2 rounded-lg border font-medium transition-all duration-200 ${isDark
-                                    ? 'bg-zinc-900 border-red-900/50 text-red-400 hover:bg-red-900/20'
-                                    : 'bg-white border-red-300 text-red-700 hover:bg-red-50'
+                                ? 'bg-zinc-900 border-red-900/50 text-red-400 hover:bg-red-900/20'
+                                : 'bg-white border-red-300 text-red-700 hover:bg-red-50'
                                 }`}
                         >
                             Remove from Marketplace

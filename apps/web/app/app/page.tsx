@@ -8,6 +8,8 @@ import AppGallery from './components/AppGallery';
 import AppEditForm from './components/AppEditForm';
 import AppInfo from './components/AppInfo';
 import { ConfirmDialog, Toast, LoginPromptModal, PayModal, ReportModal } from './components/AppModals';
+import PublicAppView from './PublicAppView';
+import { AD_SLOT_IDS } from '@/config/ads';
 
 function AppDetailClient() {
   const { isDark } = useTheme();
@@ -53,6 +55,86 @@ function AppDetailClient() {
     );
   }
 
+  const showStatusNotice = !details.isPublished;
+  const isNew = false; // Logic for new apps can be added if needed
+  const formattedPrice = typeof item.price === 'number' && item.price > 0
+    ? new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }).format(item.price)
+    : 'Besplatno';
+
+  const playButtonState = !details.user
+    ? 'login'
+    : (item.price && item.price > 0 && !(item as any).purchased && item.author?.uid !== details.user.uid)
+      ? 'pay'
+      : 'play';
+
+
+  console.log('[AppDetailClient] canEdit:', canEdit, 'user:', details.user?.uid, 'author:', item.author?.uid);
+
+  if (!canEdit) {
+    return (
+      <>
+        <PublicAppView
+          item={item}
+          authorHandle={details.authorHandle}
+          relativeCreated={details.relativeCreated}
+          isNew={isNew}
+          showStatusNotice={showStatusNotice}
+          canViewUnpublished={details.canViewUnpublished}
+          appState={details.appState}
+          visibility={details.visibility}
+          formattedPrice={formattedPrice}
+          playsDisplay={item.playsCount?.toLocaleString() || '0'}
+          likeCount={details.likeCount}
+          liked={details.liked}
+          likeBusy={details.likeBusy}
+          copySuccess={details.copySuccess}
+          buildBadgesSlot={null}
+          previewSrc={details.activePreviewSrc}
+          onPreviewError={() => details.setPreviewDisplayFailed(true)}
+          playButtonState={playButtonState}
+          onPlay={details.playListing}
+          onRequireLogin={() => setShowLoginPrompt(true)}
+          onRequirePurchase={() => setShowPayModal(true)}
+          toggleLike={details.toggleLike}
+          copyLink={details.copyLink}
+          adHeaderSlot={AD_SLOT_IDS.appDetailHeader}
+          adInlineSlot={AD_SLOT_IDS.appDetailInline}
+          tApp={tApp}
+          showContentReport={showContentReport}
+          setShowContentReport={setShowContentReport}
+          contentReportText={contentReportText}
+          setContentReportText={setContentReportText}
+          contentReportBusy={contentReportBusy}
+          submitContentReport={submitContentReport}
+          viewerIdentity={details.viewerHandle || ''}
+          descriptionFallback={tApp('viewer.description.empty', undefined, 'Nema opisa.')}
+          user={details.user}
+        />
+        {/* Modals for Public View */}
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+        {showLoginPrompt && (
+          <LoginPromptModal
+            open={showLoginPrompt}
+            onClose={() => setShowLoginPrompt(false)}
+          />
+        )}
+        {showPayModal && item && (
+          <PayModal
+            open={showPayModal}
+            item={item}
+            onClose={() => setShowPayModal(false)}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <div className={`min-h-screen pb-20 pt-24 transition-colors duration-300 ${isDark ? 'bg-black' : 'bg-gray-50'}`}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -70,18 +152,6 @@ function AppDetailClient() {
           {/* Right Column: Info & Details */}
           <div className="space-y-8">
             <AppInfo details={details} />
-
-            {/* Report Content Button for Non-Owners */}
-            {!canEdit && (
-              <div className="text-center">
-                <button
-                  onClick={() => setShowContentReport(true)}
-                  className={`text-xs underline ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  Report content
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

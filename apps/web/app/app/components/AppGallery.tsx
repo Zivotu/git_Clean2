@@ -42,6 +42,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
         previewError,
         maxPreviewMb,
         presetOverlayLabel,
+        previewDisplayUrl,
     } = details;
 
     if (!item) return null;
@@ -198,10 +199,10 @@ export default function AppGallery({ details }: AppGalleryProps) {
                             </div>
 
                             <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-zinc-700' : 'border-gray-200'}`}>
-                                {previewChoice === 'custom' && customPreview?.dataUrl ? (
+                                {previewChoice === 'custom' && previewDisplayUrl ? (
                                     <div className="relative aspect-video bg-zinc-900">
                                         <Image
-                                            src={customPreview.dataUrl}
+                                            src={previewDisplayUrl}
                                             alt="Custom preview"
                                             fill
                                             className="object-cover"
@@ -239,7 +240,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                     disabled={
                                         previewBusy ||
                                         !canEdit ||
-                                        (previewChoice === 'custom' && !customPreview?.file)
+                                        (previewChoice === 'custom' && !customPreview)
                                     }
                                     className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20"
                                 >
