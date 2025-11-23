@@ -68,6 +68,7 @@ async function getAppRecord(appId: string): Promise<AppRecord | null> {
 
 function getRoomsMode(app: AppRecord): RoomsMode {
   const mode = app.capabilities?.storage?.roomsMode;
+  if (mode === 'off') return 'off';
   if (mode === 'optional' || mode === 'required') return mode;
   return DEFAULT_ROOMS_MODE;
 }

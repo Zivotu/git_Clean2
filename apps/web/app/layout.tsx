@@ -21,8 +21,46 @@ import { BugGuardianProvider } from '@/components/BugGuardian/BugGuardianProvide
 import GlobalShell from '@/components/GlobalShell';
 
 export const metadata = {
-  title: 'Thesara',
-  description: 'Discover, play and publish mini-apps.',
+  title: 'Thesara - Discover, Play and Publish Mini-Apps',
+  description: 'Discover, play and publish mini-apps. Turn AI chats into interactive applications. Join our creative community today!',
+  metadataBase: new URL('https://www.thesara.space'),
+  openGraph: {
+    title: 'Thesara - Discover, Play and Publish Mini-Apps',
+    description: 'Discover, play and publish mini-apps. Turn AI chats into interactive applications. Join our creative community today!',
+    url: 'https://www.thesara.space',
+    siteName: 'Thesara',
+    images: [
+      {
+        url: '/og-image.png', // You'll need to create this image
+        width: 1200,
+        height: 630,
+        alt: 'Thesara - Mini-Apps Platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Thesara - Discover, Play and Publish Mini-Apps',
+    description: 'Discover, play and publish mini-apps. Turn AI chats into interactive applications.',
+    images: ['/og-image.png'], // Same image as Open Graph
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 // Firebase/Firestore se ne inicijalizira u parentu radi sigurnosnog modela.
@@ -52,6 +90,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="theme-color" content="#7c3aed" />
+        <link rel="canonical" href="https://www.thesara.space" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:site" content="@thesara" />
+        <meta name="twitter:creator" content="@thesara" />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-Q5LEE6M2QB"
           strategy="afterInteractive"
