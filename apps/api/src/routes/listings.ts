@@ -130,12 +130,31 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
     items = items.filter((a) => !a.deletedAt);
 
+    // Normalize items: ensure ownerUid is set from author.uid if missing
+    items = items.map(it => {
+      if (!(it as any).ownerUid && it.author?.uid) {
+        return { ...it, ownerUid: it.author.uid };
+      }
+      return it;
+    });
+
     if (ownerId) {
+      // DEBUG LOGGING
+      const beforeFilterCount = items.length;
+      const matchCount = items.filter((a) => a.author?.uid === ownerId || (a as any).ownerUid === ownerId || (a as any).authorUid === ownerId).length;
+
       items = items.filter(
         (a) => a.author?.uid === ownerId || (a as any).ownerUid === ownerId || (a as any).authorUid === ownerId,
       );
+
       const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
       const isOwner = req.authUser?.uid === ownerId;
+
+      // DEBUG LOGGING
+      if (matchCount > 0 && items.length === 0) {
+        req.log?.warn?.({ ownerId, authUserUid: req.authUser?.uid, isOwner, isAdmin }, 'listings_filtered_out_by_visibility');
+      }
+
       if (!isOwner && !isAdmin) {
         items = items.filter((a) => a.status === 'published' || a.state === 'active');
       }
