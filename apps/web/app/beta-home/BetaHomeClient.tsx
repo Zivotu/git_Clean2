@@ -862,7 +862,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
               <div className="mt-5 h-1 w-16 rounded-full bg-emerald-500/60" />
             </div>
 
-            <div className="flex flex-col gap-4 lg:ml-12 lg:w-[360px] lg:self-stretch">
+            <div className="flex flex-col gap-4 lg:ml-12 lg:w-[420px] lg:self-stretch">
               <div className="relative h-48 w-full">
                 <div className="absolute inset-0 rounded-[1.75rem] bg-gradient-to-br from-[#A855F7]/40 via-[#22C55E]/30 to-transparent blur-2xl" aria-hidden="true" />
                 <div
@@ -881,7 +881,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                         </div>
                         <div>
                           <h3 className={`text-base font-semibold ${isDark ? 'text-zinc-50' : 'text-slate-900'}`}>{randomApp.name}</h3>
-                          <p className={`mt-1 line-clamp-3 text-xs ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{randomApp.description}</p>
+                          <p className={`mt-1 line-clamp-2 text-xs ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{randomApp.description}</p>
                         </div>
                         <div className="flex flex-wrap gap-2 text-xs">
                           <Link
@@ -903,7 +903,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                           </Link>
                         </div>
                       </div>
-                      <div className="relative hidden h-full w-32 overflow-hidden rounded-2xl sm:block">
+                      <div className="relative h-full w-32 overflow-hidden rounded-2xl">
                         {randomApp.previewUrl ? (
                           <Image
                             src={randomApp.previewUrl}

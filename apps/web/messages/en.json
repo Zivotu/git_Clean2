@@ -643,10 +643,10 @@
   },
   "Home": {
     "headline": {
-      "one": "Discover Amazing",
-      "two": "Mini-Apps & Games"
+      "one": "Publish your AI apps",
+      "two": "in three clicks"
     },
-    "tagline": "Curated marketplace for browser-based experiences. Build, share and explore.",
+    "tagline": "Create an app in Google AI Studio, ChatGPT, or any other LLM and publish it on Thesara in three clicks – no server, no configuration, just build and share.",
     "trending": "Trending now",
     "appsCount": "{count} apps",
     "search": {
@@ -1286,5 +1286,11 @@
       "noAppsTitle": "No applications yet",
       "noAppsDescription": "This creator hasn't published any public applications."
     }
+  },
+  "ProgressModal": {
+    "uploading": "Uploading your mini app to Thesara...",
+    "errorOccurred": "An error occurred.",
+    "percentComplete": "{progress}% complete",
+    "close": "Close"
   }
 }

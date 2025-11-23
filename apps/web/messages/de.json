@@ -643,10 +643,10 @@
   },
   "Home": {
     "headline": {
-      "one": "Entdecke großartige",
-      "two": "Mini-Apps & Spiele"
+      "one": "Veröffentlichen Sie Ihre KI-Apps",
+      "two": "in drei Klicks"
     },
-    "tagline": "Kuratiertes Marketplace für Browser-Erlebnisse. Bauen, teilen und entdecken.",
+    "tagline": "Erstellen Sie eine App in Google AI Studio, ChatGPT oder einem anderen LLM und veröffentlichen Sie sie auf Thesara in drei Klicks – kein Server, keine Konfiguration, einfach erstellen und teilen.",
     "trending": "Gerade im Trend",
     "appsCount": "{count} Apps",
     "search": {
@@ -1400,5 +1400,11 @@
       "noAppsTitle": "Noch keine Anwendungen",
       "noAppsDescription": "Dieser Creator hat noch keine öffentlichen Anwendungen veröffentlicht."
     }
+  },
+  "ProgressModal": {
+    "uploading": "Ihre Mini-App wird auf Thesara hochgeladen...",
+    "errorOccurred": "Ein Fehler ist aufgetreten.",
+    "percentComplete": "{progress}% abgeschlossen",
+    "close": "Schließen"
   }
 }

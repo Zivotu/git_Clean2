@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Box, Package } from 'lucide-react';
+import { useT } from '@/lib/i18n-provider';
 
 export type BuildState = 'queued' | 'running' | 'success' | 'error';
 
@@ -23,6 +24,7 @@ export default function ProgressModal({
   previewUrl?: string;
   step?: string;
 }) {
+  const t = useT('ProgressModal');
   const [progress, setProgress] = useState(0);
   const packages = useMemo(() => Array.from({ length: 5 }), []);
 
@@ -58,8 +60,8 @@ export default function ProgressModal({
 
   const message =
     state === 'error'
-      ? error?.trim() || 'An error occurred.'
-      : 'Uploading your mini app to Thesara...';
+      ? error?.trim() || t('errorOccurred')
+      : t('uploading');
 
   return (
     <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-gradient-to-b from-white to-sky-50 text-slate-700">
@@ -68,7 +70,7 @@ export default function ProgressModal({
           <span className="text-red-600">{message}</span>
         ) : (
           <>
-            Uploading your mini app to <span className="text-emerald-600 font-bold">Thesara</span>...
+            {t('uploading').split('Thesara')[0]}<span className="text-emerald-600 font-bold">Thesara</span>{t('uploading').split('Thesara')[1]}
           </>
         )}
       </h1>
@@ -108,14 +110,14 @@ export default function ProgressModal({
         />
       </div>
 
-      <p className="mt-2 text-sm text-slate-500">{Math.round(progress)}% complete</p>
+      <p className="mt-2 text-sm text-slate-500">{t('percentComplete', { progress: Math.round(progress) })}</p>
 
       {(state === 'success' || state === 'error') && (
         <button
           onClick={onClose}
           className="mt-6 inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
         >
-          Close
+          {t('close')}
         </button>
       )}
     </div>

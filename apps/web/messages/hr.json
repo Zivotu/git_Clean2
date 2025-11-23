@@ -641,10 +641,10 @@
   },
   "Home": {
     "headline": {
-      "one": "Otkrijte nevjerojatne",
-      "two": "Mini-aplikacije i igre"
+      "one": "Objavi svoje AI aplikacije",
+      "two": "u tri klika"
     },
-    "tagline": "Odabrana tržnica za iskustva u pregledniku. Izradite, dijelite i istražujte.",
+    "tagline": "Kreiraj aplikaciju u Google AI Studiju, ChatGPT-u ili drugom LLM-u i objavi je na Thesari u tri klika – bez servera, bez konfiguracije, samo izradi i podijeli.",
     "trending": "Trenutno popularno",
     "appsCount": "{count} aplikacija",
     "search": {
@@ -1415,5 +1415,11 @@
       "noAppsTitle": "Još nema aplikacija",
       "noAppsDescription": "Ovaj kreator nije objavio nijednu javnu aplikaciju."
     }
+  },
+  "ProgressModal": {
+    "uploading": "Učitavanje vaše mini aplikacije na Thesaru...",
+    "errorOccurred": "Došlo je do greške.",
+    "percentComplete": "{progress}% završeno",
+    "close": "Zatvori"
   }
 }
