@@ -167,7 +167,6 @@ export default function ProfilePage() {
   const [publicStatus, setPublicStatus] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [repositoryName, setRepositoryName] = useState('');
   const [initialRepositoryName, setInitialRepositoryName] = useState('');
-  const [repositoryNameError, setRepositoryNameError] = useState<string | null>(null);
   const [lastChangeTimestamp, setLastChangeTimestamp] = useState<number | null>(null);
   // Compute stable values before any early returns to keep hooks order consistent
   const handle = userInfo?.username || '';
@@ -324,6 +323,7 @@ export default function ProfilePage() {
         user.email ||
         '';
       let fallbackPublicPhoto = user.photoURL || '';
+      let fallbackHandle = '';
       if (userSnap.exists()) {
         const d = userSnap.data() as any;
         setUserInfo(d);
@@ -347,6 +347,7 @@ export default function ProfilePage() {
         const docUsername = typeof d.username === 'string' ? d.username.trim() : '';
         const bestName = docDisplayName || docFullName || docUsername;
         if (bestName) fallbackPublicName = bestName;
+        if (docUsername) fallbackHandle = docUsername;
         if (typeof d.photoURL === 'string' && d.photoURL.trim()) {
           fallbackPublicPhoto = d.photoURL.trim();
         }
@@ -366,15 +367,28 @@ export default function ProfilePage() {
           displayName: creatorDisplay || fallbackPublicName || '',
           photoURL: photoCandidates[0] || fallbackPublicPhoto || '',
         });
-        const currentRepoName = c.customRepositoryName || c.handle || creatorDisplay || fallbackPublicName;
-        setRepositoryName(currentRepoName);
-        setInitialRepositoryName(currentRepoName);
-        setLastChangeTimestamp(c.lastRepositoryNameChangeTimestamp || null);
+        const creatorRepositoryName =
+          typeof c.customRepositoryName === 'string' && c.customRepositoryName.trim()
+            ? c.customRepositoryName.trim()
+            : typeof c.handle === 'string' && c.handle.trim()
+              ? c.handle.trim()
+              : '';
+        const resolvedRepositoryName = creatorRepositoryName || fallbackHandle;
+        setRepositoryName(resolvedRepositoryName);
+        setInitialRepositoryName(resolvedRepositoryName);
+        setLastChangeTimestamp(
+          typeof c.lastRepositoryNameChangeTimestamp === 'number'
+            ? c.lastRepositoryNameChangeTimestamp
+            : null,
+        );
       } else {
         setPublicProfile({
           displayName: fallbackPublicName || '',
           photoURL: fallbackPublicPhoto || '',
         });
+        setRepositoryName(fallbackHandle);
+        setInitialRepositoryName(fallbackHandle);
+        setLastChangeTimestamp(null);
       }
       await loadEntitlements();
     } catch (e) {
@@ -673,40 +687,47 @@ export default function ProfilePage() {
 
       // Repository Name Logic
       const repositoryNameTrimmed = repositoryName.trim();
-      if (repositoryNameTrimmed) {
+      const initialRepositoryNameTrimmed = initialRepositoryName.trim();
+      const repoChanged = repositoryNameTrimmed !== initialRepositoryNameTrimmed;
+      if (repositoryNameTrimmed && repoChanged) {
         if (!/^[a-zA-Z0-9_-]+$/.test(repositoryNameTrimmed)) {
           setPublicStatus({ type: 'error', text: 'Ime repozitorija može sadržavati samo slova, brojeve, crtice i donje crte.' });
           setPublicSaving(false);
           return;
         }
-        const repoChanged = repositoryNameTrimmed !== initialRepositoryName;
-        if (repoChanged) {
-          const now = Date.now();
-          const THREE_MONTHS = 90 * 24 * 60 * 60 * 1000;
-          if (lastChangeTimestamp && (now - lastChangeTimestamp < THREE_MONTHS)) {
-            setPublicStatus({ type: 'error', text: 'Ime repozitorija možete mijenjati jednom u 3 mjeseca.' });
-            setPublicSaving(false);
-            return;
-          }
-          // Check uniqueness
-          const q = query(collection(db, 'creators'), where('customRepositoryName', '==', repositoryNameTrimmed));
-          const snap = await getDocs(q);
-          if (!snap.empty && snap.docs[0].id !== user.uid) {
-            setPublicStatus({ type: 'error', text: 'Ovo ime repozitorija je već zauzeto.' });
-            setPublicSaving(false);
-            return;
-          }
-          payload.customRepositoryName = repositoryNameTrimmed;
-          payload.lastRepositoryNameChangeTimestamp = now;
+        const now = Date.now();
+        const THREE_MONTHS = 90 * 24 * 60 * 60 * 1000;
+        if (lastChangeTimestamp && (now - lastChangeTimestamp < THREE_MONTHS)) {
+          setPublicStatus({ type: 'error', text: 'Ime repozitorija možete mijenjati jednom u 3 mjeseca.' });
+          setPublicSaving(false);
+          return;
         }
+        // Check uniqueness
+        const q = query(collection(db, 'creators'), where('customRepositoryName', '==', repositoryNameTrimmed));
+        const snap = await getDocs(q);
+        if (!snap.empty && snap.docs[0].id !== user.uid) {
+          setPublicStatus({ type: 'error', text: 'Ovo ime repozitorija je već zauzeto.' });
+          setPublicSaving(false);
+          return;
+        }
+        payload.customRepositoryName = repositoryNameTrimmed;
+        payload.lastRepositoryNameChangeTimestamp = now;
       }
 
       await setDoc(doc(db, 'creators', user.uid), payload, { merge: true });
+      const updatedPhoto = photoURL || publicProfile.photoURL || '';
       setPublicProfile((prev) => ({
         ...prev,
         displayName,
-        photoURL: photoURL || prev.photoURL,
+        photoURL: updatedPhoto || prev.photoURL,
       }));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('creator-profile-updated', {
+            detail: { displayName, photoURL: updatedPhoto || null },
+          }),
+        );
+      }
       if (payload.customRepositoryName) {
         setInitialRepositoryName(payload.customRepositoryName);
         setLastChangeTimestamp(payload.lastRepositoryNameChangeTimestamp || lastChangeTimestamp);
@@ -788,9 +809,16 @@ export default function ProfilePage() {
 
   const apps = data?.items ?? [];
   const stats = data?.stats ?? { likes: 0, plays: 0, apps: 0 };
+  const publicDisplayName = (publicProfile.displayName || '').trim();
+  const personalFullName =
+    [userInfo?.firstName, userInfo?.lastName]
+      .filter((part) => typeof part === 'string' && part.trim().length > 0)
+      .join(' ')
+      .trim() || '';
   const name =
+    publicDisplayName ||
+    personalFullName ||
     getDisplayName(user) ||
-    [userInfo?.firstName, userInfo?.lastName].filter(Boolean).join(' ').trim() ||
     userInfo?.username ||
     'User';
   const publicAvatarSrc =
@@ -976,23 +1004,17 @@ export default function ProfilePage() {
                           placeholder={t('publicProfile.displayNamePlaceholder')}
                           className="bg-slate-50 dark:bg-zinc-800/50"
                         />
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                          {t('publicProfile.displayNameHint')}
-                        </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                          {t('publicProfile.repositoryNameLabel')}
+                          {t('publicProfile.repoNameLabel')}
                         </label>
                         <Input
                           value={repositoryName}
                           onChange={(e) => setRepositoryName(e.target.value)}
-                          placeholder={t('publicProfile.repositoryNamePlaceholder')}
+                          placeholder={t('publicProfile.repoNamePlaceholder')}
                           className="bg-slate-50 dark:bg-zinc-800/50"
                         />
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                          {t('publicProfile.repositoryNameHint')}
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -1007,7 +1029,7 @@ export default function ProfilePage() {
                   <div className="pt-2">
                     <Button type="submit" disabled={publicSaving} className="w-full sm:w-auto gap-2">
                       {publicSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      {publicSaving ? t('publicProfile.saving') : t('publicProfile.saveButton')}
+                      {publicSaving ? t('publicProfile.savingButton') : t('publicProfile.saveButton')}
                     </Button>
                   </div>
                 </form>
@@ -1063,7 +1085,6 @@ export default function ProfilePage() {
                         name="phone"
                         value={form.phone}
                         onChange={handleChange}
-                        placeholder={t('personalInfo.phonePlaceholder')}
                         className="bg-slate-50 dark:bg-zinc-800/50"
                       />
                     </div>

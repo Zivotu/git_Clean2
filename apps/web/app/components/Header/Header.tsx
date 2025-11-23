@@ -8,6 +8,7 @@ import ProfileCard from '@/components/ProfileCard';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { PUBLIC_API_URL } from '@/lib/config';
 import {
   Video,
   Crown,
@@ -210,11 +211,67 @@ export default function Header({
   // If a page didn't pass a profileSection, build a default one using auth
   const authCtx = useAuth?.();
   const user = authCtx?.user ?? null;
+  const [creatorProfile, setCreatorProfile] = React.useState<{ displayName?: string; photoURL?: string } | null>(null);
+
+  React.useEffect(() => {
+    let canceled = false;
+    if (!user?.uid) {
+      setCreatorProfile(null);
+      return;
+    }
+    const loadCreatorProfile = async () => {
+      try {
+        const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(user.uid)}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (canceled) return;
+        const displayName =
+          typeof data.displayName === 'string' && data.displayName.trim() ? data.displayName.trim() : '';
+        const photoCandidates = [data.photoURL, data.photo, data.avatarUrl];
+        const resolvedPhoto =
+          (photoCandidates.find((value) => typeof value === 'string' && value.trim()) as string | undefined) || '';
+        setCreatorProfile({
+          displayName,
+          photoURL: resolvedPhoto,
+        });
+      } catch (err) {
+        if (!canceled) {
+          console.warn('Failed to load creator profile', err);
+        }
+      }
+    };
+    loadCreatorProfile();
+    return () => {
+      canceled = true;
+    };
+  }, [user?.uid]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ displayName?: string; photoURL?: string }>).detail;
+      if (!detail) return;
+      setCreatorProfile((prev) => ({
+        displayName: detail.displayName ?? prev?.displayName ?? '',
+        photoURL: detail.photoURL ?? prev?.photoURL ?? '',
+      }));
+    };
+    window.addEventListener('creator-profile-updated', handler as EventListener);
+    return () => window.removeEventListener('creator-profile-updated', handler as EventListener);
+  }, []);
+
+  const creatorDisplayName = creatorProfile?.displayName?.trim();
+  const creatorPhoto = creatorProfile?.photoURL?.trim();
+  const resolvedProfileName = creatorDisplayName || getDisplayName(user) || 'Guest';
+  const resolvedProfilePhoto = creatorPhoto || ((user as any)?.photoURL ?? null);
   const defaultProfileSection = (
     <ProfileCard
       user={user}
-      displayName={getDisplayName(user) || 'Guest'}
-      photo={(user as any)?.photoURL ?? null}
+      displayName={resolvedProfileName}
+      photo={resolvedProfilePhoto}
       isDark={isDark}
       showCrown={showCrownInProfile}
       onLogout={() => {
@@ -228,8 +285,8 @@ export default function Header({
   const mobileProfileSection = (
     <ProfileCard
       user={user}
-      displayName={getDisplayName(user) || 'Guest'}
-      photo={(user as any)?.photoURL ?? null}
+      displayName={resolvedProfileName}
+      photo={resolvedProfilePhoto}
       isDark={isDark}
       showCrown={showCrownInProfile}
       compact={true}
