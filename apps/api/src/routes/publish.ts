@@ -669,6 +669,10 @@ if (typeof window !== 'undefined') {
           }
         }
         const { next } = ensureListingPreview(base);
+        // Ensure ownerUid is set for backward compatibility and robust filtering
+        if (base.author?.uid) {
+          (next as any).ownerUid = base.author.uid;
+        }
         apps[idx] = next;
       } else {
         const base: AppRecord = {
@@ -700,6 +704,10 @@ if (typeof window !== 'undefined') {
           (base as any).translations = provided as any;
         }
         const { next } = ensureListingPreview(base);
+        // Ensure ownerUid is set for backward compatibility and robust filtering
+        if (base.author?.uid) {
+          (next as any).ownerUid = base.author.uid;
+        }
         apps.push(next);
       }
 

@@ -736,6 +736,11 @@ export default async function reviewRoutes(app: FastifyInstance) {
           Object.assign(payload, ensured.next);
         }
 
+        // Ensure ownerUid is preserved/set
+        if (!payload.ownerUid && (app.author?.uid || (app as any).ownerUid)) {
+          payload.ownerUid = app.author?.uid || (app as any).ownerUid;
+        }
+
         payload.publishedAt = now;
         payload.updatedAt = now;
         payload.moderation = {
