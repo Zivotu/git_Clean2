@@ -7,6 +7,18 @@ import { apiGet } from '@/lib/api';
 import { startStripeOnboarding, openStripeDashboard } from '@/hooks/useConnectStatus';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
 import { useRouteParam } from '@/hooks/useRouteParam';
+import {
+  DollarSign,
+  Users,
+  CreditCard,
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  ExternalLink,
+  Building2,
+  Wallet
+} from 'lucide-react';
 
 type Metrics = {
   allAccess: {
@@ -44,7 +56,6 @@ export default function CreatorFinancesClient({ initialHandle }: { initialHandle
   const { user } = useAuth();
   // Prefer explicit initialHandle, then route-derived handle, then logged-in user's handle
   const handle = initialHandle || handleFromRoute || (user as any)?.handle || undefined;
-  const safeHandle = handle ? encodeURIComponent(handle) : '';
   const searchParams = useSafeSearchParams();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +80,7 @@ export default function CreatorFinancesClient({ initialHandle }: { initialHandle
         const json = await res.json();
         setMetrics(json.metrics);
       } catch {
-        setError('Nije moguće učitati financije.');
+        setError('Failed to load financial data.');
       } finally {
         setLoading(false);
       }
@@ -92,71 +103,190 @@ export default function CreatorFinancesClient({ initialHandle }: { initialHandle
     if (!user?.uid) return;
     try {
       await startStripeOnboarding(user.uid, handle);
-    } catch {}
+    } catch { }
   }
 
   async function handleDashboard() {
     if (!user?.uid) return;
     try {
       await openStripeDashboard(user.uid);
-    } catch {}
+    } catch { }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4 flex items-center gap-3 text-rose-700 dark:text-rose-400">
+          <AlertTriangle className="h-5 w-5" />
+          <p>{error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <main className="max-w-4xl mx-auto p-4 md:p-6">
-      <h1 className="text-2xl font-bold mb-4">Financije @{handle}</h1>
+    <main className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Financial Overview</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your earnings and payouts for @{handle}</p>
+        </div>
+        {connect?.onboarded && (
+          <button
+            onClick={handleDashboard}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors shadow-sm"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Stripe Dashboard
+          </button>
+        )}
+      </div>
+
       {onboardingDone && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-800">Onboarding dovršen</div>
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4 flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
+          <CheckCircle2 className="h-5 w-5" />
+          <p className="font-medium">Onboarding completed successfully!</p>
+        </div>
       )}
+
       {connect && (!connect.onboarded || !connect.payouts_enabled || (connect.requirements_due ?? 0) > 0) && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200">
-          <p className="text-sm mb-2 text-blue-900">Isplate stižu ~3 dana nakon uplate, a kreator dobiva 70% prihoda.</p>
-          <div className="space-x-2">
-            <button onClick={handleOnboard} className="px-3 py-1 bg-blue-600 text-white rounded">Postavi isplate</button>
-            {connect.onboarded && <button onClick={handleDashboard} className="px-3 py-1 bg-gray-300 rounded">Dashboard</button>}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Setup Payouts
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300 text-sm max-w-xl">
+                To receive your earnings, you need to connect a payout account. Payouts typically arrive ~3 days after payment, and you receive 70% of the revenue.
+              </p>
+            </div>
+            <button
+              onClick={handleOnboard}
+              className="shrink-0 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm flex items-center gap-2"
+            >
+              Setup Payouts
+              <ExternalLink className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}
-      {loading && <p>Učitavanje…</p>}
-      {error && <p className="text-red-600">{error}</p>}
+
       {metrics && (
-        <div className="space-y-6">
-          <section className="bg-white border rounded-lg p-4 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2">All‑Access (repozitorij)</h2>
-            <p>Aktivnih pretplatnika: <strong>{metrics.allAccess.active}</strong></p>
-            <p>Cijena: <strong>{formatUSD(metrics.allAccess.unitAmount)}</strong></p>
-            <p>Procjena mjesečnog prihoda: <strong>{formatUSD(metrics.allAccess.monthlyEstimateGross)}</strong></p>
-            <p>Procjena mjesečnog prihoda <span className="text-gray-600">(70% bez Stripe naknada)</span>: <strong>{formatUSD(metrics.allAccess.monthlyEstimateCreator)}</strong></p>
-          </section>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Summary Cards */}
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-6 shadow-sm">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg text-emerald-600 dark:text-emerald-400">
+                <DollarSign className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Est. Monthly Revenue</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {formatUSD(metrics.totals.monthlyEstimateCreator)}
+                </h3>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Gross: {formatUSD(metrics.totals.monthlyEstimateGross)} (before fees/split)
+            </div>
+          </div>
 
-          <section className="bg-white border rounded-lg p-4 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2">Pretplate po aplikaciji</h2>
-            {metrics.apps.length === 0 ? (
-              <p className="text-gray-600">Nema aplikacija s cijenom.</p>
-            ) : (
-              <ul className="divide-y">
-                {metrics.apps.map((a) => (
-                  <li key={a.appId} className="py-2 flex items-center justify-between">
-                    <div>
-                      <div className="font-medium">App ID: {a.appId}</div>
-                      <div className="text-sm text-gray-600">Aktivnih: {a.active}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm">Cijena: {formatUSD(a.unitAmount)}</div>
-                      <div className="text-sm font-semibold">Prihod/mj: {formatUSD((a.unitAmount ?? 0) * a.active)}</div>
-                      <div className="text-sm">Prihod/mj <span className="text-gray-600">(70% bez Stripe naknada)</span>: {formatUSD(a.creatorMonthly)}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-6 shadow-sm">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-violet-100 dark:bg-violet-900/30 rounded-lg text-violet-600 dark:text-violet-400">
+                <Users className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">All-Access Subscribers</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {metrics.allAccess.active}
+                </h3>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              {formatUSD(metrics.allAccess.unitAmount)} / month per user
+            </div>
+          </div>
 
-          <section className="bg-white border rounded-lg p-4 shadow-sm">
-            <h2 className="text-lg font-semibold mb-2">Ukupno</h2>
-            <p>Procjena mjesečnog prihoda: <strong>{formatUSD(metrics.totals.monthlyEstimateGross)}</strong></p>
-            <p>Procjena mjesečnog prihoda <span className="text-gray-600">(70% bez Stripe naknada)</span>: <strong>{formatUSD(metrics.totals.monthlyEstimateCreator)}</strong></p>
-          </section>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-6 shadow-sm">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                <Building2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Apps</p>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                  {metrics.apps.filter(a => a.active > 0).length}
+                </h3>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              Generating revenue
+            </div>
+          </div>
+        </div>
+      )}
+
+      {metrics && (
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-slate-500" />
+              Subscriptions by App
+            </h3>
+          </div>
+
+          {metrics.apps.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+              No monetized applications found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-zinc-800">
+                  <tr>
+                    <th className="px-6 py-3">Application</th>
+                    <th className="px-6 py-3">Price</th>
+                    <th className="px-6 py-3 text-center">Active Users</th>
+                    <th className="px-6 py-3 text-right">Monthly Revenue</th>
+                    <th className="px-6 py-3 text-right">Your Share (70%)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
+                  {metrics.apps.map((a) => (
+                    <tr key={a.appId} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
+                        {a.appId}
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                        {formatUSD(a.unitAmount)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800 dark:bg-zinc-800 dark:text-slate-300">
+                          {a.active}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-400">
+                        {formatUSD((a.unitAmount ?? 0) * a.active)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                        {formatUSD(a.creatorMonthly)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </main>

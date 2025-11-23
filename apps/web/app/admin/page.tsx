@@ -4,6 +4,24 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {
+  Search,
+  RefreshCw,
+  X,
+  Check,
+  AlertTriangle,
+  FileText,
+  Download,
+  ExternalLink,
+  Trash2,
+  RotateCcw,
+  Shield,
+  Mail,
+  Settings,
+  ChevronRight,
+  MoreHorizontal,
+  Filter
+} from 'lucide-react';
 import { apiGet, apiGetRaw, apiPost, ApiError } from '@/lib/api';
 import { joinUrl } from '@/lib/url';
 import { auth } from '@/lib/firebase';
@@ -24,7 +42,7 @@ async function buildHeaders(withJson: boolean): Promise<Record<string, string>> 
   try {
     const token = await auth?.currentUser?.getIdToken?.();
     if (token) headers['Authorization'] = `Bearer ${token}`;
-  } catch {}
+  } catch { }
   return headers;
 }
 
@@ -349,7 +367,7 @@ export default function AdminDashboard() {
       let idx: any = {};
       try {
         idx = await apiGet<any>(`/review/artifacts/${identifier}`, { auth: true });
-      } catch {}
+      } catch { }
       setArtifacts(idx);
       const resolvedBuildId = idx.buildId || resolveItemTarget(match) || '';
       setCurrentBuildId(resolvedBuildId || null);
@@ -378,13 +396,13 @@ export default function AdminDashboard() {
         try {
           const buildJson = await apiGet<any>(`/review/builds/${resolvedBuildId}`, { auth: true });
           setTimeline(buildJson.timeline || []);
-        } catch {}
+        } catch { }
         try {
           const pol = await apiGet<any>(`/review/builds/${resolvedBuildId}/policy`, { auth: true });
           setPolicy(pol || {});
-        } catch {}
+        } catch { }
       }
-    } catch {}
+    } catch { }
   };
 
   async function downloadCode(id?: string) {
@@ -507,7 +525,7 @@ export default function AdminDashboard() {
         if (status === 401) {
           try {
             await auth.currentUser?.getIdToken(true);
-          } catch {}
+          } catch { }
           status = await load();
           if (status === 401) {
             setError(ACCESS_DENIED_ERROR);
@@ -740,13 +758,13 @@ export default function AdminDashboard() {
     }
   };
 
-const filtered = items.filter((it) =>
-  (it.title || '').toLowerCase().includes(search.toLowerCase()) ||
-  (it.ownerEmail || '').toLowerCase().includes(search.toLowerCase()),
-);
+  const filtered = items.filter((it) =>
+    (it.title || '').toLowerCase().includes(search.toLowerCase()) ||
+    (it.ownerEmail || '').toLowerCase().includes(search.toLowerCase()),
+  );
 
-const confirmDialog = confirmAction
-  ? (() => {
+  const confirmDialog = confirmAction
+    ? (() => {
       const { item, type } = confirmAction;
       const name = item.title || item.slug || item.id;
       switch (type) {
@@ -822,7 +840,7 @@ const confirmDialog = confirmAction
           return null;
       }
     })()
-  : null;
+    : null;
 
   if (error)
     return (
@@ -847,1044 +865,901 @@ const confirmDialog = confirmAction
     );
 
   return (
-    <>
-      <div className="p-4 space-y-4">
-        <h1 className="text-xl font-bold">{tAdmin('title')}</h1>
-        <Tabs tabs={adminTabs} activeTab={adminTab} onTabChange={(tab) => setAdminTab(tab as AdminTabKey)}>
-          {adminTab === 'apps' && (
-            <>
-              {/* Ambassador program quick access removed — separate tab exists */}
-              <div className="flex gap-4">
-                {reviewStatuses.map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={`px-3 py-1 rounded ${tab === t ? 'bg-emerald-600 text-white' : 'bg-gray-200'}`}
-                  >
-                    {statusFilters[t]}
-                  </button>
-                ))}
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={tAdmin('filters.searchPlaceholder')}
-                  className="ml-auto border px-2 py-1 rounded"
-                />
-                {search && (
-                  <button onClick={() => setSearch('')} className="px-2 py-1 border rounded">
-                    {tAdmin('filters.clear')}
-                  </button>
-                )}
-                <button onClick={() => load()} className="px-2 py-1 border rounded">
-                  {tAdmin('filters.refresh')}
-                </button>
-              </div>
-              <div className="text-xs text-gray-500">{tAdmin('stats.foundApps', { count: filtered.length })}</div>
-              {llmEnabled === false && (
-                <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  {tAdmin('alerts.llmDisabled')}
+    <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950/50 p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+              {tAdmin('title')}
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Manage applications, users, and system settings.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+          <div className="px-6">
+            <Tabs tabs={adminTabs} activeTab={adminTab} onTabChange={(tab) => setAdminTab(tab as AdminTabKey)}>
+              {adminTab === 'apps' && (
+                <div className="space-y-6 py-6">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                    <div className="flex flex-wrap gap-2 bg-slate-100 dark:bg-zinc-800/50 p-1 rounded-lg">
+                      {reviewStatuses.map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setTab(t)}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${tab === t
+                            ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-zinc-800'
+                            }`}
+                        >
+                          {statusFilters[t]}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:flex-none">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <input
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          placeholder={tAdmin('filters.searchPlaceholder')}
+                          className="w-full sm:w-64 pl-9 pr-4 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none"
+                        />
+                        {search && (
+                          <button
+                            onClick={() => setSearch('')}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-700 text-slate-400"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => load()}
+                        className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"
+                        title={tAdmin('filters.refresh')}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Stats & Alerts */}
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <span>{tAdmin('stats.foundApps', { count: filtered.length })}</span>
+                    {llmEnabled === false && (
+                      <span className="text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        {tAdmin('alerts.llmDisabled')}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Table */}
+                  <div className="rounded-lg border border-slate-200 dark:border-zinc-700 overflow-hidden overflow-x-auto">
+                    <table className="min-w-full text-sm text-left">
+                      <thead className="bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-slate-400 font-medium">
+                        <tr>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.appId')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.preview')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.name')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.ownerEmail')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.submitted')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.network')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap">{tAdmin('table.llm')}</th>
+                          <th className="px-4 py-3 whitespace-nowrap text-right">{tAdmin('table.actions')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-zinc-700 bg-white dark:bg-zinc-900">
+                        {filtered.map((it) => {
+                          const imgSrc = resolvePreviewUrl(it.previewUrl);
+                          const hasPreview = Boolean(imgSrc);
+                          const actionTarget = resolveItemTarget(it);
+                          const detailId = actionTarget || '';
+                          const isRegenerating = actionTarget ? regeneratingId === actionTarget : false;
+                          return (
+                            <tr key={it.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                              <td className="px-4 py-3 font-mono text-xs text-slate-500">{it.appId}</td>
+                              <td className="px-4 py-3">
+                                {hasPreview ? (
+                                  <Image
+                                    src={imgSrc}
+                                    alt="preview"
+                                    width={40}
+                                    height={40}
+                                    unoptimized
+                                    style={{ color: 'transparent' }}
+                                    className="w-10 h-10 object-cover rounded-md border border-slate-200 dark:border-zinc-700"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-400 flex items-center justify-center">
+                                    <div className="h-4 w-4 bg-slate-200 dark:bg-zinc-700 rounded-sm" />
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{it.title}</td>
+                              <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                                {it.ownerEmail ? (
+                                  <a href={`mailto:${it.ownerEmail}`} className="hover:text-emerald-600 hover:underline">
+                                    {it.ownerEmail}
+                                  </a>
+                                ) : (
+                                  '-'
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-slate-500 text-xs">
+                                {it.submittedAt ? new Date(it.submittedAt).toLocaleString() : '-'}
+                              </td>
+                              <td className="px-4 py-3 text-xs">
+                                <div className="flex flex-col gap-1">
+                                  <span className="text-slate-600 dark:text-slate-400">{it.networkPolicy || '-'}</span>
+                                  {it.networkDomains && it.networkDomains.length > 0 && (
+                                    <div className="text-slate-400">
+                                      {it.networkDomains
+                                        .map((d) => tAdmin('network.fetchDomain', { domain: d }))
+                                        .join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                {llmEnabled === false ? (
+                                  <span className="text-xs text-slate-400">{tAdmin('llm.disabledLabel')}</span>
+                                ) : it.llm?.status === 'complete' ? (
+                                  <div className="space-y-1.5">
+                                    {it.llm.data?.publishRecommendation && (
+                                      <span
+                                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${it.llm.data.publishRecommendation === 'approve'
+                                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                          : it.llm.data.publishRecommendation === 'reject'
+                                            ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
+                                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                                          }`}
+                                      >
+                                        {it.llm.data.publishRecommendation.toUpperCase()}
+                                      </span>
+                                    )}
+                                    <div className="w-24 h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-emerald-500 rounded-full"
+                                        style={{ width: `${(it.llm.data?.confidence || 0) * 100}%` }}
+                                      />
+                                    </div>
+                                  </div>
+                                ) : it.state === 'llm_failed' ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-rose-500 font-medium">Failed</span>
+                                    {actionTarget && (
+                                      <button
+                                        onClick={() => triggerLlm(actionTarget)}
+                                        className="p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded text-slate-400 hover:text-emerald-600 transition-colors"
+                                        disabled={isRegenerating}
+                                        title="Retry AI Review"
+                                      >
+                                        <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+                                      </button>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-400">Waiting...</span>
+                                    {actionTarget && (
+                                      <button
+                                        onClick={() => triggerLlm(actionTarget)}
+                                        className="p-1 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded text-slate-400 hover:text-emerald-600 transition-colors"
+                                        disabled={isRegenerating}
+                                        title="Retry AI Review"
+                                      >
+                                        <RefreshCw className={`h-3 w-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  {tab === 'deleted' ? (
+                                    <>
+                                      <button
+                                        onClick={() => setConfirmAction({ type: 'restore', item: it })}
+                                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                                        title="Restore"
+                                      >
+                                        <RotateCcw className="h-4 w-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => setConfirmAction({ type: 'force-delete', item: it })}
+                                        className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-colors"
+                                        title="Delete Permanently"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {tab === 'approved' ? (
+                                        <button
+                                          onClick={() => setConfirmAction({ type: 'refresh', item: it })}
+                                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                                          disabled={!actionTarget}
+                                          title="Refresh"
+                                        >
+                                          <RefreshCw className="h-4 w-4" />
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={() => setConfirmAction({ type: 'approve', item: it })}
+                                          className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded transition-colors"
+                                          disabled={!actionTarget}
+                                          title="Approve"
+                                        >
+                                          <Check className="h-4 w-4" />
+                                        </button>
+                                      )}
+
+                                      <button
+                                        onClick={() => actionTarget && setRejectState({ item: it, reason: '' })}
+                                        className="p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded transition-colors"
+                                        disabled={!actionTarget}
+                                        title="Reject"
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </button>
+
+                                      <button
+                                        onClick={() => detailId && viewReport(detailId)}
+                                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                                        disabled={!detailId}
+                                        title="Details"
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                      </button>
+
+                                      <button
+                                        onClick={() => setConfirmAction({ type: 'delete', item: it })}
+                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+
+                                      {it.playUrl && (
+                                        <button
+                                          onClick={() => {
+                                            if (typeof window === 'undefined') return;
+                                            const url = it.playUrl!.startsWith('http')
+                                              ? it.playUrl!
+                                              : new URL(it.playUrl!, window.location.origin).toString();
+                                            window.open(url, '_blank', 'noopener');
+                                          }}
+                                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded transition-colors"
+                                          title="Play"
+                                        >
+                                          <ExternalLink className="h-4 w-4" />
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {nextCursor && (
+                    <div className="text-center pt-4">
+                      <button
+                        onClick={() => load(nextCursor)}
+                        className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"
+                      >
+                        {tAdmin('pagination.loadMore')}
+                      </button>
+                    </div>
+                  )}
                 </div>
+
               )}
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left p-2">{tAdmin('table.appId')}</th>
-                    <th className="text-left p-2">{tAdmin('table.preview')}</th>
-                    <th className="text-left p-2">{tAdmin('table.name')}</th>
-                    <th className="text-left p-2">{tAdmin('table.ownerEmail')}</th>
-                    <th className="text-left p-2">{tAdmin('table.submitted')}</th>
-                    <th className="text-left p-2">{tAdmin('table.network')}</th>
-                    <th className="text-left p-2">{tAdmin('table.llm')}</th>
-                    <th className="p-2">{tAdmin('table.actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((it) => {
-                    const imgSrc = resolvePreviewUrl(it.previewUrl);
-                    const hasPreview = Boolean(imgSrc);
-                    const actionTarget = resolveItemTarget(it);
-                    const detailId = actionTarget || '';
-                    const isRegenerating = actionTarget ? regeneratingId === actionTarget : false;
-                    return (
-                      <tr key={it.id} className="border-t">
-                        <td className="p-2">{it.appId}</td>
-                        <td className="p-2">
-                          {hasPreview ? (
-                            <Image
-                              src={imgSrc}
-                              alt="preview"
-                              width={40}
-                              height={40}
-                              unoptimized
-                              style={{ color: 'transparent' }}
-                              className="w-10 h-10 object-cover rounded"
+              {adminTab === 'users' && <UserManagement />}
+              {adminTab === 'ambassador' && <AmbassadorProgram />}
+              {adminTab === 'admins' && (
+                <section className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{tAdmin('adminSettings.heading')}</h2>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        {tAdmin('adminSettings.description')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRefreshAllowed}
+                      disabled={adminSettingsLoading}
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${adminSettingsLoading ? 'animate-spin' : ''}`} />
+                      {tAdmin('adminSettings.refresh')}
+                    </button>
+                  </div>
+
+                  <div className="p-6">
+                    {adminSettingsError && (
+                      <div className="mb-6 rounded-lg border border-rose-200 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-900/20 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        {adminSettingsError}
+                      </div>
+                    )}
+
+                    <div className="space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="flex-1">
+                          <label className="sr-only">{tAdmin('adminSettings.addPlaceholder')}</label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <input
+                              type="email"
+                              value={newAdminEmail}
+                              onChange={(event) => {
+                                setNewAdminEmail(event.target.value);
+                                if (adminSettingsError) setAdminSettingsError(null);
+                              }}
+                              placeholder={tAdmin('adminSettings.addPlaceholder')}
+                              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                             />
-                          ) : (
-                            <div className="w-10 h-10 rounded bg-slate-100 text-slate-500 text-[10px] font-medium grid place-items-center">
-                              {tAdmin('preview.none')}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-2">{it.title}</td>
-                        <td className="p-2">
-                          {it.ownerEmail ? (
-                            <a href={`mailto:${it.ownerEmail}`} className="text-emerald-600 underline">
-                              {it.ownerEmail}
-                            </a>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td className="p-2">{it.submittedAt ? new Date(it.submittedAt).toLocaleString() : '-'}</td>
-                        <td className="p-2">
-                          {it.networkPolicy || '-'}
-                          {it.networkDomains && it.networkDomains.length > 0 && (
-                            <div className="text-xs text-gray-600">
-                              {it.networkDomains
-                                .map((d) => tAdmin('network.fetchDomain', { domain: d }))
-                                .join(', ')}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-2">
-                          {llmEnabled === false ? (
-                            <span className="text-xs text-gray-500">{tAdmin('llm.disabledLabel')}</span>
-                          ) : it.llm?.status === 'complete' ? (
-                            <>
-                              {it.llm.data?.publishRecommendation && (
-                                <span
-                                  className={`px-1 text-xs rounded ${
-                                    it.llm.data.publishRecommendation === 'approve'
-                                      ? 'bg-green-100 text-green-800'
-                                      : it.llm.data.publishRecommendation === 'reject'
-                                      ? 'bg-red-100 text-red-800'
-                                      : 'bg-yellow-100 text-yellow-800'
-                                  }`}
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e: any) => handleAddAdminEmail(e)}
+                          disabled={adminSettingsSaving || adminSettingsLoading || !newAdminEmail}
+                          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {adminSettingsSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                          {tAdmin('adminSettings.addButton')}
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-lg border border-slate-200 dark:border-zinc-700 overflow-hidden">
+                        {adminSettingsLoading ? (
+                          <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                            <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 opacity-50" />
+                            {tAdmin('adminSettings.loading')}
+                          </div>
+                        ) : allowedEmails.length === 0 ? (
+                          <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                            {tAdmin('adminSettings.empty')}
+                          </div>
+                        ) : (
+                          <ul className="divide-y divide-slate-200 dark:divide-zinc-700">
+                            {allowedEmails.map((email) => (
+                              <li
+                                key={email}
+                                className="flex items-center justify-between px-4 py-3 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                              >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-xs shrink-0">
+                                    {email.charAt(0).toUpperCase()}
+                                  </div>
+                                  <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{email}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveAdminEmail(email)}
+                                  disabled={adminSettingsSaving}
+                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                  title={tAdmin('adminSettings.remove')}
                                 >
-                                  AI preporuka: {it.llm.data.publishRecommendation}
-                                </span>
-                              )}
-                              {it.llm.data?.summary && (
-                                <div className="text-xs mt-1">{it.llm.data.summary}</div>
-                              )}
-                              <div className="w-24 bg-gray-200 h-2 rounded mt-1">
-                                <div
-                                  className="h-2 bg-emerald-600 rounded"
-                                  style={{ width: `${(it.llm.data?.confidence || 0) * 100}%` }}
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {adminTab === 'emailTemplates' && (
+                <section className="space-y-6">
+                  <div className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{tAdmin('emailTemplates.heading')}</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{tAdmin('emailTemplates.description')}</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setTemplatesError(null);
+                          setTemplatesLoading(true);
+                          try {
+                            const resp = await apiGet<any>('/admin/email-templates', { auth: true });
+                            setTemplates(resp.items || []);
+                          } catch (err) {
+                            console.error('Failed to load templates', err);
+                            setTemplatesError(tAdmin('emailTemplates.loadFailed'));
+                          } finally {
+                            setTemplatesLoading(false);
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${templatesLoading ? 'animate-spin' : ''}`} />
+                        {tAdmin('emailTemplates.refresh')}
+                      </button>
+                    </div>
+
+                    <div className="p-6 bg-slate-50 dark:bg-zinc-800/30 border-b border-slate-200 dark:border-zinc-800">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                            {tAdmin('emailTemplates.scenarioLabel')}
+                          </label>
+                          <div className="relative">
+                            <select
+                              className="w-full appearance-none bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                              value={newTemplateId}
+                              onChange={(e) => {
+                                setNewTemplateId(e.target.value);
+                                setNewTemplateSubject('');
+                                setNewTemplateBody('');
+                              }}
+                            >
+                              <option value="">{tAdmin('emailTemplates.scenarioPlaceholder')}</option>
+                              <option value="welcome">{tAdmin('emailTemplates.scenarios.welcome')}</option>
+                              <option value="review:approval_notification">{tAdmin('emailTemplates.scenarios.reviewApproval')}</option>
+                              <option value="review:reject_notification">{tAdmin('emailTemplates.scenarios.reviewReject')}</option>
+                              <option value="publish:pending_notification">{tAdmin('emailTemplates.scenarios.publishPending')}</option>
+                            </select>
+                            <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 rotate-90 pointer-events-none" />
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            <button
+                              onClick={async () => {
+                                const id = (newTemplateId || '').trim();
+                                if (!id) {
+                                  showAdminAlert('emailTemplates.scenarioDropdownHint');
+                                  return;
+                                }
+                                setTemplatesError(null);
+                                setTemplatesLoading(true);
+                                try {
+                                  try {
+                                    const stored = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}`, { auth: true });
+                                    setNewTemplateSubject(stored.subject || '');
+                                    setNewTemplateBody(stored.body || '');
+                                  } catch (err: any) {
+                                    try {
+                                      const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
+                                      setNewTemplateSubject(fb.subject || '');
+                                      setNewTemplateBody(fb.body || '');
+                                    } catch (fbErr) {
+                                      console.error('Failed to load fallback', fbErr);
+                                      showAdminAlert('emailTemplates.scenarioLoadFailed');
+                                    }
+                                  }
+                                } finally {
+                                  setTemplatesLoading(false);
+                                }
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-medium transition-colors"
+                            >
+                              <Download className="h-3 w-3" />
+                              {tAdmin('emailTemplates.load')}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const id = (newTemplateId || '').trim();
+                                if (!id) {
+                                  showAdminAlert('emailTemplates.scenarioRequired');
+                                  return;
+                                }
+                                try {
+                                  await apiPost(`/admin/email-templates/${encodeURIComponent(id)}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
+                                  showAdminAlert('alerts.saveSuccess');
+                                  const resp = await apiGet<any>('/admin/email-templates', { auth: true });
+                                  setTemplates(resp.items || []);
+                                } catch (err) {
+                                  console.error(err);
+                                  showAdminAlert('alerts.saveFailed');
+                                }
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700 rounded-md text-xs font-medium transition-colors"
+                            >
+                              <Check className="h-3 w-3" />
+                              {tAdmin('emailTemplates.save')}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                const id = (newTemplateId || '').trim();
+                                if (!id) {
+                                  showAdminAlert('emailTemplates.scenarioRequired');
+                                  return;
+                                }
+                                try {
+                                  const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
+                                  setNewTemplateSubject(fb.subject || '');
+                                  setNewTemplateBody(fb.body || '');
+                                  showAdminAlert('emailTemplates.restoreInfo');
+                                } catch (err) {
+                                  console.error(err);
+                                  showAdminAlert('emailTemplates.restoreFailed');
+                                }
+                              }}
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-zinc-700 rounded-md text-xs font-medium transition-colors"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              {tAdmin('emailTemplates.restoreFallback')}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                              {tAdmin('emailTemplates.subjectLabel')}
+                            </label>
+                            <input
+                              className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                              value={newTemplateSubject}
+                              onChange={(e) => setNewTemplateSubject(e.target.value)}
+                              placeholder="Email subject..."
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">
+                              {tAdmin('emailTemplates.bodyLabel')}
+                            </label>
+                            <textarea
+                              rows={6}
+                              className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                              value={newTemplateBody}
+                              onChange={(e) => setNewTemplateBody(e.target.value)}
+                              placeholder="Email body (HTML supported)..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      {templatesError && (
+                        <div className="mb-6 rounded-lg border border-rose-200 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-900/20 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                          {templatesError}
+                        </div>
+                      )}
+
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                        {tAdmin('emailTemplates.createTitle')}
+                      </h3>
+
+                      {templatesLoading ? (
+                        <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                          <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2 opacity-50" />
+                          {tAdmin('emailTemplates.loading')}
+                        </div>
+                      ) : templates.length === 0 ? (
+                        <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400 border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-lg">
+                          {tAdmin('emailTemplates.empty')}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                          {templates.map((t) => (
+                            <div key={t.id} className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg p-4 hover:border-emerald-500/50 transition-colors group">
+                              <div className="flex items-start justify-between gap-4 mb-3">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-slate-600 dark:text-slate-400">
+                                      {t.id}
+                                    </span>
+                                    {t.description && (
+                                      <span className="text-xs text-slate-500 dark:text-slate-400">{t.description}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await apiPost(`/admin/email-templates/${t.id}`, { subject: t.subject || '', body: t.body || '' }, { auth: true });
+                                      showAdminAlert('alerts.saveSuccess');
+                                    } catch (err) {
+                                      console.error(err);
+                                      showAdminAlert('alerts.saveFailed');
+                                    }
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-md text-xs font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all"
+                                >
+                                  <Check className="h-3 w-3" />
+                                  {tAdmin('emailTemplates.save')}
+                                </button>
+                              </div>
+
+                              <div className="space-y-3">
+                                <input
+                                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                                  value={t.subject || ''}
+                                  onChange={(e) =>
+                                    setTemplates((prev) =>
+                                      prev.map((x) => (x.id === t.id ? { ...x, subject: e.target.value } : x)),
+                                    )
+                                  }
+                                  placeholder="Subject"
+                                />
+                                <textarea
+                                  rows={3}
+                                  className="w-full bg-slate-50 dark:bg-zinc-800/50 border border-slate-200 dark:border-zinc-700 rounded px-3 py-2 text-sm font-mono focus:bg-white dark:focus:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                                  value={t.body || ''}
+                                  onChange={(e) =>
+                                    setTemplates((prev) =>
+                                      prev.map((x) => (x.id === t.id ? { ...x, body: e.target.value } : x)),
+                                    )
+                                  }
+                                  placeholder="Body"
                                 />
                               </div>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {it.llm.data?.risks?.map((r) => (
-                                  <span
-                                    key={r.id || r.title}
-                                    className="px-1 text-xs rounded bg-red-100 text-red-800"
-                                  >
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="p-6 bg-slate-50 dark:bg-zinc-800/30 border-t border-slate-200 dark:border-zinc-800">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">{tAdmin('emailTemplates.createTitle')}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{tAdmin('emailTemplates.createDescription')}</p>
+
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <input
+                            placeholder={tAdmin('emailTemplates.placeholderId')}
+                            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            value={newTemplateId}
+                            onChange={(e) => setNewTemplateId(e.target.value)}
+                          />
+                          <input
+                            placeholder={tAdmin('emailTemplates.placeholderSubject')}
+                            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                            value={newTemplateSubject}
+                            onChange={(e) => setNewTemplateSubject(e.target.value)}
+                          />
+                        </div>
+                        <textarea
+                          placeholder={tAdmin('emailTemplates.placeholderBody')}
+                          rows={4}
+                          className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                          value={newTemplateBody}
+                          onChange={(e) => setNewTemplateBody(e.target.value)}
+                        />
+                        <div className="flex justify-end">
+                          <button
+                            onClick={async () => {
+                              const id = (newTemplateId || '').trim();
+                              if (!id) {
+                                showAdminAlert('emailTemplates.templateIdRequired');
+                                return;
+                              }
+                              try {
+                                await apiPost(`/admin/email-templates/${id}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
+                                const resp = await apiGet<any>('/admin/email-templates', { auth: true });
+                                setTemplates(resp.items || []);
+                                setNewTemplateId('');
+                                setNewTemplateSubject('');
+                                setNewTemplateBody('');
+                                showAdminAlert('alerts.createSuccess');
+                              } catch (err) {
+                                console.error(err);
+                                showAdminAlert('alerts.createFailed');
+                              }
+                            }}
+
+                            className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
+                          >
+                            {tAdmin('emailTemplates.createButton')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </Tabs>
+          </div>
+        </div>
+      </div>
+
+      {showDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={closeDetails} />
+          <div className="relative w-full max-w-5xl max-h-[90vh] overflow-hidden bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 flex flex-col animate-in fade-in zoom-in-95 duration-200">
+
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 z-10">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                {currentItem?.title || 'App Details'}
+              </h2>
+              <button
+                onClick={closeDetails}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-full text-slate-500 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="aspect-video bg-slate-100 dark:bg-zinc-800 rounded-lg overflow-hidden border border-slate-200 dark:border-zinc-700 flex items-center justify-center relative group">
+                    {previewSrc ? (
+                      <Image src={previewSrc} alt="Preview" fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="text-slate-400 flex flex-col items-center gap-2">
+                        <div className="h-12 w-12 bg-slate-200 dark:bg-zinc-700 rounded-lg" />
+                        <span className="text-xs font-medium">No Preview</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {currentItem && (
+                    <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-lg p-4 space-y-4 border border-slate-200 dark:border-zinc-700 text-sm">
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Description</label>
+                        <p className="mt-1 text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{currentItem.description || '-'}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">App ID</label>
+                          <p className="mt-1 font-mono text-xs text-slate-700 dark:text-slate-300 break-all">{currentItem.appId}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Version</label>
+                          <p className="mt-1 font-mono text-xs text-slate-700 dark:text-slate-300">{currentItem.version ?? '-'}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Owner</label>
+                        <p className="mt-1 text-slate-700 dark:text-slate-300 break-all">{currentItem.ownerEmail}</p>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Author</label>
+                        <p className="mt-1 text-slate-700 dark:text-slate-300">{currentItem.author?.name || currentItem.author?.handle || '-'}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Visibility</label>
+                          <p className="mt-1 text-slate-700 dark:text-slate-300 capitalize">{currentItem.visibility}</p>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Access</label>
+                          <p className="mt-1 text-slate-700 dark:text-slate-300 capitalize">{currentItem.accessMode}</p>
+                        </div>
+                      </div>
+
+                      {currentItem.playUrl && (
+                        <div className="pt-2">
+                          <a
+                            href={currentItem.playUrl}
+                            target="_blank"
+                            className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium"
+                          >
+                            Open App <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="lg:col-span-2 space-y-6">
+                  {currentBuildId && (
+                    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 p-4">
+                      <h3 className="font-medium mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                        <Settings className="h-4 w-4" />
+                        Build Artifacts
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        <button onClick={() => downloadCode()} className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-md text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+                          <Download className="h-4 w-4" />
+                          Download Bundle
+                        </button>
+                        {previewLink && (
+                          <a href={previewLink} target="_blank" className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors">
+                            <ExternalLink className="h-4 w-4" />
+                            Preview
+                          </a>
+                        )}
+                        {manifestLink && (
+                          <a href={manifestLink} target="_blank" className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors">
+                            <FileText className="h-4 w-4" />
+                            Manifest
+                          </a>
+                        )}
+                      </div>
+                      {!zipReady && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          Bundle is preparing...
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {timeline.length > 0 && (
+                    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 p-4">
+                      <h3 className="font-medium mb-3 text-slate-900 dark:text-slate-100">Build Timeline</h3>
+                      <BuildTimeline buildId={currentBuildId!} />
+                    </div>
+                  )}
+
+                  {report && (
+                    <div className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 p-4">
+                      <h3 className="font-medium mb-3 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                        <Shield className="h-4 w-4" />
+                        AI Review Report
+                      </h3>
+
+                      {report.status === 'generating' && (
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          Generating report...
+                        </div>
+                      )}
+
+                      {report.status === 'complete' && report.data && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium uppercase ${report.data.publishRecommendation === 'approve' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                              report.data.publishRecommendation === 'reject' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' :
+                                'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
+                              }`}>
+                              {report.data.publishRecommendation}
+                            </span>
+                            <span className="text-sm text-slate-500">Confidence: {Math.round((report.data.confidence || 0) * 100)}%</span>
+                          </div>
+
+                          <p className="text-sm text-slate-700 dark:text-slate-300">{report.data.summary}</p>
+
+                          {report.data.risks && report.data.risks.length > 0 && (
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-medium text-slate-500 uppercase">Risks</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {report.data.risks.map((r, i) => (
+                                  <span key={i} className="px-2 py-1 bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400 rounded text-xs border border-rose-100 dark:border-rose-900/30">
                                     {r.title}
                                   </span>
                                 ))}
                               </div>
-                            </>
-                          ) : it.state === 'llm_failed' ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-red-600">
-                                {tAdmin('llmStatus.failed')}
-                              </span>
-                              {actionTarget && (
-                                <button
-                                  onClick={() => triggerLlm(actionTarget)}
-                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                                  disabled={isRegenerating}>
-                                  {isRegenerating ? 'Running...' : 'Try again'}
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-600">
-                                {tAdmin('llmStatus.waiting')}{it.llmAttempts ? ` (${it.llmAttempts})` : ''}
-                              </span>
-                              {actionTarget && (
-                                <button
-                                  onClick={() => triggerLlm(actionTarget)}
-                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                                  disabled={isRegenerating}
-                                >
-                                  {isRegenerating ? 'Running...' : 'Try again'}
-                                </button>
-                              )}
                             </div>
                           )}
-                        </td>
-                        <td className="p-2 flex flex-wrap gap-2">
-                          {tab === 'deleted' ? (
-                            <>
-                              <button
-                                onClick={() => setConfirmAction({ type: 'restore', item: it })}
-                                className="px-2 py-1 bg-emerald-600 text-white rounded"
-                              >
-                                Restore
-                              </button>
-                              <button
-                                onClick={() => setConfirmAction({ type: 'force-delete', item: it })}
-                                className="px-2 py-1 bg-black text-white rounded"
-                                title="Permanently delete"
-                              >
-                                Delete Permanently
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              {tab === 'approved' ? (
-                                <button
-                                  onClick={() => setConfirmAction({ type: 'refresh', item: it })}
-                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                                  disabled={!actionTarget}
-                                >
-                                  Refresh
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => setConfirmAction({ type: 'approve', item: it })}
-                                  className="px-2 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                                  disabled={!actionTarget}
-                                >
-                                  Approve
-                                </button>
-                              )}
-                              <button
-                                onClick={() => actionTarget && setRejectState({ item: it, reason: '' })}
-                                className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50"
-                                disabled={!actionTarget}
-                              >
-                                Reject
-                              </button>
-                              {isRegenerating ? (
-                                <span className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></span>
-                              ) : (
-                                <button
-                                  onClick={() => detailId && viewReport(detailId)}
-                                  className="px-2 py-1 bg-gray-200 rounded disabled:opacity-50"
-                                  disabled={!detailId}
-                                >
-                                  Details
-                                </button>
-                              )}
-                              <button
-                                onClick={() => setConfirmAction({ type: 'delete', item: it })}
-                                className="px-2 py-1 bg-black text-white rounded"
-                                title="Delete"
-                              >
-                                Delete
-                              </button>
-                              {it.playUrl && (
-                                <button
-                                  onClick={() => {
-                                    if (typeof window === 'undefined') return;
-                                    const url = it.playUrl!.startsWith('http')
-                                      ? it.playUrl!
-                                      : new URL(it.playUrl!, window.location.origin).toString();
-                                    window.open(url, '_blank', 'noopener');
-                                  }}
-                                  className="px-2 py-1 border rounded"
-                                >
-                                  Play
-                                </button>
-                              )}
-                            </>
+
+                          <button
+                            className="text-xs text-emerald-600 hover:underline"
+                            onClick={() => setShowRaw((s) => !s)}
+                          >
+                            {showRaw ? 'Hide Raw JSON' : 'Show Raw JSON'}
+                          </button>
+                          {showRaw && (
+                            <pre className="text-xs bg-slate-50 dark:bg-zinc-800 p-2 rounded overflow-x-auto border border-slate-200 dark:border-zinc-700">
+                              {JSON.stringify(report, null, 2)}
+                            </pre>
                           )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {nextCursor && (
-                <div className="text-center mt-4">
-                  <button
-                    onClick={() => load(nextCursor)}
-                    className="px-2 py-1 border rounded"
-                  >
-                    {tAdmin('pagination.loadMore')}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-                  {adminTab === 'users' && <UserManagement />}
-                  {adminTab === 'ambassador' && <AmbassadorProgram />}
-                  {adminTab === 'admins' && (
-            <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">{tAdmin('adminSettings.heading')}</h2>
-                  <p className="text-sm text-gray-500">
-                    {tAdmin('adminSettings.description')}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleRefreshAllowed}
-                  disabled={adminSettingsLoading}
-                  className="inline-flex items-center justify-center rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {tAdmin('adminSettings.refresh')}
-                </button>
-              </div>
-              {adminSettingsError && (
-                <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">
-                  {adminSettingsError}
-                </div>
-              )}
-              <div className="mt-3">
-                {adminSettingsLoading ? (
-                  <div className="text-sm text-gray-500">{tAdmin('adminSettings.loading')}</div>
-                ) : allowedEmails.length === 0 ? (
-                  <div className="text-sm text-gray-500">{tAdmin('adminSettings.empty')}</div>
-                ) : (
-                  <ul className="space-y-2">
-                    {allowedEmails.map((email) => (
-                      <li
-                        key={email}
-                        className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm text-gray-800"
-                      >
-                        <span className="truncate">{email}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveAdminEmail(email)}
-                          disabled={adminSettingsSaving}
-                          className="text-rose-600 transition hover:text-rose-700 disabled:opacity-40"
-                        >
-                          {tAdmin('adminSettings.remove')}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <form onSubmit={handleAddAdminEmail} className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input
-                  type="email"
-                  value={newAdminEmail}
-                  onChange={(event) => {
-                    setNewAdminEmail(event.target.value);
-                    if (adminSettingsError) setAdminSettingsError(null);
-                  }}
-                  placeholder={tAdmin('adminSettings.addPlaceholder')}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-300"
-                />
-                <button
-                  type="submit"
-                  disabled={adminSettingsSaving || adminSettingsLoading}
-                  className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {tAdmin('adminSettings.addButton')}
-                </button>
-              </form>
-            </section>
-          )}
-                  {adminTab === 'emailTemplates' && (
-            <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">{tAdmin('emailTemplates.heading')}</h2>
-                  <p className="text-sm text-gray-500">{tAdmin('emailTemplates.description')}</p>
-                </div>
-                <div>
-                  <button
-                    onClick={async () => {
-                      setTemplatesError(null);
-                      setTemplatesLoading(true);
-                      try {
-                        const resp = await apiGet<any>('/admin/email-templates', { auth: true });
-                        setTemplates(resp.items || []);
-                      } catch (err) {
-                        console.error('Failed to load templates', err);
-                        setTemplatesError(tAdmin('emailTemplates.loadFailed'));
-                      } finally {
-                        setTemplatesLoading(false);
-                      }
-                    }}
-                    className="px-3 py-1 border rounded bg-emerald-50 text-emerald-700"
-                  >
-                    {tAdmin('emailTemplates.refresh')}
-                  </button>
-                </div>
-              </div>
-
-              <div className="mt-4 p-3 border rounded bg-gray-50">
-                <div className="flex items-start gap-4">
-                  <div className="w-64">
-                    <label className="text-xs font-medium">{tAdmin('emailTemplates.scenarioLabel')}</label>
-                    <select
-                      className="w-full border rounded px-2 py-1 text-sm mt-1"
-                      value={newTemplateId}
-                      onChange={(e) => {
-                        setNewTemplateId(e.target.value);
-                        setNewTemplateSubject('');
-                        setNewTemplateBody('');
-                      }}
-                    >
-                      <option value="">{tAdmin('emailTemplates.scenarioPlaceholder')}</option>
-                      <option value="welcome">{tAdmin('emailTemplates.scenarios.welcome')}</option>
-                      <option value="review:approval_notification">{tAdmin('emailTemplates.scenarios.reviewApproval')}</option>
-                      <option value="review:reject_notification">{tAdmin('emailTemplates.scenarios.reviewReject')}</option>
-                      <option value="publish:pending_notification">{tAdmin('emailTemplates.scenarios.publishPending')}</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2 items-end">
-                    <button
-                      onClick={async () => {
-                        const id = (newTemplateId || '').trim();
-                        if (!id) {
-                          showAdminAlert('emailTemplates.scenarioDropdownHint');
-                          return;
-                        }
-                        setTemplatesError(null);
-                        setTemplatesLoading(true);
-                        try {
-                          try {
-                            const stored = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}`, { auth: true });
-                            setNewTemplateSubject(stored.subject || '');
-                            setNewTemplateBody(stored.body || '');
-                          } catch (err: any) {
-                            try {
-                              const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
-                              setNewTemplateSubject(fb.subject || '');
-                              setNewTemplateBody(fb.body || '');
-                            } catch (fbErr) {
-                              console.error('Failed to load fallback', fbErr);
-                              showAdminAlert('emailTemplates.scenarioLoadFailed');
-                            }
-                          }
-                        } finally {
-                          setTemplatesLoading(false);
-                        }
-                      }}
-                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
-                    >
-                      {tAdmin('emailTemplates.load')}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        const id = (newTemplateId || '').trim();
-                        if (!id) {
-                          showAdminAlert('emailTemplates.scenarioRequired');
-                          return;
-                        }
-                        try {
-                          await apiPost(`/admin/email-templates/${encodeURIComponent(id)}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
-                          showAdminAlert('alerts.saveSuccess');
-                          const resp = await apiGet<any>('/admin/email-templates', { auth: true });
-                          setTemplates(resp.items || []);
-                        } catch (err) {
-                          console.error(err);
-                          showAdminAlert('alerts.saveFailed');
-                        }
-                      }}
-                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
-                    >
-                      {tAdmin('emailTemplates.save')}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        const id = (newTemplateId || '').trim();
-                        if (!id) {
-                          showAdminAlert('emailTemplates.scenarioRequired');
-                          return;
-                        }
-                        try {
-                          const fb = await apiGet<any>(`/admin/email-templates/${encodeURIComponent(id)}/fallback`, { auth: true });
-                          setNewTemplateSubject(fb.subject || '');
-                          setNewTemplateBody(fb.body || '');
-                          showAdminAlert('emailTemplates.restoreInfo');
-                        } catch (err) {
-                          console.error(err);
-                          showAdminAlert('emailTemplates.restoreFailed');
-                        }
-                      }}
-                      className="px-3 py-1 border rounded text-sm"
-                    >
-                      {tAdmin('emailTemplates.restoreFallback')}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <label className="text-xs block mb-1">{tAdmin('emailTemplates.subjectLabel')}</label>
-                  <input
-                    className="w-full border rounded px-2 py-1 text-sm"
-                    value={newTemplateSubject}
-                    onChange={(e) => setNewTemplateSubject(e.target.value)}
-                  />
-                </div>
-                <div className="mt-3">
-                  <label className="text-xs block mb-1">{tAdmin('emailTemplates.bodyLabel')}</label>
-                  <textarea
-                    rows={6}
-                    className="w-full border rounded px-2 py-1 text-sm"
-                    value={newTemplateBody}
-                    onChange={(e) => setNewTemplateBody(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {templatesError && (
-                <div className="mt-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-600">{templatesError}</div>
-              )}
-
-              <div className="mt-4 space-y-3">
-                {templatesLoading ? (
-                  <div className="text-sm text-gray-500">{tAdmin('emailTemplates.loading')}</div>
-                ) : templates.length === 0 ? (
-                  <div className="text-sm text-gray-500">{tAdmin('emailTemplates.empty')}</div>
-                ) : (
-                  templates.map((t) => (
-                    <div key={t.id} className="border rounded p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="font-mono text-xs text-gray-600">{t.id}</div>
-                        <div className="text-xs text-gray-500">{t.description || ''}</div>
-                      </div>
-                      <div>
-                        <label className="text-xs block mb-1">{tAdmin('emailTemplates.subjectLabel')}</label>
-                        <input
-                          className="w-full border rounded px-2 py-1 text-sm"
-                          value={t.subject || ''}
-                          onChange={(e) =>
-                            setTemplates((prev) =>
-                              prev.map((x) => (x.id === t.id ? { ...x, subject: e.target.value } : x)),
-                            )
-                          }
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs block mb-1">{tAdmin('emailTemplates.bodyLabel')}</label>
-                        <textarea
-                          rows={6}
-                          className="w-full border rounded px-2 py-1 text-sm"
-                          value={t.body || ''}
-                          onChange={(e) =>
-                            setTemplates((prev) =>
-                              prev.map((x) => (x.id === t.id ? { ...x, body: e.target.value } : x)),
-                            )
-                          }
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={async () => {
-                            try {
-                              await apiPost(`/admin/email-templates/${t.id}`, { subject: t.subject || '', body: t.body || '' }, { auth: true });
-                              showAdminAlert('alerts.saveSuccess');
-                            } catch (err) {
-                              console.error(err);
-                              showAdminAlert('alerts.saveFailed');
-                            }
-                          }}
-                          className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
-                        >
-                          {tAdmin('emailTemplates.save')}
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-6 border-t pt-4">
-                <h3 className="text-sm font-medium">{tAdmin('emailTemplates.createTitle')}</h3>
-                <p className="text-xs text-gray-500">{tAdmin('emailTemplates.createDescription')}</p>
-                <div className="mt-2 grid grid-cols-1 gap-2">
-                  <input
-                    placeholder={tAdmin('emailTemplates.placeholderId')}
-                    className="border rounded px-2 py-1 text-sm"
-                    value={newTemplateId}
-                    onChange={(e) => setNewTemplateId(e.target.value)}
-                  />
-                  <input
-                    placeholder={tAdmin('emailTemplates.placeholderSubject')}
-                    className="border rounded px-2 py-1 text-sm"
-                    value={newTemplateSubject}
-                    onChange={(e) => setNewTemplateSubject(e.target.value)}
-                  />
-                  <textarea
-                    placeholder={tAdmin('emailTemplates.placeholderBody')}
-                    rows={6}
-                    className="border rounded px-2 py-1 text-sm"
-                    value={newTemplateBody}
-                    onChange={(e) => setNewTemplateBody(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={async () => {
-                        const id = (newTemplateId || '').trim();
-                        if (!id) {
-                          showAdminAlert('emailTemplates.templateIdRequired');
-                          return;
-                        }
-                        try {
-                          await apiPost(`/admin/email-templates/${id}`, { subject: newTemplateSubject, body: newTemplateBody }, { auth: true });
-                          const resp = await apiGet<any>('/admin/email-templates', { auth: true });
-                          setTemplates(resp.items || []);
-                          setNewTemplateId('');
-                          setNewTemplateSubject('');
-                          setNewTemplateBody('');
-                          showAdminAlert('alerts.createSuccess');
-                        } catch (err) {
-                          console.error(err);
-                          showAdminAlert('alerts.createFailed');
-                        }
-                      }}
-                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm"
-                    >
-                      {tAdmin('emailTemplates.createButton')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-        </Tabs>
-      </div>
-      {showDetails && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 max-w-2xl max-h-[80vh] overflow-auto rounded space-y-2">
-            <button
-              className="mb-2 text-sm text-red-600"
-              onClick={closeDetails}
-            >
-              Close
-            </button>
-            {previewSrc && (
-              <Image
-                src={previewSrc}
-                alt="preview"
-                width={128}
-                height={128}
-                unoptimized
-                style={{ color: 'transparent' }}
-                className="w-32 h-32 object-cover mb-2"
-              />
-            )}
-            {currentItem && (
-              <div className="text-sm mb-3 space-y-1">
-                <div className="font-semibold">{currentItem.title}</div>
-                {currentItem.description && (
-                  <div className="text-gray-700 whitespace-pre-wrap">{currentItem.description}</div>
-                )}
-                <div className="text-xs text-gray-600 flex flex-wrap gap-x-3 gap-y-1">
-                  {currentItem.appId && <span>App ID: {currentItem.appId}</span>}
-                  {currentItem.slug && <span>Slug: {currentItem.slug}</span>}
-                  {currentItem.version !== undefined && (
-                    <span>Verzija: {currentItem.version}</span>
-                  )}
-                  {currentItem.ownerEmail && <span>Owner: {currentItem.ownerEmail}</span>}
-                  {(currentItem.author?.handle || currentItem.author?.name) && (
-                    <span>
-                      Autor: {currentItem.author?.name || currentItem.author?.handle}
-                    </span>
-                  )}
-                  {currentItem.visibility && <span>Vidljivost: {currentItem.visibility}</span>}
-                  {currentItem.accessMode && <span>Pristup: {currentItem.accessMode}</span>}
-                </div>
-                <div className="text-xs text-gray-600 flex flex-col gap-0.5 mt-1">
-                  {currentItem.createdAt && (
-                    <span>Kreirano: {new Date(currentItem.createdAt).toLocaleString()}</span>
-                  )}
-                  {currentItem.submittedAt && (
-                    <span>Poslano na review: {new Date(currentItem.submittedAt).toLocaleString()}</span>
-                  )}
-                  {currentItem.updatedAt && (
-                    <span>Zadnje ažurirano: {new Date(currentItem.updatedAt).toLocaleString()}</span>
-                  )}
-                  {currentItem.publishedAt && (
-                    <span>Objavljeno: {new Date(currentItem.publishedAt).toLocaleString()}</span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-600 flex flex-wrap gap-2 mt-2">
-                  {currentBuildId && (
-                    <span className="flex items-center gap-1">
-                      Build ID:
-                      <code className="bg-gray-100 rounded px-1 py-px">{currentBuildId}</code>
-                      <button
-                        type="button"
-                        className="px-1 py-px border rounded"
-                        onClick={() => {
-                          const clip = navigator?.clipboard;
-                          if (clip?.writeText) {
-                            void clip.writeText(currentBuildId).catch(() => {});
-                          }
-                        }}
-                      >
-                        Copy
-                      </button>
-                    </span>
-                  )}
-                  {currentIdentifier && currentIdentifier !== currentBuildId && (
-                    <span>Traženi ID: {currentIdentifier}</span>
-                  )}
-                  {currentItem.pendingBuildId && currentItem.pendingBuildId !== currentBuildId && (
-                    <span>Pending build: {currentItem.pendingBuildId}</span>
-                  )}
-                </div>
-                {currentItem.moderation && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    Moderacija: {currentItem.moderation.status || 'pending'}
-                    {currentItem.moderation.reason ? ` · ${currentItem.moderation.reason}` : ''}
-                    {currentItem.moderation.by ? ` · ${currentItem.moderation.by}` : ''}
-                    {currentItem.moderation.at ? ` · ${new Date(currentItem.moderation.at).toLocaleString()}` : ''}
-                  </div>
-                )}
-                {currentItem.playUrl && (
-                  <div className="text-xs mt-1">
-                    <a href={currentItem.playUrl} target="_blank" className="text-emerald-600 underline">
-                      Otvori play URL
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-            {currentBuildId ? (
-              <div className="flex flex-col gap-1 mb-2">
-                <div className="flex flex-wrap items-center gap-2 text-xs">
-                  {previewLink && (
-                    <a
-                      href={previewLink}
-                      target="_blank"
-                      className="px-2 py-1 border rounded text-emerald-600"
-                    >
-                      Otvori preview
-                    </a>
-                  )}
-                  <button
-                    onClick={() => downloadCode()}
-                    className="px-2 py-1 border rounded bg-emerald-50 text-emerald-700"
-                  >
-                    Preuzmi bundle (.zip)
-                  </button>
-                  {manifestLink && (
-                    <a href={manifestLink} target="_blank" className="px-2 py-1 border rounded">
-                      Manifest
-                    </a>
-                  )}
-                  {astLink && (
-                    <a href={astLink} target="_blank" className="px-2 py-1 border rounded">
-                      AST
-                    </a>
-                  )}
-                  {importsLink && (
-                    <a href={importsLink} target="_blank" className="px-2 py-1 border rounded">
-                      Imports
-                    </a>
-                  )}
-                  {transformPlanLink && (
-                    <a href={transformPlanLink} target="_blank" className="px-2 py-1 border rounded">
-                      Transform plan
-                    </a>
-                  )}
-                  {transformReportLink && (
-                    <a href={transformReportLink} target="_blank" className="px-2 py-1 border rounded">
-                      Transform report
-                    </a>
-                  )}
-                </div>
-                {!zipReady && (
-                  <div className="text-xs text-gray-500">
-                    Bundle se još priprema – ZIP će uvijek sadržavati metapodatke te eventualno README dok artefakati ne budu spremni.
-                  </div>
-                )}
-                {!zipReady && currentIdentifier && (
-                  <div>
-                    <button
-                      onClick={async () => {
-                        try {
-                          await apiPost(`/review/builds/${currentIdentifier}/rebuild`, {}, { auth: true });
-                          showAdminAlert('alerts.buildQueued');
-                          await viewReport(currentIdentifier);
-                        } catch {
-                          showAdminAlert('alerts.buildQueueFailed');
-                        }
-                      }}
-                      className="px-2 py-1 border rounded"
-                    >
-                      Run build again
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-xs text-red-600 mb-2">
-                Build artefakti nisu dostupni za ovaj unos.
-              </div>
-            )}
-            {timeline.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1 mb-2">
-                {timeline.map((t, idx) => (
-                  <div key={`${t.state}-${idx}`} className="flex items-center">
-                    <span className={timelineClass(t.state)}>{t.state}</span>
-                    {idx < timeline.length - 1 && (
-                      <span className="timeline-arrow timeline-arrow-active" aria-hidden="true">
-                        →
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            {currentBuildId ? <BuildTimeline buildId={currentBuildId} /> : null}
-            {currentItem?.networkPolicy && (
-              <div className="text-sm mb-2">
-                <div>
-                  Automatska mrežna politika: {currentItem.networkPolicy}
-                </div>
-                {currentItem.networkPolicyReason && (
-                  <div className="text-xs text-gray-600">
-                    {currentItem.networkPolicyReason}
-                  </div>
-                )}
-                {currentItem.networkDomains && currentItem.networkDomains.length > 0 && (
-                  <ul className="list-disc list-inside text-xs text-gray-600 mt-1">
-                    {currentItem.networkDomains.map((d) => (
-                      <li key={d}>fetch prema {d}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-            {currentBuildId && (
-              <div className="text-sm mb-2">
-                <div className="font-semibold">Dozvole (Permissions-Policy)</div>
-                <div className="flex flex-wrap gap-3 mt-1">
-                  {['camera','microphone','geolocation','clipboardRead','clipboardWrite'].map((k) => (
-                    <label key={k} className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={Boolean((policy as any)?.[k])}
-                        onChange={(e) => setPolicy((p) => ({ ...(p||{}), [k]: e.target.checked }))}
-                      />
-                      <span>{k}</span>
-                    </label>
-                  ))}
-                </div>
-                {report?.status === 'complete' && (report.data?.suggested_manifest_patch as any)?.permissionsPolicy && (
-                  <div className="mt-2 text-xs text-gray-700">
-                    <div className="font-medium mb-1">AI prijedlog dozvola:</div>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(((report.data?.suggested_manifest_patch as any)?.permissionsPolicy) || {}).map(([k, v]) => (
-                        <span key={k} className={`px-1 rounded ${v ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-700'}`}>
-                          {k}: {String(v)}
-                        </span>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => {
-                        const ai = (report?.data?.suggested_manifest_patch as any)?.permissionsPolicy;
-                        if (ai) setPolicy((p) => ({ ...(p || {}), ...ai }));
-                      }}
-                      className="mt-2 px-2 py-1 border rounded"
-                    >
-                      Primijeni AI prijedlog
-                    </button>
-                  </div>
-                )}
-                <div className="mt-2">
-                  <button
-                    onClick={async () => {
-                      if (!currentBuildId || !policy) return;
-                      setPolicySaving(true);
-                    try {
-                      await fetch(`${PUBLIC_API_URL}/review/builds/${currentBuildId}/policy`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: await buildHeaders(true),
-                        body: JSON.stringify(policy),
-                      });
-                    } catch (e) {
-                      console.error(e);
-                      showAdminAlert('alerts.policySaveFailed');
-                    } finally {
-                      setPolicySaving(false);
-                    }
-                  }}
-                    className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                    disabled={policySaving}
-                  >
-                    {policySaving ? 'Spremam…' : 'Spremi dozvole'}
-                  </button>
-                </div>
-                {/* Admin editable controls: visibility, accessMode, status, state */}
-                <div className="mt-3 p-3 border rounded bg-gray-50">
-                  <div className="text-sm font-medium mb-2">Admin: Uredi postavke</div>
-                  <div className="flex flex-wrap gap-2 items-center">
-                    <label className="text-xs">Vidljivost</label>
-                    <select
-                      value={editableVisibility}
-                      onChange={(e) => setEditableVisibility(e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value="public">public</option>
-                      <option value="pin">pin</option>
-                      <option value="invite">invite</option>
-                      <option value="private">private</option>
-                    </select>
-
-                    <label className="text-xs">Pristup</label>
-                    <select
-                      value={editableAccessMode}
-                      onChange={(e) => setEditableAccessMode(e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value="public">public</option>
-                      <option value="pin">pin</option>
-                      <option value="invite">invite</option>
-                      <option value="private">private</option>
-                    </select>
-
-                    <label className="text-xs">Status</label>
-                    <select
-                      value={editableStatus}
-                      onChange={(e) => setEditableStatus(e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value="published">published</option>
-                      <option value="draft">draft</option>
-                      <option value="rejected">rejected</option>
-                    </select>
-
-                    <label className="text-xs">State</label>
-                    <select
-                      value={editableState}
-                      onChange={(e) => setEditableState(e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value="active">active</option>
-                      <option value="inactive">inactive</option>
-                    </select>
-
-                    <button
-                      onClick={async () => {
-                        if (!currentIdentifier && !currentItem) {
-                          showAdminAlert('alerts.noSelection');
-                          return;
-                        }
-                        const target = currentIdentifier || currentItem?.id || currentItem?.slug || '';
-                        setAdminSaving(true);
-                        try {
-                          await apiPost(`/review/builds/${target}/admin-update`, {
-                            visibility: editableVisibility,
-                            accessMode: editableAccessMode,
-                            status: editableStatus,
-                            state: editableState,
-                            updatedAt: Date.now(),
-                          }, { auth: true });
-                          // refresh view
-                          await viewReport(target);
-                          await load();
-                          showAdminAlert('alerts.saveSuccess');
-                        } catch (err) {
-                          console.error(err);
-                          showAdminAlert('alerts.saveFailed');
-                        } finally {
-                          setAdminSaving(false);
-                        }
-                      }}
-                      className="px-3 py-1 bg-emerald-600 text-white rounded text-sm disabled:opacity-50"
-                      disabled={adminSaving}
-                    >
-                      {adminSaving ? 'Spremam…' : 'Spremi promjene'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            {currentItem?.llmAttempts !== undefined && (
-              <div className="text-sm mb-2">{tAdmin('llmDetails.attempts', { count: currentItem.llmAttempts })}</div>
-            )}
-            {report?.status === 'not_ready' && currentBuildId && (
-              <div className="space-y-2">
-                <p className="text-sm">{tAdmin('llmDetails.noReport')}</p>
-                <button
-                  onClick={regenerate}
-                  className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                  disabled={regeneratingId === currentBuildId || llmEnabled === false}
-                >
-                  {regeneratingId === currentBuildId
-                    ? tAdmin('llmDetails.regenerating')
-                    : llmEnabled === false
-                    ? tAdmin('llmDetails.disabledButton')
-                    : 'Pokreni LLM analizu'}
-                </button>
-                {llmEnabled === false && (
-                  <p className="text-xs text-gray-500">{tAdmin('llmDetails.enableHint')}</p>
-                )}
-              </div>
-            )}
-            {report?.status === 'complete' && (
-              <>
-                  <p className="text-sm text-gray-600">
-                    {tAdmin('llmDetails.providerLabel')}: {report.provider} / {report.model}
-                  </p>
-                  {report.data?.publishRecommendation && (
-                    <div className="text-sm font-semibold mt-1">
-                      {tAdmin('llm.recommendation', { value: report.data.publishRecommendation })}
+                        </div>
+                      )}
                     </div>
                   )}
-                  {report.data?.summary && (
-                    <p className="text-sm mt-1">{report.data.summary}</p>
-                  )}
-                  {report.data?.confidence !== undefined && (
-                    <div className="w-32 bg-gray-200 h-2 rounded">
-                      <div
-                        className="h-2 bg-emerald-600 rounded"
-                        style={{ width: `${(report.data?.confidence || 0) * 100}%` }}
-                      />
-                    </div>
-                  )}
-                  {(report.data?.risks?.length ?? 0) > 0 && (
-                    <ul className="list-disc list-inside text-sm mt-2">
-                      {(report.data?.risks ?? []).map((r) => (
-                        <li key={r.title}>{r.title}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {(report.data?.questions?.length ?? 0) > 0 && (
-                    <ul className="list-disc list-inside text-sm mt-2">
-                      {(report.data?.questions ?? []).map((q) => (
-                        <li key={q.q}>{q.q}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <button
-                    className="text-xs text-emerald-600 underline mt-2"
-                    onClick={() => setShowRaw((s) => !s)}
-                  >
-                    {showRaw ? tAdmin('llmDetails.hideJson') : tAdmin('llmDetails.showJson')}
-                  </button>
-                  {showRaw && (
-                    <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto">
-                      {JSON.stringify(report, null, 2)}
-                    </pre>
-                  )}
-                </>
-              )}
-            {report?.status === 'error' && (
-              <div className="space-y-2">
-                <div className="text-sm text-red-600">
-                  {getFriendlyError(report.error?.code) ||
-                    report.error?.code ||
-                    tAdmin('errors.llmReviewFailed')}
                 </div>
-                <button
-                  onClick={regenerate}
-                  className="px-3 py-1 bg-emerald-600 text-white rounded disabled:opacity-50"
-                  disabled={regeneratingId === currentBuildId}
-                >
-                  {regeneratingId === currentBuildId ? tAdmin('llmDetails.regenerating') : 'Run again'}
-                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
+
       {confirmDialog && (
         <ConfirmDialog
           open
@@ -1897,6 +1772,7 @@ const confirmDialog = confirmAction
           onClose={() => setConfirmAction(null)}
         />
       )}
+
       {rejectState && (
         <ConfirmDialog
           open
@@ -1905,7 +1781,7 @@ const confirmDialog = confirmAction
             <div className="space-y-3 text-sm">
               <p>Enter a rejection reason that will be shown to the creator.</p>
               <textarea
-                className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                className="w-full rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
                 rows={4}
                 value={rejectState.reason}
                 onChange={(e) =>
@@ -1921,6 +1797,6 @@ const confirmDialog = confirmAction
           onClose={() => setRejectState(null)}
         />
       )}
-    </>
+    </div>
   );
 }

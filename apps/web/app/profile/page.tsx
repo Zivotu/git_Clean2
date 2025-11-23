@@ -29,6 +29,30 @@ import {
 } from '@/hooks/useConnectStatus';
 import AmbassadorSection from '@/components/AmbassadorSection';
 import { playHref, appDetailsHref } from '@/lib/urls';
+import {
+  User,
+  Settings,
+  Globe,
+  Camera,
+  CreditCard,
+  Star,
+  BarChart3,
+  HardDrive,
+  History,
+  Receipt,
+  LayoutGrid,
+  AppWindow,
+  Edit3,
+  Save,
+  Loader2,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  LogOut,
+  Plus,
+  Trash2,
+  RefreshCw
+} from 'lucide-react';
 
 interface ProfileData {
   items: Listing[];
@@ -802,412 +826,552 @@ export default function ProfilePage() {
   const hasAnySubscription = hasActiveStripeSubs || hasOwnedFeatures;
   return (
     <>
+      <main className="max-w-6xl mx-auto p-4 md:p-8 space-y-8">
+        {/* Header Section */}
+        <div className="relative rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-sm">
+          <div className="h-32 bg-gradient-to-r from-emerald-500 to-teal-600 dark:from-emerald-900 dark:to-teal-900 relative">
+            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+          </div>
+          <div className="px-6 pb-6 md:px-8 md:pb-8">
+            <div className="relative -mt-12 flex flex-col md:flex-row gap-6 items-start md:items-end">
+              <div className="relative rounded-full p-1.5 bg-white dark:bg-zinc-900">
+                <Avatar uid={user.uid} src={user.photoURL ?? undefined} name={name} size={96} className="rounded-full" />
+              </div>
+              <div className="flex-1 pt-2 md:pt-0">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                  {name}
+                  {connect && (
+                    <span
+                      className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${canMonetize
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+                        : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800'
+                        }`}
+                    >
+                      {canMonetize ? 'Payouts Active' : 'Onboarding Required'}
+                    </span>
+                  )}
+                </h1>
+                <div className="mt-1 text-sm text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span className="flex items-center gap-1.5">
+                    <User className="h-3.5 w-3.5" />
+                    {user.email}
+                  </span>
+                  {handle && <span className="hidden md:inline">·</span>}
+                  {handle && <span>@{handle}</span>}
+                  {joined && <span className="hidden md:inline">·</span>}
+                  {joined && <span>Joined {joined}</span>}
+                </div>
+              </div>
+              <div className="flex gap-3 w-full md:w-auto">
+                {handle && (
+                  <Link
+                    href={`/u/${handle}`}
+                    className={buttonVariants({ variant: 'outline', className: 'flex-1 md:flex-none gap-2' })}
+                  >
+                    <Globe className="h-4 w-4" />
+                    Public Profile
+                  </Link>
+                )}
+              </div>
+            </div>
 
-      <main className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+            <div className="mt-8 grid grid-cols-3 gap-4 border-t border-slate-100 dark:border-zinc-800 pt-6">
+              <div className="text-center md:text-left">
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.apps}</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Apps</div>
+              </div>
+              <div className="text-center md:text-left">
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.likes}</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Likes</div>
+              </div>
+              <div className="text-center md:text-left">
+                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.plays}</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plays</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {connect && !canMonetize && (
-          <div className="p-6 bg-blue-50 border border-blue-200 rounded-xl text-center">
-            <p className="mb-4 text-blue-900">
-              Da bi monetizirao aplikacije ili repozitorij, najprije dovrši Stripe onboarding.
-            </p>
-            <div className="space-x-2">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg text-blue-600 dark:text-blue-400">
+                <CreditCard className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">Setup Payouts</h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                  To monetize your apps or repository, you need to complete the Stripe onboarding process.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
               <button
                 onClick={() => startStripeOnboarding(user!.uid, handle)}
-                className="px-4 py-2 bg-blue-600 text-white rounded"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Podesi isplate (Stripe)
+                Setup Stripe
               </button>
               {connect.onboarded && connect.payouts_enabled && (
                 <button
                   onClick={() => openStripeDashboard(user!.uid)}
-                  className="px-4 py-2 bg-gray-200 rounded"
+                  className="px-4 py-2 bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 >
-                  Otvori Stripe dashboard
+                  Dashboard
                 </button>
               )}
             </div>
           </div>
         )}
-        <Card className="relative overflow-hidden rounded-3xl border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-6">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-200/40 rounded-full blur-3xl" />
-          <div className="relative z-10 flex items-center gap-5">
-            <Avatar uid={user.uid} src={user.photoURL ?? undefined} name={name} size={72} />
-            <div className="flex-1">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                {name}
-                {connect && (
-                  <span
-                    className={`ml-3 text-xs px-2 py-1 rounded-full ${canMonetize
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                  >
-                    {canMonetize ? 'Isplate aktivne' : 'Onboarding potreban'}
-                  </span>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Settings */}
+          <div className="lg:col-span-2 space-y-8">
+
+            {/* Public Profile Settings */}
+            <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 bg-slate-50/50 dark:bg-zinc-800/50">
+                <Globe className="h-5 w-5 text-slate-500" />
+                <h2 className="font-semibold text-slate-900 dark:text-slate-100">Public Profile Settings</h2>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {!handle && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 p-4 flex gap-3 text-sm text-amber-800 dark:text-amber-300">
+                    <AlertTriangle className="h-5 w-5 shrink-0" />
+                    <p>Add a username below to make your public profile accessible at /u/username.</p>
+                  </div>
                 )}
-              </h1>
-              <div className="mt-1 text-sm text-gray-600 flex flex-wrap items-center gap-3">
-                <span>{user.email}</span>
-                {handle && <span>· @{handle}</span>}
-                {joined && <span>· Joined {joined}</span>}
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-700 text-sm">Apps: {stats.apps}</span>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-700 text-sm">Likes: {stats.likes}</span>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-700 text-sm">Plays: {stats.plays}</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Link href="/profile/edit" className={buttonVariants({ className: 'text-sm text-center' })}>
-                Edit Profile
-              </Link>
-              {handle && (
-                <Link
-                  href={`/u/${handle}`}
-                  className={buttonVariants({ variant: 'outline', className: 'text-sm text-center' })}
-                >
-                  Public Profile
-                </Link>
-              )}
-            </div>
-          </div>
-        </Card>
-        <Card className="rounded-3xl p-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="text-xl font-semibold">Javni profil</h2>
-                <p className="text-sm text-gray-600">
-                  Prikaži drugačije ime i fotografiju posjetiteljima koji otvore tvoj Public profile.
-                </p>
-              </div>
-              {publicProfileHref && (
-                <Link href={publicProfileHref} className="text-sm text-blue-600 hover:underline">
-                  Pogledaj javni prikaz
-                </Link>
-              )}
-            </div>
-            {!handle && (
-              <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
-                Dodaj korisničko ime u nastavku kako bi tvoj javni profil bio dostupan na /u/ime.
-              </div>
-            )}
-            <form onSubmit={handlePublicProfileSubmit} className="space-y-4">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                <Avatar
-                  uid={user.uid}
-                  src={publicAvatarSrc}
-                  name={publicProfile.displayName || name}
-                  size={72}
-                />
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Fotografija za javni profil
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePublicPhotoChange}
-                    className="mt-1 text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Ova fotografija prikazuje se samo na stranici /u/{handle || 'tvoje-ime'}.
-                  </p>
-                </div>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Ime koje vide posjetitelji
-                </label>
-                <Input
-                  value={publicProfile.displayName}
-                  onChange={handlePublicNameChange}
-                  placeholder="npr. Studio Pixel"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Ime repozitorija
-                </label>
-                <Input
-                  value={repositoryName}
-                  onChange={(e) => setRepositoryName(e.target.value)}
-                  placeholder="npr. studio-pixel"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Ovo će biti adresa tvog repozitorija. Možeš ga promijeniti jednom u 3 mjeseca.
-                </p>
-              </div>
-              {publicStatus && (
-                <p
-                  className={`text-sm ${publicStatus.type === 'success' ? 'text-emerald-600' : 'text-red-600'
-                    }`}
-                >
-                  {publicStatus.text}
-                </p>
-              )}
-              <div className="flex flex-wrap items-center gap-3">
-                <Button type="submit" disabled={publicSaving}>
-                  {publicSaving ? 'Spremanje…' : 'Spremi javni prikaz'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </Card>
-        <Card className="rounded-3xl p-6">
-          <h2 className="text-xl font-semibold mb-2">Značajke</h2>
-          {entitlementsLoading ? (
-            <p className="text-sm text-gray-500">Loading…</p>
-          ) : (
-            (() => {
-              const addable = entitlementItems.filter((it) => !it.owned);
-              return addable.length > 0 ? (
-                <EntitlementsList items={addable} />
-              ) : (
-                <p className="text-sm text-gray-500">Sve dostupne značajke su aktivne.</p>
-              );
-            })()
-          )}
-        </Card>
-        <Card className="rounded-3xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <div>
-              <h2 className="text-xl font-semibold">Subscription</h2>
-              <p className="text-sm text-gray-600">
-                {hasAnySubscription
-                  ? 'Aktivne pogodnosti povezane s tvojim računom.'
-                  : 'Trenutno nema aktivnih pretplata.'}
-              </p>
-            </div>
-            <span className={`px-3 py-1 text-xs font-semibold rounded-full ${subscriptionStatusClass}`}>
-              {subscriptionStatusLabel}
-            </span>
-          </div>
-          {subscription.renewalDate && (
-            <p className="text-sm text-gray-500 mb-4">
-              Sljedeća naplata: {subscription.renewalDate}
-            </p>
-          )}
-          {ownedFeatureBadges.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {ownedFeatureBadges.map((badge) => (
-                <span
-                  key={badge.key}
-                  className="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-sm text-emerald-700"
-                >
-                  {badge.label}
-                </span>
-              ))}
-            </div>
-          )}
-          {hasActiveStripeSubs ? (
-            <ul className="space-y-2 mb-4">
-              {activeSubs.map((sub) => {
-                const detail =
-                  sub.feature === 'creator-all-access' && sub.creatorHandle
-                    ? `Kreator @${sub.creatorHandle}`
-                    : sub.feature === 'app-subscription' && sub.appId
-                      ? `App #${sub.appId}`
-                      : featureDescriptions[sub.feature] || 'Pretplata';
-                return (
-                  <li
-                    key={sub.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 px-4 py-3"
-                  >
-                    <div>
-                      <p className="font-medium text-gray-900">{sub.label}</p>
-                      <p className="text-xs text-gray-500">{detail}</p>
+
+                <form onSubmit={handlePublicProfileSubmit} className="space-y-6">
+                  <div className="flex flex-col sm:flex-row gap-6 items-start">
+                    <div className="relative group">
+                      <Avatar
+                        uid={user.uid}
+                        src={publicAvatarSrc}
+                        name={publicProfile.displayName || name}
+                        size={80}
+                        className="ring-4 ring-slate-50 dark:ring-zinc-800"
+                      />
+                      <label className="absolute bottom-0 right-0 p-1.5 bg-emerald-600 text-white rounded-full cursor-pointer hover:bg-emerald-700 transition-colors shadow-sm">
+                        <Camera className="h-4 w-4" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePublicPhotoChange}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setConfirmCancel({ id: sub.id, label: sub.label })}
-                      >
-                        Otkaži
-                      </Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-500 mb-4">
-              {hasOwnedFeatures
-                ? 'Pogodnosti su aktivirane ručno i nisu vezane uz Stripe pretplatu.'
-                : 'Još nema aktivnih Stripe pretplata.'}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-3">
-            {hasActiveStripeSubs && (
-              <Button type="button" variant="outline" onClick={manageBilling}>
-                Upravljaj naplatom
-              </Button>
-            )}
-            {!hasAnySubscription && (
-              <Link
-                href="/pro/checkout/gold"
-                className={buttonVariants({ className: 'text-sm' })}
-              >
-                Aktiviraj Gold plan
-              </Link>
-            )}
-          </div>
-        </Card>
-
-        <AmbassadorSection userInfo={userInfo} />
-
-        <Card className="rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold">Billing History</h2>
-            <Link
-              href="/billing/history"
-              className="text-sm text-blue-600 hover:underline"
-            >
-              Purchase history
-            </Link>
-          </div>
-          {billingHistory.length ? (
-            <ul className="text-sm text-gray-700 space-y-1">
-              {billingHistory.map((ev, i) => (
-                <li key={i} className="py-2 border-b border-gray-100">
-                  {renderBillingEvent(ev)}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-500">No history</p>
-          )}
-        </Card>
-        <Card className="rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl font-semibold">Usage</h2>
-            <Button
-              onClick={loadUsage}
-              disabled={usageBusy}
-              variant="outline"
-              size="sm"
-            >
-              {usageBusy ? 'Loading…' : 'Refresh'}
-            </Button>
-          </div>
-          {usage ? (
-            <ul className="text-sm text-gray-700 space-y-1">
-              <li>
-                Apps: {usage.apps.used} / {usage.apps.limit} (remaining {usage.apps.remaining})
-              </li>
-              <li>
-                Storage: {usage.storage.used}MB / {usage.storage.limit}MB (remaining {usage.storage.remaining}MB)
-              </li>
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-500">No usage data</p>
-          )}
-        </Card>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Osobni podaci</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <Input
-                name="firstName"
-                value={form.firstName}
-                onChange={handleChange}
-                placeholder="Ime"
-              />
-              <Input
-                name="lastName"
-                value={form.lastName}
-                onChange={handleChange}
-                placeholder="Prezime"
-              />
-            </div>
-            <Input
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              placeholder="Korisničko ime"
-            />
-            <Input
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="Broj mobitela"
-            />
-            <Textarea
-              name="bio"
-              value={form.bio}
-              onChange={handleChange}
-              placeholder="Bio"
-            />
-            <div className="grid md:grid-cols-3 gap-4">
-              <Input name="website" value={form.website} onChange={handleChange} placeholder="https://example.com" />
-              <Input name="twitter" value={form.twitter} onChange={handleChange} placeholder="https://twitter.com/handle" />
-              <Input name="github" value={form.github} onChange={handleChange} placeholder="https://github.com/user" />
-            </div>
-            <Button type="submit" disabled={saving} className="rounded-2xl">
-              {saving ? 'Spremanje...' : 'Spremi'}
-            </Button>
-          </form>
-        </div>
-
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Moji projekti ({apps.length})</h2>
-          <p className="text-sm text-gray-600 mb-4">Ukupno lajkova: {stats.likes}</p>
-          {apps.length > 0 ? (
-            <ul className="space-y-4">
-              {apps.map((app) => (
-                <li key={app.id}>
-                  <Card className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div>
-                      <h3 className="text-lg font-medium">{app.title}</h3>
-                      {app.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {app.description}
+                    <div className="flex-1 space-y-4 w-full">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                          Display Name
+                        </label>
+                        <Input
+                          value={publicProfile.displayName}
+                          onChange={handlePublicNameChange}
+                          placeholder="e.g. Studio Pixel"
+                          className="bg-slate-50 dark:bg-zinc-800/50"
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                          This name will be visible to visitors on your public profile.
                         </p>
-                      )}
-                      <div className="mt-1 text-xs text-gray-500 flex gap-4">
-                        {typeof app.likesCount === 'number' && (
-                          <span>Likes: {app.likesCount}</span>
-                        )}
-                        {typeof (app as any).playCount === 'number' || typeof app.playsCount === 'number' ? (
-                          <span>
-                            Plays: {(app as any).playCount ?? app.playsCount ?? 0}
-                          </span>
-                        ) : null}
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                          Repository Name
+                        </label>
+                        <Input
+                          value={repositoryName}
+                          onChange={(e) => setRepositoryName(e.target.value)}
+                          placeholder="e.g. studio-pixel"
+                          className="bg-slate-50 dark:bg-zinc-800/50"
+                        />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+                          This will be your repository address. You can change it once every 3 months.
+                        </p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <a
-                        href={playHref(app.id, { run: 1 })}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={buttonVariants({ className: 'text-sm' })}
-                      >
-                        Open
-                      </a>
-                      <Link
-                        href={appDetailsHref(app.slug)}
-                        className={buttonVariants({ variant: 'outline', className: 'text-sm' })}
-                      >
-                        Manage
-                      </Link>
+                  </div>
+
+                  {publicStatus && (
+                    <div className={`flex items-center gap-2 text-sm ${publicStatus.type === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {publicStatus.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                      {publicStatus.text}
                     </div>
-                  </Card>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="py-4 text-gray-500">You don&apos;t have any applications yet.</p>
-          )}
+                  )}
+
+                  <div className="pt-2">
+                    <Button type="submit" disabled={publicSaving} className="w-full sm:w-auto gap-2">
+                      {publicSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      {publicSaving ? 'Saving...' : 'Save Public Profile'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            {/* Personal Info Settings */}
+            <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 bg-slate-50/50 dark:bg-zinc-800/50">
+                <User className="h-5 w-5 text-slate-500" />
+                <h2 className="font-semibold text-slate-900 dark:text-slate-100">Personal Information</h2>
+              </div>
+
+              <div className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">First Name</label>
+                      <Input
+                        name="firstName"
+                        value={form.firstName}
+                        onChange={handleChange}
+                        placeholder="First Name"
+                        className="bg-slate-50 dark:bg-zinc-800/50"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Last Name</label>
+                      <Input
+                        name="lastName"
+                        value={form.lastName}
+                        onChange={handleChange}
+                        placeholder="Last Name"
+                        className="bg-slate-50 dark:bg-zinc-800/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Username</label>
+                      <Input
+                        name="username"
+                        value={form.username}
+                        onChange={handleChange}
+                        placeholder="Username"
+                        className="bg-slate-50 dark:bg-zinc-800/50"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone</label>
+                      <Input
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        placeholder="Phone Number"
+                        className="bg-slate-50 dark:bg-zinc-800/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Bio</label>
+                    <Textarea
+                      name="bio"
+                      value={form.bio}
+                      onChange={handleChange}
+                      placeholder="Tell us a little about yourself..."
+                      className="bg-slate-50 dark:bg-zinc-800/50 min-h-[100px]"
+                    />
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Website</label>
+                      <Input name="website" value={form.website} onChange={handleChange} placeholder="https://example.com" className="bg-slate-50 dark:bg-zinc-800/50" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Twitter / X</label>
+                      <Input name="twitter" value={form.twitter} onChange={handleChange} placeholder="@handle" className="bg-slate-50 dark:bg-zinc-800/50" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">GitHub</label>
+                      <Input name="github" value={form.github} onChange={handleChange} placeholder="username" className="bg-slate-50 dark:bg-zinc-800/50" />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button type="submit" disabled={saving} className="w-full sm:w-auto gap-2">
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            {/* My Projects */}
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <LayoutGrid className="h-5 w-5 text-emerald-500" />
+                  My Projects
+                  <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                    {apps.length}
+                  </span>
+                </h2>
+              </div>
+
+              {apps.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {apps.map((app) => (
+                    <div key={app.id} className="group bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-4 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 transition-all shadow-sm hover:shadow-md">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                            {app.title}
+                          </h3>
+                          {app.description && (
+                            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
+                              {app.description}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <a
+                            href={playHref(app.id, { run: 1 })}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                            title="Run App"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                          <Link
+                            href={appDetailsHref(app.slug)}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="Manage App"
+                          >
+                            <Settings className="h-4 w-4" />
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-slate-100 dark:border-zinc-800 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5" />
+                          {app.likesCount ?? 0} Likes
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          {(app as any).playCount ?? app.playsCount ?? 0} Plays
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50 dark:bg-zinc-900/50 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white dark:bg-zinc-800 mb-4 shadow-sm">
+                    <AppWindow className="h-6 w-6 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No projects yet</h3>
+                  <p className="text-slate-500 dark:text-slate-400 mt-1">You haven&apos;t published any applications.</p>
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Right Column: Subscription & Usage */}
+          <div className="space-y-8">
+
+            {/* Subscription Card */}
+            <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-800/50">
+                <div className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-amber-500" />
+                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">Subscription</h2>
+                </div>
+                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${subscriptionStatusClass}`}>
+                  {subscriptionStatusLabel}
+                </span>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {hasAnySubscription
+                    ? 'Active benefits associated with your account.'
+                    : 'No active subscriptions currently.'}
+                </p>
+
+                {subscription.renewalDate && (
+                  <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Next billing: {subscription.renewalDate}
+                  </div>
+                )}
+
+                {ownedFeatureBadges.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {ownedFeatureBadges.map((badge) => (
+                      <span
+                        key={badge.key}
+                        className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20 dark:border-emerald-800 px-3 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {badge.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {hasActiveStripeSubs && (
+                  <div className="space-y-3">
+                    {activeSubs.map((sub) => {
+                      const detail =
+                        sub.feature === 'creator-all-access' && sub.creatorHandle
+                          ? `Creator @${sub.creatorHandle}`
+                          : sub.feature === 'app-subscription' && sub.appId
+                            ? `App #${sub.appId}`
+                            : featureDescriptions[sub.feature] || 'Subscription';
+                      return (
+                        <div
+                          key={sub.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-zinc-700 p-3 bg-slate-50 dark:bg-zinc-800/30"
+                        >
+                          <div>
+                            <p className="font-medium text-sm text-slate-900 dark:text-slate-100">{sub.label}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{detail}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmCancel({ id: sub.id, label: sub.label })}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors"
+                            title="Cancel Subscription"
+                          >
+                            <LogOut className="h-4 w-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 pt-2">
+                  {hasActiveStripeSubs && (
+                    <Button type="button" variant="outline" onClick={manageBilling} className="w-full justify-center">
+                      Manage Billing
+                    </Button>
+                  )}
+                  {!hasAnySubscription && (
+                    <Link
+                      href="/pro/checkout/gold"
+                      className={buttonVariants({ className: 'w-full justify-center bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 border-0' })}
+                    >
+                      Upgrade to Gold
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <AmbassadorSection userInfo={userInfo} />
+
+            {/* Usage Card */}
+            <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-800/50">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-slate-500" />
+                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">Usage Limits</h2>
+                </div>
+                <button
+                  onClick={loadUsage}
+                  disabled={usageBusy}
+                  className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
+                >
+                  <RefreshCw className={`h-4 w-4 ${usageBusy ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {usage ? (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                          <AppWindow className="h-4 w-4" /> Apps
+                        </span>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">
+                          {usage.apps.used} / {usage.apps.limit}
+                        </span>
+                      </div>
+                      <div className="h-2 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full"
+                          style={{ width: `${Math.min((usage.apps.used / usage.apps.limit) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-slate-600 dark:text-slate-400 flex items-center gap-2">
+                          <HardDrive className="h-4 w-4" /> Storage
+                        </span>
+                        <span className="font-medium text-slate-900 dark:text-slate-100">
+                          {usage.storage.used}MB / {usage.storage.limit}MB
+                        </span>
+                      </div>
+                      <div className="h-2 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full"
+                          style={{ width: `${Math.min((usage.storage.used / usage.storage.limit) * 100, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-slate-500 dark:text-slate-400 text-sm">
+                    No usage data available
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Billing History */}
+            <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between bg-slate-50/50 dark:bg-zinc-800/50">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-slate-500" />
+                  <h2 className="font-semibold text-slate-900 dark:text-slate-100">Billing History</h2>
+                </div>
+                <Link
+                  href="/billing/history"
+                  className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  View All
+                </Link>
+              </div>
+
+              <div className="p-6">
+                {billingHistory.length ? (
+                  <ul className="space-y-4">
+                    {billingHistory.slice(0, 5).map((ev, i) => (
+                      <li key={i} className="flex items-start gap-3 text-sm">
+                        <div className="mt-0.5 p-1 bg-slate-100 dark:bg-zinc-800 rounded text-slate-500">
+                          <History className="h-3 w-3" />
+                        </div>
+                        <span className="text-slate-600 dark:text-slate-300">{renderBillingEvent(ev)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-2">No billing history found</p>
+                )}
+              </div>
+            </section>
+
+          </div>
         </div>
       </main>
+
       <ConfirmDialog
         open={!!confirmCancel}
-        title={'Otkaži pretplatu'}
-        message={`Želite li otkazati pretplatu${confirmCancel?.label ? ` za "${confirmCancel.label}"` : ''}? Pretplata će ostati aktivna do kraja tekućeg obračunskog razdoblja.`}
-        confirmLabel={'Da, otkaži'}
-        cancelLabel="Ne"
+        title={'Cancel Subscription'}
+        message={`Are you sure you want to cancel the subscription${confirmCancel?.label ? ` for "${confirmCancel.label}"` : ''}? It will remain active until the end of the current billing period.`}
+        confirmLabel={'Yes, Cancel'}
+        cancelLabel="No, Keep it"
         confirmTone={'danger'}
         onConfirm={() => {
           const id = confirmCancel?.id;

@@ -5,6 +5,15 @@ import Image from 'next/image'
 import Link from 'next/link'
 import AppCard, { Listing } from '@/components/AppCard'
 import { PUBLIC_API_URL } from '@/lib/config'
+import {
+  Star,
+  UserPlus,
+  ArrowLeft,
+  Loader2,
+  LayoutGrid,
+  Share2,
+  MessageSquare
+} from 'lucide-react'
 
 export default function UserProfileClient({ username }: { username: string }) {
   const [user, setUser] = useState<any>(null)
@@ -49,19 +58,32 @@ export default function UserProfileClient({ username }: { username: string }) {
     fetchUserAndApps()
   }, [username])
 
-  if (loading)
-    return <div className="flex items-center justify-center min-h-screen text-gray-500">Loading profile...</div>
-
-  if (!user)
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center">
-        <h1 className="text-3xl font-bold mb-2">User not found</h1>
-        <p className="text-gray-500 mb-4">No profile for @{username}</p>
-        <Link href="/" className="text-blue-600 underline">
-          ← Back to home
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="bg-slate-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
+          <LayoutGrid className="h-8 w-8 text-slate-400" />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">User not found</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">We couldn&apos;t find a profile for @{username}</p>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to home
         </Link>
       </div>
     )
+  }
 
   const handleToggleFavorite = () => {
     console.log(`Toggle favorite for creator: ${user.displayName || username}`);
@@ -74,55 +96,109 @@ export default function UserProfileClient({ username }: { username: string }) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
-      {user.photoURL && (
-        <Image
-          src={user.photoURL}
-          alt={user.displayName || username}
-          width={120}
-          height={120}
-          className="rounded-full shadow mb-4"
-        />
-      )}
-      <h1 className="text-3xl font-bold mb-1">{user.displayName || username}</h1>
-      <p className="text-gray-600 mb-4">@{user.handle || username}</p>
-      {user.bio && <p className="text-gray-700 max-w-md">{user.bio}</p>}
-
-      <div className="mt-6 flex gap-4">
-        <button
-          onClick={handleToggleFavorite}
-          className="flex items-center gap-2 px-4 py-2 bg-yellow-400 text-white rounded-full shadow hover:bg-yellow-500 transition"
-        >
-          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
-          </svg>
-          Add to Favorites
-        </button>
-        <button
-          onClick={handleSubscribeToCreator}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-full shadow hover:bg-emerald-700 transition"
-        >
-          Subscribe to Creator
-        </button>
+    <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950/50">
+      {/* Header Banner */}
+      <div className="h-48 md:h-64 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-900 dark:to-teal-900 relative">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
       </div>
 
-      <div className="mt-12 w-full max-w-4xl">
-        <h2 className="text-2xl font-bold mb-6 text-left">Creator&apos;s Applications</h2>
-        {loadingApps ? (
-          <div className="text-gray-500 text-center">Loading applications...</div>
-        ) : userApps.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userApps.map((app) => (
-              <AppCard
-                key={app.id}
-                item={app}
-                viewMode="grid"
-              />
-            ))}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative pb-12">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-6 md:items-start">
+            {/* Avatar */}
+            <div className="shrink-0 flex justify-center md:justify-start">
+              <div className="relative h-32 w-32 rounded-full ring-4 ring-white dark:ring-zinc-900 bg-slate-100 dark:bg-zinc-800 overflow-hidden shadow-lg">
+                {user.photoURL ? (
+                  <Image
+                    src={user.photoURL}
+                    alt={user.displayName || username}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-4xl font-bold text-slate-300 dark:text-zinc-600">
+                    {(user.displayName || username).charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 text-center md:text-left space-y-4">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                  {user.displayName || username}
+                </h1>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">@{user.handle || username}</p>
+              </div>
+
+              {user.bio && (
+                <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto md:mx-0 leading-relaxed">
+                  {user.bio}
+                </p>
+              )}
+
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
+                <button
+                  onClick={handleToggleFavorite}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors border border-amber-200 dark:border-amber-800/50"
+                >
+                  <Star className="h-4 w-4" />
+                  Add to Favorites
+                </button>
+                <button
+                  onClick={handleSubscribeToCreator}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Subscribe
+                </button>
+                <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                  <Share2 className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <div className="text-gray-500 text-center">No public applications found for this creator.</div>
-        )}
+        </div>
+
+        {/* Apps Grid */}
+        <div className="mt-12 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <LayoutGrid className="h-5 w-5 text-emerald-500" />
+              Applications
+              <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                {userApps.length}
+              </span>
+            </h2>
+          </div>
+
+          {loadingApps ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-64 bg-slate-100 dark:bg-zinc-900 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : userApps.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userApps.map((app) => (
+                <AppCard
+                  key={app.id}
+                  item={app}
+                  viewMode="grid"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 border-dashed">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 mb-4">
+                <LayoutGrid className="h-6 w-6 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No applications yet</h3>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">This creator hasn&apos;t published any public applications.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
