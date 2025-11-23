@@ -228,9 +228,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const normalizedRoomsMode = storageDisabled ? 'off' : normalizeRoomsMode(rawRoomsMode)
   const roomsMode: RoomsMode =
     GLOBAL_ROOMS_ENABLED && !storageDisabled
-      ? normalizedRoomsMode === 'off'
-        ? 'optional'
-        : normalizedRoomsMode
+      ? normalizedRoomsMode
       : 'off'
   const roomsEnabled = roomsMode !== 'off'
   const baseNamespace = useMemo(() => makeNamespace(appId), [appId])
@@ -252,7 +250,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const [iframeUrl, setIframeUrl] = useState<string>('')
   const [frameHeight, setFrameHeight] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  
+
   const sandboxFlags = useMemo(() => {
     const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads'];
     if (securityPolicy?.sandbox?.allowModals) {
@@ -372,7 +370,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       const exit = doc.exitFullscreen ?? doc.webkitExitFullscreen ?? doc.msExitFullscreen
       const result = exit?.call(doc)
       if (result && typeof (result as Promise<unknown>).catch === 'function') {
-        ;(result as Promise<unknown>).catch(() => {})
+        ; (result as Promise<unknown>).catch(() => { })
       }
       return
     }
@@ -380,7 +378,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       container.requestFullscreen ?? element.webkitRequestFullscreen ?? element.msRequestFullscreen
     const result = request?.call(container)
     if (result && typeof (result as Promise<unknown>).catch === 'function') {
-      ;(result as Promise<unknown>).catch(() => {})
+      ; (result as Promise<unknown>).catch(() => { })
     }
   }, [])
 
@@ -471,11 +469,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   )
 
   useEffect(() => {
-    if (!roomsEnabled) return
+    // Always use demo room for shared storage, even when additional rooms are disabled
     if (autoDemoRequested) return
     setAutoDemoRequested(true)
     void handleUseDemo()
-  }, [roomsEnabled, autoDemoRequested, handleUseDemo])
+  }, [autoDemoRequested, handleUseDemo])
 
   useEffect(() => {
     if (!SHIM_ENABLED) {
@@ -914,14 +912,14 @@ function RoomsToolbar({
     session?.room?.name ?? messages['Rooms.defaultRoomName'] ?? 'Javna demo soba (PIN 1111)'
   const summaryText = isDemo
     ? messages['Rooms.descriptionDemoCompact'] ??
-      'Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.'
+    'Demo soba je javna i služi testiranju. Svi korisnici dijele iste podatke.'
     : messages['Rooms.descriptionPrivateCompact'] ??
-      'Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.'
+    'Ova soba ima vlastitu pohranu koju dijele samo članovi s istim PIN-om.'
   const fullDescription = isDemo
     ? messages['Rooms.descriptionDemoFull'] ??
-      'Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.'
+    'Ova demo soba je javna i služi upoznavanju aplikacije. Za privatnu pohranu kreiraj vlastitu sobu i PIN.'
     : messages['Rooms.descriptionPrivateFull'] ??
-      'Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.'
+    'Soba koju si odabrao/la ima vlastitu pohranu i dostupna je svima koji znaju naziv i PIN.'
   const roomLabel = messages['Rooms.roomLabel'] ?? 'Naziv sobe'
   const pinLabel = messages['Rooms.pinLabel'] ?? 'PIN'
   const roomPlaceholder = messages['Rooms.roomPlaceholder'] ?? 'Naziv sobe (npr. Kuhinja)'
@@ -955,12 +953,17 @@ function RoomsToolbar({
     if (variant === 'compact') {
       void Promise.resolve(result)
         .then(() => setCollapsed(true))
-        .catch(() => {})
+        .catch(() => { })
     }
   }
 
   return (
-    <div className={panelClasses}>
+    <motion.div
+      initial={{ x: 100, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className={panelClasses}
+    >
       <div className="px-4 py-3">
         <button
           type="button"
@@ -974,7 +977,7 @@ function RoomsToolbar({
             <p className={`text-sm font-semibold ${titleTextColor}`}>{displayName}</p>
           </div>
           {toggleArrow && (
-            <span className="text-sm text-slate-500" aria-hidden="true">
+            <span className="text-2xl text-slate-500 transition-transform duration-200" aria-hidden="true">
               {toggleArrow}
             </span>
           )}
@@ -1037,11 +1040,10 @@ function RoomsToolbar({
                 </button>
                 <button
                   type="button"
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                    variant === 'full'
-                      ? 'border border-white/30 bg-white/10 text-white hover:bg-white/20 disabled:border-white/20'
-                      : 'border border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
-                  }`}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${variant === 'full'
+                    ? 'border border-white/30 bg-white/10 text-white hover:bg-white/20 disabled:border-white/20'
+                    : 'border border-slate-200 bg-white text-slate-900 hover:bg-slate-50'
+                    }`}
                   onClick={() => void onUseDemo()}
                   disabled={loading}
                 >
@@ -1052,7 +1054,7 @@ function RoomsToolbar({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   )
 }
 

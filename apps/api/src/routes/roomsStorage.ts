@@ -139,10 +139,8 @@ const roomsStorageRoutes: FastifyPluginAsync = async (app) => {
     if (!appRecord) {
       return reply.code(404).send({ ok: false, error: 'app_not_found' });
     }
-    const mode = getRoomsMode(appRecord);
-    if (mode === 'off') {
-      return reply.code(400).send({ ok: false, error: 'rooms_disabled' });
-    }
+    // Demo room is always available - it's the shared global storage
+    // 'off' mode means no additional private rooms, but demo room is still accessible
     const roomDoc = await ensureDemoRoom(appId);
     const namespace = makeRoomNamespace(appId, roomDoc.roomCode);
     return reply.send({ ...buildResponse(roomDoc, namespace), pin: DEMO_PIN });
