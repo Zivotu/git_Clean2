@@ -104,7 +104,7 @@
           "detail2": "Aktiviere Rooms, wenn du mehr Nutzer mit persistenten Zuständen brauchst."
         },
         "cta": "Creator Studio öffnen"
-      },
+      }
     },
     "search": {
       "placeholder": "Suche nach Apps, Creators oder Prompts...",
@@ -123,20 +123,20 @@
           "favorites": "{count} Favoriten"
         }
       },
-    "badges": {
-      "curated": "Kuratiert"
+      "badges": {
+        "curated": "Kuratiert"
+      },
+      "random": {
+        "label": "Random Pick",
+        "details": "Details ansehen"
+      }
     },
-    "random": {
-      "label": "Random Pick",
-      "details": "Details ansehen"
-    }
-  },
-  "promo": {
-    "sidebar": {
-      "title": "Empfohlene Stories",
-      "subtitle": "Einfache Anleitung und Publikationsregeln auf einen Blick."
-    }
-  },
+    "promo": {
+      "sidebar": {
+        "title": "Empfohlene Stories",
+        "subtitle": "Einfache Anleitung und Publikationsregeln auf einen Blick."
+      }
+    },
     "promo": {
       "featuredLabel": "Empfohlen",
       "learnMore": "Mehr erfahren",
@@ -765,10 +765,10 @@
   },
   "Home": {
     "headline": {
-      "one": "Entdecke groÃ¢â€Å“Ã†â€™artige",
+      "one": "Entdecke großartige",
       "two": "Mini-Apps & Spiele"
     },
-    "tagline": "Kuratiertes Marketplace fÃ¢â€Å“Ã¢â€¢Âr Browser-Erlebnisse. Bauen, teilen und entdecken.",
+    "tagline": "Kuratiertes Marketplace für Browser-Erlebnisse. Bauen, teilen und entdecken.",
     "trending": "Gerade im Trend",
     "appsCount": "{count} Apps",
     "search": {
@@ -1214,6 +1214,3 @@
     "redirecting": "Weiterleitung zum Golden BookÃ¢â‚¬Â¦"
   }
 }
-
-
-

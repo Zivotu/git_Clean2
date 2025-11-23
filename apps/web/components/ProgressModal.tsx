@@ -20,8 +20,8 @@ export default function ProgressModal({
   state: BuildState | null;
   error?: string;
   onClose?: () => void;
-  previewUrl?: string; 
-  step?: string; 
+  previewUrl?: string;
+  step?: string;
 }) {
   const [progress, setProgress] = useState(0);
   const packages = useMemo(() => Array.from({ length: 5 }), []);
@@ -45,10 +45,10 @@ export default function ProgressModal({
         const target = targets[state];
         const diff = target - current;
         if (Math.abs(diff) < 0.5) {
-            if(state === 'success' || state === 'error') {
-                clearInterval(id);
-            }
-            return target;
+          if (state === 'success' || state === 'error') {
+            clearInterval(id);
+          }
+          return target;
         }
         return current + diff * 0.3;
       });
@@ -62,14 +62,14 @@ export default function ProgressModal({
       : 'Uploading your mini app to Thesara...';
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-white to-sky-50 text-slate-700">
+    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-gradient-to-b from-white to-sky-50 text-slate-700">
       <h1 className="text-2xl font-semibold mb-8 text-center">
         {state === 'error' ? (
-            <span className="text-red-600">{message}</span>
+          <span className="text-red-600">{message}</span>
         ) : (
-            <>
+          <>
             Uploading your mini app to <span className="text-emerald-600 font-bold">Thesara</span>...
-            </>
+          </>
         )}
       </h1>
 
@@ -111,13 +111,13 @@ export default function ProgressModal({
       <p className="mt-2 text-sm text-slate-500">{Math.round(progress)}% complete</p>
 
       {(state === 'success' || state === 'error') && (
-          <button
-            onClick={onClose}
-            className="mt-6 inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
-          >
-            Close
-          </button>
-        )}
+        <button
+          onClick={onClose}
+          className="mt-6 inline-flex items-center justify-center rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
+        >
+          Close
+        </button>
+      )}
     </div>
   );
 }
