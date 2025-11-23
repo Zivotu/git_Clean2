@@ -5,8 +5,6 @@
     "myProjects": "My Projects",
     "myCreators": "My Creators",
     "goPro": "Go Pro",
-    "adsOff": "AdsOff",
-    "goGold": "Go Gold",
     "browseApps": "Browse Apps",
     "login": "Sign In",
     "logout": "Sign Out",
@@ -31,7 +29,7 @@
     "goldBadge": "Gold member",
     "noAdsBadge": "No Ads",
     "subscribeEarlyAccess": "Subscribe for early access",
-    "earlyAccessSubscribed": "You'll get 50% off the first month.",
+    "earlyAccessSubscribed": "You’ll get 50% off the first month.",
     "earlyAccessSubscribeError": "Subscription failed. Please try again.",
     "feedback": "Feedback",
     "docs": "Documentation",
@@ -42,17 +40,17 @@
   },
   "Feedback": {
     "title": "Feedback",
-    "description": "Share your suggestions and feedback with us.",
-    "nameLabel": "Your name",
+    "description": "Podijelite svoje prijedloge i povratne informacije s nama.",
+    "nameLabel": "Vaše ime",
     "emailLabel": "Email",
-    "messageLabel": "Your message",
-    "messagePlaceholder": "Share your thoughts...",
+    "messageLabel": "Vaša poruka",
+    "messagePlaceholder": "Podijelite svoje misli...",
     "send": "Send",
-    "sending": "Sending...",
-    "cancel": "Cancel",
-    "successMessage": "Thank you! We will review your feedback.",
-    "errorMessage": "Message is too short (minimum 5 characters).",
-    "errorGeneric": "We could not send the request. Please try again."
+    "sending": "Šalje se...",
+    "cancel": "Odustani",
+    "successMessage": "Hvala! Razmotriti ćemo vaš feedback.",
+    "errorMessage": "Poruka je prekratka (najmanje 5 znakova).",
+    "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo."
   },
   "BugGuardian": {
     "title": "Hello! I'm the spider guardian of Thesara.space. 🕷",
@@ -60,7 +58,7 @@
     "line2": "If you notice a weird jump, text or a button that doesn't work, one of the bugs probably escaped.",
     "line3": "Feel free to report us to the team; it helps them make the site even better.",
     "thanks": "Thanks for testing with us!",
-    "tooltip": "I'm playing hide and seek with the developers 🙂"
+    "tooltip": "Igram se skrivača s programerima 🙂"
   },
   "About": {
     "title": "About Thesara",
@@ -643,71 +641,72 @@
   },
   "Home": {
     "headline": {
-      "one": "Publish your AI apps",
-      "two": "in three clicks"
+      "one": "Objavi svoje AI aplikacije",
+      "two": "u tri klika"
     },
-    "tagline": "Create an app in Google AI Studio, ChatGPT, or any other LLM and publish it on Thesara in three clicks – no server, no configuration, just build and share.",
-    "trending": "Trending now",
-    "appsCount": "{count} apps",
+    "tagline": "Kreiraj aplikaciju u Google AI Studiju, ChatGPT-u ili drugom LLM-u i objavi je na Thesari u tri klika – bez servera, bez konfiguracije, samo izradi i podijeli.",
+    "trending": "Trenutno popularno",
+    "appsCount": "{count} aplikacija",
     "search": {
-      "placeholder": "Search apps, games, or tags..."
+      "placeholder": "Pretraži aplikacije, igre ili oznake..."
     },
-    "appsFound": "{count} apps found",
-    "publishedCount": "{count} published apps",
-    "membersCount": "{count} registered members",
+    "appsFound": "{count} aplikacija pronađeno",
+    "publishedCount": "{count} objavljenih aplikacija",
+    "membersCount": "{count} registriranih članova",
     "sort": {
-      "new": "Newest",
-      "popular": "Popular",
-      "title": "Alphabetical"
+      "new": "Najnovije",
+      "popular": "Popularno",
+      "title": "Abecedno"
     },
-    "clear": "Clear",
-    "noApps": "No apps found",
-    "tryAdjust": "Try adjusting your search or filters.",
-    "beFirst": "Be the first to publish an app!",
-    "publish": "Publish App",
-    "earlyAccessTitle": "Everything is free right now",
-    "earlyAccessBody": "Gold + No Ads are unlocked during Early Access. Publish an app to make the most of the benefits.",
-    "earlyAccessPublish": "Publish now",
-    "earlyAccessSignIn": "Sign in now",
-    "earlyAccessDismiss": "Close",
-    "plays": "{count} plays",
+    "clear": "Očisti",
+    "noApps": "Nema pronađenih aplikacija",
+    "tryAdjust": "Pokušajte prilagoditi pretragu ili filtere.",
+    "beFirst": "Budite prvi koji će objaviti aplikaciju!",
+    "publish": "Objavi aplikaciju",
+    "earlyAccessTitle": "Sve je trenutno besplatno",
+    "earlyAccessBody": "Gold + Bez reklama su otključani tijekom ranog pristupa. Objavite aplikaciju da iskoristite pogodnosti.",
+    "earlyAccessPublish": "Objavi sada",
+    "earlyAccessSignIn": "Prijavi se sada",
+    "earlyAccessDismiss": "Zatvori",
+    "plays": "{count} igranja",
     "leftPanel": {
-      "title": "From AI chats to your mini app",
-      "subtitle": "Thesara is where you turn AI ideas into real apps, games or interactive stories you can share in just a few clicks.",
-      "llmLabel": "Start with your favorite model",
+      "title": "Od AI razgovora do vaše mini aplikacije",
+      "subtitle": "Thesara je mjesto gdje pretvarate AI ideje u stvarne aplikacije, igre ili interaktivne priče koje možete podijeliti u nekoliko klikova.",
+      "llmLabel": "Započnite s vašim omiljenim modelom",
       "steps": {
         "1": {
-          "title": "Chat with your AI",
-          "text": "Ask the model to build you a mini app, game, quiz, simulation or lecture."
+          "title": "Razgovarajte sa svojim AI-jem",
+          "text": "Zatražite od modela da vam izradi mini aplikaciju, igru, kviz, simulaciju ili predavanje."
         },
         "2": {
-          "title": "Grab the generated code or ZIP",
-          "text": "The assistant hands you a finished web app that you download as code or a bundle."
+          "title": "Preuzmite generirani kod ili ZIP",
+          "text": "Asistent vam daje gotovu web aplikaciju koju preuzimate kao kod ili paket."
         },
         "3": {
-          "title": "Publish on Thesara in a few clicks",
-          "text": "Upload, confirm and hit Play - your app lives on Thesara, free or priced by you."
+          "title": "Objavite na Thesari u nekoliko klikova",
+          "text": "Učitajte, potvrdite i pritisnite Igraj - vaša aplikacija živi na Thesari, besplatno ili po cijeni koju odredite."
         }
       },
       "storage": {
-        "title": "A new memory layer LLMs do not ship with",
-        "tag": "Memory & rooms",
+        "title": "Novi sloj memorije koji LLM-ovi nemaju",
+        "tag": "Memorija i sobe",
         "shared": {
-          "title": "Shared memory",
-          "text": "Everyone shares the same state and results (like a global leaderboard) without relying on the chat model."
+          "title": "Dijeljena memorija",
+          "text": "Svi dijele isto stanje i rezultate (poput globalne ljestvice) bez oslanjanja na model razgovora."
         },
         "rooms": {
-          "title": "Rooms",
-          "text": "Enable rooms when you want multiple people to use your app but each in a private session or group."
+          "title": "Sobe",
+          "text": "Omogućite sobe kada želite da više ljudi koristi vašu aplikaciju, ali svatko u privatnoj sesiji ili grupi."
         }
       },
-      "footer": "AI enthusiasts - imagine it, chat with your model, publish here and let others play.",
-      "footerHighlight": "Good luck with your first Thesara app!"
+      "footer": "AI entuzijasti - zamislite, razgovarajte s modelom, objavite ovdje i pustite druge da se igraju.",
+      "footerHighlight": "Sretno s vašom prvom Thesara aplikacijom!",
+      "loading": "Učitavanje..."
     },
-    "noGraphic": "No graphic",
-    "priceLabel": "Price",
-    "play": "Play",
-    "fullDetails": "Full Details"
+    "noGraphic": "Bez grafike",
+    "priceLabel": "Cijena",
+    "play": "Igraj",
+    "fullDetails": "Detalji"
   },
   "BetaHome": {
     "tags": {
@@ -721,51 +720,162 @@
     },
     "listing": {
       "badge": {
-        "free": "FREE"
+        "free": "BESPLATNO"
       },
       "label": {
-        "creator": "Creator"
+        "creator": "Kreator"
       },
       "actions": {
-        "play": "Play",
-        "fullDetails": "Full details",
-        "edit": "Edit"
+        "play": "Igraj",
+        "fullDetails": "Detalji",
+        "edit": "Uredi"
       },
       "tag": {
-        "trending": "Trending"
+        "trending": "Popularno"
       }
+    },
+    "hero": {
+      "badge": "Otkrijte nevjerojatne mini aplikacije i igre",
+      "random": {
+        "label": "Nasumični odabir",
+        "details": "Pogledaj detalje"
+      },
+      "actions": {
+        "submit": "Objavi aplikaciju"
+      },
+      "badges": {
+        "curated": "Odabrano"
+      },
+      "card": {
+        "description": "Izradite kolekcije AI iskustava i podijelite ih putem linka.",
+        "stats": {
+          "apps": "{count}+ Mini aplikacija",
+          "favorites": "{count} favorita"
+        }
+      }
+    },
+    "promo": {
+      "featuredLabel": "Izdvojeno",
+      "learnMore": "Saznaj više"
+    },
+    "view": {
+      "gridLabel": "Mreža",
+      "decreaseGrid": "Prikaži manje kartica po redu",
+      "increaseGrid": "Prikaži više kartica po redu"
+    },
+    "sort": {
+      "newest": "Najnovije",
+      "popular": "Najpopularnije",
+      "alpha": "Abecedno",
+      "label": "Sortiraj po"
+    },
+    "metrics": {
+      "liveUsage": "Korištenje uživo",
+      "apps": "Objavljene aplikacije",
+      "members": "Članova zajednice",
+      "runs": "Ukupno pokretanja"
+    },
+    "empty": {
+      "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
+      "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
+      "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
+    },
+    "filters": {
+      "tagsHeading": "Popularne oznake",
+      "clear": "Poništi filtere"
+    },
+    "actions": {
+      "refresh": "Osvježi",
+      "retry": "Pokušaj ponovo"
+    },
+    "errors": {
+      "listings": "Ne mogu osvježiti feed. Pokušajte ponovo."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} aplikacija"
+      }
+    },
+    "search": {
+      "liveStats": "{apps} aktivnih aplikacija · {plays} igranja"
+    },
+    "sidebar": {
+      "title": "Thesara Space v2.0",
+      "subtitle": "Od AI razgovora do vaše mini aplikacije.",
+      "nav": {
+        "discover": "Otkrij",
+        "games": "Igre",
+        "productivity": "Produktivnost",
+        "myApps": "Moje aplikacije",
+        "paidApps": "Plaćene aplikacije",
+        "myProjects": "Projekti",
+        "myCreators": "Kreatori",
+        "feelingLucky": "Osjećam se sretno"
+      },
+      "creatorMode": {
+        "badge": "Kreatorski način",
+        "title": "Od AI razgovora do vaše mini aplikacije",
+        "description": "Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.",
+        "steps": {
+          "0": {
+            "title": "Razgovaraj s AI-jem",
+            "text": "Zatraži asistenta da isporuči mini aplikaciju."
+          },
+          "1": {
+            "title": "Preuzmi kod",
+            "text": "Dobivaš bundle spreman za upload."
+          },
+          "2": {
+            "title": "Objavi na Thesari",
+            "text": "Upload, potvrdi i klikni Play."
+          }
+        },
+        "memory": {
+          "title": "Memorija i sobe",
+          "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
+          "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
+        },
+        "cta": "Objavi svoju aplikaciju"
+      }
+    },
+    "header": {
+      "homeAria": "Thesara naslovnica",
+      "liveBadge": "Uživo",
+      "themeToggle": "Promijeni temu",
+      "backLink": "← Natrag na uživo",
+      "backLinkMobile": "← Natrag"
     }
   },
   "Toasts": {
-    "welcome": "Welcome to Thesara!",
-    "loginToLike": "Sign in to like apps",
-    "slowDown": "Easy there 🙂",
-    "likeError": "Unable to like the app. Please check the API URL and server status.",
-    "loadError": "Unable to load apps. Please check the API URL and server status.",
-    "retry": "Retry"
+    "welcome": "Dobrodošli na Thesaru!",
+    "loginToLike": "Prijavite se za lajkanje aplikacija",
+    "slowDown": "Polako 🙂",
+    "likeError": "Ne mogu lajkati aplikaciju. Provjerite API URL i status poslužitelja.",
+    "loadError": "Ne mogu učitati aplikacije. Provjerite API URL i status poslužitelja.",
+    "retry": "Pokušaj ponovo"
   },
   "Footer": {
-    "slogan": "The marketplace for browser-based apps and games.",
-    "allRights": "All rights reserved.",
-    "partnershipLink": "Partnership with us"
+    "slogan": "Tržnica za aplikacije i igre u pregledniku.",
+    "allRights": "Sva prava pridržana.",
+    "partnershipLink": "Partnerstvo s nama"
   },
   "Partnership": {
-    "title": "Partnership with us",
-    "description": "Tell us about your organization and the type of collaboration you would like to build.",
-    "nameLabel": "Your name",
-    "companyLabel": "Company or project",
-    "emailLabel": "Business email",
-    "phoneLabel": "Phone (optional)",
-    "messagePlaceholder": "Describe your idea, target audience, timelines, or the value you expect for both sides.",
-    "submit": "Send partnership request",
-    "sending": "Sending…",
-    "cancel": "Cancel",
-    "successMessage": "Thank you! We will reply shortly.",
-    "errorGeneric": "We could not send the request. Please try again.",
-    "errorEmail": "Please enter a valid email.",
-    "errorMessage": "Describe the partnership idea (at least 5 characters).",
-    "footerNote": "You can also email activity(at)thesara.space",
-    "closeLabel": "Close partnership form"
+    "title": "Partnerstvo s nama",
+    "description": "Recite nam nešto o svojoj organizaciji i vrsti suradnje koju želite ostvariti.",
+    "nameLabel": "Vaše ime",
+    "companyLabel": "Tvrtka ili projekt",
+    "emailLabel": "Poslovni email",
+    "phoneLabel": "Telefon (neobavezno)",
+    "messagePlaceholder": "Opišite svoju ideju, ciljanu publiku, rokove ili vrijednost koju očekujete za obje strane.",
+    "submit": "Pošalji zahtjev za partnerstvo",
+    "sending": "Šaljem...",
+    "cancel": "Odustani",
+    "successMessage": "Hvala! Odgovorit ćemo uskoro.",
+    "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo.",
+    "errorEmail": "Unesite valjanu email adresu.",
+    "errorMessage": "Opišite ideju partnerstva (najmanje 5 znakova).",
+    "footerNote": "Također možete poslati email na activity(at)thesara.space",
+    "closeLabel": "Zatvori obrazac za partnerstvo"
   },
   "Pro": {
     "choosePlan": "Choose a plan",
@@ -843,75 +953,73 @@
     "noAccount": "Don’t have an account?",
     "register": "Register"
   },
-  "Create": {
-    "source": "Source",
-    "pageTitle": "Publish new app",
-    "pasteCode": "Paste code",
-    "placeholderHtml": "<!-- HTML code here -->\n<div>\n  <h1>Hello</h1>\n</div>",
-    "placeholderReact": "// React code here\nexport default function App(){\n  return <h1>Hello</h1>;\n}",
-    "basics": "Basics",
-    "name": "Name",
-    "description": "Description",
-    "sourceSection": "App source",
-    "optionPasteCode": "Paste code",
-    "optionUploadBundle": "Upload bundle (.zip)",
-    "bundleHintPart1": "The ZIP bundle must include the build output together with",
-    "bundleHintPart2": "and",
-    "bundleHintPart3": "The worker installs it locally and runs",
-    "bundleAiWarning": "IMPORTANT: Apps that rely on Google AI Studio, Gemini, Kimi or any other LLM provider must include their own API key. Without it the bundle will not work after publishing.",
-    "bundleAiWarningDetail": "Enter your key below (we do not supply one). Leave it empty only if your AI app works without a private key. Documentation on AI bundles is coming soon.",
-    "bundleAiNoKeyNote": "You can still publish demos that do not require keys — it depends on how you built the app.",
-    "bundleAiApiLabel": "AI / LLM API key",
-    "bundleAiApiPlaceholder": "Paste your provider key (stored only for this build)",
-    "bundleAiApiHelp": "We inject this key into the bundle so it can reach your AI service. If the app stops working later, rotate or update the key.",
-    "chooseZip": "Choose ZIP",
-    "placeholderHtmlLong": "HTML snippet or entire page...",
-    "placeholderReactLong": "React component...",
-    "previewGraphic": "Choose your app graphic",
-    "previewGraphicHint": "Pick one of our presets or upload your own image (max 1MB).",
-    "previewOverlayPlaceholder": "Your app title",
-    "previewTitleLabel": "Overlay title",
-    "characters": "characters",
-    "previewTitlePlaceholder": "Enter title for overlay",
-    "previewTitleHint": "Displayed on a semi-transparent banner over the selected graphic.",
-    "chooseCustomGraphic": "Choose your own graphic",
-    "removeCustomGraphic": "Use preset instead",
-    "customGraphicHint": "PNG or JPG up to",
-    "previewUploading": "Saving graphic…",
-    "previewUploadSuccess": "Graphic saved.",
-    "previewFileTooLarge": "Image must be smaller than",
-    "previewFileReadFailed": "Failed to read the selected image.",
-    "previewUploadFailed": "Failed to save graphic. Please try again.",
-    "longDescriptionLabel": "Detailed overview",
-    "longDescriptionHint": "Give readers at least {min} characters so they know what to expect.",
-    "longDescriptionPlaceholder": "Share the story, features, and benefits of your app...",
-    "longDescriptionCounter": "{used}/{limit} characters",
-    "longDescriptionTooShort": "Detailed overview should have at least {min} characters.",
-    "screenshotsLabel": "Screenshots",
-    "screenshotsHint": "Upload up to two screenshots (PNG/JPG/WebP, max {size}MB).",
-    "screenshotsPreviewAlt": "Screenshot {index}",
-    "screenshotsFileHint": "PNG/JPG/WebP up to {size}MB.",
-    "screenshotsUploadButton": "Upload screenshot",
-    "screenshotsReplaceButton": "Replace screenshot",
-    "screenshotsRemoveButton": "Remove",
-    "screenshotsEmptyPlaceholder": "Upload screenshot",
-    "screenshotsTooLarge": "Screenshot must be {size}MB or smaller.",
-    "screenshotsRequired": "Add at least one screenshot before publishing.",
-    "metadataSyncFailed": "We published the build, but saving your long description or screenshots failed. Open the listing details to try again.",
-    "back": "Back",
-    "next": "Next",
-    "publish": "Publish",
-    "shortVideoButton": "Thesara Short Video",
-    "mustSignIn": "Please sign in first to publish.",
-    "login": "Sign in",
-    "tag_Igre": "Games",
-    "tag_Kvizovi": "Quizzes",
-    "tag_Učenje": "Learning",
-    "tag_Alati": "Tools",
-    "tag_Business": "Business",
-    "tag_Zabava": "Entertainment",
-    "tag_Ostalo": "Other"
-  },
+  "source": "Source",
+  "pageTitle": "Publish new app",
+  "pasteCode": "Paste code",
+  "placeholderHtml": "<!-- HTML code here -->\n<div>\n  <h1>Hello</h1>\n</div>",
+  "placeholderReact": "// React code here\nexport default function App(){\n  return <h1>Hello</h1>;\n}",
+  "basics": "Basics",
+  "name": "Name",
+  "description": "Description",
+  "sourceSection": "App source",
+  "optionPasteCode": "Paste code",
+  "optionUploadBundle": "Upload bundle (.zip)",
+  "bundleHintPart1": "The ZIP bundle must include the build output together with",
+  "bundleHintPart2": "and",
+  "bundleHintPart3": "The worker installs it locally and runs",
+  "bundleAiWarning": "IMPORTANT: Apps that rely on Google AI Studio, Gemini, Kimi or any other LLM provider must include their own API key. Without it the bundle will not work after publishing.",
+  "bundleAiWarningDetail": "Enter your key below (we do not supply one). Leave it empty only if your AI app works without a private key. Documentation on AI bundles is coming soon.",
+  "bundleAiNoKeyNote": "You can still publish demos that do not require keys — it depends on how you built the app.",
+  "bundleAiApiLabel": "AI / LLM API key",
+  "bundleAiApiPlaceholder": "Paste your provider key (stored only for this build)",
+  "bundleAiApiHelp": "We inject this key into the bundle so it can reach your AI service. If the app stops working later, rotate or update the key.",
+  "chooseZip": "Choose ZIP",
+  "placeholderHtmlLong": "HTML snippet or entire page...",
+  "placeholderReactLong": "React component...",
+  "previewGraphic": "Choose your app graphic",
+  "previewGraphicHint": "Pick one of our presets or upload your own image (max 1MB).",
+  "previewOverlayPlaceholder": "Your app title",
+  "previewTitleLabel": "Overlay title",
+  "characters": "characters",
+  "previewTitlePlaceholder": "Enter title for overlay",
+  "previewTitleHint": "Displayed on a semi-transparent banner over the selected graphic.",
+  "chooseCustomGraphic": "Choose your own graphic",
+  "removeCustomGraphic": "Use preset instead",
+  "customGraphicHint": "PNG or JPG up to",
+  "previewUploading": "Saving graphic…",
+  "previewUploadSuccess": "Graphic saved.",
+  "previewFileTooLarge": "Image must be smaller than",
+  "previewFileReadFailed": "Failed to read the selected image.",
+  "previewUploadFailed": "Failed to save graphic. Please try again.",
+  "longDescriptionLabel": "Detailed overview",
+  "longDescriptionHint": "Give readers at least {min} characters so they know what to expect.",
+  "longDescriptionPlaceholder": "Share the story, features, and benefits of your app...",
+  "longDescriptionCounter": "{used}/{limit} characters",
+  "longDescriptionTooShort": "Detailed overview should have at least {min} characters.",
+  "screenshotsLabel": "Screenshots",
+  "screenshotsHint": "Upload up to two screenshots (PNG/JPG/WebP, max {size}MB).",
+  "screenshotsPreviewAlt": "Screenshot {index}",
+  "screenshotsFileHint": "PNG/JPG/WebP up to {size}MB.",
+  "screenshotsUploadButton": "Upload screenshot",
+  "screenshotsReplaceButton": "Replace screenshot",
+  "screenshotsRemoveButton": "Remove",
+  "screenshotsEmptyPlaceholder": "Upload screenshot",
+  "screenshotsTooLarge": "Screenshot must be {size}MB or smaller.",
+  "screenshotsRequired": "Add at least one screenshot before publishing.",
+  "metadataSyncFailed": "We published the build, but saving your long description or screenshots failed. Open the listing details to try again.",
+  "back": "Back",
+  "next": "Next",
+  "publish": "Publish",
+  "shortVideoButton": "Thesara Short Video",
+  "mustSignIn": "Please sign in first to publish.",
+  "login": "Sign in",
+  "tag_Igre": "Igre",
+  "tag_Kvizovi": "Kvizovi",
+  "tag_Učenje": "Učenje",
+  "tag_Alati": "Alati",
+  "tag_Business": "Business",
+  "tag_Zabava": "Zabava",
+  "tag_Ostalo": "Ostalo",
   "App": {
     "notFound": "App not found",
     "backToMarketplace": "Back to Marketplace",
@@ -1126,230 +1234,251 @@
     "backHome": "Back to home",
     "redirecting": "Redirecting you to the Golden Book…"
   },
+  "promo": {
+    "banners": {
+      "0": {
+        "title": "Jednostavne upute",
+        "subtitle": "Kako iz razgovora s AI-jem doći do objave na Thesari."
+      },
+      "1": {
+        "title": "Pravila objave",
+        "subtitle": "Sve o monetizaciji, licencama i uvjetima."
+      }
+    }
+  },
+  "Create": {
+    "tag_Igre": "Igre",
+    "tag_Kvizovi": "Kvizovi",
+    "tag_Učenje": "Učenje",
+    "tag_Alati": "Alati",
+    "tag_Business": "Business",
+    "tag_Zabava": "Zabava",
+    "tag_Ostalo": "Ostalo"
+  },
   "GoldenBook": {
-    "anonymousDonor": "Anonymous Donor",
-    "addYourName": "Add your name",
-    "titlePrefix": "Get written into the",
+    "anonymousDonor": "Anonimni donator",
+    "addYourName": "Dodaj svoje ime",
+    "titlePrefix": "Upiši se u",
     "titleSuffix": "Thesara Golden Book",
-    "descriptionPart1": "Support Thesara in the first",
-    "descriptionHighlight": "90 days",
-    "descriptionPart2": "and engrave your name among the first donors. The book remains publicly available forever.",
-    "yourNameLivesHere": "Your name lives here",
-    "campaignWindow": "Campaign window",
-    "campaignDates": "Nov 16, 2025 – Feb 14, 2026",
-    "campaignNote": "After the sprint ends, the Golden Book remains publicly available and will no longer be changed. Enrolled donors remain visible forever.",
-    "becomeEarlyDonor": "Become an early donor",
-    "supportersTitle": "Golden Book of Supporters",
-    "mainTitlePrefix": "Help us get out of the garage",
-    "mainTitleSuffix": "and keep Thesara online, independent and open.",
-    "mainDescription": "Every donation goes into the development of a platform where anyone can publish their own application in just a few clicks. In the first sprint, our goal is to cover the costs of infrastructure, design, and the first team.",
-    "howItWorks": "How it works",
-    "step1": "1. Make a donation (card or QR code).",
-    "step2": "2. Enter the name you want in the Golden Book.",
-    "step3": "3. Your name remains permanently written among the first supporters.",
-    "transparentRecords": "Transparent donation records",
-    "publicNames": "Names remain publicly visible",
-    "qrDescription": "Scan the QR code for quick payment via mobile or continue to classic card payment.",
-    "payWithCard": "Pay with card",
-    "donorsTitle": "Donors",
-    "earlySupporters": "Early supporters of the Golden Book",
-    "entriesCount": "entries",
-    "loadingDonors": "Loading donors...",
-    "transparencyNote": "Donation amounts are shown for transparency. If you want to remain completely anonymous, you can hide your name and show only the amount."
+    "descriptionPart1": "Podrži Thesaru u prvih",
+    "descriptionHighlight": "90 dana",
+    "descriptionPart2": "i ugraviraj svoje ime među prvim donatorima. Knjiga ostaje javno dostupna zauvijek.",
+    "yourNameLivesHere": "Tvoje ime živi ovdje",
+    "campaignWindow": "Razdoblje kampanje",
+    "campaignDates": "16. stu 2025. – 14. velj 2026.",
+    "campaignNote": "Nakon završetka sprinta, Golden Book ostaje javno dostupan i više se ne mijenja. Upisani donatori ostaju zauvijek vidljivi.",
+    "becomeEarlyDonor": "Postani rani donator",
+    "supportersTitle": "Golden Book Podržavatelja",
+    "mainTitlePrefix": "Pomozi nam izaći iz garaže",
+    "mainTitleSuffix": "i održati Thesaru online, neovisnom i otvorenom.",
+    "mainDescription": "Svaka donacija ide u razvoj platforme gdje svatko može objaviti vlastitu aplikaciju u samo nekoliko klikova. U prvom sprintu nam je cilj pokriti troškove infrastrukture, dizajna i prvog tima.",
+    "howItWorks": "Kako funkcionira",
+    "step1": "1. Uplatiš donaciju (kartica ili QR kod).",
+    "step2": "2. Upisuješ ime koje želiš u Golden Book.",
+    "step3": "3. Tvoje ime ostaje trajno zapisano među prvim podržavateljima.",
+    "transparentRecords": "Transparentna evidencija donacija",
+    "publicNames": "Imena ostaju javno vidljiva",
+    "qrDescription": "Skeniraj QR kod za brzu uplatu s mobitela ili nastavi na klasičnu kartičnu uplatu.",
+    "payWithCard": "Uplati karticom",
+    "donorsTitle": "Donatori",
+    "earlySupporters": "Rani podržavatelji Golden Booka",
+    "entriesCount": "upisa",
+    "loadingDonors": "Učitavanje donatora…",
+    "transparencyNote": "Iznosi donacija prikazuju se za transparentnost. Ako želiš ostati potpuno anoniman, možeš sakriti svoje ime i prikazati samo iznos."
   },
   "Profile": {
     "header": {
-      "payoutsActive": "Payouts Active",
-      "onboardingRequired": "Onboarding Required",
-      "joined": "Joined {date}",
-      "publicProfile": "Public Profile"
+      "payoutsActive": "Isplate aktivne",
+      "onboardingRequired": "Potrebna registracija",
+      "joined": "Pridružen {date}",
+      "publicProfile": "Javni profil"
     },
     "stats": {
-      "apps": "Apps",
-      "likes": "Likes",
-      "plays": "Plays"
+      "apps": "Aplikacije",
+      "likes": "Lajkovi",
+      "plays": "Igranja"
     },
     "payouts": {
-      "setupTitle": "Setup Payouts",
-      "setupDescription": "To monetize your apps or repository, you need to complete the Stripe onboarding process.",
-      "setupButton": "Setup Stripe",
-      "dashboardButton": "Dashboard"
+      "setupTitle": "Postavi isplate",
+      "setupDescription": "Da biste monetizirali svoje aplikacije ili repozitorij, morate dovršiti proces registracije na Stripe.",
+      "setupButton": "Postavi Stripe",
+      "dashboardButton": "Nadzorna ploča"
     },
     "publicProfile": {
-      "title": "Public Profile Settings",
-      "noHandle": "Add a username below to make your public profile accessible at /u/username.",
-      "displayNameLabel": "Display Name",
-      "displayNamePlaceholder": "e.g. Studio Pixel",
-      "displayNameHelp": "This name will be visible to visitors on your public profile.",
-      "repoNameLabel": "Repository Name",
-      "repoNamePlaceholder": "e.g. studio-pixel",
-      "repoNameHelp": "This will be your repository address. You can change it once every 3 months.",
-      "saveButton": "Save Public Profile",
-      "savingButton": "Saving...",
-      "success": "Public profile updated.",
-      "error": "Failed to update public profile."
+      "title": "Postavke javnog profila",
+      "noHandle": "Dodajte korisničko ime ispod kako bi vaš javni profil bio dostupan na /u/korisnickoime.",
+      "displayNameLabel": "Prikazano ime",
+      "displayNamePlaceholder": "npr. Studio Pixel",
+      "displayNameHelp": "Ovo ime bit će vidljivo posjetiteljima na vašem javnom profilu.",
+      "repoNameLabel": "Ime repozitorija",
+      "repoNamePlaceholder": "npr. studio-pixel",
+      "repoNameHelp": "Ovo će biti adresa vašeg repozitorija. Možete je promijeniti jednom svaka 3 mjeseca.",
+      "saveButton": "Spremi javni profil",
+      "savingButton": "Spremanje...",
+      "success": "Javni profil ažuriran.",
+      "error": "Ažuriranje javnog profila nije uspjelo."
     },
     "personalInfo": {
-      "title": "Personal Information",
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "username": "Username",
-      "phone": "Phone",
-      "bio": "Bio",
-      "bioPlaceholder": "Tell us a little about yourself...",
-      "website": "Website",
+      "title": "Osobni podaci",
+      "firstName": "Ime",
+      "lastName": "Prezime",
+      "username": "Korisničko ime",
+      "phone": "Telefon",
+      "bio": "Biografija",
+      "bioPlaceholder": "Recite nam nešto o sebi...",
+      "website": "Web stranica",
       "twitter": "Twitter / X",
       "github": "GitHub",
-      "saveButton": "Save Changes",
-      "savingButton": "Saving...",
-      "success": "Personal info updated.",
-      "error": "Failed to update personal info."
+      "saveButton": "Spremi promjene",
+      "savingButton": "Spremanje...",
+      "success": "Osobni podaci ažurirani.",
+      "error": "Ažuriranje osobnih podataka nije uspjelo."
     },
     "projects": {
-      "title": "My Projects",
-      "likes": "Likes",
-      "plays": "Plays",
-      "noProjectsTitle": "No projects yet",
-      "noProjectsDescription": "You haven't published any applications."
+      "title": "Moji projekti",
+      "likes": "Lajkovi",
+      "plays": "Igranja",
+      "noProjectsTitle": "Još nema projekata",
+      "noProjectsDescription": "Niste objavili nijednu aplikaciju."
     },
     "subscription": {
-      "title": "Subscription",
-      "activeBenefits": "Active benefits associated with your account.",
-      "noActive": "No active subscriptions currently.",
-      "nextBilling": "Next billing: {date}",
-      "manageBilling": "Manage Billing",
-      "upgradeGold": "Upgrade to Gold",
+      "title": "Pretplata",
+      "activeBenefits": "Aktivne pogodnosti povezane s vašim računom.",
+      "noActive": "Trenutno nema aktivnih pretplata.",
+      "nextBilling": "Sljedeća naplata: {date}",
+      "manageBilling": "Upravljaj naplatom",
+      "upgradeGold": "Nadogradi na Gold",
       "cancelDialog": {
-        "title": "Cancel Subscription",
-        "message": "Are you sure you want to cancel the subscription{label}? It will remain active until the end of the current billing period.",
-        "confirm": "Yes, Cancel",
-        "cancel": "No, Keep it"
+        "title": "Otkaži pretplatu",
+        "message": "Jeste li sigurni da želite otkazati pretplatu{label}? Ostat će aktivna do kraja trenutnog obračunskog razdoblja.",
+        "confirm": "Da, otkaži",
+        "cancel": "Ne, zadrži"
       }
     },
     "usage": {
-      "title": "Usage Limits",
-      "apps": "Apps",
-      "storage": "Storage",
-      "noData": "No usage data available"
+      "title": "Limiti korištenja",
+      "apps": "Aplikacije",
+      "storage": "Pohrana",
+      "noData": "Nema dostupnih podataka o korištenju"
     },
     "billing": {
-      "title": "Billing History",
-      "viewAll": "View All",
-      "noHistory": "No billing history found"
+      "title": "Povijest naplate",
+      "viewAll": "Vidi sve",
+      "noHistory": "Nema povijesti naplate"
     }
   },
   "Finances": {
-    "title": "Financial Overview",
-    "subtitle": "Manage your earnings and payouts for @{handle}",
-    "stripeDashboard": "Stripe Dashboard",
-    "onboardingSuccess": "Onboarding completed successfully!",
+    "title": "Financijski pregled",
+    "subtitle": "Upravljajte svojom zaradom i isplatama za @{handle}",
+    "stripeDashboard": "Stripe nadzorna ploča",
+    "onboardingSuccess": "Registracija uspješno završena!",
     "setupPayouts": {
-      "title": "Setup Payouts",
-      "description": "To receive your earnings, you need to connect a payout account. Payouts typically arrive ~3 days after payment, and you receive 70% of the revenue.",
-      "button": "Setup Payouts"
+      "title": "Postavi isplate",
+      "description": "Da biste primili zaradu, morate povezati račun za isplatu. Isplate obično stižu ~3 dana nakon uplate, a vi dobivate 70% prihoda.",
+      "button": "Postavi isplate"
     },
     "metrics": {
-      "estMonthlyRevenue": "Est. Monthly Revenue",
-      "gross": "Gross: {amount} (before fees/split)",
-      "subscribers": "All-Access Subscribers",
-      "perMonthUser": "{amount} / month per user",
-      "activeApps": "Active Apps",
-      "generatingRevenue": "Generating revenue"
+      "estMonthlyRevenue": "Proc. mjesečni prihod",
+      "gross": "Bruto: {amount} (prije naknada/podjele)",
+      "subscribers": "All-Access pretplatnici",
+      "perMonthUser": "{amount} / mjesečno po korisniku",
+      "activeApps": "Aktivne aplikacije",
+      "generatingRevenue": "Generiraju prihod"
     },
     "table": {
-      "title": "Subscriptions by App",
-      "noApps": "No monetized applications found.",
+      "title": "Pretplate po aplikaciji",
+      "noApps": "Nisu pronađene monetizirane aplikacije.",
       "header": {
-        "application": "Application",
-        "price": "Price",
-        "activeUsers": "Active Users",
-        "monthlyRevenue": "Monthly Revenue",
-        "yourShare": "Your Share (70%)"
+        "application": "Aplikacija",
+        "price": "Cijena",
+        "activeUsers": "Aktivni korisnici",
+        "monthlyRevenue": "Mjesečni prihod",
+        "yourShare": "Vaš udio (70%)"
       }
     },
     "error": {
-      "loadFailed": "Failed to load financial data."
+      "loadFailed": "Učitavanje financijskih podataka nije uspjelo."
     }
   },
   "UserProfile": {
     "notFound": {
-      "title": "User not found",
-      "description": "We couldn't find a profile for @{username}",
-      "backHome": "Back to home"
+      "title": "Korisnik nije pronađen",
+      "description": "Nismo mogli pronaći profil za @{username}",
+      "backHome": "Natrag na početnu"
     },
     "actions": {
-      "addToFavorites": "Add to Favorites",
-      "subscribe": "Subscribe"
+      "addToFavorites": "Dodaj u favorite",
+      "subscribe": "Pretplati se"
     },
     "apps": {
-      "title": "Applications",
-      "noAppsTitle": "No applications yet",
-      "noAppsDescription": "This creator hasn't published any public applications."
+      "title": "Aplikacije",
+      "noAppsTitle": "Još nema aplikacija",
+      "noAppsDescription": "Ovaj kreator nije objavio nijednu javnu aplikaciju."
     }
   },
   "ProgressModal": {
-    "uploading": "Uploading your mini app to Thesara...",
-    "errorOccurred": "An error occurred.",
-    "percentComplete": "{progress}% complete",
-    "close": "Close"
+    "uploading": "Učitavanje vaše mini aplikacije na Thesaru...",
+    "errorOccurred": "Došlo je do greške.",
+    "percentComplete": "{progress}% završeno",
+    "close": "Zatvori"
   },
   "MyProjectsPage": {
-    "title": "My Projects",
-    "signInMessage": "Sign in to manage and view your created projects.",
-    "goToLogin": "Go to Login",
-    "stats": "{total} total · {public} public · {unlisted} unlisted",
-    "finances": "Finances",
-    "createNew": "Create New",
+    "title": "Moji projekti",
+    "signInMessage": "Prijavite se za upravljanje i pregled vaših kreiranih projekata.",
+    "goToLogin": "Idi na prijavu",
+    "stats": "{total} ukupno · {public} javno · {unlisted} neizlistano",
+    "finances": "Financije",
+    "createNew": "Kreiraj novi",
     "handle": {
-      "title": "Set handle",
-      "description": "Before setting a repository price, set your handle (e.g. amir_dev). Allowed: lowercase letters, numbers, dashes, underscores. Min 3 chars.",
-      "label": "Handle",
-      "placeholder": "e.g. amir_dev",
-      "submit": "Save handle",
-      "submitting": "Saving…",
-      "errorFormat": "Allowed: lowercase letters, numbers, - and _. Min 3 chars.",
-      "errorTaken": "Handle is taken. Try another.",
-      "errorGeneric": "Save failed"
+      "title": "Postavi korisničko ime (handle)",
+      "description": "Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.",
+      "label": "Korisničko ime",
+      "placeholder": "npr. amir_dev",
+      "submit": "Spremi handle",
+      "submitting": "Spremanje…",
+      "errorFormat": "Dozvoljena su mala slova, brojevi, - i _. Min 3 znaka.",
+      "errorTaken": "Korisničko ime je zauzeto. Pokušajte drugo.",
+      "errorGeneric": "Spremanje nije uspjelo"
     },
     "repoPrice": {
-      "title": "Repository Price",
-      "locked": "Pricing is locked until you complete Stripe onboarding.",
-      "setupStripe": "Setup payouts (Stripe)",
-      "allAccess": "All‑Access {price}/mo",
-      "lastUpdated": "Last updated: {date}",
-      "edit": "Edit",
-      "description": "Set a monthly price for All‑Access (access to all your apps). If left empty or 0, All‑Access is disabled.",
-      "priceLabel": "Price (USD)",
-      "save": "Save",
-      "saving": "Saving…",
-      "cancel": "Cancel",
-      "success": "Repository price saved",
-      "error": "Save failed"
+      "title": "Cijena repozitorija",
+      "locked": "Postavljanje cijena je zaključano dok ne dovršiš Stripe onboarding.",
+      "setupStripe": "Podesi isplate (Stripe)",
+      "allAccess": "All‑Access {price}/mj",
+      "lastUpdated": "Zadnja promjena: {date}",
+      "edit": "Uredi",
+      "description": "Postavite mjesečnu cijenu za All‑Access (pristup svim vašim aplikacijama). Ako ostavite prazno ili 0, All‑Access je isključen.",
+      "priceLabel": "Cijena (USD)",
+      "save": "Spremi",
+      "saving": "Spremanje…",
+      "cancel": "Odustani",
+      "success": "Cijena repozitorija spremljena",
+      "error": "Spremanje nije uspjelo"
     },
-    "searchPlaceholder": "Search by title, tag, description...",
+    "searchPlaceholder": "Pretraži po naslovu, oznaci, opisu...",
     "filters": {
-      "all": "All",
-      "public": "Public",
-      "unlisted": "Unlisted"
+      "all": "Sve",
+      "public": "Javno",
+      "unlisted": "Neizlistano"
     },
     "sort": {
-      "label": "Sort",
-      "newest": "Newest",
-      "mostLiked": "Most liked",
-      "titleAZ": "Title A–Z"
+      "label": "Sortiraj",
+      "newest": "Najnovije",
+      "mostLiked": "Najpopularnije",
+      "titleAZ": "Naslov A–Z"
     },
-    "noProjects": "No matching projects. Try adjusting filters.",
-    "createFirst": "Create Your First Project",
-    "appDeleted": "Application deleted.",
-    "deleteSuccess": "App deleted",
-    "deleteError": "Failed to delete app",
-    "notPublished": "App must be approved before it can run.",
-    "linkCopied": "Link copied to clipboard!",
-    "slowDown": "Easy there 🙂",
+    "noProjects": "Nema projekata koji odgovaraju pretrazi. Pokušajte prilagoditi filtere.",
+    "createFirst": "Kreiraj svoj prvi projekt",
+    "appDeleted": "Aplikacija obrisana.",
+    "deleteSuccess": "Aplikacija obrisana",
+    "deleteError": "Brisanje aplikacije nije uspjelo",
+    "notPublished": "Aplikacija mora biti odobrena prije nego što se može pokrenuti.",
+    "linkCopied": "Link kopiran u međuspremnik!",
+    "slowDown": "Polako 🙂",
     "congrats": {
-      "title": "Congratulations!",
-      "message": "Your app has been submitted successfully.",
-      "confirm": "OK"
+      "title": "Čestitamo!",
+      "message": "Vaša aplikacija je uspješno predana.",
+      "confirm": "U redu"
     }
   }
 }

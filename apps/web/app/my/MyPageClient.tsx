@@ -168,7 +168,7 @@ export default function MyProjectsPage() {
           return;
         }
         if (res.status === 429) {
-          setToast({ message: 'Polako 🙂', type: 'info' });
+          setToast({ message: t('slowDown'), type: 'info' });
           return;
         }
         if (!res.ok) throw new Error(`POST ${res.status}`);
@@ -196,7 +196,7 @@ export default function MyProjectsPage() {
         setBusy((prev) => ({ ...prev, [slug]: false }));
       }
     },
-    [busy, items, user]
+    [busy, items, user, t]
   );
 
   const deleteItem = useCallback(
@@ -212,15 +212,15 @@ export default function MyProjectsPage() {
         });
         if (!res.ok) throw new Error(`DELETE ${res.status}`);
         setItems((prev) => prev.filter((it) => it.slug !== item.slug));
-        setToast({ message: 'App deleted', type: 'success' });
+        setToast({ message: t('deleteSuccess'), type: 'success' });
       } catch (e) {
         console.error('Failed to delete app', e);
-        setToast({ message: 'Failed to delete app', type: 'error' });
+        setToast({ message: t('deleteError'), type: 'error' });
       } finally {
         setBusy((prev) => ({ ...prev, [item.slug]: false }));
       }
     },
-    [busy]
+    [busy, t]
   );
 
   const handlePlayClick = useCallback(
@@ -228,13 +228,13 @@ export default function MyProjectsPage() {
       e.preventDefault();
       e.stopPropagation();
       if (item.status !== 'published') {
-        setToast({ message: 'App must be approved before it can run.', type: 'info' });
+        setToast({ message: t('notPublished'), type: 'info' });
         return;
       }
       const dest = await getPlayUrl(item.id);
       window.open(dest, '_blank', 'noopener,noreferrer');
     },
-    [setToast]
+    [setToast, t]
   );
 
   // — Load my listings (localized)
@@ -340,9 +340,9 @@ export default function MyProjectsPage() {
         if (typeof creator.allAccessPriceUpdatedAt === 'number') setRepoPriceUpdatedAt(creator.allAccessPriceUpdatedAt);
       }
       setEditingRepoPrice(false);
-      setToast({ message: 'Cijena repozitorija spremljena', type: 'success' });
+      setToast({ message: t('repoPrice.success'), type: 'success' });
     } catch {
-      setToast({ message: 'Spremanje nije uspjelo', type: 'error' });
+      setToast({ message: t('repoPrice.error'), type: 'error' });
     } finally {
       setSavingPrice(false);
     }
@@ -399,7 +399,7 @@ export default function MyProjectsPage() {
   const copyLink = (it: Listing) => {
     const href = new URL(playHref(it.id, { run: 1 }), window.location.origin).toString();
     navigator.clipboard.writeText(href).then(() => {
-      setToast({ message: 'Link copied to clipboard!', type: 'success' });
+      setToast({ message: t('linkCopied'), type: 'success' });
     });
   };
 
@@ -409,9 +409,9 @@ export default function MyProjectsPage() {
     return (
       <div className="min-h-screen grid place-items-center bg-gradient-to-br from-white via-emerald-50/30 to-white text-gray-900">
         <div className={`p-8 text-center max-w-md rounded-2xl ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-100' : 'bg-white border shadow-md text-gray-900'}`}>
-          <h1 className="text-2xl font-bold mb-2">My Projects</h1>
-          <p className="mb-6">Sign in to manage and view your created projects.</p>
-          <Link href="/login" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title="Go to login">Go to Login</Link>
+          <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
+          <p className="mb-6">{t('signInMessage')}</p>
+          <Link href="/login" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title={t('goToLogin')}>{t('goToLogin')}</Link>
         </div>
       </div>
     );
@@ -442,16 +442,20 @@ export default function MyProjectsPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {deleted && (
           <div className="mb-6 p-4 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-sm">
-            Application deleted.
+            {t('appDeleted')}
           </div>
         )}
 
         {/* Title + Actions */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className={`text-3xl md:text-4xl font-black ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>My Projects</h1>
+            <h1 className={`text-3xl md:text-4xl font-black ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{t('title')}</h1>
             <p className={`text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-gray-700'}`}>
-              {items.length} total · {items.filter(i => i.visibility === 'public').length} public · {items.filter(i => i.visibility === 'unlisted').length} unlisted
+              {t('stats', {
+                total: items.length,
+                public: items.filter(i => i.visibility === 'public').length,
+                unlisted: items.filter(i => i.visibility === 'unlisted').length
+              })}
             </p>
           </div>
           <div className="flex gap-2">
@@ -459,17 +463,17 @@ export default function MyProjectsPage() {
               <Link
                 href={`/u/${handle}/finances`}
                 className={`px-5 py-2.5 rounded-full border font-medium transition shadow-sm ${isDark ? 'border-emerald-700 text-emerald-400 bg-emerald-950/50 hover:bg-emerald-900/50' : 'border-emerald-300 text-emerald-800 bg-white hover:bg-emerald-50'}`}
-                title="Pregled financija"
+                title={t('finances')}
               >
-                Financije
+                {t('finances')}
               </Link>
             )}
             <Link
               href="/create"
               className="px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-medium hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-md hover:shadow-lg"
-              title="Create new project"
+              title={t('createNew')}
             >
-              Create New
+              {t('createNew')}
             </Link>
           </div>
         </div>
@@ -477,26 +481,26 @@ export default function MyProjectsPage() {
         {/* Handle setup if missing */}
         {!handle && (
           <section className={`mb-6 p-4 rounded-xl border shadow-sm ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`}>
-            <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>Postavi korisničko ime (handle)</h2>
-            <p className={`text-sm mb-3 ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.</p>
-            <HandleForm onSuccess={(h) => setHandle(h)} />
+            <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{t('handle.title')}</h2>
+            <p className={`text-sm mb-3 ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>{t('handle.description')}</p>
+            <HandleForm onSuccess={(h) => setHandle(h)} t={t} />
           </section>
         )}
 
         {/* Repo-level price */}
         {handle && (
           <section className={`mb-6 p-4 rounded-xl border shadow-sm ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`}>
-            <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>Cijena repozitorija</h2>
+            <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{t('repoPrice.title')}</h2>
             {!canMonetize && (
               <div className={`mb-3 p-3 border rounded ${isDark ? 'border-blue-800 bg-blue-950/50' : 'border-blue-200 bg-blue-50'}`}>
                 <p className={`text-sm mb-2 ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>
-                  Postavljanje cijena je zaključano dok ne dovršiš Stripe onboarding.
+                  {t('repoPrice.locked')}
                 </p>
                 <button
                   onClick={() => startStripeOnboarding(user!.uid, handle)}
                   className={`px-3 py-1 rounded ${isDark ? 'bg-blue-700 text-white hover:bg-blue-600' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                 >
-                  Podesi isplate (Stripe)
+                  {t('repoPrice.setupStripe')}
                 </button>
               </div>
             )}
@@ -504,10 +508,10 @@ export default function MyProjectsPage() {
               <div className="flex items-center justify-between">
                 <div className="text-gray-900">
                   <span className="inline-block px-3 py-1 rounded-full bg-emerald-600 text-white font-semibold">
-                    All‑Access {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(allAccessPrice))}/mo
+                    {t('repoPrice.allAccess', { price: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(allAccessPrice)) })}
                   </span>
                   {repoPriceUpdatedAt && (
-                    <span className="ml-3 text-sm text-gray-500">Zadnja promjena: {new Date(repoPriceUpdatedAt).toLocaleString()}</span>
+                    <span className="ml-3 text-sm text-gray-500">{t('repoPrice.lastUpdated', { date: new Date(repoPriceUpdatedAt).toLocaleString() })}</span>
                   )}
                 </div>
                 <button
@@ -516,15 +520,15 @@ export default function MyProjectsPage() {
                   className="px-4 py-2 rounded border border-gray-300 text-gray-800 hover:bg-white"
                   disabled={!canMonetize}
                 >
-                  Uredi
+                  {t('repoPrice.edit')}
                 </button>
               </div>
             ) : (
               <>
-                <p className="text-sm text-gray-600 mb-3">Postavite mjesečnu cijenu za All‑Access (pristup svim vašim aplikacijama). Ako ostavite prazno ili 0, All‑Access je isključen.</p>
+                <p className="text-sm text-gray-600 mb-3">{t('repoPrice.description')}</p>
                 <form onSubmit={saveRepoPrice} className="flex items-end gap-2">
                   <div>
-                    <label className="block text-sm text-gray-700">Cijena (USD)</label>
+                    <label className="block text-sm text-gray-700">{t('repoPrice.priceLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -540,7 +544,7 @@ export default function MyProjectsPage() {
                     disabled={savingPrice || !canMonetize}
                     className="px-4 py-2 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-60"
                   >
-                    {savingPrice ? 'Spremanje…' : 'Spremi'}
+                    {savingPrice ? t('repoPrice.saving') : t('repoPrice.save')}
                   </button>
                   {Number(allAccessPrice || 0) > 0 && (
                     <button
@@ -548,7 +552,7 @@ export default function MyProjectsPage() {
                       onClick={() => setEditingRepoPrice(false)}
                       className="px-4 py-2 rounded border border-gray-300 text-gray-800 hover:bg-white"
                     >
-                      Odustani
+                      {t('repoPrice.cancel')}
                     </button>
                   )}
                 </form>
@@ -567,7 +571,7 @@ export default function MyProjectsPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by title, tag, description..."
+                placeholder={t('searchPlaceholder')}
                 className={`w-full outline-none bg-transparent text-sm placeholder:text-gray-500 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}
               />
             </div>
@@ -585,21 +589,21 @@ export default function MyProjectsPage() {
                     : `${isDark ? 'bg-[#18181B] border-[#27272A] text-zinc-400 hover:border-zinc-600' : 'bg-white border-gray-200 text-gray-800 hover:border-gray-300'}`
                 )}
               >
-                {v === 'all' ? 'All' : v === 'public' ? 'Public' : 'Unlisted'}
+                {v === 'all' ? t('filters.all') : v === 'public' ? t('filters.public') : t('filters.unlisted')}
               </button>
             ))}
           </div>
 
           <div className="flex items-center gap-2">
-            <label className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-700'}`}>Sort</label>
+            <label className={`text-sm ${isDark ? 'text-zinc-400' : 'text-gray-700'}`}>{t('sort.label')}</label>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
               className={`flex-1 py-2.5 px-3 rounded-lg text-sm border transition-shadow ${isDark ? 'border-[#27272A] bg-zinc-800/70 text-zinc-100 shadow-sm' : 'border-gray-200 bg-white text-gray-900'}`}
             >
-              <option value="newest">Newest</option>
-              <option value="likes">Most liked</option>
-              <option value="title">Title A–Z</option>
+              <option value="newest">{t('sort.newest')}</option>
+              <option value="likes">{t('sort.mostLiked')}</option>
+              <option value="title">{t('sort.titleAZ')}</option>
             </select>
           </div>
         </div>
@@ -620,8 +624,8 @@ export default function MyProjectsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className={`text-center py-16 ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>
-            <p className="text-lg mb-4">No matching projects. Try adjusting filters.</p>
-            <Link href="/create" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title="Create your first project">Create Your First Project</Link>
+            <p className="text-lg mb-4">{t('noProjects')}</p>
+            <Link href="/create" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title={t('createFirst')}>{t('createFirst')}</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -719,7 +723,7 @@ export default function MyProjectsPage() {
   );
 }
 
-function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
+function HandleForm({ onSuccess, t }: { onSuccess: (h: string) => void, t: any }) {
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -728,7 +732,7 @@ function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
     setErr(null);
     const h = value.trim().toLowerCase();
     if (!/^[a-z0-9_-]{3,}$/.test(h)) {
-      setErr('Dozvoljena su mala slova, brojevi, - i _. Min 3 znaka.');
+      setErr(t('handle.errorFormat'));
       return;
     }
     setBusy(true);
@@ -740,13 +744,13 @@ function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
         body: JSON.stringify({ handle: h }),
       });
       if (res.status === 409) {
-        setErr('Korisničko ime je zauzeto. Pokušajte drugo.');
+        setErr(t('handle.errorTaken'));
         return;
       }
       if (!res.ok) throw new Error('bad_response');
       onSuccess(h);
     } catch {
-      setErr('Spremanje nije uspjelo');
+      setErr(t('handle.errorGeneric'));
     } finally {
       setBusy(false);
     }
@@ -754,12 +758,12 @@ function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
   return (
     <form onSubmit={submit} className="flex items-end gap-2">
       <div>
-        <label className="block text-sm text-gray-700">Handle</label>
+        <label className="block text-sm text-gray-700">{t('handle.label')}</label>
         <input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           className="border px-3 py-2 rounded w-48"
-          placeholder="npr. amir_dev"
+          placeholder={t('handle.placeholder')}
         />
       </div>
       <button
@@ -767,11 +771,9 @@ function HandleForm({ onSuccess }: { onSuccess: (h: string) => void }) {
         disabled={busy}
         className="px-4 py-2 rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-60"
       >
-        {busy ? 'Spremanje…' : 'Spremi handle'}
+        {busy ? t('handle.submitting') : t('handle.submit')}
       </button>
       {err && <span className="text-sm text-red-600 ml-2">{err}</span>}
     </form>
   );
 }
-
-

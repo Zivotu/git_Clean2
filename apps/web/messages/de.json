@@ -1406,5 +1406,64 @@
     "errorOccurred": "Ein Fehler ist aufgetreten.",
     "percentComplete": "{progress}% abgeschlossen",
     "close": "Schließen"
+  },
+  "MyProjectsPage": {
+    "title": "Meine Projekte",
+    "signInMessage": "Melden Sie sich an, um Ihre erstellten Projekte zu verwalten und anzuzeigen.",
+    "goToLogin": "Zur Anmeldung",
+    "stats": "{total} gesamt · {public} öffentlich · {unlisted} nicht gelistet",
+    "finances": "Finanzen",
+    "createNew": "Neu erstellen",
+    "handle": {
+      "title": "Benutzernamen (Handle) festlegen",
+      "description": "Bevor Sie einen Repository-Preis festlegen, legen Sie Ihren Benutzernamen fest (z. B. amir_dev). Erlaubt sind Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche. Mindestens 3 Zeichen.",
+      "label": "Handle",
+      "placeholder": "z. B. amir_dev",
+      "submit": "Handle speichern",
+      "submitting": "Speichern…",
+      "errorFormat": "Erlaubt sind Kleinbuchstaben, Zahlen, - und _. Min. 3 Zeichen.",
+      "errorTaken": "Benutzername ist bereits vergeben. Versuchen Sie einen anderen.",
+      "errorGeneric": "Speichern fehlgeschlagen"
+    },
+    "repoPrice": {
+      "title": "Repository-Preis",
+      "locked": "Die Preisfestlegung ist gesperrt, bis Sie das Stripe-Onboarding abgeschlossen haben.",
+      "setupStripe": "Auszahlungen einrichten (Stripe)",
+      "allAccess": "All‑Access {price}/Monat",
+      "lastUpdated": "Letzte Änderung: {date}",
+      "edit": "Bearbeiten",
+      "description": "Legen Sie einen monatlichen Preis für All‑Access (Zugriff auf alle Ihre Apps) fest. Wenn Sie das Feld leer lassen oder 0 eingeben, ist All‑Access deaktiviert.",
+      "priceLabel": "Preis (USD)",
+      "save": "Speichern",
+      "saving": "Speichern…",
+      "cancel": "Abbrechen",
+      "success": "Repository-Preis gespeichert",
+      "error": "Speichern fehlgeschlagen"
+    },
+    "searchPlaceholder": "Suche nach Titel, Tag, Beschreibung...",
+    "filters": {
+      "all": "Alle",
+      "public": "Öffentlich",
+      "unlisted": "Nicht gelistet"
+    },
+    "sort": {
+      "label": "Sortieren",
+      "newest": "Neueste",
+      "mostLiked": "Beliebteste",
+      "titleAZ": "Titel A–Z"
+    },
+    "noProjects": "Keine passenden Projekte. Versuchen Sie, die Filter anzupassen.",
+    "createFirst": "Erstellen Sie Ihr erstes Projekt",
+    "appDeleted": "Anwendung gelöscht.",
+    "deleteSuccess": "App gelöscht",
+    "deleteError": "Löschen der App fehlgeschlagen",
+    "notPublished": "Die App muss genehmigt werden, bevor sie ausgeführt werden kann.",
+    "linkCopied": "Link in die Zwischenablage kopiert!",
+    "slowDown": "Langsam 🙂",
+    "congrats": {
+      "title": "Herzlichen Glückwunsch!",
+      "message": "Ihre App wurde erfolgreich eingereicht.",
+      "confirm": "OK"
+    }
   }
 }
