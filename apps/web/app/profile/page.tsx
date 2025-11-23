@@ -1,5 +1,6 @@
 'use client';
 
+import { useT } from '@/lib/i18n-provider';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import { PUBLIC_API_URL } from '@/lib/config';
 import Link from 'next/link';
@@ -109,6 +110,7 @@ async function buildHeaders(withJson: boolean): Promise<Record<string, string>> 
 }
 
 export default function ProfilePage() {
+  const t = useT('Profile');
   const { user, loading } = useAuth();
   const [data, setData] = useState<ProfileData | null>(null);
   const [busy, setBusy] = useState(false);
@@ -859,7 +861,7 @@ export default function ProfilePage() {
                   {handle && <span className="hidden md:inline">·</span>}
                   {handle && <span>@{handle}</span>}
                   {joined && <span className="hidden md:inline">·</span>}
-                  {joined && <span>Joined {joined}</span>}
+                  {joined && <span>{t('header.joined', { date: joined })}</span>}
                 </div>
               </div>
               <div className="flex gap-3 w-full md:w-auto">
@@ -869,7 +871,7 @@ export default function ProfilePage() {
                     className={buttonVariants({ variant: 'outline', className: 'flex-1 md:flex-none gap-2' })}
                   >
                     <Globe className="h-4 w-4" />
-                    Public Profile
+                    {t('header.publicProfile')}
                   </Link>
                 )}
               </div>
@@ -878,15 +880,15 @@ export default function ProfilePage() {
             <div className="mt-8 grid grid-cols-3 gap-4 border-t border-slate-100 dark:border-zinc-800 pt-6">
               <div className="text-center md:text-left">
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.apps}</div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Apps</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.apps')}</div>
               </div>
               <div className="text-center md:text-left">
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.likes}</div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Likes</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.likes')}</div>
               </div>
               <div className="text-center md:text-left">
                 <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.plays}</div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Plays</div>
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.plays')}</div>
               </div>
             </div>
           </div>
@@ -899,9 +901,9 @@ export default function ProfilePage() {
                 <CreditCard className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">Setup Payouts</h3>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">{t('payouts.setupTitle')}</h3>
                 <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  To monetize your apps or repository, you need to complete the Stripe onboarding process.
+                  {t('payouts.setupDescription')}
                 </p>
               </div>
             </div>
@@ -910,14 +912,14 @@ export default function ProfilePage() {
                 onClick={() => startStripeOnboarding(user!.uid, handle)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Setup Stripe
+                {t('payouts.setupButton')}
               </button>
               {connect.onboarded && connect.payouts_enabled && (
                 <button
                   onClick={() => openStripeDashboard(user!.uid)}
                   className="px-4 py-2 bg-white dark:bg-zinc-800 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 >
-                  Dashboard
+                  {t('payouts.dashboardButton')}
                 </button>
               )}
             </div>
@@ -932,14 +934,14 @@ export default function ProfilePage() {
             <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 bg-slate-50/50 dark:bg-zinc-800/50">
                 <Globe className="h-5 w-5 text-slate-500" />
-                <h2 className="font-semibold text-slate-900 dark:text-slate-100">Public Profile Settings</h2>
+                <h2 className="font-semibold text-slate-900 dark:text-slate-100">{t('publicProfile.title')}</h2>
               </div>
 
               <div className="p-6 space-y-6">
                 {!handle && (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 p-4 flex gap-3 text-sm text-amber-800 dark:text-amber-300">
                     <AlertTriangle className="h-5 w-5 shrink-0" />
-                    <p>Add a username below to make your public profile accessible at /u/username.</p>
+                    <p>{t('publicProfile.noHandle')}</p>
                   </div>
                 )}
 
@@ -966,30 +968,30 @@ export default function ProfilePage() {
                     <div className="flex-1 space-y-4 w-full">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                          Display Name
+                          {t('publicProfile.displayNameLabel')}
                         </label>
                         <Input
                           value={publicProfile.displayName}
                           onChange={handlePublicNameChange}
-                          placeholder="e.g. Studio Pixel"
+                          placeholder={t('publicProfile.displayNamePlaceholder')}
                           className="bg-slate-50 dark:bg-zinc-800/50"
                         />
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                          This name will be visible to visitors on your public profile.
+                          {t('publicProfile.displayNameHint')}
                         </p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                          Repository Name
+                          {t('publicProfile.repositoryNameLabel')}
                         </label>
                         <Input
                           value={repositoryName}
                           onChange={(e) => setRepositoryName(e.target.value)}
-                          placeholder="e.g. studio-pixel"
+                          placeholder={t('publicProfile.repositoryNamePlaceholder')}
                           className="bg-slate-50 dark:bg-zinc-800/50"
                         />
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                          This will be your repository address. You can change it once every 3 months.
+                          {t('publicProfile.repositoryNameHint')}
                         </p>
                       </div>
                     </div>
@@ -1005,7 +1007,7 @@ export default function ProfilePage() {
                   <div className="pt-2">
                     <Button type="submit" disabled={publicSaving} className="w-full sm:w-auto gap-2">
                       {publicSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      {publicSaving ? 'Saving...' : 'Save Public Profile'}
+                      {publicSaving ? t('publicProfile.saving') : t('publicProfile.saveButton')}
                     </Button>
                   </div>
                 </form>
@@ -1016,29 +1018,29 @@ export default function ProfilePage() {
             <section className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
               <div className="px-6 py-4 border-b border-slate-200 dark:border-zinc-800 flex items-center gap-2 bg-slate-50/50 dark:bg-zinc-800/50">
                 <User className="h-5 w-5 text-slate-500" />
-                <h2 className="font-semibold text-slate-900 dark:text-slate-100">Personal Information</h2>
+                <h2 className="font-semibold text-slate-900 dark:text-slate-100">{t('personalInfo.title')}</h2>
               </div>
 
               <div className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">First Name</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.firstName')}</label>
                       <Input
                         name="firstName"
                         value={form.firstName}
                         onChange={handleChange}
-                        placeholder="First Name"
+                        placeholder={t('personalInfo.firstName')}
                         className="bg-slate-50 dark:bg-zinc-800/50"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Last Name</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.lastName')}</label>
                       <Input
                         name="lastName"
                         value={form.lastName}
                         onChange={handleChange}
-                        placeholder="Last Name"
+                        placeholder={t('personalInfo.lastName')}
                         className="bg-slate-50 dark:bg-zinc-800/50"
                       />
                     </div>
@@ -1046,49 +1048,49 @@ export default function ProfilePage() {
 
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Username</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.username')}</label>
                       <Input
                         name="username"
                         value={form.username}
                         onChange={handleChange}
-                        placeholder="Username"
+                        placeholder={t('personalInfo.username')}
                         className="bg-slate-50 dark:bg-zinc-800/50"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Phone</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.phone')}</label>
                       <Input
                         name="phone"
                         value={form.phone}
                         onChange={handleChange}
-                        placeholder="Phone Number"
+                        placeholder={t('personalInfo.phonePlaceholder')}
                         className="bg-slate-50 dark:bg-zinc-800/50"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Bio</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.bio')}</label>
                     <Textarea
                       name="bio"
                       value={form.bio}
                       onChange={handleChange}
-                      placeholder="Tell us a little about yourself..."
+                      placeholder={t('personalInfo.bioPlaceholder')}
                       className="bg-slate-50 dark:bg-zinc-800/50 min-h-[100px]"
                     />
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Website</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.website')}</label>
                       <Input name="website" value={form.website} onChange={handleChange} placeholder="https://example.com" className="bg-slate-50 dark:bg-zinc-800/50" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Twitter / X</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.twitter')}</label>
                       <Input name="twitter" value={form.twitter} onChange={handleChange} placeholder="@handle" className="bg-slate-50 dark:bg-zinc-800/50" />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">GitHub</label>
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('personalInfo.github')}</label>
                       <Input name="github" value={form.github} onChange={handleChange} placeholder="username" className="bg-slate-50 dark:bg-zinc-800/50" />
                     </div>
                   </div>
@@ -1096,7 +1098,7 @@ export default function ProfilePage() {
                   <div className="pt-2">
                     <Button type="submit" disabled={saving} className="w-full sm:w-auto gap-2">
                       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      {saving ? 'Saving...' : 'Save Changes'}
+                      {saving ? t('personalInfo.saving') : t('personalInfo.saveButton')}
                     </Button>
                   </div>
                 </form>
@@ -1108,7 +1110,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <LayoutGrid className="h-5 w-5 text-emerald-500" />
-                  My Projects
+                  {t('projects.title')}
                   <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                     {apps.length}
                   </span>

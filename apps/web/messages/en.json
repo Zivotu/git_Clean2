@@ -1156,5 +1156,135 @@
     "entriesCount": "entries",
     "loadingDonors": "Loading donors...",
     "transparencyNote": "Donation amounts are shown for transparency. If you want to remain completely anonymous, you can hide your name and show only the amount."
+  },
+  "Profile": {
+    "header": {
+      "payoutsActive": "Payouts Active",
+      "onboardingRequired": "Onboarding Required",
+      "joined": "Joined {date}",
+      "publicProfile": "Public Profile"
+    },
+    "stats": {
+      "apps": "Apps",
+      "likes": "Likes",
+      "plays": "Plays"
+    },
+    "payouts": {
+      "setupTitle": "Setup Payouts",
+      "setupDescription": "To monetize your apps or repository, you need to complete the Stripe onboarding process.",
+      "setupButton": "Setup Stripe",
+      "dashboardButton": "Dashboard"
+    },
+    "publicProfile": {
+      "title": "Public Profile Settings",
+      "noHandle": "Add a username below to make your public profile accessible at /u/username.",
+      "displayNameLabel": "Display Name",
+      "displayNamePlaceholder": "e.g. Studio Pixel",
+      "displayNameHelp": "This name will be visible to visitors on your public profile.",
+      "repoNameLabel": "Repository Name",
+      "repoNamePlaceholder": "e.g. studio-pixel",
+      "repoNameHelp": "This will be your repository address. You can change it once every 3 months.",
+      "saveButton": "Save Public Profile",
+      "savingButton": "Saving...",
+      "success": "Public profile updated.",
+      "error": "Failed to update public profile."
+    },
+    "personalInfo": {
+      "title": "Personal Information",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "username": "Username",
+      "phone": "Phone",
+      "bio": "Bio",
+      "bioPlaceholder": "Tell us a little about yourself...",
+      "website": "Website",
+      "twitter": "Twitter / X",
+      "github": "GitHub",
+      "saveButton": "Save Changes",
+      "savingButton": "Saving...",
+      "success": "Personal info updated.",
+      "error": "Failed to update personal info."
+    },
+    "projects": {
+      "title": "My Projects",
+      "likes": "Likes",
+      "plays": "Plays",
+      "noProjectsTitle": "No projects yet",
+      "noProjectsDescription": "You haven't published any applications."
+    },
+    "subscription": {
+      "title": "Subscription",
+      "activeBenefits": "Active benefits associated with your account.",
+      "noActive": "No active subscriptions currently.",
+      "nextBilling": "Next billing: {date}",
+      "manageBilling": "Manage Billing",
+      "upgradeGold": "Upgrade to Gold",
+      "cancelDialog": {
+        "title": "Cancel Subscription",
+        "message": "Are you sure you want to cancel the subscription{label}? It will remain active until the end of the current billing period.",
+        "confirm": "Yes, Cancel",
+        "cancel": "No, Keep it"
+      }
+    },
+    "usage": {
+      "title": "Usage Limits",
+      "apps": "Apps",
+      "storage": "Storage",
+      "noData": "No usage data available"
+    },
+    "billing": {
+      "title": "Billing History",
+      "viewAll": "View All",
+      "noHistory": "No billing history found"
+    }
+  },
+  "Finances": {
+    "title": "Financial Overview",
+    "subtitle": "Manage your earnings and payouts for @{handle}",
+    "stripeDashboard": "Stripe Dashboard",
+    "onboardingSuccess": "Onboarding completed successfully!",
+    "setupPayouts": {
+      "title": "Setup Payouts",
+      "description": "To receive your earnings, you need to connect a payout account. Payouts typically arrive ~3 days after payment, and you receive 70% of the revenue.",
+      "button": "Setup Payouts"
+    },
+    "metrics": {
+      "estMonthlyRevenue": "Est. Monthly Revenue",
+      "gross": "Gross: {amount} (before fees/split)",
+      "subscribers": "All-Access Subscribers",
+      "perMonthUser": "{amount} / month per user",
+      "activeApps": "Active Apps",
+      "generatingRevenue": "Generating revenue"
+    },
+    "table": {
+      "title": "Subscriptions by App",
+      "noApps": "No monetized applications found.",
+      "header": {
+        "application": "Application",
+        "price": "Price",
+        "activeUsers": "Active Users",
+        "monthlyRevenue": "Monthly Revenue",
+        "yourShare": "Your Share (70%)"
+      }
+    },
+    "error": {
+      "loadFailed": "Failed to load financial data."
+    }
+  },
+  "UserProfile": {
+    "notFound": {
+      "title": "User not found",
+      "description": "We couldn't find a profile for @{username}",
+      "backHome": "Back to home"
+    },
+    "actions": {
+      "addToFavorites": "Add to Favorites",
+      "subscribe": "Subscribe"
+    },
+    "apps": {
+      "title": "Applications",
+      "noAppsTitle": "No applications yet",
+      "noAppsDescription": "This creator hasn't published any public applications."
+    }
   }
 }

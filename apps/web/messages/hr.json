@@ -1285,5 +1285,135 @@
     "entriesCount": "upisa",
     "loadingDonors": "Učitavanje donatora…",
     "transparencyNote": "Iznosi donacija prikazuju se za transparentnost. Ako želiš ostati potpuno anoniman, možeš sakriti svoje ime i prikazati samo iznos."
+  },
+  "Profile": {
+    "header": {
+      "payoutsActive": "Isplate aktivne",
+      "onboardingRequired": "Potrebna registracija",
+      "joined": "Pridružen {date}",
+      "publicProfile": "Javni profil"
+    },
+    "stats": {
+      "apps": "Aplikacije",
+      "likes": "Lajkovi",
+      "plays": "Igranja"
+    },
+    "payouts": {
+      "setupTitle": "Postavi isplate",
+      "setupDescription": "Da biste monetizirali svoje aplikacije ili repozitorij, morate dovršiti proces registracije na Stripe.",
+      "setupButton": "Postavi Stripe",
+      "dashboardButton": "Nadzorna ploča"
+    },
+    "publicProfile": {
+      "title": "Postavke javnog profila",
+      "noHandle": "Dodajte korisničko ime ispod kako bi vaš javni profil bio dostupan na /u/korisnickoime.",
+      "displayNameLabel": "Prikazano ime",
+      "displayNamePlaceholder": "npr. Studio Pixel",
+      "displayNameHelp": "Ovo ime bit će vidljivo posjetiteljima na vašem javnom profilu.",
+      "repoNameLabel": "Ime repozitorija",
+      "repoNamePlaceholder": "npr. studio-pixel",
+      "repoNameHelp": "Ovo će biti adresa vašeg repozitorija. Možete je promijeniti jednom svaka 3 mjeseca.",
+      "saveButton": "Spremi javni profil",
+      "savingButton": "Spremanje...",
+      "success": "Javni profil ažuriran.",
+      "error": "Ažuriranje javnog profila nije uspjelo."
+    },
+    "personalInfo": {
+      "title": "Osobni podaci",
+      "firstName": "Ime",
+      "lastName": "Prezime",
+      "username": "Korisničko ime",
+      "phone": "Telefon",
+      "bio": "Biografija",
+      "bioPlaceholder": "Recite nam nešto o sebi...",
+      "website": "Web stranica",
+      "twitter": "Twitter / X",
+      "github": "GitHub",
+      "saveButton": "Spremi promjene",
+      "savingButton": "Spremanje...",
+      "success": "Osobni podaci ažurirani.",
+      "error": "Ažuriranje osobnih podataka nije uspjelo."
+    },
+    "projects": {
+      "title": "Moji projekti",
+      "likes": "Lajkovi",
+      "plays": "Igranja",
+      "noProjectsTitle": "Još nema projekata",
+      "noProjectsDescription": "Niste objavili nijednu aplikaciju."
+    },
+    "subscription": {
+      "title": "Pretplata",
+      "activeBenefits": "Aktivne pogodnosti povezane s vašim računom.",
+      "noActive": "Trenutno nema aktivnih pretplata.",
+      "nextBilling": "Sljedeća naplata: {date}",
+      "manageBilling": "Upravljaj naplatom",
+      "upgradeGold": "Nadogradi na Gold",
+      "cancelDialog": {
+        "title": "Otkaži pretplatu",
+        "message": "Jeste li sigurni da želite otkazati pretplatu{label}? Ostat će aktivna do kraja trenutnog obračunskog razdoblja.",
+        "confirm": "Da, otkaži",
+        "cancel": "Ne, zadrži"
+      }
+    },
+    "usage": {
+      "title": "Limiti korištenja",
+      "apps": "Aplikacije",
+      "storage": "Pohrana",
+      "noData": "Nema dostupnih podataka o korištenju"
+    },
+    "billing": {
+      "title": "Povijest naplate",
+      "viewAll": "Vidi sve",
+      "noHistory": "Nema povijesti naplate"
+    }
+  },
+  "Finances": {
+    "title": "Financijski pregled",
+    "subtitle": "Upravljajte svojom zaradom i isplatama za @{handle}",
+    "stripeDashboard": "Stripe nadzorna ploča",
+    "onboardingSuccess": "Registracija uspješno završena!",
+    "setupPayouts": {
+      "title": "Postavi isplate",
+      "description": "Da biste primili zaradu, morate povezati račun za isplatu. Isplate obično stižu ~3 dana nakon uplate, a vi dobivate 70% prihoda.",
+      "button": "Postavi isplate"
+    },
+    "metrics": {
+      "estMonthlyRevenue": "Proc. mjesečni prihod",
+      "gross": "Bruto: {amount} (prije naknada/podjele)",
+      "subscribers": "All-Access pretplatnici",
+      "perMonthUser": "{amount} / mjesečno po korisniku",
+      "activeApps": "Aktivne aplikacije",
+      "generatingRevenue": "Generiraju prihod"
+    },
+    "table": {
+      "title": "Pretplate po aplikaciji",
+      "noApps": "Nisu pronađene monetizirane aplikacije.",
+      "header": {
+        "application": "Aplikacija",
+        "price": "Cijena",
+        "activeUsers": "Aktivni korisnici",
+        "monthlyRevenue": "Mjesečni prihod",
+        "yourShare": "Vaš udio (70%)"
+      }
+    },
+    "error": {
+      "loadFailed": "Učitavanje financijskih podataka nije uspjelo."
+    }
+  },
+  "UserProfile": {
+    "notFound": {
+      "title": "Korisnik nije pronađen",
+      "description": "Nismo mogli pronaći profil za @{username}",
+      "backHome": "Natrag na početnu"
+    },
+    "actions": {
+      "addToFavorites": "Dodaj u favorite",
+      "subscribe": "Pretplati se"
+    },
+    "apps": {
+      "title": "Aplikacije",
+      "noAppsTitle": "Još nema aplikacija",
+      "noAppsDescription": "Ovaj kreator nije objavio nijednu javnu aplikaciju."
+    }
   }
 }

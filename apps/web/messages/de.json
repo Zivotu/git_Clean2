@@ -1270,5 +1270,135 @@
     "entriesCount": "Einträge",
     "loadingDonors": "Lade Spender...",
     "transparencyNote": "Spendenbeträge werden aus Transparenzgründen angezeigt. Wenn du völlig anonym bleiben möchtest, kannst du deinen Namen verbergen und nur den Betrag anzeigen."
+  },
+  "Profile": {
+    "header": {
+      "payoutsActive": "Auszahlungen aktiv",
+      "onboardingRequired": "Registrierung erforderlich",
+      "joined": "Beigetreten {date}",
+      "publicProfile": "Öffentliches Profil"
+    },
+    "stats": {
+      "apps": "Apps",
+      "likes": "Likes",
+      "plays": "Spiele"
+    },
+    "payouts": {
+      "setupTitle": "Auszahlungen einrichten",
+      "setupDescription": "Um Ihre Apps oder Ihr Repository zu monetarisieren, müssen Sie den Stripe-Onboarding-Prozess abschließen.",
+      "setupButton": "Stripe einrichten",
+      "dashboardButton": "Dashboard"
+    },
+    "publicProfile": {
+      "title": "Einstellungen für öffentliches Profil",
+      "noHandle": "Fügen Sie unten einen Benutzernamen hinzu, damit Ihr öffentliches Profil unter /u/benutzername erreichbar ist.",
+      "displayNameLabel": "Anzeigename",
+      "displayNamePlaceholder": "z. B. Studio Pixel",
+      "displayNameHelp": "Dieser Name wird Besuchern auf Ihrem öffentlichen Profil angezeigt.",
+      "repoNameLabel": "Repository-Name",
+      "repoNamePlaceholder": "z. B. studio-pixel",
+      "repoNameHelp": "Dies wird Ihre Repository-Adresse sein. Sie können sie einmal alle 3 Monate ändern.",
+      "saveButton": "Öffentliches Profil speichern",
+      "savingButton": "Speichern...",
+      "success": "Öffentliches Profil aktualisiert.",
+      "error": "Aktualisierung des öffentlichen Profils fehlgeschlagen."
+    },
+    "personalInfo": {
+      "title": "Persönliche Informationen",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "username": "Benutzername",
+      "phone": "Telefon",
+      "bio": "Biografie",
+      "bioPlaceholder": "Erzählen Sie uns etwas über sich...",
+      "website": "Webseite",
+      "twitter": "Twitter / X",
+      "github": "GitHub",
+      "saveButton": "Änderungen speichern",
+      "savingButton": "Speichern...",
+      "success": "Persönliche Daten aktualisiert.",
+      "error": "Aktualisierung der persönlichen Daten fehlgeschlagen."
+    },
+    "projects": {
+      "title": "Meine Projekte",
+      "likes": "Likes",
+      "plays": "Spiele",
+      "noProjectsTitle": "Noch keine Projekte",
+      "noProjectsDescription": "Sie haben noch keine Anwendungen veröffentlicht."
+    },
+    "subscription": {
+      "title": "Abonnement",
+      "activeBenefits": "Aktive Vorteile, die mit Ihrem Konto verknüpft sind.",
+      "noActive": "Derzeit keine aktiven Abonnements.",
+      "nextBilling": "Nächste Abrechnung: {date}",
+      "manageBilling": "Abrechnung verwalten",
+      "upgradeGold": "Auf Gold upgraden",
+      "cancelDialog": {
+        "title": "Abonnement kündigen",
+        "message": "Sind Sie sicher, dass Sie das Abonnement{label} kündigen möchten? Es bleibt bis zum Ende des aktuellen Abrechnungszeitraums aktiv.",
+        "confirm": "Ja, kündigen",
+        "cancel": "Nein, behalten"
+      }
+    },
+    "usage": {
+      "title": "Nutzungslimits",
+      "apps": "Apps",
+      "storage": "Speicher",
+      "noData": "Keine Nutzungsdaten verfügbar"
+    },
+    "billing": {
+      "title": "Abrechnungsverlauf",
+      "viewAll": "Alle anzeigen",
+      "noHistory": "Kein Abrechnungsverlauf gefunden"
+    }
+  },
+  "Finances": {
+    "title": "Finanzübersicht",
+    "subtitle": "Verwalten Sie Ihre Einnahmen und Auszahlungen für @{handle}",
+    "stripeDashboard": "Stripe-Dashboard",
+    "onboardingSuccess": "Onboarding erfolgreich abgeschlossen!",
+    "setupPayouts": {
+      "title": "Auszahlungen einrichten",
+      "description": "Um Ihre Einnahmen zu erhalten, müssen Sie ein Auszahlungskonto verknüpfen. Auszahlungen erfolgen in der Regel ~3 Tage nach Zahlungseingang, und Sie erhalten 70% der Einnahmen.",
+      "button": "Auszahlungen einrichten"
+    },
+    "metrics": {
+      "estMonthlyRevenue": "Geschätzter monatlicher Umsatz",
+      "gross": "Brutto: {amount} (vor Gebühren/Aufteilung)",
+      "subscribers": "All-Access-Abonnenten",
+      "perMonthUser": "{amount} / Monat pro Benutzer",
+      "activeApps": "Aktive Apps",
+      "generatingRevenue": "Generieren Umsatz"
+    },
+    "table": {
+      "title": "Abonnements nach App",
+      "noApps": "Keine monetarisierten Anwendungen gefunden.",
+      "header": {
+        "application": "Anwendung",
+        "price": "Preis",
+        "activeUsers": "Aktive Benutzer",
+        "monthlyRevenue": "Monatlicher Umsatz",
+        "yourShare": "Ihr Anteil (70%)"
+      }
+    },
+    "error": {
+      "loadFailed": "Laden der Finanzdaten fehlgeschlagen."
+    }
+  },
+  "UserProfile": {
+    "notFound": {
+      "title": "Benutzer nicht gefunden",
+      "description": "Wir konnten kein Profil für @{username} finden",
+      "backHome": "Zurück zur Startseite"
+    },
+    "actions": {
+      "addToFavorites": "Zu Favoriten hinzufügen",
+      "subscribe": "Abonnieren"
+    },
+    "apps": {
+      "title": "Anwendungen",
+      "noAppsTitle": "Noch keine Anwendungen",
+      "noAppsDescription": "Dieser Creator hat noch keine öffentlichen Anwendungen veröffentlicht."
+    }
   }
 }

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -27,6 +26,7 @@
     --radius: 0.5rem;
     color-scheme: light;
   }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -76,7 +76,7 @@
   pointer-events: none;
   animation: heart-fall linear forwards;
   z-index: 9999;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
 }
 
 @keyframes heart-fall {
@@ -84,10 +84,12 @@
     transform: translateY(0) scale(0.9) rotate(-8deg);
     opacity: 0.95;
   }
+
   60% {
     transform: translateY(55vh) translateX(6px) scale(1.02) rotate(6deg);
     opacity: 1;
   }
+
   100% {
     transform: translateY(100vh) translateX(12px) rotate(18deg) scale(1.06);
     opacity: 0.9;
@@ -103,6 +105,7 @@
     box-shadow: 0 0 0 rgba(16, 185, 129, 0.1);
     transform: scale(1);
   }
+
   to {
     box-shadow: 0 0 32px rgba(16, 185, 129, 0.45);
     transform: scale(1.01);
@@ -114,20 +117,56 @@
     @apply px-2 py-0.5 rounded-full text-xs bg-gray-200;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
+
   .timeline-step-active {
     @apply bg-emerald-600 text-white;
   }
+
   .timeline-step-waiting {
     @apply bg-yellow-500 text-white;
   }
+
   .timeline-step-generating {
     @apply bg-blue-500 text-white;
   }
+
   .timeline-arrow {
     @apply mx-1 text-gray-400;
     transition: color 0.3s ease;
   }
+
   .timeline-arrow-active {
     @apply text-emerald-600;
   }
+}
+
+/* Modal animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
 }

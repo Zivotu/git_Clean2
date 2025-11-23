@@ -1,4 +1,7 @@
-'use client'
+'use client';
+
+import { useT } from '@/lib/i18n-provider';
+import { useAuth } from '@/lib/auth';
 
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
@@ -12,10 +15,13 @@ import {
   Loader2,
   LayoutGrid,
   Share2,
-  MessageSquare
+  MessageSquare,
+  Edit
 } from 'lucide-react'
 
 export default function UserProfileClient({ username }: { username: string }) {
+  const t = useT('UserProfile');
+  const { user: currentUser } = useAuth();
   const [user, setUser] = useState<any>(null)
   const [userApps, setUserApps] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,28 +78,20 @@ export default function UserProfileClient({ username }: { username: string }) {
         <div className="bg-slate-100 dark:bg-zinc-800 p-4 rounded-full mb-4">
           <LayoutGrid className="h-8 w-8 text-slate-400" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">User not found</h1>
-        <p className="text-slate-500 dark:text-slate-400 mb-6">We couldn&apos;t find a profile for @{username}</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">{t('notFound.title')}</h1>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">{t('notFound.message', { username })}</p>
         <Link
           href="/"
           className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to home
+          {t('notFound.backHome')}
         </Link>
       </div>
     )
   }
 
-  const handleToggleFavorite = () => {
-    console.log(`Toggle favorite for creator: ${user.displayName || username}`);
-    // Future: Implement Firestore logic to add/remove creator from favorites
-  };
-
-  const handleSubscribeToCreator = () => {
-    console.log(`Subscribe to creator: ${user.displayName || username}`);
-    // Future: Implement Firestore logic to subscribe to creator's repository
-  };
+  const isOwnProfile = currentUser?.uid === user?.uid;
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950/50">
@@ -138,23 +136,37 @@ export default function UserProfileClient({ username }: { username: string }) {
                 </p>
               )}
 
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                <button
-                  onClick={handleToggleFavorite}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors border border-amber-200 dark:border-amber-800/50"
-                >
-                  <Star className="h-4 w-4" />
-                  Add to Favorites
-                </button>
-                <button
-                  onClick={handleSubscribeToCreator}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Subscribe
-                </button>
-                <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
-                  <Share2 className="h-5 w-5" />
+              <div className="mt-8 grid grid-cols-3 gap-4 border-t border-slate-100 dark:border-zinc-800 pt-6">
+                <div className="text-center md:text-left">
+                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{user.stats.apps}</div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.apps')}</div>
+                </div>
+                <div className="text-center md:text-left">
+                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{user.stats.likes}</div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.likes')}</div>
+                </div>
+                <div className="text-center md:text-left">
+                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{user.stats.plays}</div>
+                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.plays')}</div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 w-full md:w-auto">
+                {isOwnProfile ? (
+                  <Link
+                    href="/profile"
+                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                  >
+                    <Edit className="h-4 w-4" />
+                    {t('editProfile')}
+                  </Link>
+                ) : (
+                  <button className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors">
+                    {t('follow')}
+                  </button>
+                )}
+                <button className="p-2 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors text-slate-600 dark:text-slate-400">
+                  <Share2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -166,7 +178,7 @@ export default function UserProfileClient({ username }: { username: string }) {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <LayoutGrid className="h-5 w-5 text-emerald-500" />
-              Applications
+              {t('projects')}
               <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
                 {userApps.length}
               </span>
@@ -194,8 +206,8 @@ export default function UserProfileClient({ username }: { username: string }) {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 mb-4">
                 <LayoutGrid className="h-6 w-6 text-slate-400" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">No applications yet</h3>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">This creator hasn&apos;t published any public applications.</p>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">{t('noProjects.title')}</h3>
+              <p className="text-slate-500 dark:text-slate-400 mt-1">{t('noProjects.message')}</p>
             </div>
           )}
         </div>
