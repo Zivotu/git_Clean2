@@ -91,10 +91,10 @@ async function detectAiMarkers(
 async function ensureListingRecord(opts: {
   listingId: string | number;
   title?: string | null;
-  uid?: string | null;
+  author?: { uid: string; name?: string; photo?: string; handle?: string } | null;
   buildId: string;
 }) {
-  const { listingId, title, uid, buildId } = opts;
+  const { listingId, title, author, buildId } = opts;
   const id = String(listingId);
   const ns = `listing:${id}`;
   const backend = await getStorageBackend();
@@ -106,7 +106,7 @@ async function ensureListingRecord(opts: {
     ops.push({ op: 'set', key: 'id', value: id });
     ops.push({ op: 'set', key: 'title', value: safeTitle });
     ops.push({ op: 'set', key: 'status', value: 'pending_review' });
-    if (uid) ops.push({ op: 'set', key: 'authorUid', value: uid });
+    if (author?.uid) ops.push({ op: 'set', key: 'authorUid', value: author.uid });
     ops.push({ op: 'set', key: 'createdAt', value: Date.now() });
   } else {
     if (title) ops.push({ op: 'set', key: 'title', value: safeTitle });
@@ -134,13 +134,18 @@ async function ensureListingRecord(opts: {
     };
     if (isNew) {
       firestorePayload.status = 'pending_review';
-      if (uid) firestorePayload.authorUid = uid;
+      // Store full author object instead of just authorUid
+      if (author?.uid) {
+        firestorePayload.author = author;
+        // Keep authorUid for backward compatibility
+        firestorePayload.authorUid = author.uid;
+      }
       firestorePayload.createdAt = ops.find((op: any) => op.key === 'createdAt')?.value;
     } else {
       firestorePayload.updatedAt = ops.find((op: any) => op.key === 'updatedAt')?.value;
     }
     await updateApp(id, firestorePayload);
-    console.log('[ensureListingRecord] ✅ Auto-synced to Firestore:', { listingId: id, pendingBuildId: buildId });
+    console.log('[ensureListingRecord] ✅ Auto-synced to Firestore:', { listingId: id, pendingBuildId: buildId, hasAuthor: !!author });
   } catch (syncError) {
     console.error('[ensureListingRecord] ⚠️ Failed to sync to Firestore (KV write succeeded):', syncError);
   }
@@ -286,7 +291,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
 
     // 3. Save the uploaded ZIP file to a temporary location
     // TODO: Define a proper temporary directory structure
-  const tempDir = path.join(getConfig().TMP_PATH, 'publish-bundle', buildId);
+    const tempDir = path.join(getConfig().TMP_PATH, 'publish-bundle', buildId);
     await fs.mkdir(tempDir, { recursive: true });
     const zipPath = path.join(tempDir, 'bundle.zip');
     await fs.writeFile(zipPath, await data.toBuffer());
@@ -337,10 +342,13 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       ? Number(existing.id)
       : (numericIds.length ? Math.max(...numericIds) : 0) + 1;
 
+    // Resolve author metadata before creating listing record
+    const author = await resolveAuthorMetadata({ uid, existing: existing?.author, req });
+
     await ensureListingRecord({
       listingId,
       title: title,
-      uid,
+      author,
       buildId,
     });
 
@@ -379,7 +387,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       }
 
       const { version, archivedVersions } = computeNextVersion(existing, now);
-      
+
       let payloadPreviewUrl: string | undefined = existing?.previewUrl ?? undefined;
       const previewDataUrl = (data.fields.preview as any)?.value;
       const parsedPreview = parseDataUrlValue(previewDataUrl);
@@ -396,7 +404,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       if (!payloadPreviewUrl) {
         payloadPreviewUrl = pickRandomPreviewPreset();
       }
-      
+
       const description = (data.fields.description as any)?.value || '';
       const visibility = (data.fields.visibility as any)?.value || 'public';
       const author = await resolveAuthorMetadata({ uid, existing: existing?.author, req });

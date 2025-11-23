@@ -132,7 +132,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
     if (ownerId) {
       items = items.filter(
-        (a) => a.author?.uid === ownerId || (a as any).ownerUid === ownerId,
+        (a) => a.author?.uid === ownerId || (a as any).ownerUid === ownerId || (a as any).authorUid === ownerId,
       );
       const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
       const isOwner = req.authUser?.uid === ownerId;
@@ -182,10 +182,10 @@ export default async function listingsRoutes(app: FastifyInstance) {
   };
 
   // Primarna ruta
-  app.route({ method: ['GET','HEAD'], url: '/listings', handler: listHandler });
+  app.route({ method: ['GET', 'HEAD'], url: '/listings', handler: listHandler });
 
   // Alias za rad iza /api prefiksa (obrambeno, iako hook rješava većinu slučajeva)
-  app.route({ method: ['GET','HEAD'], url: '/api/listings', handler: listHandler });
+  app.route({ method: ['GET', 'HEAD'], url: '/api/listings', handler: listHandler });
 
   const DEBUG_LISTING_AUTH = process.env.DEBUG_LISTING_AUTH === '1';
 
@@ -257,7 +257,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
           result.title = tr.title;
           result.description = tr.description;
         }
-      } catch {}
+      } catch { }
     }
     if (!isOwner && !isModerator) {
       delete result.moderation;
@@ -291,7 +291,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         : reply.code(404).send({ ok: false, error: 'not_found' });
     }
 
-  try {
+    try {
       const ct = (req.headers['content-type'] || '').toString();
       // Support preset application via JSON body { path: '/preview-presets/..' | '/assets/..' }
       if (/^application\/json/i.test(ct)) {
@@ -305,7 +305,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         // Clean up prior uploaded file if it lived under /uploads
         try {
           await removeExistingPreviewFile(item.previewUrl);
-        } catch {}
+        } catch { }
         const next: AppRecord = {
           ...item,
           previewUrl: normalized,
@@ -348,7 +348,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         const entry = { ts: new Date().toISOString(), slug, err: (err as any)?.stack || String(err) };
         await fs.mkdir(path.dirname(p), { recursive: true });
         await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
-      } catch {}
+      } catch { }
       req.log.error({ err, slug }, 'preview_upload_failed');
       return reply.code(500).send({ ok: false, error: 'preview_failed' });
     }
@@ -393,8 +393,8 @@ export default async function listingsRoutes(app: FastifyInstance) {
     const rawAssets = Array.isArray(body?.assets)
       ? body.assets
       : Array.isArray(body)
-      ? body
-      : [];
+        ? body
+        : [];
     if (!Array.isArray(rawAssets)) {
       return reply.code(400).send({ ok: false, error: 'invalid_payload' });
     }
@@ -512,7 +512,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     if (appRec.deletedAt) return reply.code(404).send({ ok: false, error: 'not_found' });
 
     const like = Boolean((req.body as any)?.like);
-  try {
+    try {
       await setAppLike(appRec.id, uid, like);
       return reply.send({ ok: true, like });
     } catch (err) {
@@ -614,7 +614,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         const entry = { ts: new Date().toISOString(), slug, err: (err as any)?.stack || String(err) };
         await fs.mkdir(path.dirname(p), { recursive: true });
         await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
-      } catch {}
+      } catch { }
       req.log.error({ err, slug }, 'screenshot_upload_failed');
       return reply.code(500).send({ ok: false, error: 'screenshot_failed' });
     }
@@ -663,7 +663,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
     await writeApps(apps);
     try {
       await removeExistingPreviewFile(previousUrl);
-    } catch {}
+    } catch { }
     return reply.send({ ok: true, screenshotUrls, slot: slotParam });
   };
 
@@ -720,7 +720,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
       const out: Record<string, { title?: string; description?: string }> = {} as any;
       for (const [loc, obj] of Object.entries(input || {})) {
         const l = String(loc).toLowerCase().slice(0, 2);
-        if (!['en','hr','de'].includes(l)) continue;
+        if (!['en', 'hr', 'de'].includes(l)) continue;
         const t = (obj?.title ?? '').toString().trim();
         const d = (obj?.description ?? '').toString().trim();
         if (!t && !d) continue;
@@ -784,7 +784,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         }
         try {
           await removeExistingPreviewFile(item.previewUrl);
-        } catch {}
+        } catch { }
         next.previewUrl = normalized;
         next.updatedAt = Date.now();
       }
@@ -812,7 +812,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
             const entry = { ts: new Date().toISOString(), slug, context: 'patch_store', err: (e as any)?.stack || String(e) };
             await fs.mkdir(path.dirname(p), { recursive: true });
             await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
-          } catch {}
+          } catch { }
           req.log?.warn?.({ e, slug }, 'patch_preview_store_failed');
           return reply.code(500).send({ ok: false, error: 'preview_failed' });
         }
@@ -824,7 +824,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
         const entry = { ts: new Date().toISOString(), slug, context: 'patch_parse', err: (e as any)?.stack || String(e) };
         await fs.mkdir(path.dirname(p), { recursive: true });
         await fs.appendFile(p, JSON.stringify(entry) + '\n', 'utf8');
-      } catch {}
+      } catch { }
       req.log?.warn?.({ e, slug }, 'patch_preview_parse_failed');
     }
     if (typeof next.price === 'number' && next.price > 0) {
@@ -941,7 +941,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
       lines.push('Opis poteškoće:');
       lines.push(reason);
       await notifyAdmins(subject, lines.join('\n'));
-    } catch {}
+    } catch { }
 
     return reply.send({ ok: true });
   });

@@ -91,10 +91,10 @@ function parseDataUrl(input: string | undefined): { mimeType: string; buffer: Bu
 async function ensureListingRecord(opts: {
   listingId: string | number;
   title?: string | null;
-  uid?: string | null;
+  author?: { uid: string; name?: string; photo?: string; handle?: string } | null;
   buildId: string;
 }) {
-  const { listingId, title, uid, buildId } = opts;
+  const { listingId, title, author, buildId } = opts;
   const id = String(listingId);
   const ns = `listing:${id}`;
   const backend = await getStorageBackend();
@@ -106,7 +106,7 @@ async function ensureListingRecord(opts: {
     ops.push({ op: 'set', key: 'id', value: id });
     ops.push({ op: 'set', key: 'title', value: safeTitle });
     ops.push({ op: 'set', key: 'status', value: 'pending_review' });
-    if (uid) ops.push({ op: 'set', key: 'authorUid', value: uid });
+    if (author?.uid) ops.push({ op: 'set', key: 'authorUid', value: author.uid });
     ops.push({ op: 'set', key: 'createdAt', value: Date.now() });
   } else {
     if (title) ops.push({ op: 'set', key: 'title', value: safeTitle });
@@ -135,13 +135,18 @@ async function ensureListingRecord(opts: {
     };
     if (isNew) {
       firestorePayload.status = 'pending_review';
-      if (uid) firestorePayload.authorUid = uid;
+      // Store full author object instead of just authorUid
+      if (author?.uid) {
+        firestorePayload.author = author;
+        // Keep authorUid for backward compatibility
+        firestorePayload.authorUid = author.uid;
+      }
       firestorePayload.createdAt = ops.find((op: any) => op.key === 'createdAt')?.value;
     } else {
       firestorePayload.updatedAt = ops.find((op: any) => op.key === 'updatedAt')?.value;
     }
     await updateApp(id, firestorePayload);
-    console.log('[ensureListingRecord] ✅ Auto-synced to Firestore:', { listingId: id, pendingBuildId: buildId });
+    console.log('[ensureListingRecord] ✅ Auto-synced to Firestore:', { listingId: id, pendingBuildId: buildId, hasAuthor: !!author });
   } catch (syncError) {
     console.error('[ensureListingRecord] ⚠️ Failed to sync to Firestore (KV write succeeded):', syncError);
     // Don't throw - KV write succeeded, Firestore sync is best-effort
@@ -238,7 +243,7 @@ export default async function publishRoutes(app: FastifyInstance) {
     await ensureListingRecord({
       listingId,
       title: (body as any)?.title,
-      uid,
+      author: body.author,
       buildId,
     });
 
@@ -421,7 +426,7 @@ export default async function publishRoutes(app: FastifyInstance) {
         // esbuild worker now bundles ALL dependencies (React, ReactDOM, etc.) into IIFE
         // Replace shadcn components with simple React element wrappers
         const code = body.inlineCode;
-        
+
         // Remove shadcn imports
         const importRe = /import\s*\{([^}]+)\}\s*from\s*["']@\/components\/ui\/(card|button|input|slider|label)["'];?\r?\n?/g;
         let cleanedCode = code.replace(importRe, '');
@@ -466,40 +471,40 @@ export default async function publishRoutes(app: FastifyInstance) {
         if (stubLines.length > 3) {
           cleanedCode = stubLines.join('\n') + '\n' + cleanedCode;
         }
-        
-          // Fix ResponsiveContainer issues in sandboxed iframe
-          // ResponsiveContainer doesn't work well in sandboxed iframes, replace with fixed dimensions
-          cleanedCode = cleanedCode.replace(
-            /<ResponsiveContainer\s+width="100%"\s+height="100%"\s*>/g,
-            '<div style={{width: "100%", height: "100%"}}>'
-          );
-          cleanedCode = cleanedCode.replace(
-            /<\/ResponsiveContainer>/g,
-            '</div>'
-          );
-          // Also remove ResponsiveContainer from imports if present
-          cleanedCode = cleanedCode.replace(
-            /ResponsiveContainer,?\s*/g,
-            ''
-          );
-          // Fix PieChart to use fixed dimensions instead of percentage
-          cleanedCode = cleanedCode.replace(
-            /<PieChart>/g,
-            '<PieChart width={600} height={420}>'
-          );
-        
+
+        // Fix ResponsiveContainer issues in sandboxed iframe
+        // ResponsiveContainer doesn't work well in sandboxed iframes, replace with fixed dimensions
+        cleanedCode = cleanedCode.replace(
+          /<ResponsiveContainer\s+width="100%"\s+height="100%"\s*>/g,
+          '<div style={{width: "100%", height: "100%"}}>'
+        );
+        cleanedCode = cleanedCode.replace(
+          /<\/ResponsiveContainer>/g,
+          '</div>'
+        );
+        // Also remove ResponsiveContainer from imports if present
+        cleanedCode = cleanedCode.replace(
+          /ResponsiveContainer,?\s*/g,
+          ''
+        );
+        // Fix PieChart to use fixed dimensions instead of percentage
+        cleanedCode = cleanedCode.replace(
+          /<PieChart>/g,
+          '<PieChart width={600} height={420}>'
+        );
+
         // Check if user code exports a default component
         const hasDefaultExport = /export\s+default\s+/.test(cleanedCode);
-        
+
         // Extract the component name from "export default function ComponentName()"
         const defaultFnMatch = cleanedCode.match(/export\s+default\s+function\s+(\w+)/);
         const componentName = defaultFnMatch ? defaultFnMatch[1] : 'App';
-        
+
         if (!hasDefaultExport) {
           // If no default export, user code might be incomplete - wrap it
           cleanedCode = `import React from 'react';\n\n${cleanedCode}\n\nfunction App() { return null; }\nexport default App;\n`;
         }
-        
+
         // Add mount code at the end using the actual exported component
         // IMPORTANT: Reference the component by name, not via import
         cleanedCode += `
@@ -528,7 +533,7 @@ if (typeof window !== 'undefined') {
   }
 }
 `;
-        
+
         const entryPath = path.join(buildDir, '_app_entry.tsx');
         await fs.writeFile(entryPath, cleanedCode, 'utf8');
 
@@ -605,7 +610,7 @@ if (typeof window !== 'undefined') {
     };
 
     try {
-  let payloadPreviewUrl: string | undefined = existing?.previewUrl ?? undefined;
+      let payloadPreviewUrl: string | undefined = existing?.previewUrl ?? undefined;
       try {
         const parsedPreview = parseDataUrl(body.preview?.dataUrl);
         if (parsedPreview) {
@@ -769,7 +774,7 @@ if (typeof window !== 'undefined') {
         req.log?.warn?.({ err, listingId, buildId }, 'publish:notify_user_pending_failed');
       }
 
-      try {        
+      try {
         const created = apps.find((a) => a.id === String(listingId));
         if (created) {
           void ensureListingTranslations(created as any, ['en', 'hr', 'de']);
@@ -782,7 +787,7 @@ if (typeof window !== 'undefined') {
       try {
         const dir = getBuildDir(buildId);
         await fs.writeFile(path.join(dir, 'build-info.json'), JSON.stringify({ listingId: String(listingId) }, null, 2), 'utf8');
-      } catch {}
+      } catch { }
 
       const responsePayload = { ok: true as const, buildId, listingId, slug };
       return reply.code(202).send(responsePayload);
@@ -798,8 +803,8 @@ if (typeof window !== 'undefined') {
 
   const gone =
     (target: '/api/publish' | '/api/createx/publish') =>
-    async (_req: FastifyRequest, reply: FastifyReply) =>
-      reply.code(410).send({ ok: false, error: 'gone', use: target });
+      async (_req: FastifyRequest, reply: FastifyReply) =>
+        reply.code(410).send({ ok: false, error: 'gone', use: target });
 
   app.post('/publish', gone('/api/publish'));
   app.post('/publish/', gone('/api/publish'));
