@@ -186,6 +186,7 @@ export default function AdminDashboard() {
   const [adminSettingsSaving, setAdminSettingsSaving] = useState(false);
   const [adminSettingsError, setAdminSettingsError] = useState<string | null>(null);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [pendingAdminRemoval, setPendingAdminRemoval] = useState<string | null>(null);
   const [adminTab, setAdminTab] = useState<AdminTabKey>('apps');
   // Email templates editor state
   const [templates, setTemplates] = useState<Array<{ id: string; subject?: string; body?: string; description?: string }>>([]);
@@ -624,8 +625,6 @@ export default function AdminDashboard() {
   const handleRemoveAdminEmail = useCallback(
     async (email: string) => {
       if (!isAdmin) return;
-      const confirmed = window.confirm(tAdmin('adminSettings.removeConfirm', { email }));
-      if (!confirmed) return;
       setAdminSettingsSaving(true);
       setAdminSettingsError(null);
       try {
@@ -1245,14 +1244,14 @@ export default function AdminDashboard() {
                                   </div>
                                   <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{email}</span>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveAdminEmail(email)}
-                                  disabled={adminSettingsSaving}
-                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors disabled:opacity-50"
-                                  title={tAdmin('adminSettings.remove')}
-                                >
-                                  <Trash2 className="h-4 w-4" />
+                                  <button
+                                    type="button"
+                                    onClick={() => setPendingAdminRemoval(email)}
+                                    disabled={adminSettingsSaving}
+                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                    title={tAdmin('adminSettings.remove')}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
                                 </button>
                               </li>
                             ))}
@@ -1758,6 +1757,25 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {pendingAdminRemoval && (
+        <ConfirmDialog
+          open
+          title={tAdmin('adminSettings.remove')}
+          message={tAdmin('adminSettings.removeConfirm', { email: pendingAdminRemoval })}
+          confirmLabel={tAdmin('adminSettings.remove')}
+          cancelLabel={tAdmin('buttons.close')}
+          confirmTone="danger"
+          onConfirm={() => {
+            const email = pendingAdminRemoval;
+            setPendingAdminRemoval(null);
+            if (email) {
+              void handleRemoveAdminEmail(email);
+            }
+          }}
+          onClose={() => setPendingAdminRemoval(null)}
+        />
       )}
 
       {confirmDialog && (

@@ -10,6 +10,7 @@ import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 import { resolvePreviewUrl } from '@/lib/preview';
+import { syncFavorites } from '@/lib/favorites';
 
 type FavoriteCreator = {
   id: string;
@@ -29,6 +30,46 @@ type AppLite = {
   previewUrl?: string;
 };
 
+async function loadEntitledCreators(): Promise<FavoriteCreator[]> {
+  try {
+    const full = await apiFetch<{ items: Array<{ id: string; feature: string; data?: any }> }>(
+      '/me/entitlements-full',
+      { auth: true }
+    );
+    const ids = Array.from(
+      new Set(
+        (full.items || [])
+          .filter((e) => e && e.feature === 'creator-all-access' && e.data && e.data.creatorId)
+          .map((e) => String(e.data.creatorId))
+      )
+    );
+    const list: FavoriteCreator[] = [];
+    for (const id of ids) {
+      try {
+        const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(id)}`);
+        if (!res.ok) {
+          list.push({ id, handle: id });
+          continue;
+        }
+        const js = await res.json();
+        const handle = js?.handle || id;
+        list.push({
+          id,
+          handle,
+          displayName: js?.displayName || handle,
+          photo: js?.photoURL || js?.photo || null,
+        });
+      } catch {
+        list.push({ id, handle: id });
+      }
+    }
+    return list;
+  } catch (e) {
+    console.warn('Failed to load subscribed creators', e);
+    return [];
+  }
+}
+
 export default function MyCreatorsPage() {
   const { user } = useAuth();
   const { locale } = useI18n();
@@ -38,49 +79,41 @@ export default function MyCreatorsPage() {
   const { isDark } = useTheme();
 
   useEffect(() => {
-    if (!user) { setLoading(false); return; }
     let cancelled = false;
-    async function loadSubscribedCreators() {
+    async function loadCreators() {
       try {
         setLoading(true);
-        // Load full entitlements from API and filter for creator-all-access
-        const full = await apiFetch<{ items: Array<{ id: string; feature: string; data?: any }> }>(
-          '/me/entitlements-full',
-          { auth: true }
-        );
-        const ids = Array.from(
-          new Set(
-            (full.items || [])
-              .filter((e) => e && e.feature === 'creator-all-access' && e.data && e.data.creatorId)
-              .map((e) => String(e.data.creatorId))
-          )
-        );
-        const list: FavoriteCreator[] = [];
-        for (const id of ids) {
-          try {
-            const res = await fetch(`${PUBLIC_API_URL}/creators/id/${encodeURIComponent(id)}`);
-            if (!res.ok) {
-              list.push({ id, handle: id });
-              continue;
-            }
-            const js = await res.json();
-            const handle = js?.handle || id;
-            list.push({ id, handle });
-          } catch {
-            list.push({ id, handle: id });
-          }
+        const favorites = await syncFavorites(user?.uid);
+        const normalizedFavorites: FavoriteCreator[] = favorites.map((fav) => ({
+          id: fav.id,
+          handle: fav.handle,
+          displayName: fav.displayName || fav.handle,
+          photo: fav.photoURL || undefined,
+        }));
+        const entitlements = user ? await loadEntitledCreators() : [];
+        const seen = new Set<string>();
+        const merged: FavoriteCreator[] = [];
+        for (const entry of normalizedFavorites) {
+          if (!entry.id || seen.has(entry.id)) continue;
+          seen.add(entry.id);
+          merged.push(entry);
         }
-        if (!cancelled) setCreators(list);
+        for (const entry of entitlements) {
+          if (!entry.id || seen.has(entry.id)) continue;
+          seen.add(entry.id);
+          merged.push(entry);
+        }
+        if (!cancelled) setCreators(merged);
       } catch (e) {
-        console.warn('Failed to load subscribed creators', e);
+        console.warn('Failed to load creators list', e);
         if (!cancelled) setCreators([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
-    loadSubscribedCreators();
+    loadCreators();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
     let cancelled = false;

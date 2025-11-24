@@ -3,75 +3,57 @@
 import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  FavoriteCreatorMeta,
+  deleteFavorite,
+  getLocalFavorite,
+  isFavorite,
+  persistFavorite,
+} from '@/lib/favorites';
 
-export default function FollowButton({ creatorId, handle }: { creatorId: string; handle: string }) {
+type FollowButtonProps = {
+  creatorId: string;
+  handle: string;
+  displayName?: string | null;
+  photoURL?: string | null;
+};
+
+export default function FollowButton({ creatorId, handle, displayName, photoURL }: FollowButtonProps) {
   const { user } = useAuth();
   const [busy, setBusy] = React.useState(false);
-  const [done, setDone] = React.useState(false);
+  const [done, setDone] = React.useState<boolean>(() => Boolean(getLocalFavorite(creatorId)));
 
   // On mount, detect if already favorited (Firestore first, then localStorage)
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
-      try {
-        if (user && db) {
-          const favSnap = await getDoc(doc(db, 'users', user.uid, 'favorites', creatorId));
-          if (!cancelled && favSnap.exists()) {
-            setDone(true);
-            return;
-          }
-        }
-      } catch {}
-      try {
-        const raw = localStorage.getItem('cx:favorites');
-        const map = raw ? (JSON.parse(raw) as Record<string, { handle?: string }>) : {};
-        if (!cancelled && map[creatorId]) setDone(true);
-      } catch {}
+      const result = await isFavorite(creatorId, user?.uid);
+      if (!cancelled) setDone(result);
     })();
-    return () => { cancelled = true; };
-  }, [user, creatorId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, creatorId]);
 
   const onClick = async () => {
     if (!user) return;
     try {
       setBusy(true);
+      const meta: FavoriteCreatorMeta = {
+        id: creatorId,
+        handle,
+        displayName: displayName ?? handle,
+        photoURL: photoURL ?? null,
+      };
       if (!done) {
-        // Add favorite
-        if (db) await setDoc(
-          doc(db, 'users', user.uid, 'favorites', creatorId),
-          {
-            creatorId,
-            handle: handle || null,
-            addedAt: serverTimestamp(),
-          },
-          { merge: true }
-        );
+        await persistFavorite(meta, user.uid);
         setDone(true);
       } else {
-        // Remove favorite
-        if (db) await deleteDoc(doc(db, 'users', user.uid, 'favorites', creatorId));
+        await deleteFavorite(creatorId, user.uid);
         setDone(false);
       }
     } catch (e) {
-      console.error('Favorite toggle failed (Firestore). Falling back to localStorage.', e);
-      try {
-        const key = 'cx:favorites';
-        const raw = localStorage.getItem(key);
-        const map = raw ? (JSON.parse(raw) as Record<string, { handle?: string }>) : {};
-        if (!done) {
-          map[creatorId] = { handle };
-          localStorage.setItem(key, JSON.stringify(map));
-          setDone(true);
-        } else {
-          delete map[creatorId];
-          localStorage.setItem(key, JSON.stringify(map));
-          setDone(false);
-        }
-      } catch (err) {
-        console.error('LocalStorage fallback failed', err);
-      }
+      console.error('Favorite toggle failed', e);
     } finally {
       setBusy(false);
     }
@@ -91,7 +73,7 @@ export default function FollowButton({ creatorId, handle }: { creatorId: string;
   return (
     <button
       onClick={onClick}
-      disabled={busy || done}
+      disabled={busy}
       className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border ${done ? 'border-red-300 text-red-700 hover:bg-red-50' : 'border-gray-300 hover:bg-gray-50'}`}
       title={done ? 'Ukloni iz favorita' : 'Dodaj u favorite'}
     >

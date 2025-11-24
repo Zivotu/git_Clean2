@@ -1087,9 +1087,61 @@
     }
   },
   "MyProjectsPage": {
+    "title": "My Projects",
+    "signInMessage": "Sign in to manage and view your created projects.",
+    "goToLogin": "Go to Login",
+    "stats": "{total} total · {public} public · {unlisted} unlisted",
+    "finances": "Finances",
+    "createNew": "Create New",
+    "handle": {
+      "title": "Set handle",
+      "description": "Before setting a repository price, set your handle (e.g. amir_dev). Allowed: lowercase letters, numbers, dashes, underscores. Min 3 chars.",
+      "label": "Handle",
+      "placeholder": "e.g. amir_dev",
+      "submit": "Save handle",
+      "submitting": "Saving…",
+      "errorFormat": "Allowed: lowercase letters, numbers, - and _. Min 3 chars.",
+      "errorTaken": "Handle is taken. Try another.",
+      "errorGeneric": "Save failed"
+    },
+    "repoPrice": {
+      "title": "Repository Price",
+      "locked": "Pricing is locked until you complete Stripe onboarding.",
+      "setupStripe": "Setup payouts (Stripe)",
+      "allAccess": "All‑Access {price}/mo",
+      "lastUpdated": "Last updated: {date}",
+      "edit": "Edit",
+      "description": "Set a monthly price for All‑Access (access to all your apps). If left empty or 0, All‑Access is disabled.",
+      "priceLabel": "Price (USD)",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "success": "Repository price saved",
+      "error": "Save failed"
+    },
+    "searchPlaceholder": "Search by title, tag, description...",
+    "filters": {
+      "all": "All",
+      "public": "Public",
+      "unlisted": "Unlisted"
+    },
+    "sort": {
+      "label": "Sort",
+      "newest": "Newest",
+      "mostLiked": "Most liked",
+      "titleAZ": "Title A–Z"
+    },
+    "noProjects": "No matching projects. Try adjusting filters.",
+    "createFirst": "Create Your First Project",
+    "appDeleted": "Application deleted.",
+    "deleteSuccess": "App deleted",
+    "deleteError": "Failed to delete app",
+    "notPublished": "App must be approved before it can run.",
+    "linkCopied": "Link copied to clipboard!",
+    "slowDown": "Easy there 🙂",
     "congrats": {
       "title": "Congratulations!",
-      "message": "Now just wait while we publish your app. Good luck!",
+      "message": "Your app has been submitted successfully.",
       "confirm": "OK"
     }
   },
@@ -1280,8 +1332,44 @@
   "UserProfile": {
     "notFound": {
       "title": "User not found",
+      "message": "We couldn't find a profile for @{username}",
       "description": "We couldn't find a profile for @{username}",
       "backHome": "Back to home"
+    },
+    "stats": {
+      "apps": "Apps",
+      "likes": "Likes",
+      "plays": "Plays"
+    },
+    "editProfile": "Edit profile",
+    "follow": "Follow",
+    "following": "Following",
+    "projects": "Projects",
+    "noProjects": {
+      "title": "No public apps yet",
+      "message": "When this creator publishes something it will appear here."
+    },
+  "share": {
+    "label": "Share profile",
+    "dialog": "Check out {name} on Thesara",
+    "copied": "Profile link copied",
+    "shared": "Share sheet opened",
+    "error": "Could not copy profile link, please try again.",
+    "copy": "Copy link",
+    "native": "Share via device",
+    "networks": "Share on",
+    "targets": {
+      "facebook": "Facebook",
+      "instagram": "Instagram",
+      "twitter": "X (Twitter)",
+      "linkedin": "LinkedIn",
+      "whatsapp": "WhatsApp"
+    }
+  },
+    "followToast": {
+      "followed": "You're now following {name}",
+      "unfollowed": "You stopped following {name}",
+      "error": "We couldn't update the follow status."
     },
     "actions": {
       "addToFavorites": "Add to Favorites",
@@ -1298,64 +1386,5 @@
     "errorOccurred": "An error occurred.",
     "percentComplete": "{progress}% complete",
     "close": "Close"
-  },
-  "MyProjectsPage": {
-    "title": "My Projects",
-    "signInMessage": "Sign in to manage and view your created projects.",
-    "goToLogin": "Go to Login",
-    "stats": "{total} total · {public} public · {unlisted} unlisted",
-    "finances": "Finances",
-    "createNew": "Create New",
-    "handle": {
-      "title": "Set handle",
-      "description": "Before setting a repository price, set your handle (e.g. amir_dev). Allowed: lowercase letters, numbers, dashes, underscores. Min 3 chars.",
-      "label": "Handle",
-      "placeholder": "e.g. amir_dev",
-      "submit": "Save handle",
-      "submitting": "Saving…",
-      "errorFormat": "Allowed: lowercase letters, numbers, - and _. Min 3 chars.",
-      "errorTaken": "Handle is taken. Try another.",
-      "errorGeneric": "Save failed"
-    },
-    "repoPrice": {
-      "title": "Repository Price",
-      "locked": "Pricing is locked until you complete Stripe onboarding.",
-      "setupStripe": "Setup payouts (Stripe)",
-      "allAccess": "All‑Access {price}/mo",
-      "lastUpdated": "Last updated: {date}",
-      "edit": "Edit",
-      "description": "Set a monthly price for All‑Access (access to all your apps). If left empty or 0, All‑Access is disabled.",
-      "priceLabel": "Price (USD)",
-      "save": "Save",
-      "saving": "Saving…",
-      "cancel": "Cancel",
-      "success": "Repository price saved",
-      "error": "Save failed"
-    },
-    "searchPlaceholder": "Search by title, tag, description...",
-    "filters": {
-      "all": "All",
-      "public": "Public",
-      "unlisted": "Unlisted"
-    },
-    "sort": {
-      "label": "Sort",
-      "newest": "Newest",
-      "mostLiked": "Most liked",
-      "titleAZ": "Title A–Z"
-    },
-    "noProjects": "No matching projects. Try adjusting filters.",
-    "createFirst": "Create Your First Project",
-    "appDeleted": "Application deleted.",
-    "deleteSuccess": "App deleted",
-    "deleteError": "Failed to delete app",
-    "notPublished": "App must be approved before it can run.",
-    "linkCopied": "Link copied to clipboard!",
-    "slowDown": "Easy there 🙂",
-    "congrats": {
-      "title": "Congratulations!",
-      "message": "Your app has been submitted successfully.",
-      "confirm": "OK"
-    }
   }
 }

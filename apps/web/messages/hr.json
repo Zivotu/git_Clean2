@@ -1476,8 +1476,44 @@
   "UserProfile": {
     "notFound": {
       "title": "Korisnik nije pronađen",
+      "message": "Nismo mogli pronaći profil za @{username}",
       "description": "Nismo mogli pronaći profil za @{username}",
       "backHome": "Natrag na početnu"
+    },
+    "stats": {
+      "apps": "Aplikacije",
+      "likes": "Sviđanja",
+      "plays": "Pokretanja"
+    },
+    "editProfile": "Uredi profil",
+    "follow": "Prati",
+    "following": "Pratiš?",
+    "projects": "Projekti",
+    "noProjects": {
+      "title": "Jo? nema javnih aplikacija",
+      "message": "Kad kreator objavi aplikaciju, pojavit ?e se ovdje."
+    },
+    "share": {
+      "label": "Podijeli profil",
+      "dialog": "Pogledaj {name} na Thesari",
+      "copied": "Link profila je kopiran",
+      "shared": "Dijeljenje profila otvoreno",
+      "error": "Nije mogu?e kopirati link profila. Poku?aj ponovno.",
+      "copy": "Kopiraj link",
+      "native": "Podijeli putem ure?aja",
+      "networks": "Podijeli na",
+      "targets": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "twitter": "X (Twitter)",
+        "linkedin": "LinkedIn",
+        "whatsapp": "WhatsApp"
+      }
+    },
+    "followToast": {
+      "followed": "Pratiš {name}",
+      "unfollowed": "Više ne pratiš {name}",
+      "error": "Ne možemo spremiti status praćenja."
     },
     "actions": {
       "addToFavorites": "Dodaj u favorite",

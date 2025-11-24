@@ -30,6 +30,7 @@ const App: React.FC = () => {
     const [room, setRoom] = useState<QuizRoom | null>(null);
     const [error, setError] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
+    const [isEndGameModalOpen, setEndGameModalOpen] = useState(false);
 
     // Initialize RoomsClient once
     useEffect(() => {
@@ -188,27 +189,38 @@ const App: React.FC = () => {
         });
     }, [session]);
     
-    const handleEndGame = useCallback(() => {
-        if(window.confirm("Are you sure you want to end the game? This cannot be undone.")) {
-            setRoom(prev => prev ? { ...prev, status: RoomStatus.ENDED } : null);
-            // Persist
-            setTimeout(async () => {
-                if (!session) return;
-                if (!room) return;
-                try {
-                    const storage = storageClientRef.current!;
-                    const ns = `quiz-state/${session.roomCode}`;
-                    const snap = await storage.get<any>(ns).catch(()=>({ etag: '0', data: {} }));
-                    const newQuiz = {
-                        status: RoomStatus.ENDED,
-                        currentIndex: room.currentIndex,
-                        questions: room.questions,
-                    };
-                    await storage.setObject(ns, 'quiz', newQuiz, snap.etag);
-                } catch (e) { console.debug('end persist failed', e); }
-            }, 0);
-        }
+    const finalizeEndGame = useCallback(() => {
+        setRoom(prev => prev ? { ...prev, status: RoomStatus.ENDED } : null);
+        // Persist
+        setTimeout(async () => {
+            if (!session) return;
+            if (!room) return;
+            try {
+                const storage = storageClientRef.current!;
+                const ns = `quiz-state/${session.roomCode}`;
+                const snap = await storage.get<any>(ns).catch(()=>({ etag: '0', data: {} }));
+                const newQuiz = {
+                    status: RoomStatus.ENDED,
+                    currentIndex: room.currentIndex,
+                    questions: room.questions,
+                };
+                await storage.setObject(ns, 'quiz', newQuiz, snap.etag);
+            } catch (e) { console.debug('end persist failed', e); }
+        }, 0);
     }, [session, room]);
+
+    const handleEndGame = useCallback(() => {
+        setEndGameModalOpen(true);
+    }, []);
+
+    const handleConfirmEndGame = useCallback(() => {
+        setEndGameModalOpen(false);
+        finalizeEndGame();
+    }, [finalizeEndGame]);
+
+    const handleCancelEndGame = useCallback(() => {
+        setEndGameModalOpen(false);
+    }, []);
 
     const handleSubmitAnswer = useCallback((value: string | number) => {
         setRoom(prev => {
@@ -371,6 +383,11 @@ const App: React.FC = () => {
             <main>
                 {renderContent()}
             </main>
+            <EndGameConfirmModal
+                isOpen={isEndGameModalOpen}
+                onConfirm={handleConfirmEndGame}
+                onCancel={handleCancelEndGame}
+            />
         </div>
     );
 };
@@ -611,6 +628,17 @@ const EndScreen: React.FC<{room: QuizRoom; isAdmin: boolean; results: Result[]; 
     );
 };
 
+const EndGameConfirmModal: React.FC<{isOpen: boolean; onConfirm: () => void; onCancel: () => void;}> = ({ isOpen, onConfirm, onCancel }) => (
+    <Modal isOpen={isOpen} onClose={onCancel} title="End Game?">
+        <div className="space-y-4">
+            <p className="text-gray-300 text-lg">Are you sure you want to end the game? This cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+                <Button variant="ghost" onClick={onCancel}>Keep Playing</Button>
+                <Button variant="danger" onClick={onConfirm}>End Game</Button>
+            </div>
+        </div>
+    </Modal>
+);
 
 const FormatHelpModal: React.FC<{isOpen: boolean; onClose: () => void}> = ({isOpen, onClose}) => (
     <Modal isOpen={isOpen} onClose={onClose} title="How to format questions">
