@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-provider';
@@ -247,9 +248,16 @@ export default function UserManagement() {
                   <tr key={user.uid} className={`hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors ${user.disabled ? 'opacity-50 bg-slate-50 dark:bg-zinc-900/50' : ''}`}>
                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-lg shrink-0 overflow-hidden border border-slate-200 dark:border-zinc-700">
+                        <div className="relative h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-lg shrink-0 overflow-hidden border border-slate-200 dark:border-zinc-700">
                           {user.photoURL ? (
-                            <img src={user.photoURL} alt="" className="h-full w-full object-cover" />
+                            <Image
+                              src={user.photoURL}
+                              alt={user.displayName || user.email || 'User avatar'}
+                              fill
+                              className="object-cover"
+                              sizes="48px"
+                              unoptimized
+                            />
                           ) : (
                             user.email?.charAt(0).toUpperCase() || '?'
                           )}
@@ -328,9 +336,16 @@ export default function UserManagement() {
 
             <div className="p-6 space-y-6 overflow-y-auto">
               <div className="flex items-center justify-center mb-6">
-                <div className="h-32 w-32 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-4xl shrink-0 overflow-hidden border-4 border-white dark:border-zinc-800 shadow-lg">
+                <div className="relative h-32 w-32 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-4xl shrink-0 overflow-hidden border-4 border-white dark:border-zinc-800 shadow-lg">
                   {editingUser.photoURL ? (
-                    <img src={editingUser.photoURL} alt="" className="h-full w-full object-cover" />
+                    <Image
+                      src={editingUser.photoURL}
+                      alt={editingUser.displayName || editingUser.email || 'User avatar'}
+                      fill
+                      className="object-cover"
+                      sizes="128px"
+                      unoptimized
+                    />
                   ) : (
                     editingUser.email?.charAt(0).toUpperCase() || '?'
                   )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import Image from "next/image";
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
 import { useI18n } from '@/lib/i18n-provider';
@@ -257,11 +258,15 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
                   key={shot.id}
                   className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
                 >
-                  <img
+                  <Image
                     src={shot.src}
                     alt={shot.alt}
+                    width={900}
+                    height={384}
                     className="h-48 w-full object-cover"
                     loading="lazy"
+                    sizes="(min-width: 1024px) 33vw, 100vw"
+                    unoptimized
                   />
                 </figure>
               ))}
@@ -461,5 +466,4 @@ function RatingStars({ value }: { value: number }) {
     </div>
   );
 }
-
 

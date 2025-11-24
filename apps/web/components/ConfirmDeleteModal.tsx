@@ -71,7 +71,7 @@ export default function ConfirmDeleteModal({
                 {/* App title highlight */}
                 <p className={`mb-6 text-center font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'
                     }`}>
-                    "{appTitle}"
+                    &quot;{appTitle}&quot;
                 </p>
 
                 {/* Actions */}

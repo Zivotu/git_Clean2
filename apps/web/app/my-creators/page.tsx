@@ -77,20 +77,22 @@ export default function MyCreatorsPage() {
   const [creators, setCreators] = useState<FavoriteCreator[]>([]);
   const [appsByCreator, setAppsByCreator] = useState<Record<string, AppLite[]>>({});
   const { isDark } = useTheme();
+  const userId = user?.uid;
+  const hasUser = Boolean(user);
 
   useEffect(() => {
     let cancelled = false;
     async function loadCreators() {
       try {
         setLoading(true);
-        const favorites = await syncFavorites(user?.uid);
+        const favorites = await syncFavorites(userId);
         const normalizedFavorites: FavoriteCreator[] = favorites.map((fav) => ({
           id: fav.id,
           handle: fav.handle,
           displayName: fav.displayName || fav.handle,
           photo: fav.photoURL || undefined,
         }));
-        const entitlements = user ? await loadEntitledCreators() : [];
+        const entitlements = hasUser ? await loadEntitledCreators() : [];
         const seen = new Set<string>();
         const merged: FavoriteCreator[] = [];
         for (const entry of normalizedFavorites) {
@@ -113,7 +115,7 @@ export default function MyCreatorsPage() {
     }
     loadCreators();
     return () => { cancelled = true; };
-  }, [user?.uid]);
+  }, [hasUser, userId]);
 
   useEffect(() => {
     let cancelled = false;
