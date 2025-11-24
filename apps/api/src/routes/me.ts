@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { requireRole } from '../middleware/auth.js'
-import { db, listEntitlements, readApps, readEarlyAccessSettings } from '../db.js'
+import { db, listEntitlements, readApps, readEarlyAccessSettings, getCreatorByHandle, upsertCreator } from '../db.js'
 import type { Entitlement } from '../entitlements/service.js'
 import type { AppRecord } from '../types.js'
 import { notifyReports, sendTemplateToUser } from '../notifier.js'
@@ -210,6 +210,56 @@ function sumStorageUsageMb(apps: AppRecord[], uid: string): number {
   return Math.max(0, Math.round(total * 100) / 100)
 }
 
+/**
+ * Generate a unique handle for a new user based on their displayName.
+ * Format: {sanitized_name}_{random4chars} or user_{random6chars} if no name
+ */
+async function generateUniqueHandle(displayName?: string): Promise<string> {
+  const generateRandom = (length: number): string => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    for (let i = 0; i < length; i++) {
+      result += chars[Math.floor(Math.random() * chars.length)]
+    }
+    return result
+  }
+
+  const sanitize = (name: string): string => {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[^a-z0-9]/g, '_') // Replace non-alphanumeric with underscore
+      .replace(/_+/g, '_') // Collapse multiple underscores
+      .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+      .slice(0, 20) // Limit length
+  }
+
+  let baseHandle: string
+  if (displayName && displayName.trim()) {
+    const sanitized = sanitize(displayName.trim())
+    baseHandle = sanitized || 'user'
+  } else {
+    baseHandle = 'user'
+  }
+
+  // Try up to 10 times to find a unique handle
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const suffix = generateRandom(baseHandle === 'user' ? 6 : 4)
+    const candidate = `${baseHandle}_${suffix}`
+
+    // Check if handle is already taken
+    const existing = await getCreatorByHandle(candidate)
+    if (!existing) {
+      return candidate
+    }
+  }
+
+  // Fallback: use longer random suffix
+  return `user_${generateRandom(12)}`
+}
+
+
 export default async function meRoutes(app: FastifyInstance) {
   const secureGet = (
     url: string,
@@ -331,33 +381,33 @@ export default async function meRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: 'unauthorized' })
     }
     try {
-        const summary = await buildEntitlementSummary(uid)
-        if (!summary.appIds.size && !summary.creatorIds.size) {
-          return reply.send({ items: [], count: 0, total: 0 })
-        }
+      const summary = await buildEntitlementSummary(uid)
+      if (!summary.appIds.size && !summary.creatorIds.size) {
+        return reply.send({ items: [], count: 0, total: 0 })
+      }
 
-        const lang = normalizeLang((req.query as any)?.lang)
-        const apps = await readApps()
-        const items: AppRecord[] = []
-        const seen = new Set<string>()
+      const lang = normalizeLang((req.query as any)?.lang)
+      const apps = await readApps()
+      const items: AppRecord[] = []
+      const seen = new Set<string>()
 
-        for (const item of apps) {
-          if ((item as any).deletedAt) continue
-          const isPublished =
-            (item as any).status === 'published' || (item as any).state === 'active'
-          if (!isPublished) continue
+      for (const item of apps) {
+        if ((item as any).deletedAt) continue
+        const isPublished =
+          (item as any).status === 'published' || (item as any).state === 'active'
+        if (!isPublished) continue
 
-          const matches =
-            matchesAppTarget(item, summary.appIds) || matchesCreator(item, summary.creatorIds)
-          if (!matches) continue
+        const matches =
+          matchesAppTarget(item, summary.appIds) || matchesCreator(item, summary.creatorIds)
+        if (!matches) continue
 
-          const key = toStringId((item as any).id) ?? item.slug ?? Math.random().toString(16)
-          if (seen.has(key)) continue
-          seen.add(key)
-          items.push(localizeApp(item, lang))
-        }
+        const key = toStringId((item as any).id) ?? item.slug ?? Math.random().toString(16)
+        if (seen.has(key)) continue
+        seen.add(key)
+        items.push(localizeApp(item, lang))
+      }
 
-        return reply.send({ items, count: items.length, total: items.length })
+      return reply.send({ items, count: items.length, total: items.length })
     } catch (err) {
       req.log.error({ err, uid }, 'me_subscribed_apps_failed')
       return reply.code(500).send({ error: 'failed_to_load_subscribed_apps' })
@@ -483,14 +533,39 @@ export default async function meRoutes(app: FastifyInstance) {
           { merge: true },
         )
 
+        // Automatically generate and assign a unique handle for the new user
+        let generatedHandle: string | undefined
+        try {
+          // Check if user already has a handle
+          if (!data?.handle) {
+            const handle = await generateUniqueHandle(displayName ?? data?.displayName)
+
+            // Create creator record with the generated handle
+            await upsertCreator({
+              id: uid,
+              handle,
+            })
+
+            // Update user document with the handle
+            await userRef.set({ handle }, { merge: true })
+
+            generatedHandle = handle
+            req.log.info({ uid, handle }, 'auto_generated_handle_for_new_user')
+          }
+        } catch (handleErr) {
+          // Log error but don't fail the welcome email
+          req.log.error({ err: handleErr, uid }, 'auto_handle_generation_failed')
+        }
+
         const adminLines = [
           `UID: ${uid}`,
           `Email: ${explicitEmail ?? data?.email ?? '(nije dostupno)'}`,
           `Display name: ${displayName ?? data?.displayName ?? '(nije dostupno)'}`,
+          generatedHandle ? `Handle: @${generatedHandle} (auto-generated)` : undefined,
           `IP: ${req.ip ?? '(nepoznato)'}`,
           `User-Agent: ${req.headers['user-agent'] ?? '(nepoznato)'}`,
           `Zabilježeno: ${new Date(now).toISOString()}`,
-        ]
+        ].filter(Boolean)
         try {
           await notifyReports('Novi korisnik registriran', adminLines.join('\n'))
         } catch (notifyErr) {
@@ -501,6 +576,36 @@ export default async function meRoutes(app: FastifyInstance) {
       } catch (err) {
         req.log.error({ err, uid }, 'welcome_email_failed')
         return reply.code(500).send({ ok: false, error: 'welcome_email_failed' })
+      }
+    },
+  )
+
+  app.post(
+    '/me/visit',
+    { preHandler: requireRole(['user']) },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const uid = req.authUser?.uid
+      if (!uid) {
+        return reply.code(401).send({ ok: false, error: 'unauthorized' })
+      }
+
+      try {
+        const userRef = db.collection('users').doc(uid)
+        // Use a transaction or just an update. Since accuracy isn't critical (it's just stats),
+        // a simple update with FieldValue.increment is best.
+        const now = Date.now()
+        await userRef.set(
+          {
+            visitCount: require('firebase-admin/firestore').FieldValue.increment(1),
+            lastVisitAt: now,
+          },
+          { merge: true },
+        )
+        return reply.send({ ok: true })
+      } catch (err) {
+        req.log.error({ err, uid }, 'visit_tracking_failed')
+        // Don't fail the request for the client, just log it
+        return reply.send({ ok: true, ignored: true })
       }
     },
   )

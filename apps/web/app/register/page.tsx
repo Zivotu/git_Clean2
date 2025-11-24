@@ -109,125 +109,146 @@ export default function RegisterPage() {
   return (
     <main className="max-w-md mx-auto p-6">
       <h1 className="text-3xl font-bold mt-8">{t("title")}</h1>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        <div className="flex gap-4">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        {/* Mandatory Fields */}
+        <div className="space-y-4">
           <input
             required
-            name="firstName"
-            placeholder={field("firstName")}
-            value={form.firstName}
+            name="username"
+            placeholder={field("username")}
+            value={form.username}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2"
           />
           <input
             required
-            name="lastName"
-            placeholder={field("lastName")}
-            value={form.lastName}
+            type="email"
+            name="email"
+            placeholder={field("email")}
+            value={form.email}
             onChange={handleChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2"
           />
+          <div className="flex gap-4">
+            <input
+              required
+              type="password"
+              name="password"
+              placeholder={field("password")}
+              value={form.password}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+            <input
+              required
+              type="password"
+              name="confirmPassword"
+              placeholder={field("confirmPassword")}
+              value={form.confirmPassword}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+          </div>
         </div>
-        <input
-          required
-          name="username"
-          placeholder={field("username")}
-          value={form.username}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-        <input
-          required
-          type="email"
-          name="email"
-          placeholder={field("email")}
-          value={form.email}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-        <input
-          required
-          name="birthYear"
-          placeholder={field("birthYear")}
-          value={form.birthYear}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-        <div className="flex gap-4">
-          <input
-            required
-            type="password"
-            name="password"
-            placeholder={field("password")}
-            value={form.password}
-            onChange={handleChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
-          />
-          <input
-            required
-            type="password"
-            name="confirmPassword"
-            placeholder={field("confirmPassword")}
-            value={form.confirmPassword}
-            onChange={handleChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2"
-          />
-        </div>
-        <input
-          name="phone"
-          placeholder={field("phone")}
-          value={form.phone}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-        <select
-          name="gender"
-          value={form.gender}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        >
-          <option value="">{field("gender")}</option>
-          <option value="male">{field("genderMale")}</option>
-          <option value="female">{field("genderFemale")}</option>
-          <option value="other">{field("genderOther")}</option>
-        </select>
-        <textarea
-          name="bio"
-          placeholder={field("bio")}
-          value={form.bio}
-          onChange={handleChange}
-          className="w-full rounded-md border border-gray-300 px-3 py-2"
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("fields.photo")}
-          </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null;
-              setPhotoFile(file);
-              setPhotoPreview((prev) => {
-                if (prev) URL.revokeObjectURL(prev);
-                return file ? URL.createObjectURL(file) : "";
-              });
-            }}
-            className="w-full text-sm"
-          />
-          {photoPreview && (
-            <div className="mt-2 h-16 w-16 rounded-full overflow-hidden">
-              <Image src={photoPreview} alt="Preview" width={64} height={64} className="object-cover h-full w-full" />
-            </div>
-          )}
-        </div>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+
         <button
           type="submit"
-          className="rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 px-4 py-2"
+          className="w-full rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-3 transition-colors"
         >
           {t("cta.submit")}
         </button>
+
+        {/* Optional / Monetization Fields */}
+        <div className="border-t border-gray-200 pt-6 mt-6">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            {t("sections.monetization")} <span className="text-sm font-normal text-gray-500">({t("sections.optional")})</span>
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {t("sections.monetizationDesc")}
+          </p>
+
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <input
+                name="firstName"
+                placeholder={field("firstName")}
+                value={form.firstName}
+                onChange={handleChange}
+                className="w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+              <input
+                name="lastName"
+                placeholder={field("lastName")}
+                value={form.lastName}
+                onChange={handleChange}
+                className="w-full rounded-md border border-gray-300 px-3 py-2"
+              />
+            </div>
+
+            <select
+              name="birthYear"
+              value={form.birthYear}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            >
+              <option value="">{field("birthYear")}</option>
+              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+
+            <input
+              name="phone"
+              placeholder={field("phone")}
+              value={form.phone}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+            <select
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            >
+              <option value="">{field("gender")}</option>
+              <option value="male">{field("genderMale")}</option>
+              <option value="female">{field("genderFemale")}</option>
+              <option value="other">{field("genderOther")}</option>
+            </select>
+            <textarea
+              name="bio"
+              placeholder={field("bio")}
+              value={form.bio}
+              onChange={handleChange}
+              className="w-full rounded-md border border-gray-300 px-3 py-2"
+            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("fields.photo")}
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setPhotoFile(file);
+                  setPhotoPreview((prev) => {
+                    if (prev) URL.revokeObjectURL(prev);
+                    return file ? URL.createObjectURL(file) : "";
+                  });
+                }}
+                className="w-full text-sm"
+              />
+              {photoPreview && (
+                <div className="mt-2 h-16 w-16 rounded-full overflow-hidden">
+                  <Image src={photoPreview} alt="Preview" width={64} height={64} className="object-cover h-full w-full" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </form>
     </main>
   );

@@ -623,7 +623,8 @@
       "genderMale": "Muško",
       "genderFemale": "Žensko",
       "genderOther": "Ostalo",
-      "bio": "Biografija"
+      "bio": "Biografija",
+      "photo": "Profilna slika"
     },
     "terms": {
       "beforeLink": "Prihvaćam ",
@@ -631,6 +632,11 @@
     },
     "cta": {
       "submit": "Registriraj se"
+    },
+    "sections": {
+      "monetization": "Monetizacija",
+      "optional": "opcionalno",
+      "monetizationDesc": "Ovi podaci su potrebni samo ako planirate monetizirati svoje aplikacije."
     }
   },
   "Setup": {
@@ -728,7 +734,8 @@
       "actions": {
         "play": "Igraj",
         "fullDetails": "Detalji",
-        "edit": "Uredi"
+        "edit": "Uredi",
+        "delete": "Obriši"
       },
       "tag": {
         "trending": "Popularno"
@@ -1197,14 +1204,18 @@
     "createNew": "Kreiraj novi",
     "handle": {
       "title": "Postavi korisničko ime (handle)",
-      "description": "Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.",
+      "currentTitle": "Korisničko ime",
+      "current": "Trenutno korisničko ime",
+      "change": "Promijeni",
+      "description": "Korisničko ime se automatski generira pri registraciji. Možete ga promijeniti ako želite. Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.",
       "label": "Korisničko ime",
       "placeholder": "npr. amir_dev",
       "submit": "Spremi handle",
       "submitting": "Spremanje…",
       "errorFormat": "Dozvoljena su mala slova, brojevi, - i _. Min 3 znaka.",
       "errorTaken": "Korisničko ime je zauzeto. Pokušajte drugo.",
-      "errorGeneric": "Spremanje nije uspjelo"
+      "errorGeneric": "Spremanje nije uspjelo",
+      "success": "Korisničko ime uspješno promijenjeno!"
     },
     "repoPrice": {
       "title": "Cijena repozitorija",
@@ -1245,6 +1256,16 @@
       "title": "Čestitamo!",
       "message": "Vaša aplikacija je uspješno predana.",
       "confirm": "U redu"
+    },
+    "deleteConfirm": {
+      "title": "Obriši aplikaciju?",
+      "message": "Ova radnja je trajna i ne može se poništiti. Aplikacija će biti potpuno uklonjena iz sustava.",
+      "confirm": "Obriši",
+      "cancel": "Odustani"
+    },
+    "actions": {
+      "edit": "Uredi",
+      "delete": "Obriši"
     }
   },
   "GoldenBookPage": {

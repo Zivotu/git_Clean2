@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
 import { useI18n } from '@/lib/i18n-provider';
+import { useEarlyAccessCampaign } from '@/hooks/useEarlyAccessCampaign';
 import {
   Search,
   Filter,
@@ -12,7 +13,9 @@ import {
   Shield,
   User as UserIcon,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Ban,
+  Trash2
 } from 'lucide-react';
 
 interface User {
@@ -24,6 +27,16 @@ interface User {
   ambassador?: {
     status: string;
   };
+  firstName?: string | null;
+  lastName?: string | null;
+  birthYear?: string | null;
+  phone?: string | null;
+  gender?: string | null;
+  bio?: string | null;
+  photoURL?: string | null;
+  createdAt?: number | null;
+  visitCount?: number;
+  lastVisitAt?: number | null;
 }
 
 const ENTITLEMENTS = ['isGold', 'noAds', 'Ambasador', 'Partner'];
@@ -36,6 +49,8 @@ export default function UserManagement() {
   const [entitlementFilter, setEntitlementFilter] = useState<string>('all');
   const [query, setQuery] = useState<string>('');
   const { messages } = useI18n();
+  const { data: earlyAccess } = useEarlyAccessCampaign();
+
   const tAdmin = useCallback(
     (key: string, params?: Record<string, string | number>) => {
       let value = messages[`Admin.${key}`] || key;
@@ -130,6 +145,39 @@ export default function UserManagement() {
     }
   };
 
+  const handleBanUser = async (user: User) => {
+    if (!confirm(tAdmin('users.banConfirm', { email: user.email }))) return;
+    try {
+      await apiPost(`/admin/users/${user.uid}/ban`, {}, { auth: true });
+      await loadUsers();
+      setEditingUser(null);
+    } catch (err) {
+      alert(tAdmin('users.banFailed'));
+    }
+  };
+
+  const handleUnbanUser = async (user: User) => {
+    if (!confirm(tAdmin('users.unbanConfirm', { email: user.email }))) return;
+    try {
+      await apiPost(`/admin/users/${user.uid}/unban`, {}, { auth: true });
+      await loadUsers();
+      setEditingUser(null);
+    } catch (err) {
+      alert(tAdmin('users.unbanFailed'));
+    }
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (!confirm(tAdmin('users.deleteConfirm', { email: user.email }))) return;
+    try {
+      await apiPost(`/admin/users/${user.uid}/delete-blacklist`, {}, { auth: true });
+      await loadUsers();
+      setEditingUser(null);
+    } catch (err) {
+      alert(tAdmin('users.deleteFailed'));
+    }
+  };
+
   return (
     <section className="bg-white dark:bg-zinc-900 rounded-lg border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden flex flex-col h-[calc(100vh-12rem)]">
       <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -182,6 +230,7 @@ export default function UserManagement() {
               <tr>
                 <th className="px-6 py-3 font-medium">{tAdmin('users.table.email')}</th>
                 <th className="px-6 py-3 font-medium">{tAdmin('users.table.displayName')}</th>
+                <th className="px-6 py-3 font-medium">Visits</th>
                 <th className="px-6 py-3 font-medium">{tAdmin('users.table.entitlements')}</th>
                 <th className="px-6 py-3 font-medium text-right">{tAdmin('users.table.actions')}</th>
               </tr>
@@ -189,24 +238,39 @@ export default function UserManagement() {
             <tbody className="divide-y divide-slate-200 dark:divide-zinc-800">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                     No users found matching your criteria.
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.uid} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                  <tr key={user.uid} className={`hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors ${user.disabled ? 'opacity-50 bg-slate-50 dark:bg-zinc-900/50' : ''}`}>
                     <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-xs shrink-0">
-                          {user.email?.charAt(0).toUpperCase() || '?'}
+                        <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-lg shrink-0 overflow-hidden border border-slate-200 dark:border-zinc-700">
+                          {user.photoURL ? (
+                            <img src={user.photoURL} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            user.email?.charAt(0).toUpperCase() || '?'
+                          )}
                         </div>
-                        {user.email}
+                        <div>
+                          <div className="font-semibold">{user.email}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                            Joined: {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{user.displayName || '-'}</td>
+                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{user.visitCount || 0}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
+                        {earlyAccess?.isActive && (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 text-xs font-medium border border-purple-100 dark:border-purple-900/30" title="Active via Early Access Campaign">
+                            Early Access
+                          </span>
+                        )}
                         {user.ambassador?.status === 'approved' && (
                           <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium border border-blue-100 dark:border-blue-900/30">
                             {tAdmin('users.badges.ambassador')}
@@ -217,9 +281,14 @@ export default function UserManagement() {
                             {claim}
                           </span>
                         ))}
-                        {user.ambassador?.status !== 'approved' && Object.keys(user.customClaims || {}).length === 0 && (
+                        {user.ambassador?.status !== 'approved' && Object.keys(user.customClaims || {}).length === 0 && !earlyAccess?.isActive && (
                           <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 text-xs font-medium border border-slate-200 dark:border-zinc-700">
                             {tAdmin('users.badges.free')}
+                          </span>
+                        )}
+                        {user.disabled && (
+                          <span className="px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs font-medium border border-red-100 dark:border-red-900/30">
+                            BANNED
                           </span>
                         )}
                       </div>
@@ -243,10 +312,11 @@ export default function UserManagement() {
 
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-xl shadow-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-zinc-800 shrink-0">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-3">
                 {tAdmin('users.editTitle', { email: editingUser.email || '' })}
+                {editingUser.disabled && <span className="text-red-500 text-xs border border-red-200 bg-red-50 px-2 py-0.5 rounded-full">BANNED</span>}
               </h3>
               <button
                 onClick={() => setEditingUser(null)}
@@ -256,56 +326,151 @@ export default function UserManagement() {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
-                  Entitlements
-                </label>
-                {ENTITLEMENTS.map(entitlement => {
-                  const isAmbassador = entitlement === 'Ambasador';
-                  const isChecked = isAmbassador ? editingUser.ambassador?.status === 'approved' : !!editingUser.customClaims?.[entitlement];
-                  const label = entitlementOptions.find((option) => option.value === entitlement)?.label || entitlement;
-
-                  return (
-                    <label
-                      key={entitlement}
-                      className={`flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${isChecked
-                          ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-900/30'
-                          : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-800'
-                        } ${isAmbassador ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isChecked
-                            ? 'bg-emerald-500 border-emerald-500 text-white'
-                            : 'bg-white dark:bg-zinc-800 border-slate-300 dark:border-zinc-600'
-                          }`}>
-                          {isChecked && <Check className="h-3 w-3" />}
-                        </div>
-                        <span className={`text-sm font-medium ${isChecked ? 'text-emerald-900 dark:text-emerald-100' : 'text-slate-700 dark:text-slate-300'}`}>
-                          {label}
-                        </span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={isChecked}
-                        disabled={isAmbassador}
-                        onChange={(e) => handleClaimChange(editingUser, entitlement, e.target.checked)}
-                      />
-                      {isAmbassador && <Shield className="h-4 w-4 text-slate-400" />}
-                    </label>
-                  );
-                })}
+            <div className="p-6 space-y-6 overflow-y-auto">
+              <div className="flex items-center justify-center mb-6">
+                <div className="h-32 w-32 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-medium text-4xl shrink-0 overflow-hidden border-4 border-white dark:border-zinc-800 shadow-lg">
+                  {editingUser.photoURL ? (
+                    <img src={editingUser.photoURL} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    editingUser.email?.charAt(0).toUpperCase() || '?'
+                  )}
+                </div>
               </div>
 
-              {editingUser.ambassador?.status === 'approved' && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                  * Ambassador status is managed in the Ambassador Program tab.
-                </p>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-zinc-800 pb-2">
+                    Profile Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">First Name</span>
+                      <span className="text-slate-900 dark:text-slate-100">{editingUser.firstName || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Last Name</span>
+                      <span className="text-slate-900 dark:text-slate-100">{editingUser.lastName || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Birth Year</span>
+                      <span className="text-slate-900 dark:text-slate-100">{editingUser.birthYear || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Gender</span>
+                      <span className="text-slate-900 dark:text-slate-100">{editingUser.gender || '-'}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Phone</span>
+                      <span className="text-slate-900 dark:text-slate-100">{editingUser.phone || '-'}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="block text-xs text-slate-500 dark:text-slate-400">Bio</span>
+                      <p className="text-slate-900 dark:text-slate-100 whitespace-pre-wrap">{editingUser.bio || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-zinc-800 pb-2">
+                    Activity & Stats
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Total Visits</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{editingUser.visitCount || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Last Visit</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {editingUser.lastVisitAt ? new Date(editingUser.lastVisitAt).toLocaleString() : '-'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 dark:text-slate-400">Registered</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {editingUser.createdAt ? new Date(editingUser.createdAt).toLocaleDateString() : '-'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-zinc-800 pb-2 mb-3">
+                      Entitlements
+                    </h4>
+                    {earlyAccess?.isActive && (
+                      <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/30 rounded-lg text-xs text-purple-700 dark:text-purple-300">
+                        <strong>Early Access Active:</strong> User has Gold & NoAds benefits via campaign.
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {ENTITLEMENTS.map(entitlement => {
+                        const isAmbassador = entitlement === 'Ambasador';
+                        const isChecked = isAmbassador ? editingUser.ambassador?.status === 'approved' : !!editingUser.customClaims?.[entitlement];
+                        const label = entitlementOptions.find((option) => option.value === entitlement)?.label || entitlement;
+
+                        return (
+                          <label
+                            key={entitlement}
+                            className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer ${isChecked
+                              ? 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-900/30'
+                              : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-800'
+                              } ${isAmbassador ? 'opacity-60 cursor-not-allowed' : ''}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${isChecked
+                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                : 'bg-white dark:bg-zinc-800 border-slate-300 dark:border-zinc-600'
+                                }`}>
+                                {isChecked && <Check className="h-3 w-3" />}
+                              </div>
+                              <span className={`text-sm font-medium ${isChecked ? 'text-emerald-900 dark:text-emerald-100' : 'text-slate-700 dark:text-slate-300'}`}>
+                                {label}
+                              </span>
+                            </div>
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={isChecked}
+                              disabled={isAmbassador}
+                              onChange={(e) => handleClaimChange(editingUser, entitlement, e.target.checked)}
+                            />
+                            {isAmbassador && <Shield className="h-3 w-3 text-slate-400" />}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-800/50 border-t border-slate-200 dark:border-zinc-800 flex justify-end">
+            <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-800/50 border-t border-slate-200 dark:border-zinc-800 flex justify-between shrink-0">
+              <div className="flex gap-2">
+                {editingUser.disabled ? (
+                  <button
+                    onClick={() => handleUnbanUser(editingUser)}
+                    className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg text-sm font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors flex items-center gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Unban User
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleBanUser(editingUser)}
+                    className="px-4 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
+                  >
+                    <Ban className="h-4 w-4" />
+                    Ban User
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDeleteUser(editingUser)}
+                  className="px-4 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:hover:bg-red-900/10 dark:hover:text-red-400 dark:hover:border-red-900/30 transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete & Blacklist
+                </button>
+              </div>
               <button
                 onClick={() => setEditingUser(null)}
                 className="px-4 py-2 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"

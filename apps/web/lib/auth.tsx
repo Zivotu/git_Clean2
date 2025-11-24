@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from './firebase';
+import { apiAuthedPost } from './api';
 import { onAuthStateChanged, type User, setPersistence, inMemoryPersistence } from 'firebase/auth';
 import { ensureUserDoc } from './ensureUserDoc';
 
@@ -22,9 +23,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const inIframe = typeof window !== 'undefined' && window.self !== window.top;
       if (inIframe) {
         // Fire-and-forget; if this fails we continue with default persistence
-        void setPersistence(auth, inMemoryPersistence).catch(() => {});
+        void setPersistence(auth, inMemoryPersistence).catch(() => { });
       }
-    } catch {}
+    } catch { }
     const off = onAuthStateChanged(auth, async (u) => {
       setUser(u ?? null);
       setLoading(false);
@@ -32,18 +33,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (u) {
         try {
           // Proactively refresh the ID token so Firestore has a valid auth context
-          try { await u.getIdToken(true); } catch {}
+          try { await u.getIdToken(true); } catch { }
           await ensureUserDoc({
             uid: u.uid,
             email: u.email,
             displayName: u.displayName,
             photoURL: u.photoURL,
           });
+          // Track visit
+          apiAuthedPost('/me/visit').catch(() => { });
         } catch (err) {
           // Retry once after a brief tick in case token/persistence just initialized
           try {
             await new Promise((r) => setTimeout(r, 50));
-            try { await u.getIdToken(); } catch {}
+            try { await u.getIdToken(); } catch { }
             await ensureUserDoc({
               uid: u.uid,
               email: u.email,

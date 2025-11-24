@@ -625,7 +625,8 @@
       "genderMale": "Male",
       "genderFemale": "Female",
       "genderOther": "Other",
-      "bio": "Bio"
+      "bio": "Bio",
+      "photo": "Profile photo"
     },
     "terms": {
       "beforeLink": "I accept ",
@@ -633,6 +634,11 @@
     },
     "cta": {
       "submit": "Register"
+    },
+    "sections": {
+      "monetization": "Monetization",
+      "optional": "optional",
+      "monetizationDesc": "These details are only required if you plan to monetize your apps."
     }
   },
   "Setup": {

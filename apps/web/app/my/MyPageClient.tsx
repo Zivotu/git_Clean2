@@ -20,6 +20,7 @@ import {
 import { playHref, appDetailsHref } from '@/lib/urls';
 import { getPlayUrl } from '@/lib/play';
 import CongratsModal from '@/components/CongratsModal';
+import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
 
 import { useTheme } from '@/components/ThemeProvider';
@@ -134,6 +135,7 @@ export default function MyProjectsPage() {
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [showCongrats, setShowCongrats] = useState(false);
+  const [deleteCandidate, setDeleteCandidate] = useState<Listing | null>(null);
   const [handle, setHandle] = useState<string | null>(null);
   const [allAccessPrice, setAllAccessPrice] = useState<string>('');
   const [savingPrice, setSavingPrice] = useState(false);
@@ -202,7 +204,6 @@ export default function MyProjectsPage() {
   const deleteItem = useCallback(
     async (item: Listing) => {
       if (busy[item.slug]) return;
-      if (!window.confirm(`Delete "${item.title}"?`)) return;
       setBusy((prev) => ({ ...prev, [item.slug]: true }));
       try {
         const res = await fetch(`${PUBLIC_API_URL}/listing/${item.slug}`, {
@@ -213,6 +214,7 @@ export default function MyProjectsPage() {
         if (!res.ok) throw new Error(`DELETE ${res.status}`);
         setItems((prev) => prev.filter((it) => it.slug !== item.slug));
         setToast({ message: t('deleteSuccess'), type: 'success' });
+        setDeleteCandidate(null);
       } catch (e) {
         console.error('Failed to delete app', e);
         setToast({ message: t('deleteError'), type: 'error' });
@@ -478,8 +480,8 @@ export default function MyProjectsPage() {
           </div>
         </div>
 
-        {/* Handle setup if missing */}
-        {!handle && (
+        {/* Handle setup if missing - DISABLED: handles are now auto-generated during registration */}
+        {false && (
           <section className={`mb-6 p-4 rounded-xl border shadow-sm ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-gray-200 bg-white'}`}>
             <h2 className={`text-lg font-semibold mb-1 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{t('handle.title')}</h2>
             <p className={`text-sm mb-3 ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>{t('handle.description')}</p>
@@ -675,6 +677,8 @@ export default function MyProjectsPage() {
                 play: 'Play',
                 details: 'Details',
                 trending: 'Trending',
+                edit: t('actions.edit') || 'Edit',
+                delete: t('actions.delete') || 'Delete',
               };
 
               return (
@@ -684,6 +688,16 @@ export default function MyProjectsPage() {
                   isDark={isDark}
                   view="grid"
                   labels={labels}
+                  showDetailsButton={false}
+                  showDeleteButton={false}
+                  onEdit={(app) => {
+                    // Navigate to app details page (same as Details button)
+                    router.push(appDetailsHref(app.slug));
+                  }}
+                  onDelete={(app) => {
+                    // Open delete confirmation modal
+                    setDeleteCandidate(it);
+                  }}
                 />
               );
             })}
@@ -707,6 +721,20 @@ export default function MyProjectsPage() {
           />
         )
       }
+
+      {/* Delete Confirmation Modal */}
+      {deleteCandidate && (
+        <ConfirmDeleteModal
+          title={t('deleteConfirm.title')}
+          message={t('deleteConfirm.message')}
+          appTitle={deleteCandidate.title}
+          confirmLabel={t('deleteConfirm.confirm')}
+          cancelLabel={t('deleteConfirm.cancel')}
+          onConfirm={() => deleteItem(deleteCandidate)}
+          onCancel={() => setDeleteCandidate(null)}
+          isDark={isDark}
+        />
+      )}
 
       {toast ? <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} /> : null}
 

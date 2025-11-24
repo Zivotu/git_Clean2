@@ -71,6 +71,28 @@ function makeAbsoluteUrl(url?: string | null): string | null {
   }
 }
 
+const PlayGlyph = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M7 5.143a1 1 0 0 1 1.528-.85l10.286 6.357a1 1 0 0 1 0 1.7L8.528 18.707A1 1 0 0 1 7 17.857z" />
+  </svg>
+);
+
+const InfoGlyph = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M12 2a10 10 0 1 0 10 10A10.011 10.011 0 0 0 12 2m0 3.25a1.5 1.5 0 1 1-1.5 1.5A1.5 1.5 0 0 1 12 5.25M14 18H10a1 1 0 0 1 0-2h1v-4h-.5a1 1 0 0 1 0-2H12a1 1 0 0 1 1 1v5h1a1 1 0 0 1 0 2" />
+  </svg>
+);
+
 // Component
 export interface AppCardProps {
   item: Listing;
@@ -288,6 +310,40 @@ const AppCard = React.memo(
       ];
     }, [shareUrl, item.title]);
 
+    const renderActionButtons = (layout: 'inline' | 'stacked') => {
+      const isStacked = layout === 'stacked';
+      const containerClass = isStacked ? 'mt-3 flex gap-2 sm:hidden' : 'hidden sm:flex items-center gap-2';
+      const playButtonClasses = cn(
+        'inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 text-white font-semibold shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600',
+        isStacked ? 'flex-1 px-4 py-2 text-base' : 'px-4 py-1.5 text-sm'
+      );
+      const detailsButtonClasses = cn(
+        'inline-flex items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:text-gray-700 hover:border-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-300',
+        isStacked ? 'flex-1 gap-2 px-4 py-2 text-sm bg-white' : 'p-2.5 text-xs'
+      );
+      return (
+        <div className={containerClass}>
+          <button type="button" onClick={handlePlayClick} className={playButtonClasses}>
+            <PlayGlyph className={isStacked ? 'w-5 h-5' : 'w-4 h-4'} />
+            <span>{locale === 'hr' ? 'Pokreni' : 'Play'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleDetailsClick}
+            className={detailsButtonClasses}
+            title={locale === 'hr' ? 'Detalji aplikacije' : 'App details'}
+          >
+            <InfoGlyph className={isStacked ? 'w-5 h-5' : 'w-4 h-4'} />
+            {isStacked ? (
+              <span>{locale === 'hr' ? 'Detalji' : 'Details'}</span>
+            ) : (
+              <span className="sr-only">{locale === 'hr' ? 'Detalji' : 'Details'}</span>
+            )}
+          </button>
+        </div>
+      );
+    };
+
     const ShareMenu = ({ align = 'right' }: { align?: 'left' | 'right' }) => (
       <div className="relative">
         <button
@@ -482,48 +538,22 @@ const AppCard = React.memo(
                   <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">Subscribed</span>
                 )}
               </h2>
-              {item.description && (
-                <p className="mt-1 text-sm text-gray-500 line-clamp-3 break-words">{item.description}</p>
-              )}
-            </div>
-            <div className="mt-3 sm:hidden flex items-center gap-2">
-              <button
-                onClick={handlePlayClick}
-                className="flex-1 px-3 py-2 rounded-md bg-emerald-600 text-white font-medium text-center hover:bg-emerald-700"
-              >
-                Play
-              </button>
-              <button
-                onClick={handleDetailsClick}
-                className="flex-1 px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Details
-              </button>
-            </div>
+          {item.description && (
+            <p className="mt-1 text-sm text-gray-500 line-clamp-3 break-words">{item.description}</p>
+          )}
+        </div>
+        {renderActionButtons('stacked')}
             <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
               <span>{relativeCreated || ''}</span>
               <div className="flex items-center gap-4">
                 <ShareMenu align="left" />
-                <span className="flex items-center gap-1">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {item.playsCount ?? 0}
-                </span>
-                <div className="hidden sm:flex items-center gap-2">
-                  <button
-                    onClick={handlePlayClick}
-                    className="px-3 py-1.5 rounded-md bg-emerald-600 text-white font-medium hover:bg-emerald-700"
-                  >
-                    Play
-                  </button>
-                  <button
-                    onClick={handleDetailsClick}
-                    className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    Details
-                  </button>
-                </div>
+          <span className="flex items-center gap-1">
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {item.playsCount ?? 0}
+          </span>
+          {renderActionButtons('inline')}
                 <button
                   id={`like-${item.slug}`}
                   onClick={(e) => {
@@ -640,20 +670,7 @@ const AppCard = React.memo(
                 </svg>
                 {item.playsCount ?? 0}
               </span>
-              <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={handlePlayClick}
-                  className="px-3 py-1.5 rounded-md bg-emerald-600 text-white font-medium hover:bg-emerald-700"
-                >
-                  Play
-                </button>
-                <button
-                  onClick={handleDetailsClick}
-                  className="px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  Details
-                </button>
-              </div>
+              {renderActionButtons('inline')}
               <button
                 id={`like-${item.slug}`}
                 onClick={(e) => {
@@ -675,20 +692,7 @@ const AppCard = React.memo(
               </button>
             </div>
           </div>
-          <div className="mt-3 sm:hidden flex items-center gap-2">
-            <button
-              onClick={handlePlayClick}
-              className="flex-1 px-3 py-2 rounded-md bg-emerald-600 text-white font-medium text-center hover:bg-emerald-700"
-            >
-              Play
-            </button>
-            <button
-              onClick={handleDetailsClick}
-              className="flex-1 px-3 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-            >
-              Details
-            </button>
-          </div>
+        {renderActionButtons('stacked')}
         </div>
       </article>
     );

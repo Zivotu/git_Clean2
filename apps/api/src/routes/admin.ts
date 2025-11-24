@@ -18,7 +18,8 @@ export default async function adminRoutes(app: FastifyInstance) {
   const listUsersHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const schema = z.object({
       limit: z.preprocess((v) => Number(v), z.number().int().min(1).max(100)).optional().default(100),
-      page: z.preprocess((v) => Number(v), z.number().int().min(0)).optional().default(0),
+      // Cursor based pagination for Firestore
+      cursor: z.string().optional(),
     });
 
     const parsed = schema.safeParse(req.query);
@@ -26,35 +27,64 @@ export default async function adminRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: 'invalid_query', details: parsed.error.issues });
     }
 
-    const { limit, page } = parsed.data;
-    const pageToken = page > 0 ? Buffer.from(JSON.stringify({ page })).toString('base64') : undefined;
+    const { limit, cursor } = parsed.data;
 
     try {
-      const userRecords = await getAuth().listUsers(limit, pageToken);
+      let query = db.collection('users').orderBy('createdAt', 'desc').limit(limit);
+      if (cursor) {
+        const cursorDoc = await db.collection('users').doc(cursor).get();
+        if (cursorDoc.exists) {
+          query = query.startAfter(cursorDoc);
+        }
+      }
 
-      const userDocs: Array<DocumentSnapshot> = await Promise.all(
-        userRecords.users.map((user) => db.collection('users').doc(user.uid).get()),
+      const snapshot = await query.get();
+      const userDocs = snapshot.docs;
+      const uids = userDocs.map((d) => d.id);
+
+      // Fetch auth data for these users
+      const authUsers = await Promise.all(
+        uids.map(async (uid) => {
+          try {
+            return await getAuth().getUser(uid);
+          } catch (e) {
+            return null;
+          }
+        })
       );
 
-      const users = userRecords.users.map((user, index) => {
-        const userDoc = userDocs[index];
-        const userData = userDoc && userDoc.exists ? (userDoc.data() as Record<string, unknown>) : {};
+      const users = userDocs.map((doc, index) => {
+        const userData = doc.data();
+        const authUser = authUsers[index];
 
         // Safely extract `ambassador` only if it's a string; otherwise null.
         const ambassador =
           userData && typeof userData['ambassador'] === 'string' ? (userData['ambassador'] as string) : null;
 
         return {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          customClaims: user.customClaims,
-          disabled: user.disabled,
+          uid: doc.id,
+          email: authUser?.email || userData.email || '',
+          displayName: authUser?.displayName || userData.displayName || '',
+          customClaims: authUser?.customClaims || {},
+          disabled: authUser?.disabled || false,
           ambassador,
+          firstName: userData?.firstName || null,
+          lastName: userData?.lastName || null,
+          birthYear: userData?.birthYear || null,
+          phone: userData?.phone || null,
+          gender: userData?.gender || null,
+          bio: userData?.bio || null,
+          photoURL: userData?.photoURL || authUser?.photoURL || null,
+          createdAt: userData?.createdAt ? (userData.createdAt as any).toMillis?.() || userData.createdAt : null,
+          visitCount: userData?.visitCount || 0,
+          lastVisitAt: userData?.lastVisitAt || null,
         };
       });
 
-      return reply.send({ users, nextPage: userRecords.pageToken });
+      const lastDoc = userDocs[userDocs.length - 1];
+      const nextCursor = lastDoc ? lastDoc.id : undefined;
+
+      return reply.send({ users, nextCursor });
     } catch (error) {
       req.log.error(error, 'Failed to list users');
       return reply.code(500).send({ error: 'internal_server_error', details: (error as Error).message });
@@ -63,6 +93,104 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   app.get('/admin/users', { preHandler: [requireRole('admin')] }, listUsersHandler);
   app.get('/api/admin/users', { preHandler: [requireRole('admin')] }, listUsersHandler);
+
+  const banUserHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { uid } = req.params as any;
+    if (!uid) return reply.code(400).send({ error: 'missing_uid' });
+
+    try {
+      // Disable user in Auth
+      await getAuth().updateUser(uid, { disabled: true });
+
+      // Set all user's apps to unlisted
+      const appsSnap = await db.collection('apps').where('ownerUid', '==', uid).get();
+      const batch = db.batch();
+      appsSnap.docs.forEach((doc) => {
+        // Mark as quarantined so we know which ones to restore if unbanned
+        batch.update(doc.ref, { visibility: 'unlisted', state: 'quarantined' });
+      });
+      await batch.commit();
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      req.log.error({ err, uid }, 'ban_user_failed');
+      return reply.code(500).send({ error: 'ban_failed' });
+    }
+  };
+
+  app.post('/admin/users/:uid/ban', { preHandler: [requireRole('admin')] }, banUserHandler);
+  app.post('/api/admin/users/:uid/ban', { preHandler: [requireRole('admin')] }, banUserHandler);
+
+  const unbanUserHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { uid } = req.params as any;
+    if (!uid) return reply.code(400).send({ error: 'missing_uid' });
+
+    try {
+      // Enable user in Auth
+      await getAuth().updateUser(uid, { disabled: false });
+
+      // Restore quarantined apps
+      const appsSnap = await db.collection('apps')
+        .where('ownerUid', '==', uid)
+        .where('state', '==', 'quarantined')
+        .get();
+
+      const batch = db.batch();
+      appsSnap.docs.forEach((doc) => {
+        batch.update(doc.ref, { visibility: 'public', state: 'published' });
+      });
+      await batch.commit();
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      req.log.error({ err, uid }, 'unban_user_failed');
+      return reply.code(500).send({ error: 'unban_failed' });
+    }
+  };
+
+  app.post('/admin/users/:uid/unban', { preHandler: [requireRole('admin')] }, unbanUserHandler);
+  app.post('/api/admin/users/:uid/unban', { preHandler: [requireRole('admin')] }, unbanUserHandler);
+
+  const deleteAndBlacklistUserHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { uid } = req.params as any;
+    if (!uid) return reply.code(400).send({ error: 'missing_uid' });
+
+    try {
+      const userRecord = await getAuth().getUser(uid);
+      const userDoc = await db.collection('users').doc(uid).get();
+      const userData = userDoc.data() || {};
+
+      // Add to blacklist
+      await db.collection('blacklist').add({
+        uid,
+        email: userRecord.email,
+        ip: userData.ip || null, // Assuming we might store IP
+        reason: 'Permanent ban via admin',
+        createdAt: Date.now(),
+        createdBy: req.authUser?.uid,
+      });
+
+      // Set apps to unlisted
+      const appsSnap = await db.collection('apps').where('ownerUid', '==', uid).get();
+      const batch = db.batch();
+      appsSnap.docs.forEach((doc) => {
+        batch.update(doc.ref, { visibility: 'unlisted', state: 'deleted' });
+      });
+      await batch.commit();
+
+      // Delete user
+      await getAuth().deleteUser(uid);
+      await db.collection('users').doc(uid).delete();
+
+      return reply.send({ ok: true });
+    } catch (err) {
+      req.log.error({ err, uid }, 'delete_blacklist_failed');
+      return reply.code(500).send({ error: 'delete_blacklist_failed' });
+    }
+  };
+
+  app.post('/admin/users/:uid/delete-blacklist', { preHandler: [requireRole('admin')] }, deleteAndBlacklistUserHandler);
+  app.post('/api/admin/users/:uid/delete-blacklist', { preHandler: [requireRole('admin')] }, deleteAndBlacklistUserHandler);
 
   const setClaimsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     const paramsSchema = z.object({ uid: z.string() });

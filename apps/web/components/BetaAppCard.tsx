@@ -39,6 +39,8 @@ export type ListingLabels = {
     play: string;
     details: string;
     trending: string;
+    edit?: string;
+    delete?: string;
 };
 
 export function BetaAppCard({
@@ -47,12 +49,20 @@ export function BetaAppCard({
     view,
     labels,
     onDetails,
+    onEdit,
+    onDelete,
+    showDetailsButton = true,
+    showDeleteButton = true,
 }: {
     app: BetaApp;
     isDark: boolean;
     view: 'grid' | 'list';
     labels: ListingLabels;
     onDetails?: (app: BetaApp) => void;
+    onEdit?: (app: BetaApp) => void;
+    onDelete?: (app: BetaApp) => void;
+    showDetailsButton?: boolean;
+    showDeleteButton?: boolean;
 }) {
     const [authorProfile, setAuthorProfile] = useState<{ name: string; handle?: string; photo?: string } | null>(null);
     const [liked, setLiked] = useState(!!app.likedByMe);
@@ -118,6 +128,44 @@ export function BetaAppCard({
 
     const isList = view === 'list';
     const wrapperBase = 'group rounded-3xl border p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl';
+    const playButtonClass = isDark
+        ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 focus-visible:outline-emerald-500'
+        : 'bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:outline-emerald-600';
+    const playButton = (
+        <Link
+            prefetch={false}
+            href={playHref(app.id, { run: 1 })}
+            className={`inline-flex items-center rounded-full px-3 py-2 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${playButtonClass}`}
+            aria-label={labels.play}
+        >
+            <Play className="h-5 w-5" />
+        </Link>
+    );
+    const detailsButton = showDetailsButton
+        ? onDetails ? (
+            <button
+                type="button"
+                onClick={() => onDetails(app)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${isDark ? 'border-[#2F2F33] text-zinc-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                title={labels.details}
+            >
+                <ArrowRight className="h-3 w-3" />
+                <span className="text-xs uppercase tracking-wide">{labels.details}</span>
+            </button>
+        ) : (
+            <Link
+                prefetch={false}
+                href={appDetailsHref(app.slug)}
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${isDark ? 'border-[#2F2F33] text-zinc-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                title={labels.details}
+            >
+                <ArrowRight className="h-3 w-3" />
+                <span className="text-xs uppercase tracking-wide">{labels.details}</span>
+            </Link>
+        )
+        : null;
     return (
         <div
             className={`${wrapperBase} ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white shadow-sm'
@@ -273,27 +321,36 @@ export function BetaAppCard({
                                 {app.usersLabel}
                             </span>
                         </div>
-                        {onDetails ? (
-                            <button
-                                type="button"
-                                onClick={() => onDetails(app)}
-                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${isDark ? 'border-[#27272A] text-zinc-100 hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                                    }`}
-                            >
-                                {labels.details}
-                                <ArrowRight className="h-3 w-3" />
-                            </button>
-                        ) : (
-                            <Link
-                                prefetch={false}
-                                href={appDetailsHref(app.slug)}
-                                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${isDark ? 'border-[#27272A] text-zinc-100' : 'border-slate-200 text-slate-700'
-                                    }`}
-                            >
-                                {labels.details}
-                                <ArrowRight className="h-3 w-3" />
-                            </Link>
-                        )}
+                        <div className="flex flex-wrap items-center gap-3 min-[420px]:flex-nowrap">
+                            {detailsButton}
+                            {playButton}
+                            {onEdit && (
+                                <button
+                                    type="button"
+                                    onClick={() => onEdit(app)}
+                                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${isDark ? 'border-emerald-700 text-emerald-400 hover:bg-emerald-950/50' : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50'
+                                        }`}
+                                >
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                    {labels.edit || 'Edit'}
+                                </button>
+                            )}
+                            {showDeleteButton && onDelete && (
+                                <button
+                                    type="button"
+                                    onClick={() => onDelete(app)}
+                                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${isDark ? 'border-red-900 text-red-400 hover:bg-red-950/50' : 'border-red-300 text-red-700 hover:bg-red-50'
+                                        }`}
+                                >
+                                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    {labels.delete || 'Delete'}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
