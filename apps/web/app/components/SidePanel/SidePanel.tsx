@@ -144,37 +144,28 @@ export default function SidePanel({
       title: tBeta('sidebar.creatorMode.title', 'From AI chats to your mini app'),
       description: tBeta(
         'sidebar.creatorMode.description',
-        'Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.',
+        'Create a game or tool, upload it, and share it with the whole community.',
       ),
       steps: [
         {
           title: tBeta('sidebar.creatorMode.steps.0.title', 'Chat with your AI'),
-          text: tBeta(
-            'sidebar.creatorMode.steps.0.text',
-            'Zatraži asistenta da isporuči mini aplikaciju.',
-          ),
+          text: tBeta('sidebar.creatorMode.steps.0.text', 'Ask the assistant to deliver a mini app.'),
         },
         {
-          title: tBeta('sidebar.creatorMode.steps.1.title', 'Preuzmi kod'),
-          text: tBeta(
-            'sidebar.creatorMode.steps.1.text',
-            'Dobivaš bundle spreman za upload.',
-          ),
+          title: tBeta('sidebar.creatorMode.steps.1.title', 'Download the code'),
+          text: tBeta('sidebar.creatorMode.steps.1.text', 'You get a bundle ready to upload.'),
         },
         {
-          title: tBeta('sidebar.creatorMode.steps.2.title', 'Objavi na Thesari'),
-          text: tBeta(
-            'sidebar.creatorMode.steps.2.text',
-            'Upload, potvrdi i klikni Play.',
-          ),
+          title: tBeta('sidebar.creatorMode.steps.2.title', 'Publish on Thesara'),
+          text: tBeta('sidebar.creatorMode.steps.2.text', 'Upload, confirm, and click Play.'),
         },
       ],
       memoryTitle: tBeta('sidebar.creatorMode.memory.title', 'Memory & Rooms'),
       memoryDetails: [
-        tBeta('sidebar.creatorMode.memory.detail1', 'Dodatna memorija koju LLM-ovi nemaju.'),
+        tBeta('sidebar.creatorMode.memory.detail1', "Additional memory that LLMs don't have."),
         tBeta(
           'sidebar.creatorMode.memory.detail2',
-          'Aktiviraj sobe kad želiš više korisnika s trajnim stanjima.',
+          'Activate rooms when you need more users with persistent state.',
         ),
       ],
       cta: tBeta('sidebar.creatorMode.cta', 'Publish your App'),
