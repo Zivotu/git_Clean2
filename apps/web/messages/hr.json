@@ -674,6 +674,7 @@
     "earlyAccessPublish": "Objavi sada",
     "earlyAccessSignIn": "Prijavi se sada",
     "earlyAccessDismiss": "Zatvori",
+    "promotionWarning": "Da bi ostvarili pravo na tri mjeseca ako su među prvih 100 korisnika moraju objaviti jednu aplikaciju unutar 15 dana od registracije ili gube to pravo pa ćemo nekome drugome pokloniti to mjesto.",
     "plays": "{count} igranja",
     "leftPanel": {
       "title": "Od AI razgovora do vaše mini aplikacije",

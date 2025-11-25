@@ -676,6 +676,7 @@
     "earlyAccessPublish": "Publish now",
     "earlyAccessSignIn": "Sign in now",
     "earlyAccessDismiss": "Close",
+    "promotionWarning": "To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration, otherwise you lose that right and we will give that spot to someone else.",
     "plays": "{count} plays",
     "leftPanel": {
       "title": "From AI chats to your mini app",
@@ -1349,23 +1350,23 @@
       "title": "No public apps yet",
       "message": "When this creator publishes something it will appear here."
     },
-  "share": {
-    "label": "Share profile",
-    "dialog": "Check out {name} on Thesara",
-    "copied": "Profile link copied",
-    "shared": "Share sheet opened",
-    "error": "Could not copy profile link, please try again.",
-    "copy": "Copy link",
-    "native": "Share via device",
-    "networks": "Share on",
-    "targets": {
-      "facebook": "Facebook",
-      "instagram": "Instagram",
-      "twitter": "X (Twitter)",
-      "linkedin": "LinkedIn",
-      "whatsapp": "WhatsApp"
-    }
-  },
+    "share": {
+      "label": "Share profile",
+      "dialog": "Check out {name} on Thesara",
+      "copied": "Profile link copied",
+      "shared": "Share sheet opened",
+      "error": "Could not copy profile link, please try again.",
+      "copy": "Copy link",
+      "native": "Share via device",
+      "networks": "Share on",
+      "targets": {
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "twitter": "X (Twitter)",
+        "linkedin": "LinkedIn",
+        "whatsapp": "WhatsApp"
+      }
+    },
     "followToast": {
       "followed": "You're now following {name}",
       "unfollowed": "You stopped following {name}",

@@ -82,5 +82,15 @@
         "a": "A short program for enthusiasts who want to promote Thesara. Sign up via the form in the UI and join the team building the future of creativity!"
       }
     ]
+  },
+  {
+    "id": "promotion",
+    "title": "First 100 Users Promotion",
+    "items": [
+      {
+        "q": "First 100 Users Rule",
+        "a": "To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration, otherwise you lose that right and we will give that spot to someone else."
+      }
+    ]
   }
 ]

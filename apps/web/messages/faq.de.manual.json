@@ -82,5 +82,15 @@
         "a": "Ein kurzes Programm für Enthusiasten, die Thesara promoten möchten. Melde dich über das Formular im UI an und werde Teil des Teams, das die Zukunft der Kreativität gestaltet!"
       }
     ]
+  },
+  {
+    "id": "promotion",
+    "title": "Erste 100 Benutzer Promotion",
+    "items": [
+      {
+        "q": "Regel für die ersten 100 Benutzer",
+        "a": "Um sich für die drei Monate zu qualifizieren, wenn Sie zu den ersten 100 Benutzern gehören, müssen Sie innerhalb von 15 Tagen nach der Registrierung eine Anwendung veröffentlichen, andernfalls verlieren Sie dieses Recht und wir vergeben den Platz an jemand anderen."
+      }
+    ]
   }
 ]

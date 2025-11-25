@@ -82,5 +82,15 @@
         "a": "Kratak program za entuzijaste koji žele promovirati Thesaru. Prijavi se putem obrasca u sučelju i postani dio tima koji gradi budućnost kreativnosti!"
       }
     ]
+  },
+  {
+    "id": "promocija",
+    "title": "Promocija 'Prvih 100 korisnika'",
+    "items": [
+      {
+        "q": "Pravilo za prvih 100 korisnika",
+        "a": "Da bi ostvarili pravo na tri mjeseca ako su među prvih 100 korisnika moraju objaviti jednu aplikaciju unutar 15 dana od registracije ili gube to pravo pa ćemo nekome drugome pokloniti to mjesto."
+      }
+    ]
   }
 ]

@@ -859,6 +859,15 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
               <p className={`mt-3 max-w-2xl text-base ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
                 {tHome('tagline') || 'Curirani marketplace s tisućama mini aplikacija, igara i utilsa.'}
               </p>
+              {/* Promotion Warning Banner */}
+              <div className={`mt-4 rounded-xl border px-4 py-3 ${isDark ? 'border-amber-900/50 bg-amber-900/20 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+                <div className="flex items-start gap-3">
+                  <Bell className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm leading-relaxed">
+                    {tHome('promotionWarning') || 'To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration, otherwise you lose that right and we will give that spot to someone else.'}
+                  </p>
+                </div>
+              </div>
               <div className="mt-5 h-1 w-16 rounded-full bg-emerald-500/60" />
             </div>
 
