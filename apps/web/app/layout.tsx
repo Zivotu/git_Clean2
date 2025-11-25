@@ -168,7 +168,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                           backLink: (messages['BetaHome.header.backLink'] as string) ?? '← Back to live',
                           backLinkMobile: (messages['BetaHome.header.backLinkMobile'] as string) ?? '← Back',
                         }}
-                        shortVideoUrl={'https://youtube.com/shorts/m_4RqaGClFI'}
+                        shortVideoUrl={'https://youtube.com/shorts/esSpiQr63WE?feature=share'}
                         shortVideoLabel={(messages['Nav.shortVideo'] as string) ?? 'Video'}
                         goProLabel={(messages['Nav.goPro'] as string) ?? 'Go Pro'}
                         adsOffLabel={(messages['Nav.adsOff'] as string) ?? 'AdsOff'}

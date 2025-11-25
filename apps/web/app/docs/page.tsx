@@ -38,8 +38,32 @@ export default async function DocsPage() {
   const activeLocale: Locale = heroCopy[cookieLocale] ? cookieLocale : defaultLocale;
   const hero = heroCopy[activeLocale] ?? heroCopy[defaultLocale];
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: hero.title,
+    description: hero.body,
+    author: {
+      '@type': 'Organization',
+      name: 'Thesara'
+    },
+    inLanguage: activeLocale,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Thesara',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://www.thesara.space/icon.svg'
+      }
+    }
+  };
+
   return (
     <main className="px-4 py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-3">
           <div>

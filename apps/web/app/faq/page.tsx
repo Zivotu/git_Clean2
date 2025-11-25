@@ -27,8 +27,27 @@ export default function FaqPage() {
     [messages]
   );
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: data.flatMap(section =>
+      section.items.map(item => ({
+        '@type': 'Question',
+        name: repl(item.q),
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: repl(item.a)
+        }
+      }))
+    )
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6 text-zinc-900 dark:text-zinc-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="flex items-center justify-between mb-6">
         <Logo isDark={isDark} />
         <Link href="/" className="text-sm text-gray-600 hover:text-emerald-700 dark:text-zinc-400 dark:hover:text-emerald-500">

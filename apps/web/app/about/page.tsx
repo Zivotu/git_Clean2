@@ -10,8 +10,24 @@ export default function AboutPage() {
     [messages]
   );
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: t("title"),
+    description: t("subtitle"),
+    mainEntity: {
+      '@type': 'Organization',
+      name: 'Thesara',
+      description: t("garageBody")
+    }
+  };
+
   return (
     <div className="min-h-screen max-w-2xl mx-auto p-6 space-y-6 bg-gray-50 dark:bg-[#0b0b0b] text-zinc-900 dark:text-zinc-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <header>
         <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="mt-2 text-zinc-500 dark:text-zinc-400">{t("subtitle")}</p>

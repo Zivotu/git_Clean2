@@ -28,8 +28,24 @@ export default async function Page() {
     }
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Thesara',
+    url: 'https://www.thesara.space',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://www.thesara.space/search?q={search_term_string}',
+      'query-input': 'required name=search_term_string'
+    }
+  };
+
   return (
     <Suspense fallback={<HomeFallback label={loadingLabel} />}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <BetaHomeClient initialItems={initialItems} />
     </Suspense>
   );
