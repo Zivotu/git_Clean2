@@ -32,6 +32,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (u) {
         try {
+          // Detect user's current locale from cookie or default to 'en'
+          const getLocale = () => {
+            if (typeof document !== 'undefined') {
+              const cookies = document.cookie.split(';');
+              for (const cookie of cookies) {
+                const [key, value] = cookie.trim().split('=');
+                if (key === 'NEXT_LOCALE') {
+                  return decodeURIComponent(value);
+                }
+              }
+            }
+            return 'en';
+          };
+          const locale = getLocale();
+
           // Proactively refresh the ID token so Firestore has a valid auth context
           try { await u.getIdToken(true); } catch { }
           await ensureUserDoc({
@@ -39,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: u.email,
             displayName: u.displayName,
             photoURL: u.photoURL,
+            locale,
           });
           // Track visit
           apiAuthedPost('/me/visit').catch(() => { });
@@ -47,11 +63,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             await new Promise((r) => setTimeout(r, 50));
             try { await u.getIdToken(); } catch { }
+            const getLocale = () => {
+              if (typeof document !== 'undefined') {
+                const cookies = document.cookie.split(';');
+                for (const cookie of cookies) {
+                  const [key, value] = cookie.trim().split('=');
+                  if (key === 'NEXT_LOCALE') {
+                    return decodeURIComponent(value);
+                  }
+                }
+              }
+              return 'en';
+            };
+            const locale = getLocale();
             await ensureUserDoc({
               uid: u.uid,
               email: u.email,
               displayName: u.displayName,
               photoURL: u.photoURL,
+              locale,
             });
           } catch (err2) {
             console.error('Error ensuring user document', err2);

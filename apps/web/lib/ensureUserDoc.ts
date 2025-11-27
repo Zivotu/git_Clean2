@@ -7,6 +7,7 @@ export type MinimalUser = {
   email: string | null;
   displayName?: string | null;
   photoURL?: string | null;
+  locale?: string;
 };
 
 export async function ensureUserDoc(user: MinimalUser) {
@@ -31,6 +32,7 @@ export async function ensureUserDoc(user: MinimalUser) {
       await apiAuthedPost('me/welcome-email', {
         email: user.email,
         displayName: user.displayName ?? undefined,
+        locale: user.locale ?? 'en',
       });
     } catch (err) {
       console.warn('Failed to trigger welcome email', err);

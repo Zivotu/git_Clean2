@@ -487,6 +487,7 @@ export default async function meRoutes(app: FastifyInstance) {
       const body = (req.body as any) || {}
       const explicitEmail = typeof body.email === 'string' ? body.email : undefined
       const displayName = typeof body.displayName === 'string' ? body.displayName : undefined
+      const locale = typeof body.locale === 'string' ? body.locale : 'en'
 
       try {
         const userRef = db.collection('users').doc(uid)
@@ -502,22 +503,14 @@ export default async function meRoutes(app: FastifyInstance) {
           return reply.send({ ok: true, sent: false })
         }
 
-        const subject = 'Dobrodošli u Thesaru'
-        const lines = [
-          displayName ? `Bok ${displayName},` : 'Bok,',
-          '',
-          'Dobrodošli u Thesaru! Spremni smo pomoći vam u stvaranju i objavi vaših aplikacija.',
-          '',
-          'Ako trebate pomoć, javite nam se na welcome@thesara.space.',
-          '',
-          'THESARA tim',
-        ]
-
         await sendTemplateToUser('welcome', uid, {
-          displayName: displayName ?? data?.displayName,
+          displayName: displayName ?? data?.displayName ?? 'there',
           supportEmail: 'welcome@thesara.space',
           // ensure email override if provided
           email: explicitEmail ?? data?.email,
+        }, {
+          email: explicitEmail ?? data?.email,
+          locale,
         })
 
         const now = Date.now()

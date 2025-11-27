@@ -1,18 +1,18 @@
-import {cookies, headers} from 'next/headers';
-import {locales, type Locale} from '@/i18n/config';
+import { cookies, headers } from 'next/headers';
+import { locales, type Locale } from '@/i18n/config';
 
 export function isLocale(v?: string | null): v is Locale {
   return !!v && (locales as readonly string[]).includes(v);
 }
 
-export function normalizeLocale(v?: string | null, fallback: Locale = 'hr'): Locale {
+export function normalizeLocale(v?: string | null, fallback: Locale = 'en'): Locale {
   if (!v) return fallback;
   const c = v.toLowerCase().slice(0, 2);
   return (locales as readonly string[]).includes(c) ? (c as Locale) : fallback;
 }
 
 // Server-only helper: picks locale from NEXT_LOCALE cookie, then Accept-Language, else fallback
-export async function getServerLocale(fallback: Locale = 'hr'): Promise<Locale> {
+export async function getServerLocale(fallback: Locale = 'en'): Promise<Locale> {
   const c = await cookies();
   const hdrs = await headers();
   const fromCookie = c.get('NEXT_LOCALE')?.value || null;
@@ -23,7 +23,7 @@ export async function getServerLocale(fallback: Locale = 'hr'): Promise<Locale> 
 }
 
 // For Route Handlers (re-usable with the Request object)
-export function getLocaleFromRequest(req: Request, fallback: Locale = 'hr'): Locale {
+export function getLocaleFromRequest(req: Request, fallback: Locale = 'en'): Locale {
   const fromCookie = parseCookie(req.headers.get('cookie') || '')['NEXT_LOCALE'] || null;
   if (isLocale(fromCookie)) return fromCookie;
   const fromHdr = req.headers.get('accept-language') || '';

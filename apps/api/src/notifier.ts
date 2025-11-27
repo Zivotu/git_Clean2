@@ -80,9 +80,9 @@ const mailboxes: Record<MailboxKey, Mailbox> = {
       sanitize(adminDefaults.smtpHost),
     port: coercePort(
       process.env.WELCOME_SMTP_PORT ??
-        welcomeDefaults.smtpPort ??
-        process.env.SMTP_PORT ??
-        adminDefaults.smtpPort,
+      welcomeDefaults.smtpPort ??
+      process.env.SMTP_PORT ??
+      adminDefaults.smtpPort,
     ),
     user:
       sanitize(process.env.WELCOME_SMTP_USER) ??
@@ -108,9 +108,9 @@ const mailboxes: Record<MailboxKey, Mailbox> = {
       sanitize(adminDefaults.smtpHost),
     port: coercePort(
       process.env.REPORTS_SMTP_PORT ??
-        reportsDefaults.smtpPort ??
-        process.env.SMTP_PORT ??
-        adminDefaults.smtpPort,
+      reportsDefaults.smtpPort ??
+      process.env.SMTP_PORT ??
+      adminDefaults.smtpPort,
     ),
     user:
       sanitize(process.env.REPORTS_SMTP_USER) ??
@@ -330,13 +330,28 @@ function getMailboxForTemplate(id: string): MailboxKey {
 }
 
 // Known fallback templates used when no stored template exists. Keep minimal safe text.
-function getFallbackTemplate(id: string): { subject: string; body: string } | null {
+function getFallbackTemplate(id: string, locale?: string): { subject: string; body: string } | null {
+  const lang = locale?.toLowerCase().slice(0, 2) || 'en';
+
   switch (id) {
     case 'welcome':
-      return {
-        subject: 'Dobrodošli u Thesaru',
-        body: 'Bok {{displayName}},\n\nDobrodošli u Thesaru! Spremni smo pomoći vam u stvaranju i objavi vaših aplikacija.\n\nAko trebate pomoć, javite nam se na {{supportEmail}}.\n\nTHESARA tim',
-      };
+      if (lang === 'hr') {
+        return {
+          subject: 'Dobrodošli u Thesaru',
+          body: 'Bok {{displayName}},\n\nDobrodošli u Thesaru! Spremni smo pomoći vam u stvaranju i objavi vaših aplikacija.\n\n🎉 ČESTITAMO! 🎉\nJedan ste od prvih 100 registriranih korisnika!\n\nKao dio naše Early Access kampanje, imate priliku dobiti 3 MJESECA BESPLATNOG GOLD PLANA!\n\nŠto trebate učiniti:\n✓ Objavite jednu aplikaciju unutar 15 dana od registracije\n✓ To je sve! Nakon što objavite aplikaciju, automatski ćete dobiti Gold plan na 3 mjeseca\n\nNapomena: Ako ne objavite aplikaciju unutar 15 dana, to mjesto će biti dodijeljeno drugom korisniku.\n\nAko trebate pomoć, javite nam se na {{supportEmail}}.\n\nSretno!\nTHESARA tim',
+        };
+      } else if (lang === 'de') {
+        return {
+          subject: 'Willkommen bei Thesara',
+          body: 'Hallo {{displayName}},\n\nWillkommen bei Thesara! Wir sind bereit, Ihnen beim Erstellen und Veröffentlichen Ihrer Anwendungen zu helfen.\n\n🎉 HERZLICHEN GLÜCKWUNSCH! 🎉\nSie gehören zu den ersten 100 registrierten Benutzern!\n\nAls Teil unserer Early Access-Kampagne haben Sie die Möglichkeit, 3 MONATE KOSTENLOSEN GOLD-PLAN zu erhalten!\n\nWas Sie tun müssen:\n✓ Veröffentlichen Sie eine Anwendung innerhalb von 15 Tagen nach der Registrierung\n✓ Das ist alles! Nach der Veröffentlichung Ihrer Anwendung erhalten Sie automatisch den Gold-Plan für 3 Monate\n\nHinweis: Wenn Sie innerhalb von 15 Tagen keine Anwendung veröffentlichen, wird dieser Platz einem anderen Benutzer zugewiesen.\n\nWenn Sie Hilfe benötigen, kontaktieren Sie uns unter {{supportEmail}}.\n\nViel Erfolg!\nTHESARA Team',
+        };
+      } else {
+        // Default to English
+        return {
+          subject: 'Welcome to Thesara',
+          body: 'Hi {{displayName}},\n\nWelcome to Thesara! We\'re ready to help you create and publish your applications.\n\n🎉 CONGRATULATIONS! 🎉\nYou are one of the first 100 registered users!\n\nAs part of our Early Access campaign, you have the opportunity to get 3 MONTHS OF FREE GOLD PLAN!\n\nWhat you need to do:\n✓ Publish one application within 15 days of registration\n✓ That\'s it! After you publish your application, you\'ll automatically receive the Gold plan for 3 months\n\nNote: If you don\'t publish an application within 15 days, that spot will be given to another user.\n\nIf you need help, contact us at {{supportEmail}}.\n\nGood luck!\nTHESARA team',
+        };
+      }
     case 'review:approval_notification':
       return {
         subject: 'Vaša aplikacija "{{appTitle}}" je odobrena',
@@ -362,8 +377,9 @@ export async function sendTemplate(
   to: string,
   data: Record<string, unknown> = {},
   mailboxKey?: MailboxKey,
+  locale?: string,
 ): Promise<void> {
-  const tmpl = (await fetchTemplate(templateId)) ?? getFallbackTemplate(templateId);
+  const tmpl = (await fetchTemplate(templateId)) ?? getFallbackTemplate(templateId, locale);
   if (!tmpl) {
     console.warn({ templateId }, 'template_not_found');
     return;
@@ -378,7 +394,7 @@ export async function sendTemplateToUser(
   templateId: string,
   uid: string,
   data: Record<string, unknown> = {},
-  options: Omit<NotifyUserOptions, 'mailbox'> = {},
+  options: Omit<NotifyUserOptions, 'mailbox'> & { locale?: string } = {},
 ): Promise<void> {
   const email = sanitizeEmailAddress(options.email ?? undefined) ?? (await lookupUserEmail(uid));
   if (!email) return;
@@ -394,7 +410,7 @@ export async function sendTemplateToUser(
     // ignore
   }
   const mailbox = getMailboxForTemplate(templateId);
-  await sendTemplate(templateId, email, data, mailbox);
+  await sendTemplate(templateId, email, data, mailbox, options.locale);
 }
 
 export async function sendEmail(
