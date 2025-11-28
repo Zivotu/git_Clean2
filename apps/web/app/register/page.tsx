@@ -74,6 +74,7 @@ export default function RegisterPage() {
         photoURL = await getDownloadURL(storageRef);
       }
       await updateProfile(cred.user, { displayName, photoURL: photoURL || undefined });
+      await cred.user.reload();
       await ensureUserDoc({
         uid: cred.user.uid,
         email: cred.user.email,
@@ -93,6 +94,7 @@ export default function RegisterPage() {
           gender: form.gender || null,
           bio: form.bio || null,
           photoURL: photoURL || null,
+          displayName: displayName,
         },
         { merge: true }
       );

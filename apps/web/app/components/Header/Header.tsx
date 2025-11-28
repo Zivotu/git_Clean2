@@ -265,7 +265,11 @@ export default function Header({
 
   const creatorDisplayName = creatorProfile?.displayName?.trim();
   const creatorPhoto = creatorProfile?.photoURL?.trim();
-  const resolvedProfileName = creatorDisplayName || getDisplayName(user) || 'Guest';
+  const fallbackProfileName = getDisplayName(user) || undefined;
+  const sanitizedCreatorName =
+    creatorDisplayName && creatorDisplayName !== user?.uid ? creatorDisplayName : undefined;
+  // Creator documents sometimes fall back to UID when created manually, so prefer auth name in that case.
+  const resolvedProfileName = sanitizedCreatorName || fallbackProfileName || 'Guest';
   const resolvedProfilePhoto = creatorPhoto || ((user as any)?.photoURL ?? null);
   const defaultProfileSection = (
     <ProfileCard

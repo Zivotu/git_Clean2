@@ -501,6 +501,45 @@ async function ensureQueue(): Promise<Queue | null> {
   return bundleBuildQueue;
 }
 
+async function fixCommonAiErrors(projectDir: string) {
+  const exts = new Set(['.tsx', '.jsx']);
+  async function walk(dir: string) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const abs = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === '.git') continue;
+        await walk(abs);
+      } else {
+        const ext = path.extname(entry.name).toLowerCase();
+        if (exts.has(ext)) {
+          let content = await fs.readFile(abs, 'utf8');
+          let changed = false;
+
+          // Fix: Adjacent JSX elements in object property without Fragment
+          // Matches: key: <Tag ... /><Tag ... />
+          // We limit to self-closing tags for safety as that's the common case for icons
+          const regex = /(\w+\s*:\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(,|})/g;
+          if (regex.test(content)) {
+            content = content.replace(regex, '$1<>$2</>$3');
+            changed = true;
+          }
+
+          if (changed) {
+            console.log(`[bundle-worker] Fixed AI syntax error in ${abs}`);
+            await fs.writeFile(abs, content, 'utf8');
+          }
+        }
+      }
+    }
+  }
+  try {
+    await walk(projectDir);
+  } catch (err) {
+    console.warn('[bundle-worker] Failed to run AI error fixer', err);
+  }
+}
+
 export async function enqueueBundleBuild(
   buildId: string,
   zipPath: string,
@@ -557,6 +596,9 @@ async function runBundleBuildProcess(
       console.log(`[bundle-worker] Using nested project directory: ${path.relative(workspaceDir, projectDir) || '.'}`);
     }
 
+    // Attempt to fix common AI generation errors (e.g. missing fragments in icon maps)
+    await fixCommonAiErrors(projectDir);
+
     // If package.json exists, attempt dependency install + build
     const packageJsonPath = path.join(projectDir, 'package.json');
     const hasPackageJson = await fileExists(packageJsonPath);
@@ -605,9 +647,9 @@ async function runBundleBuildProcess(
           [
             'Ne mozemo instalirati ovisnosti jer paket nema lock datoteku.',
             `Dodaj jednu od sljedecih: ${REQUIRED_LOCK_FILES.join(', ')}`,
-          'Ako ti je aplikaciju generirao LLM, zamoli ga da za ovaj projekt napravi package-lock.json (ili odgovarajuci lock) pa ponovno uploadaj ZIP.'
-        ].join(' ')
-      );
+            'Ako ti je aplikaciju generirao LLM, zamoli ga da za ovaj projekt napravi package-lock.json (ili odgovarajuci lock) pa ponovno uploadaj ZIP.'
+          ].join(' ')
+        );
       }
       console.log(`[bundle-worker] Using ${lockFile} for deterministic install.`);
       const installPlan = await prepareInstallPlan(lockFile, projectDir, workspaceDir, npmCacheDir);
@@ -811,10 +853,10 @@ async function runBundleBuildProcess(
 export function startBundleBuildWorker(): BundleBuildWorkerHandle {
   if (process.env.CREATEX_WORKER_ENABLED !== 'true') {
     console.warn('[bundle-worker] CREATEX_WORKER_ENABLED is not "true" – worker disabled');
-    return { close: async () => {} };
+    return { close: async () => { } };
   }
   console.log('[bundle-worker] Starting bundle build worker...');
-  let handle: BundleBuildWorkerHandle = { close: async () => {} };
+  let handle: BundleBuildWorkerHandle = { close: async () => { } };
 
   const start = async () => {
     queueConnection = await resolveRedisConnection();
@@ -839,7 +881,7 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
           await runBundleBuildProcess(buildId, zipPath, { llmApiKey, customAssets });
 
           await updateBuild(buildId, { state: 'pending_review', progress: 100 });
-          
+
           const listingId = (await getBuildData(buildId))?.listingId;
           sseEmitter.emit(buildId, 'final', { status: 'success', buildId, listingId });
 
