@@ -539,7 +539,7 @@ async function ensureQueue(): Promise<Queue | null> {
 }
 
 async function fixCommonAiErrors(projectDir: string) {
-  const exts = new Set(['.tsx', '.jsx']);
+  const exts = new Set(['.tsx', '.jsx', '.ts', '.js']);
   async function walk(dir: string) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -553,13 +553,10 @@ async function fixCommonAiErrors(projectDir: string) {
           let content = await fs.readFile(abs, 'utf8');
           let changed = false;
 
-          // Fix: Adjacent JSX elements in object property without Fragment
-          // Matches: key: <Tag ... /><Tag ... />
-          // We limit to self-closing tags for safety as that's the common case for icons
-          // Support both identifier keys and string-literal keys, with optional parentheses
+          // Fix 1: Adjacent JSX elements in object property without Fragment
           const regex =
             /((?:['"][^'"]+['"]|[\w$]+)\s*:\s*)(\(?\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(\s*\)?)(,|})/g;
-          const next = content.replace(
+          let next = content.replace(
             regex,
             (match, key, before, nodes, after, suffix) => {
               const trimmedNodes = (nodes as string).trimStart();
@@ -569,13 +566,20 @@ async function fixCommonAiErrors(projectDir: string) {
               return `${key}${before}<>${nodes}</>${after}${suffix}`;
             },
           );
+
+          // Fix 2: Remove leading slash from img.src assignments to support base href
+          // Matches: img.src = `/${...}` or img.src = "/..."
+          // We want to turn `/${def.filename}` into `${def.filename}` so it respects <base>
+          const imgSrcRegex = /(img\.src\s*=\s*[`"'])(\/)([^`"'])/g;
+          next = next.replace(imgSrcRegex, '$1$3');
+
           if (next !== content) {
             content = next;
             changed = true;
           }
 
           if (changed) {
-            console.log(`[bundle-worker] Fixed AI syntax error in ${abs}`);
+            console.log(`[bundle-worker] Fixed AI syntax/path error in ${abs}`);
             await fs.writeFile(abs, content, 'utf8');
           }
         }
