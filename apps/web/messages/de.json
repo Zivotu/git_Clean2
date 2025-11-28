@@ -1251,6 +1251,10 @@
     "appDeleted": "Anwendung gelöscht.",
     "deleteSuccess": "App gelöscht",
     "deleteError": "Löschen der App fehlgeschlagen",
+    "actions": {
+      "edit": "Bearbeiten",
+      "delete": "L\u00f6schen"
+    },
     "notPublished": "Die App muss genehmigt werden, bevor sie ausgeführt werden kann.",
     "linkCopied": "Link in die Zwischenablage kopiert!",
     "slowDown": "Langsam 🙂",

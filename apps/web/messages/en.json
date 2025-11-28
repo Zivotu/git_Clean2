@@ -1137,6 +1137,10 @@
     "appDeleted": "Application deleted.",
     "deleteSuccess": "App deleted",
     "deleteError": "Failed to delete app",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
     "notPublished": "App must be approved before it can run.",
     "linkCopied": "Link copied to clipboard!",
     "slowDown": "Easy there 🙂",

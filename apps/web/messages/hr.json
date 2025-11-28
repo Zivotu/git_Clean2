@@ -1171,6 +1171,10 @@
     "appDeleted": "Aplikacija obrisana.",
     "deleteSuccess": "Aplikacija obrisana",
     "deleteError": "Brisanje aplikacije nije uspjelo",
+    "actions": {
+      "edit": "Uredi",
+      "delete": "Obri\u0161i"
+    },
     "notPublished": "Aplikacija mora biti odobrena prije nego što se može pokrenuti.",
     "linkCopied": "Link kopiran u međuspremnik!",
     "slowDown": "Polako 🙂",

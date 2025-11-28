@@ -74,6 +74,16 @@ const createFallbacks: Record<string, Record<string, string>> = {
       'Before uploading, launch the bundle where you built it, save something to storage, close the browser and reopen. If it fails there, it will also fail on Thesara.',
     bundleTestingPromptHint:
       'When prompting an LLM, remind it to persist state with localStorage so our shim can sync it.',
+    bundleAiWarning:
+      'IMPORTANT: Apps that rely on Google AI Studio, Gemini, Kimi or any other LLM provider must include their own API key. Without it the bundle will not work after publishing.',
+    bundleAiWarningDetail:
+      'Enter your key below (we do not supply one). Leave it empty only if your AI app works without a private key. Documentation on AI bundles is coming soon.',
+    bundleAiNoKeyNote:
+      'You can still publish demos that do not require keys — it depends on how you built the app.',
+    bundleAiApiLabel: 'AI / LLM API key',
+    bundleAiApiPlaceholder: 'Paste your provider key (stored only for this build)',
+    bundleAiApiHelp:
+      'We inject this key into the bundle so it can reach your AI service. If the app stops working later, rotate or update the key.',
     basicInfoHeading: 'Basic information',
     namePlaceholder: 'My super app',
     descriptionPlaceholder: 'Short description of your app...',
@@ -123,6 +133,16 @@ const createFallbacks: Record<string, Record<string, string>> = {
       'Prije uploadanja pokreni bundle tamo gdje si ga gradio, pokušaj nešto spremiti u pohranu, zatvori preglednik i ponovno otvori. Ako tamo ne radi, neće raditi ni na Thesari.',
     bundleTestingPromptHint:
       'Kad koristiš LLM, napomeni u promptu da treba koristiti localStorage kako bi naš shim mogao sinkati podatke.',
+    bundleAiWarning:
+      'VAZNO: Aplikacije koje se oslanjaju na Google AI Studio, Gemini, Kimi ili bilo kojeg drugog LLM pruzatelja moraju ukljucivati vlastiti API kljuc. Bez njega paket nece raditi nakon objavljivanja.',
+    bundleAiWarningDetail:
+      'Unesi svoj kljuc u nastavku (mi ga ne isporucujemo). Ostavi ga praznim samo ako tvoja AI aplikacija radi bez privatnog kljuca. Dokumentacija o AI paketima dolazi uskoro.',
+    bundleAiNoKeyNote:
+      'I dalje mozes objavljivati demo verzije koje ne zahtijevaju kljuceve - to ovisi o tome kako si izgradio aplikaciju.',
+    bundleAiApiLabel: 'AI / LLM API kljuc',
+    bundleAiApiPlaceholder: 'Zalijepi svoj kljuc pruzatelja (pohranjen samo za ovu izradu)',
+    bundleAiApiHelp:
+      'Ubacujemo ovaj kljuc u paket kako bi mogao doci do tvoje AI usluge. Ako aplikacija kasnije prestane raditi, rotiraj ili azuriraj kljuc.',
     basicInfoHeading: 'Osnovne informacije',
     namePlaceholder: 'Moj super app',
     descriptionPlaceholder: 'Kratak opis tvoje aplikacije...',
@@ -173,6 +193,16 @@ const createFallbacks: Record<string, Record<string, string>> = {
       'Teste dein Bundle dort, wo es erstellt wurde: etwas speichern, Browser schließen und erneut öffnen. Wenn es dort nicht funktioniert, funktioniert es auch auf Thesara nicht.',
     bundleTestingPromptHint:
       'Wenn du ein LLM nutzt, erwähne im Prompt, dass Daten über localStorage gespeichert werden sollen, damit unser Shim sie synchronisieren kann.',
+    bundleAiWarning:
+      'WICHTIG: Apps, die auf Google AI Studio, Gemini, Kimi oder einen anderen LLM-Anbieter angewiesen sind, ben?tigen einen eigenen API-Schl?ssel. Ohne ihn funktioniert das Bundle nach der Ver?ffentlichung nicht.',
+    bundleAiWarningDetail:
+      'Trage deinen Schl?ssel unten ein (wir stellen keinen bereit). Lass das Feld nur leer, wenn deine AI-App ohne privaten Schl?ssel auskommt. Eine Dokumentation zu AI-Bundles folgt in K?rze.',
+    bundleAiNoKeyNote:
+      'Du kannst weiterhin Demo-Apps ver?ffentlichen, die keinen Schl?ssel brauchen ? das h?ngt davon ab, wie du sie gebaut hast.',
+    bundleAiApiLabel: 'AI- / LLM-API-Schl?ssel',
+    bundleAiApiPlaceholder: 'F?ge hier deinen Anbieter-Schl?ssel ein (wird nur f?r diesen Build gespeichert)',
+    bundleAiApiHelp:
+      'Wir betten den Schl?ssel in das Bundle ein, damit es deinen AI-Dienst erreichen kann. Wenn die App sp?ter nicht mehr funktioniert, ?berpr?fe oder rotiere den Schl?ssel.',
     basicInfoHeading: 'Grundlegende Informationen',
     namePlaceholder: 'Meine Super-App',
     descriptionPlaceholder: 'Kurze Beschreibung deiner App...',
