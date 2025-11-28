@@ -46,18 +46,55 @@ async function applyCustomAssets(
   projectDir: string,
   assets: { name: string; path: string }[] | undefined,
   preferPublic: boolean,
-) {
-  if (!assets?.length) return;
+): Promise<string[]> {
+  if (!assets?.length) return [];
   const targetDir = preferPublic ? path.join(projectDir, 'public') : projectDir;
   await fs.mkdir(targetDir, { recursive: true });
+
+  const copiedAssets: string[] = [];
   for (const asset of assets) {
     const safeName = path.basename(asset.name || '');
     const dest = path.join(targetDir, safeName || `asset-${Date.now()}`);
     await fs.copyFile(asset.path, dest);
+    copiedAssets.push(safeName);
   }
+
   console.log(
-    `[bundle-worker] Added ${assets.length} custom asset(s) to ${preferPublic ? 'public/' : 'project root'}.`,
+    `[bundle-worker] Added ${assets.length} custom asset(s) to ${preferPublic ? 'public/' : 'project root'}:`,
+    copiedAssets.join(', ')
   );
+
+  return copiedAssets;
+}
+
+async function ensureAssetsInDist(
+  distDir: string,
+  publicDir: string,
+  assetNames: string[]
+): Promise<void> {
+  if (!assetNames?.length) return;
+
+  let copiedCount = 0;
+  for (const assetName of assetNames) {
+    const distPath = path.join(distDir, assetName);
+    const publicPath = path.join(publicDir, assetName);
+
+    // Check if asset exists in dist
+    const existsInDist = await fileExists(distPath);
+
+    if (!existsInDist && await fileExists(publicPath)) {
+      // Copy from public to dist if missing
+      await fs.copyFile(publicPath, distPath);
+      copiedCount++;
+      console.log(`[bundle-worker] ⚠️  Copied missing asset to dist/: ${assetName}`);
+    }
+  }
+
+  if (copiedCount > 0) {
+    console.log(`[bundle-worker] ✅ Ensured ${copiedCount} custom asset(s) are in dist/`);
+  } else if (assetNames.length > 0) {
+    console.log(`[bundle-worker] ✅ All ${assetNames.length} custom asset(s) already in dist/`);
+  }
 }
 
 function isIgnorableUnzipEntry(name: string): boolean {
@@ -615,9 +652,10 @@ async function runBundleBuildProcess(
     const packageJsonPath = path.join(projectDir, 'package.json');
     const hasPackageJson = await fileExists(packageJsonPath);
 
+    let customAssetNames: string[] = [];
     if (options?.customAssets?.length) {
       try {
-        await applyCustomAssets(projectDir, options.customAssets, hasPackageJson);
+        customAssetNames = await applyCustomAssets(projectDir, options.customAssets, hasPackageJson);
       } catch (err) {
         console.warn('[bundle-worker] Failed to apply custom assets.', err);
         throw err;
@@ -734,6 +772,13 @@ async function runBundleBuildProcess(
       if (!(await dirExists(distDir))) {
         throw new Error('Build completed but no dist/ directory was produced.');
       }
+
+      // Ensure custom assets are in dist/ before copying to buildDir
+      if (customAssetNames.length > 0) {
+        const publicDir = path.join(projectDir, 'public');
+        await ensureAssetsInDist(distDir, publicDir, customAssetNames);
+      }
+
       await fs.rm(buildDir, { recursive: true, force: true });
       await copyDir(distDir, buildDir);
     } else {
