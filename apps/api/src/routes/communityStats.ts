@@ -34,11 +34,11 @@ async function fetchMembersCount(): Promise<number> {
 
 async function calculateStats(): Promise<CommunityStats> {
   const [apps, membersCount] = await Promise.all([
-    readApps(['status', 'state', 'deletedAt']),
+    readApps(['status', 'state', 'deletedAt', 'visibility']),
     fetchMembersCount(),
   ]);
   const publishedApps = apps.filter(
-    (app) => !app?.deletedAt && (app?.status === 'published' || app?.state === 'active'),
+    (app) => !app?.deletedAt && (app?.status === 'published' || app?.state === 'active') && app?.visibility !== 'unlisted',
   ).length;
   return { publishedApps, membersCount };
 }

@@ -156,10 +156,10 @@ export default async function listingsRoutes(app: FastifyInstance) {
       }
 
       if (!isOwner && !isAdmin) {
-        items = items.filter((a) => a.status === 'published' || a.state === 'active');
+        items = items.filter((a) => (a.status === 'published' || a.state === 'active') && a.visibility !== 'unlisted');
       }
     } else {
-      items = items.filter((a) => a.status === 'published' || a.state === 'active');
+      items = items.filter((a) => (a.status === 'published' || a.state === 'active') && a.visibility !== 'unlisted');
     }
 
     const viewerUid = req.authUser?.uid;
