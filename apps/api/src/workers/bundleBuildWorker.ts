@@ -519,9 +519,21 @@ async function fixCommonAiErrors(projectDir: string) {
           // Fix: Adjacent JSX elements in object property without Fragment
           // Matches: key: <Tag ... /><Tag ... />
           // We limit to self-closing tags for safety as that's the common case for icons
-          const regex = /(\w+\s*:\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(,|})/g;
-          if (regex.test(content)) {
-            content = content.replace(regex, '$1<>$2</>$3');
+          // Support both identifier keys and string-literal keys, with optional parentheses
+          const regex =
+            /((?:['"][^'"]+['"]|[\w$]+)\s*:\s*)(\(?\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(\s*\)?)(,|})/g;
+          const next = content.replace(
+            regex,
+            (match, key, before, nodes, after, suffix) => {
+              const trimmedNodes = (nodes as string).trimStart();
+              if (trimmedNodes.startsWith('<>') || trimmedNodes.startsWith('<React.Fragment')) {
+                return match;
+              }
+              return `${key}${before}<>${nodes}</>${after}${suffix}`;
+            },
+          );
+          if (next !== content) {
+            content = next;
             changed = true;
           }
 
