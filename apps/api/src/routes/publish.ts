@@ -33,6 +33,7 @@ interface PublishPayload {
   id: string;
   title?: string;
   description?: string;
+  tags?: string[];
   translations?: Record<string, { title?: string; description?: string }>;
   author?: { uid: string; handle?: string };
   capabilities?: {
@@ -639,7 +640,7 @@ if (typeof window !== 'undefined') {
           slug,
           title: body.title || existing.title || '',
           description: body.description || existing.description || '',
-          tags: existing.tags ?? [],
+          tags: body.tags || existing.tags || [],
           visibility: (body.visibility as any) || existing.visibility,
           accessMode: existing.accessMode,
           author: body.author,
@@ -681,7 +682,7 @@ if (typeof window !== 'undefined') {
           pendingBuildId: buildId,
           title: body.title || '',
           description: body.description || '',
-          tags: [],
+          tags: body.tags || [],
           visibility: (body.visibility as any) || 'public',
           accessMode: 'public',
           author: body.author,

@@ -29,8 +29,8 @@ type TermsContextValue = {
 const TermsContext = createContext<TermsContextValue>({
   status: null,
   loading: false,
-  refresh: async () => {},
-  accept: async () => {},
+  refresh: async () => { },
+  accept: async () => { },
 });
 
 export function TermsProvider({ children }: { children: ReactNode }) {
@@ -81,10 +81,9 @@ export function TermsProvider({ children }: { children: ReactNode }) {
     [userId, refresh],
   );
 
-  const shouldEnforce =
-    Boolean(user) && !authLoading && Boolean(status) && status?.accepted === false;
-  const isHomePage = !pathname || pathname === '/';
-  const shouldShowGlobalModal = shouldEnforce && !isHomePage;
+
+
+  const shouldShowGlobalModal = false;
 
   const handleModalAccept = useCallback(async () => {
     setEnforceBusy(true);

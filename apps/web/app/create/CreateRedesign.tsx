@@ -104,13 +104,13 @@ export default function CreateRedesign(props: any) {
   // Tag translations fallback map
   const getTagTranslation = (tagId: string): string => {
     const translations: Record<string, Record<string, string>> = {
-      'Igre': { hr: 'Igre', en: 'Games', de: 'Spiele' },
-      'Kvizovi': { hr: 'Kvizovi', en: 'Quizzes', de: 'Quiz' },
-      'Učenje': { hr: 'Učenje', en: 'Learning', de: 'Lernen' },
-      'Alati': { hr: 'Alati', en: 'Tools', de: 'Werkzeuge' },
-      'Business': { hr: 'Business', en: 'Business', de: 'Business' },
-      'Zabava': { hr: 'Zabava', en: 'Entertainment', de: 'Unterhaltung' },
-      'Ostalo': { hr: 'Ostalo', en: 'Other', de: 'Sonstiges' },
+      'games': { hr: 'Igre', en: 'Games', de: 'Spiele' },
+      'quiz': { hr: 'Kvizovi', en: 'Quizzes', de: 'Quiz' },
+      'learning': { hr: 'Učenje', en: 'Learning', de: 'Lernen' },
+      'tools': { hr: 'Alati', en: 'Tools', de: 'Werkzeuge' },
+      'business': { hr: 'Posao', en: 'Business', de: 'Geschäft' },
+      'entertainment': { hr: 'Zabava', en: 'Entertainment', de: 'Unterhaltung' },
+      'other': { hr: 'Ostalo', en: 'Other', de: 'Sonstiges' },
     };
 
     // Try to get from tCreate first
@@ -396,7 +396,7 @@ export default function CreateRedesign(props: any) {
                   <div className="group">
                     <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">{tCreate('tagsLabel') || 'Tags'}</label>
                     <div className="flex flex-wrap gap-2">
-                      {['Igre', 'Kvizovi', 'Učenje', 'Alati', 'Business', 'Zabava', 'Ostalo'].map((tagId) => {
+                      {['games', 'quiz', 'learning', 'tools', 'business', 'entertainment', 'other'].map((tagId) => {
                         const isSelected = selectedTags.includes(tagId);
                         const canSelect = selectedTags.length < 2 || isSelected;
                         // Get translated tag name with fallback support

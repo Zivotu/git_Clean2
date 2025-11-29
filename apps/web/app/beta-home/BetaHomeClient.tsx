@@ -117,9 +117,20 @@ function formatMetric(count?: number | null, newLabel = 'New') {
   return `${count}`;
 }
 
-function pickCategory(tags?: string[] | null, fallback = 'Ostalo') {
+const legacyTagMap: Record<string, string> = {
+  'Igre': 'games', 'Spiele': 'games', 'Games': 'games',
+  'Kvizovi': 'quiz', 'Quiz': 'quiz', 'Quizzes': 'quiz',
+  'Učenje': 'learning', 'Lernen': 'learning', 'Learning': 'learning',
+  'Alati': 'tools', 'Werkzeuge': 'tools', 'Tools': 'tools',
+  'Posao': 'business', 'Geschäft': 'business', 'Business': 'business',
+  'Zabava': 'entertainment', 'Unterhaltung': 'entertainment', 'Entertainment': 'entertainment',
+  'Ostalo': 'other', 'Sonstiges': 'other', 'Other': 'other',
+};
+
+function pickCategory(tags: string[] | null, translator: (key: string, fallback: string) => string, fallback: string) {
   if (!tags?.length) return fallback;
-  return tags[0]
+  const tag = tags[0];
+  return translator(`tags.${tag}`, tag)
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (match) => match.toUpperCase());
 }
@@ -150,6 +161,7 @@ function mapListings(
     fallbackCategory: string;
     metricNewLabel: string;
     unknownAuthor: string;
+    translator: (key: string, fallback: string) => string;
   },
 ): BetaApp[] {
   const sortedByLikes = [...items].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
@@ -157,14 +169,17 @@ function mapListings(
 
   return items.map((item, index) => {
     const authorName = item.author?.name || item.author?.handle || options.unknownAuthor;
-    const tags = Array.isArray(item.tags)
+    const rawTags = Array.isArray(item.tags)
       ? item.tags
         .map((tag) => (typeof tag === 'string' ? tag.trim() : ''))
         .filter((tag) => Boolean(tag))
       : [];
 
+    // Normalize tags
+    const tags = rawTags.map(tag => legacyTagMap[tag] || tag);
+
     if (tags.length === 0) {
-      tags.push('Ostalo');
+      tags.push('other');
     }
     const createdAt =
       typeof item.createdAt === 'number'
@@ -177,7 +192,7 @@ function mapListings(
       slug: item.slug,
       name: item.title,
       description: item.description || options.defaultDescription,
-      category: pickCategory(item.tags, options.fallbackCategory),
+      category: pickCategory(tags, options.translator, options.fallbackCategory),
       authorName,
       authorInitials: makeInitials(authorName),
       authorPhoto: item.author?.photo || null,
@@ -248,8 +263,9 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       fallbackCategory,
       metricNewLabel,
       unknownAuthor,
+      translator: (key: string, fallback: string) => tBeta(key, fallback),
     }),
-    [defaultDescription, fallbackCategory, metricNewLabel, unknownAuthor],
+    [defaultDescription, fallbackCategory, metricNewLabel, unknownAuthor, tBeta],
   );
   const apps = useMemo(() => mapListings(rawListings, mappingOptions), [rawListings, mappingOptions]);
   useEffect(() => {
@@ -291,8 +307,8 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const _predefinedTagKeysHash = PREDEFINED_TAG_KEYS.join('|');
   const visibleTags = useMemo(() =>
     PREDEFINED_TAG_KEYS.map((key) => {
-      const labelFallback = key.split('.').pop() || key;
-      return [tBeta(key, labelFallback), 0] as [string, number];
+      const canonicalKey = key.split('.').pop() || key;
+      return { key: canonicalKey, label: tBeta(key, canonicalKey), count: 0 };
     }),
     // include locale/messages, tBeta and PREDEFINED_TAG_KEYS so labels recompute on locale change
     [locale, messages, _predefinedTagKeysHash, tBeta, PREDEFINED_TAG_KEYS],
@@ -507,17 +523,17 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     const currentString = searchParams.toString();
     if (nextString === currentString) return;
     router.replace(`${pathname}${nextString ? `?${nextString}` : ''}`, { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     initialQuerySynced,
     pathname,
-    router,
     search,
     selectedTags,
     sortBy,
     view,
     cardsPerRow,
     activeFilter,
-    searchParams,
+    // NOTE: searchParams intentionally excluded to prevent infinite loop
   ]);
   const randomApp = randomIndex !== null ? apps[randomIndex] : null;
   const profileDisplayName =
@@ -1094,13 +1110,13 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
             <section className="flex flex-col gap-2 rounded-2xl border px-3 py-3 text-xs md:text-sm">
               <div className={`font-semibold ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>{tagsHeading}</div>
               <div className="flex flex-wrap gap-2">
-                {visibleTags.map(([tag]) => {
-                  const isSelected = selectedTags.includes(tag);
+                {visibleTags.map(({ key, label }) => {
+                  const isSelected = selectedTags.includes(key);
                   return (
                     <button
-                      key={tag}
+                      key={key}
                       type="button"
-                      onClick={() => toggleTag(tag)}
+                      onClick={() => toggleTag(key)}
                       aria-pressed={isSelected}
                       className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${isSelected
                         ? isDark
@@ -1111,7 +1127,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                           : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
                         }`}
                     >
-                      #{tag}
+                      #{label}
                     </button>
                   );
                 })}

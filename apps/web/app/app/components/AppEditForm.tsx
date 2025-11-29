@@ -479,19 +479,29 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                             Tags <span className={`font-normal ${isDark ? 'text-zinc-500' : 'text-gray-600'}`}>(max 2)</span>
                         </label>
                         <div className="flex flex-wrap gap-2">
-                            {['Igre', 'Kvizovi', 'Učenje', 'Alati', 'Business', 'Zabava', 'Ostalo'].map((tag) => {
-                                const isSelected = tags.includes(tag);
+                            {['games', 'quiz', 'learning', 'tools', 'business', 'entertainment', 'other'].map((tagKey) => {
+                                const isSelected = tags.includes(tagKey);
+                                const tagTranslations: Record<string, Record<string, string>> = {
+                                    'games': { hr: 'Igre', en: 'Games', de: 'Spiele' },
+                                    'quiz': { hr: 'Kvizovi', en: 'Quizzes', de: 'Quiz' },
+                                    'learning': { hr: 'Učenje', en: 'Learning', de: 'Lernen' },
+                                    'tools': { hr: 'Alati', en: 'Tools', de: 'Werkzeuge' },
+                                    'business': { hr: 'Posao', en: 'Business', de: 'Geschäft' },
+                                    'entertainment': { hr: 'Zabava', en: 'Entertainment', de: 'Unterhaltung' },
+                                    'other': { hr: 'Ostalo', en: 'Other', de: 'Sonstiges' },
+                                };
+                                const tagLabel = tApp(`tags.${tagKey}`, undefined, tagTranslations[tagKey]?.['hr'] || tagKey);
                                 return (
                                     <button
-                                        key={tag}
+                                        key={tagKey}
                                         type="button"
                                         disabled={!canEdit}
                                         onClick={() => {
                                             if (isSelected) {
-                                                setTags(tags.filter((t) => t !== tag));
+                                                setTags(tags.filter((t) => t !== tagKey));
                                             } else {
                                                 if (tags.length >= 2) return;
-                                                setTags([...tags, tag]);
+                                                setTags([...tags, tagKey]);
                                             }
                                         }}
                                         className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 border ${isSelected
@@ -501,7 +511,7 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                                 : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
                                             } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        {tag}
+                                        {tagLabel}
                                     </button>
                                 );
                             })}

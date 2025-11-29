@@ -8,6 +8,7 @@ import { playHref, appDetailsHref } from '@/lib/urls';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useI18n } from '@/lib/i18n-provider';
 
 export type BetaApp = {
     id: string;
@@ -68,6 +69,8 @@ export function BetaAppCard({
     const [liked, setLiked] = useState(!!app.likedByMe);
     const [likesCount, setLikesCount] = useState(app.likesCount);
     const [showExplosion, setShowExplosion] = useState(false);
+    const { messages } = useI18n();
+    const tTag = (tag: string) => (messages[`BetaHome.tags.${tag}`] as string) || tag;
 
     useEffect(() => {
         setLiked(!!app.likedByMe);
@@ -221,7 +224,7 @@ export function BetaAppCard({
                         <div className="mt-4 flex flex-wrap gap-2">
                             {app.tags.map((tag) => (
                                 <span key={tag} className={`rounded-full px-3 py-1 text-xs font-semibold ${isDark ? 'bg-zinc-700 text-zinc-200' : 'bg-slate-100 text-slate-600'}`}>
-                                    #{tag}
+                                    #{tTag(tag)}
                                 </span>
                             ))}
                         </div>
