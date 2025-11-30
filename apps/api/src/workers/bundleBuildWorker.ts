@@ -8,7 +8,9 @@ import extract from 'extract-zip';
 import { BUNDLE_ROOT, getBuildDir } from '../paths.js';
 import { REDIS_URL } from '../config.js';
 import { sseEmitter } from '../sse.js';
-import { updateBuild, getBuildData } from '../models/Build.js';
+import { updateBuild, getBuildData, type BuildInfoMetadata } from '../models/Build.js';
+import { notifyAdmins } from '../notifier.js';
+import { normalizeSupportedLocale } from '../lib/locale.js';
 
 async function dirExists(p: string): Promise<boolean> {
   try {
@@ -39,6 +41,64 @@ async function copyDir(src: string, dest: string) {
     } else {
       await fs.copyFile(from, to);
     }
+  }
+}
+
+const FRIENDLY_FAILURE_MESSAGES: Record<'hr' | 'en' | 'de', string> = {
+  hr: 'Primijetili smo poteškoće u vašem kodu, ali odmah istražujemo i pokušat ćemo sve popraviti umjesto vas. Pričekajte daljnje obavijesti — bacamo se na posao!',
+  en: "We noticed a hiccup in your code, but we're digging into it and will try to fix it for you. Sit tight for further updates — we're on it!",
+  de: 'Wir haben ein Problem in deinem Code bemerkt, prüfen es sofort und versuchen es für dich zu beheben. Bitte warte auf weitere Updates – wir legen gleich los!',
+};
+
+function getFriendlyFailureMessage(locale?: string | null): string {
+  const normalized = normalizeSupportedLocale(locale);
+  return FRIENDLY_FAILURE_MESSAGES[normalized] ?? FRIENDLY_FAILURE_MESSAGES.en;
+}
+
+async function notifyBuildFailureAdmins(opts: {
+  buildId: string;
+  reason: string;
+  error: any;
+  meta?: BuildInfoMetadata;
+  llmApiKey?: string;
+  customAssets?: { name: string; path: string }[];
+}): Promise<void> {
+  const { buildId, reason, error, meta, llmApiKey, customAssets } = opts;
+  try {
+    const subjectParts = ['Build failed', meta?.appTitle || '', `#${meta?.listingId || '?'}`]
+      .map((part) => part && part.trim())
+      .filter(Boolean);
+    const subject = `[bundle-worker] ${subjectParts.join(' · ') || buildId}`;
+    const lines: string[] = [];
+    lines.push(`Build ID: ${buildId}`);
+    if (meta?.listingId) lines.push(`Listing ID: ${meta.listingId}`);
+    if (meta?.slug) lines.push(`Slug: ${meta.slug}`);
+    if (meta?.appTitle) lines.push(`Naslov: ${meta.appTitle}`);
+    if (meta?.creatorLanguage) lines.push(`Creator lang: ${meta.creatorLanguage}`);
+    if (meta?.authorUid) lines.push(`Author UID: ${meta.authorUid}`);
+    if (meta?.authorName) lines.push(`Author name: ${meta.authorName}`);
+    if (meta?.authorHandle) lines.push(`Author handle: @${meta.authorHandle}`);
+    if (meta?.authorEmail) lines.push(`Author email: ${meta.authorEmail}`);
+    if (meta?.submitterUid && meta.submitterUid !== meta.authorUid) {
+      lines.push(`Submitted by UID: ${meta.submitterUid}`);
+    }
+    if (meta?.submitterEmail && meta.submitterEmail !== meta.authorEmail) {
+      lines.push(`Submitted by email: ${meta.submitterEmail}`);
+    }
+    lines.push(`LLM API key supplied: ${llmApiKey ? 'yes' : 'no'}`);
+    if (customAssets?.length) {
+      lines.push(`Custom assets: ${customAssets.length} (${customAssets.map((a) => a.name).join(', ')})`);
+    }
+    lines.push('');
+    lines.push(`Error: ${reason}`);
+    if (error?.stack) {
+      lines.push('');
+      lines.push('Stack trace:');
+      lines.push(error.stack);
+    }
+    await notifyAdmins(subject, lines.join('\n'));
+  } catch (notifyErr) {
+    console.warn('[bundle-worker] Failed to notify admins about build failure', { buildId, notifyErr });
   }
 }
 
@@ -538,8 +598,117 @@ async function ensureQueue(): Promise<Queue | null> {
   return bundleBuildQueue;
 }
 
+const AI_FIX_JS_EXTENSIONS = new Set(['.tsx', '.jsx', '.ts', '.js']);
+const AI_FIX_HTML_EXTENSIONS = new Set(['.html', '.htm']);
+const REACT_ATTR_ALIASES: Record<string, string> = {
+  className: 'class',
+  htmlFor: 'for',
+};
+
+function escapeHtmlAttributeValue(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\r?\n|\r/g, ' ')
+    .trim();
+}
+
+function normalizeTemplateLiteral(literal: string): { literal: string; expressions: string[] } {
+  const expressions: string[] = [];
+  const withoutExpressions = literal.replace(/\$\{([^}]*)\}/g, (_, expr) => {
+    const trimmed = (expr || '').trim();
+    if (trimmed) expressions.push(trimmed);
+    return '';
+  });
+  const normalized = withoutExpressions.replace(/\s+/g, ' ').trim();
+  return { literal: normalized, expressions };
+}
+
+function toDataAttrKey(name: string): string {
+  const dashed = name
+    .replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)
+    .replace(/[^a-z0-9:-]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return dashed || 'attr';
+}
+
+function fixReactLikeAttributesInTag(tag: string): { tag: string; changed: boolean } {
+  let updated = tag;
+  let changed = false;
+
+  updated = updated.replace(/(^|[\s"'`])(className|htmlFor)(?=\s*=)/g, (match, prefix, attr) => {
+    changed = true;
+    return `${prefix}${REACT_ATTR_ALIASES[attr] ?? attr}`;
+  });
+
+  const doubleBraceRe = /([A-Za-z_:][\w:.-]*)\s*=\s*{{([\s\S]*?)}}/g;
+  updated = updated.replace(doubleBraceRe, (match, rawName, expr) => {
+    changed = true;
+    const mapped = REACT_ATTR_ALIASES[rawName] ?? rawName;
+    return `${mapped}="${escapeHtmlAttributeValue(expr)}"`;
+  });
+
+  const singleExprRe = /([A-Za-z_:][\w:.-]*)\s*=\s*{\s*([\s\S]*?)\s*}/g;
+  updated = updated.replace(singleExprRe, (match, rawName, expr) => {
+    const mapped = REACT_ATTR_ALIASES[rawName] ?? rawName;
+    const trimmed = expr.trim();
+    if (!trimmed) {
+      changed = true;
+      return `${mapped}=""`;
+    }
+    const firstChar = trimmed[0];
+    if ((firstChar === '"' || firstChar === "'") && trimmed.endsWith(firstChar)) {
+      changed = true;
+      const inner = trimmed.slice(1, -1);
+      return `${mapped}="${escapeHtmlAttributeValue(inner)}"`;
+    }
+    if (firstChar === '`' && trimmed.endsWith('`')) {
+      changed = true;
+      const inner = trimmed.slice(1, -1);
+      const { literal, expressions } = normalizeTemplateLiteral(inner);
+      let replacement = `${mapped}="${escapeHtmlAttributeValue(literal)}"`;
+      if (expressions.length) {
+        replacement += ` data-ai-${toDataAttrKey(mapped)}-expr="${escapeHtmlAttributeValue(
+          expressions.join('; '),
+        )}"`;
+      }
+      return replacement;
+    }
+    if (/^(true|false|null|undefined|\d+(\.\d+)?)/i.test(trimmed)) {
+      changed = true;
+      return `${mapped}="${escapeHtmlAttributeValue(trimmed)}"`;
+    }
+    changed = true;
+    const dataAttr = `data-ai-${toDataAttrKey(mapped)}-expr`;
+    return `${dataAttr}="${escapeHtmlAttributeValue(trimmed)}"`;
+  });
+
+  return { tag: updated, changed };
+}
+
+function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boolean } {
+  let mutated = false;
+  const output = html.replace(/<[^>]+>/g, (segment) => {
+    const trimmed = segment.trimStart();
+    if (
+      !trimmed.startsWith('<') ||
+      /^<\s*\/.*/.test(trimmed) ||
+      /^<\s*!/.test(trimmed) ||
+      /^<\s*\?/.test(trimmed)
+    ) {
+      return segment;
+    }
+    const { tag, changed } = fixReactLikeAttributesInTag(segment);
+    if (changed) mutated = true;
+    return tag;
+  });
+  return { output, changed: mutated };
+}
+
 async function fixCommonAiErrors(projectDir: string) {
-  const exts = new Set(['.tsx', '.jsx', '.ts', '.js']);
   async function walk(dir: string) {
     const entries = await fs.readdir(dir, { withFileTypes: true });
     for (const entry of entries) {
@@ -549,15 +718,21 @@ async function fixCommonAiErrors(projectDir: string) {
         await walk(abs);
       } else {
         const ext = path.extname(entry.name).toLowerCase();
-        if (exts.has(ext)) {
-          let content = await fs.readFile(abs, 'utf8');
-          let changed = false;
+        const isScriptLike = AI_FIX_JS_EXTENSIONS.has(ext);
+        const isHtmlLike = AI_FIX_HTML_EXTENSIONS.has(ext);
+        if (!isScriptLike && !isHtmlLike) {
+          continue;
+        }
 
+        let content = await fs.readFile(abs, 'utf8');
+        let changed = false;
+
+        if (isScriptLike) {
           // Fix 1: Adjacent JSX elements in object property without Fragment
-          const regex =
+          const adjacentJsxRegex =
             /((?:['"][^'"]+['"]|[\w$]+)\s*:\s*)(\(?\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(\s*\)?)(,|})/g;
           let next = content.replace(
-            regex,
+            adjacentJsxRegex,
             (match, key, before, nodes, after, suffix) => {
               const trimmedNodes = (nodes as string).trimStart();
               if (trimmedNodes.startsWith('<>') || trimmedNodes.startsWith('<React.Fragment')) {
@@ -577,11 +752,19 @@ async function fixCommonAiErrors(projectDir: string) {
             content = next;
             changed = true;
           }
+        }
 
-          if (changed) {
-            console.log(`[bundle-worker] Fixed AI syntax/path error in ${abs}`);
-            await fs.writeFile(abs, content, 'utf8');
+        if (isHtmlLike) {
+          const sanitized = sanitizeReactSyntaxInHtml(content);
+          if (sanitized.changed) {
+            content = sanitized.output;
+            changed = true;
           }
+        }
+
+        if (changed) {
+          console.log(`[bundle-worker] Fixed AI syntax/path error in ${abs}`);
+          await fs.writeFile(abs, content, 'utf8');
         }
       }
     }
@@ -949,8 +1132,29 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
         } catch (err: any) {
           console.error(`[bundle-worker] Job ${buildId} failed:`, err);
           const reason = err?.message || 'Unknown error';
-          await updateBuild(buildId, { state: 'failed', progress: 100, error: reason });
-          sseEmitter.emit(buildId, 'final', { status: 'failed', reason, buildId });
+          const meta = await getBuildData(buildId);
+          const friendly = getFriendlyFailureMessage(meta?.creatorLanguage);
+          await updateBuild(buildId, {
+            state: 'failed',
+            progress: 100,
+            error: reason,
+            publicMessage: friendly,
+          });
+          await notifyBuildFailureAdmins({
+            buildId,
+            reason,
+            error: err,
+            meta,
+            llmApiKey,
+            customAssets,
+          });
+          sseEmitter.emit(buildId, 'final', {
+            status: 'failed',
+            reason: friendly,
+            detailReason: reason,
+            buildId,
+            listingId: meta?.listingId,
+          });
         }
       },
       { connection: queueConnection as any }

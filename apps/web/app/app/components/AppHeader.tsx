@@ -50,29 +50,29 @@ export default function AppHeader({ details }: AppHeaderProps) {
                         </h1>
                         {isNew && (
                             <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold animate-pulse shadow-lg shadow-emerald-500/30">
-                                NEW
+                                {tApp('AppDetails.badges.new', undefined, 'NEW')}
                             </span>
                         )}
                         {isHot && (
                             <span className="px-3 py-1 rounded-full bg-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-500/30">
-                                🔥 HOT
+                                🔥 {tApp('AppDetails.badges.hot', undefined, 'HOT')}
                             </span>
                         )}
                         {visibility === 'unlisted' && (
                             <span className="px-3 py-1 rounded-full bg-gray-700 text-white text-xs font-bold">
-                                UNLISTED
+                                {tApp('AppDetails.badges.unlisted', undefined, 'UNLISTED')}
                             </span>
                         )}
                         {appState === 'inactive' && (
                             <span className="px-3 py-1 rounded-full bg-red-600 text-white text-xs font-bold">
-                                INACTIVE
+                                {tApp('AppDetails.badges.inactive', undefined, 'INACTIVE')}
                             </span>
                         )}
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDark ? 'bg-zinc-800 text-zinc-300' : 'bg-gray-900 text-white'
                             }`}>
                             {typeof item.price === 'number' && item.price > 0
-                                ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price) + '/mo'
-                                : 'FREE'}
+                                ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price) + tApp('AppDetails.badges.perMonth', undefined, '/mo')
+                                : tApp('AppDetails.badges.free', undefined, 'FREE')}
                         </span>
                     </div>
 
@@ -90,7 +90,7 @@ export default function AppHeader({ details }: AppHeaderProps) {
                                     </Link>
                                 )}
                                 <span>
-                                    by{' '}
+                                    {tApp('AppDetails.header.by', undefined, 'by')}{' '}
                                     {authorHandle ? (
                                         <Link
                                             href={`/u/${authorHandle}`}
@@ -100,7 +100,7 @@ export default function AppHeader({ details }: AppHeaderProps) {
                                         </Link>
                                     ) : (
                                         <span className={`font-medium ${isDark ? 'text-zinc-200' : 'text-gray-900'}`}>
-                                            {item.author.name || 'Anonymous'}
+                                            {item.author.name || tApp('AppDetails.header.anonymous', undefined, 'Anonymous')}
                                         </span>
                                     )}
                                 </span>
@@ -117,7 +117,7 @@ export default function AppHeader({ details }: AppHeaderProps) {
                         {typeof item.playsCount === 'number' && (
                             <>
                                 <span className="opacity-50">•</span>
-                                <span>Plays: {item.playsCount}</span>
+                                <span>{tApp('AppDetails.header.plays', undefined, 'Plays:')} {item.playsCount}</span>
                             </>
                         )}
                     </div>
@@ -129,10 +129,10 @@ export default function AppHeader({ details }: AppHeaderProps) {
                         onClick={toggleLike}
                         disabled={likeBusy}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all duration-200 ${liked
-                                ? 'bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20'
-                                : isDark
-                                    ? 'bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                            ? 'bg-red-500/10 border-red-500/50 text-red-500 hover:bg-red-500/20'
+                            : isDark
+                                ? 'bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
                             } ${likeBusy ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         <svg className="w-5 h-5" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
@@ -150,7 +150,7 @@ export default function AppHeader({ details }: AppHeaderProps) {
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <polygon points="5 3 19 12 5 21 5 3" />
                                 </svg>
-                                {tApp('playNow')}
+                                {tApp('AppDetails.header.playNow', undefined, 'Play Now')}
                             </span>
                         </button>
                     ) : item.price && !allowed ? (
@@ -163,7 +163,7 @@ export default function AppHeader({ details }: AppHeaderProps) {
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <polygon points="5 3 19 12 5 21 5 3" />
                                 </svg>
-                                {tApp('playNow')}
+                                {tApp('AppDetails.header.playNow', undefined, 'Play Now')}
                             </span>
                         </button>
                     ) : (
@@ -176,7 +176,7 @@ export default function AppHeader({ details }: AppHeaderProps) {
                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <polygon points="5 3 19 12 5 21 5 3" />
                                 </svg>
-                                {tApp('playNow')}
+                                {tApp('AppDetails.header.playNow', undefined, 'Play Now')}
                             </span>
                         </button>
                     )}
@@ -184,10 +184,10 @@ export default function AppHeader({ details }: AppHeaderProps) {
                     <button
                         onClick={copyLink}
                         className={`px-4 py-2.5 rounded-full border transition-all duration-200 ${copySuccess
-                                ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500'
-                                : isDark
-                                    ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-300'
-                                    : 'border-gray-300 hover:bg-gray-50 text-gray-700'
+                            ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500'
+                            : isDark
+                                ? 'border-zinc-700 hover:bg-zinc-800 text-zinc-300'
+                                : 'border-gray-300 hover:bg-gray-50 text-gray-700'
                             }`}
                     >
                         {copySuccess ? (
@@ -195,14 +195,14 @@ export default function AppHeader({ details }: AppHeaderProps) {
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
-                                Copied!
+                                {tApp('AppDetails.actions.copied', undefined, 'Copied!')}
                             </span>
                         ) : (
                             <span className="flex items-center gap-2">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
-                                Copy Link
+                                {tApp('AppDetails.actions.copyLink', undefined, 'Copy Link')}
                             </span>
                         )}
                     </button>
@@ -212,30 +212,30 @@ export default function AppHeader({ details }: AppHeaderProps) {
                             <Link
                                 href={`/create?slug=${item.slug}`}
                                 className={`px-4 py-2.5 rounded-full border transition-all duration-200 ${isDark
-                                        ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
-                                Update Version
+                                {tApp('AppDetails.actions.updateVersion', undefined, 'Update Version')}
                             </Link>
                             <button
                                 onClick={onToggleState}
                                 className={`px-4 py-2.5 rounded-full border transition-all duration-200 ${isDark
-                                        ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
-                                {appState === 'active' ? 'Deactivate' : 'Activate'}
+                                {appState === 'active' ? tApp('AppDetails.actions.deactivate', undefined, 'Deactivate') : tApp('AppDetails.actions.activate', undefined, 'Activate')}
                             </button>
                             <button
                                 onClick={() => setShowReport(true)}
                                 className={`px-4 py-2.5 rounded-full border transition-all duration-200 ${isDark
-                                        ? 'border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
-                                        : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                                    ? 'border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
+                                    : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100'
                                     }`}
                                 title="Report an issue"
                             >
-                                Report Issue
+                                {tApp('AppDetails.actions.reportIssue', undefined, 'Report Issue')}
                             </button>
                         </>
                     )}

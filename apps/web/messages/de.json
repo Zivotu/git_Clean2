@@ -1,11 +1,11 @@
-{
+﻿{
   "Nav": {
     "publishApp": "App veröffentlichen",
     "shortVideo": "Thesara Kurzvideo",
     "myProjects": "Meine Projekte",
     "myCreators": "Meine Creators",
     "goPro": "Go Pro",
-    "adsOff": "Werbung Aus",
+    "adsOff": "Werbung aus",
     "goGold": "Go Gold",
     "browseApps": "Apps durchsuchen",
     "login": "Anmelden",
@@ -25,8 +25,8 @@
     "launchBadge": "Live seit 17.11.2025.",
     "earlyAccessBadge": "GRATIS, MACH MIT!",
     "earlyAccessDays": "noch {days} Tage",
-    "earlyAccessTooltip": "Registriere dich und erhalte 30 Tage Gold + Keine Werbung gratis. Kein Haken - veroeffentliche deine App solange alles freigeschaltet ist.",
-    "earlyAccessCountdownUnit": "tage",
+    "earlyAccessTooltip": "Registriere dich und erhalte 30 Tage Gold + Keine Werbung gratis. Kein Haken – veröffentliche deine App, solange alles freigeschaltet ist.",
+    "earlyAccessCountdownUnit": "Tage",
     "earlyAccessCountdownLabel": "Countdown",
     "goldBadge": "Gold-Mitglied",
     "noAdsBadge": "Keine Werbung",
@@ -36,7 +36,7 @@
     "feedback": "Ihre Vorschläge",
     "docs": "Dokumentation",
     "tutorials": "Tutorials",
-    "api": "API Referenz",
+    "api": "API-Referenz",
     "language": "Sprache",
     "admin": "Admin"
   },
@@ -55,7 +55,7 @@
     "errorGeneric": "Wir konnten die Anfrage nicht senden. Bitte versuchen Sie es erneut."
   },
   "BugGuardian": {
-    "title": "Hallo! Ich bin der Spinnenwächter von Thesara.space. 🕷",
+    "title": "Hallo! Ich bin der Spinnenwächter von Thesara.space. 🕷️",
     "line1": "Wir befinden uns gerade in der Testing-Phase, daher schleichen meine kleinen Käferfreunde und ich herum und verstecken uns vor den Entwicklern.",
     "line2": "Wenn dir ein seltsamer Sprung, Text oder ein Button auffällt, der nicht funktioniert, ist wahrscheinlich einer der Käfer ausgebüxt.",
     "line3": "Zeig uns ruhig dem Team – damit hilfst du ihnen, die Seite noch besser zu machen.",
@@ -64,12 +64,12 @@
   },
   "About": {
     "title": "Über Thesara",
-    "subtitle": "Ein Garagenprojekt, das heute eine Heimat für KI-Min-Apps und Spiele wird.",
+    "subtitle": "Ein Garagenprojekt, das heute eine Heimat für KI-Mini-Apps und Spiele wird.",
     "healthTitle": "API-Status",
     "loading": "Wird geprüft...",
     "errorDefault": "Abrufen der Health-Daten fehlgeschlagen.",
     "garageTitle": "Projekt aus der Garage",
-    "garageBody": "Thesara entstand als kleines Garagenprojekt, in dem wir Werkzeuge für das Veröffentlichen von KI-Apps und -Spielen zusammengeschraubt haben. Wir wachsen Schritt für Schritt, Build für Build, Creator für Creator, und behalten dabei den hands-on Ansatz bei.",
+    "garageBody": "Thesara entstand als kleines Garagenprojekt, in dem wir Werkzeuge für das Veröffentlichen von KI-Apps und -Spielen zusammengeschraubt haben. Wir wachsen Schritt für Schritt, Build für Build, Creator für Creator, und behalten dabei den Hands-on-Ansatz bei.",
     "comingSoon": "Bald teilen wir hier einen liebevollen Text über uns, unser Team und unsere Vision – bleib dran."
   },
   "Search": {
@@ -153,12 +153,12 @@
   },
   "Creators": {
     "SimpleGuide": {
-      "title": "Einfache Anleitung fuer Creator",
-      "cta": "Veroeffentlichen",
+      "title": "Einfache Anleitung für Creator",
+      "cta": "Veröffentlichen",
       "steps": {
-        "1": "Schreibe deine App in deinem Lieblings-LLM (ChatGPT, Kimi, Google AI Studio oder jeder andere Assistent).",
+        "1": "Schreibe deine App in deinem Lieblings-LLM (ChatGPT, Kimi, Google AI Studio oder einem anderen Assistenten).",
         "2": "Kopiere den Code oder lade das Bundle aus dem Assistenten in unseren Editor hoch.",
-        "3": "Veroeffentliche die App mit einem Klick auf Publish.",
+        "3": "Veröffentliche die App mit einem Klick auf Publish.",
         "4": "Passe Optik, Beschreibung und Titel an, damit alles perfekt aussieht.",
         "5": "Freu dich darauf, wie andere Nutzer deine App, dein Spiel, deine Simulation oder dein Quiz ausprobieren."
       }
@@ -349,7 +349,7 @@
       "slotsLoading": "Lade Slot-Konfiguration …",
       "slotsLoadFailed": "Slot-Konfiguration konnte nicht geladen werden.",
       "slotsSaveFailed": "Slot-Konfiguration konnte nicht gespeichert werden.",
-      "noId": "Kein Ad-Unit-ID hinterlegt",
+      "noId": "Keine Ad-Unit-ID hinterlegt",
       "slotsTable": {
         "location": "Platzierung",
         "envVar": "Env-Variable",
@@ -424,7 +424,7 @@
     },
     "AdsConsent": {
       "title": "Cookies & optionale Daten",
-      "description": "Wir verwenden notwendige Cookies für Anmeldung und Sicherheit. Optionale Cookies ermöglichen Analysen und personalisierte Google AdSense-Werbung - du entscheidest.",
+      "description": "Wir verwenden notwendige Cookies für Anmeldung und Sicherheit. Optionale Cookies ermöglichen Analysen und personalisierte Google-AdSense-Werbung – du entscheidest.",
       "items.essential": "Notwendige Cookies merken dich angemeldet, speichern die Sprache und schützen Zahlungen.",
       "items.analytics": "Anonyme Analysen zeigen uns, welche Funktionen funktionieren und wo Ausfälle auftreten.",
       "items.ads": "AdSense-Cookies bestimmen, ob wir personalisierte oder nur kontextuelle Anzeigen zeigen.",
@@ -689,11 +689,11 @@
         },
         "2": {
           "title": "Hol dir den generierten Code oder das ZIP",
-          "text": "Der Assistent liefert dir eine fertige Web-App, die du als Code oder Bundle herunterlaedst."
+          "text": "Der Assistent liefert dir eine fertige Web-App, die du als Code oder Bundle herunterlädst."
         },
         "3": {
-          "title": "Veroeffentliche auf Thesara in wenigen Klicks",
-          "text": "Upload, bestaetigen und Play - deine App lebt auf Thesara, gratis oder mit Preis von dir."
+          "title": "Veröffentliche auf Thesara in wenigen Klicks",
+          "text": "Upload, bestätigen und Play – deine App lebt auf Thesara, gratis oder mit Preis von dir."
         }
       },
       "storage": {
@@ -708,7 +708,7 @@
           "text": "Aktiviere Rooms, wenn mehrere Personen deine App nutzen sollen, aber jede Session privat bleiben soll."
         }
       },
-      "footer": "AI-Fans - stell es dir vor, chatte mit deinem Modell, veroeffentliche hier und lass andere spielen.",
+      "footer": "AI-Fans – stell es dir vor, chatte mit deinem Modell, veröffentliche hier und lass andere spielen.",
       "footerHighlight": "Viel Erfolg mit deiner ersten Thesara-App!"
     },
     "noGraphic": "Keine Grafik",
@@ -1027,11 +1027,19 @@
     "login": "Anmelden",
     "tag_Igre": "Spiele",
     "tag_Kvizovi": "Quizze",
-    "tag_Učenje": "Lernen",
+    "tag_UÄenje": "Lernen",
     "tag_Alati": "Werkzeuge",
-    "tag_Business": "Business",
     "tag_Zabava": "Unterhaltung",
-    "tag_Ostalo": "Sonstiges"
+    "tag_Ostalo": "Sonstiges",
+    "tagsLabel": "Tags (Kategorien)",
+    "tagsHint": "Wählen Sie bis zu 2 Tags",
+    "tag_games": "Spiele",
+    "tag_quiz": "Quiz",
+    "tag_learning": "Lernen",
+    "tag_tools": "Werkzeuge",
+    "tag_business": "Geschäft",
+    "tag_entertainment": "Unterhaltung",
+    "tag_other": "Sonstiges"
   },
   "App": {
     "notFound": "App nicht gefunden",
@@ -1049,7 +1057,7 @@
     "previewTitleHint": "Wird auf einem halbtransparenten Banner über der ausgewählten Grafik angezeigt.",
     "tag_Igre": "Spiele",
     "tag_Kvizovi": "Quizze",
-    "tag_Učenje": "Lernen",
+    "tag_UÄenje": "Lernen",
     "tag_Alati": "Tools",
     "tag_Business": "Business",
     "tag_Zabava": "Unterhaltung",
@@ -1177,7 +1185,8 @@
       "submitting": "Senden...",
       "sent": "Danke! Deine Bewertung wurde empfangen.",
       "error": "Wir können die Bewertung derzeit nicht speichern. Bitte versuche es erneut."
-    }
+    },
+    "categoriesLabel": "Kategorien"
   },
   "Rooms": {
     "headerActiveLabel": "Aktiver Raum",
@@ -1223,10 +1232,10 @@
       "title": "Repository-Preis",
       "locked": "Die Preisfestlegung ist gesperrt, bis Sie das Stripe-Onboarding abgeschlossen haben.",
       "setupStripe": "Auszahlungen einrichten (Stripe)",
-      "allAccess": "All‑Access {price}/Monat",
+      "allAccess": "All-Access {price}/Monat",
       "lastUpdated": "Letzte Änderung: {date}",
       "edit": "Bearbeiten",
-      "description": "Legen Sie einen monatlichen Preis für All‑Access (Zugriff auf alle Ihre Apps) fest. Wenn Sie das Feld leer lassen oder 0 eingeben, ist All‑Access deaktiviert.",
+      "description": "Legen Sie einen monatlichen Preis für All-Access (Zugriff auf alle Ihre Apps) fest. Wenn Sie das Feld leer lassen oder 0 eingeben, ist All-Access deaktiviert.",
       "priceLabel": "Preis (USD)",
       "save": "Speichern",
       "saving": "Speichern…",
@@ -1253,7 +1262,7 @@
     "deleteError": "Löschen der App fehlgeschlagen",
     "actions": {
       "edit": "Bearbeiten",
-      "delete": "L\u00f6schen"
+      "delete": "Löschen"
     },
     "notPublished": "Die App muss genehmigt werden, bevor sie ausgeführt werden kann.",
     "linkCopied": "Link in die Zwischenablage kopiert!",
@@ -1451,9 +1460,9 @@
   "UserProfile": {
     "notFound": {
       "title": "Profil nicht gefunden",
-      "message": "Wir konnten kein Profil f?r @{username} finden",
-      "description": "Wir konnten kein Profil f?r @{username} finden",
-      "backHome": "Zur?ck zur Startseite"
+      "message": "Wir konnten kein Profil für @{username} finden",
+      "description": "Wir konnten kein Profil für @{username} finden",
+      "backHome": "Zurück zur Startseite"
     },
     "stats": {
       "apps": "Apps",
@@ -1465,8 +1474,8 @@
     "following": "Gefolgt",
     "projects": "Projekte",
     "noProjects": {
-      "title": "Noch keine ?ffentlichen Apps",
-      "message": "Sobald dieser Creator etwas ver?ffentlicht, erscheint es hier."
+      "title": "Noch keine öffentlichen Apps",
+      "message": "Sobald dieser Creator etwas veröffentlicht, erscheint es hier."
     },
     "share": {
       "label": "Profil teilen",
@@ -1475,9 +1484,8 @@
       "shared": "Teilen gestartet",
       "error": "Profil-Link konnte nicht kopiert werden.",
       "copy": "Link kopieren",
-      "native": "?ber Ger?t teilen",
-      "networks": "Teilen auf",
-      "targets": {
+      "native": "Über Gerät teilen",
+      "networks": {
         "facebook": "Facebook",
         "instagram": "Instagram",
         "twitter": "X (Twitter)",

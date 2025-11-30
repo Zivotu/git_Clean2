@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 function classNames(...classes: Array<string | false | undefined>) {
     return classes.filter(Boolean).join(' ');
@@ -147,7 +148,7 @@ export function LoginPromptModal({ open, onClose }: { open: boolean; onClose: ()
                 <p className="text-gray-600 mb-6">Please sign in to continue.</p>
                 <div className="flex flex-col gap-3">
                     <button
-                        onClick={() => router.push('/login')}
+                        onClick={() => sendToLogin(router)}
                         className="w-full py-2.5 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all"
                     >
                         Sign In

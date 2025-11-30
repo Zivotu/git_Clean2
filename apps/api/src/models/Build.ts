@@ -182,6 +182,8 @@ export interface BuildRecord {
   timeline: Array<{ state: BuildState; at: number }>;
   createdAt: number;
   error?: string;
+  publicMessage?: string;
+  creatorLanguage?: string;
   reasons?: string[];
   llmAttempts?: number;
   llmAttemptWindowStart?: number;
@@ -266,7 +268,9 @@ export async function updateBuild(
         'state'
       | 'progress'
       | 'error'
+      | 'publicMessage'
       | 'reasons'
+      | 'creatorLanguage'
       | 'llmReportPath'
       | 'networkPolicy'
       | 'networkPolicyReason'
@@ -405,13 +409,44 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
   };
 }
 
-// Lightweight metadata persisted by publish route for worker to read
-export async function getBuildData(id: string): Promise<{ listingId?: string } | undefined> {
+export interface BuildInfoMetadata {
+  listingId?: string;
+  creatorLanguage?: string;
+  appTitle?: string;
+  slug?: string;
+  authorUid?: string;
+  authorName?: string;
+  authorHandle?: string;
+  authorEmail?: string;
+  submitterUid?: string;
+  submitterEmail?: string;
+  submittedAt?: number;
+}
+
+const BUILD_INFO_FILENAME = 'build-info.json';
+
+async function readBuildInfoFile(id: string): Promise<BuildInfoMetadata> {
   try {
     const dir = getBuildDir(id);
-    const raw = await fs.readFile(path.join(dir, 'build-info.json'), 'utf8');
-    const data = JSON.parse(raw);
-    return data as { listingId?: string };
+    const raw = await fs.readFile(path.join(dir, BUILD_INFO_FILENAME), 'utf8');
+    return JSON.parse(raw) as BuildInfoMetadata;
+  } catch {
+    return {};
+  }
+}
+
+export async function writeBuildInfo(id: string, patch: BuildInfoMetadata): Promise<void> {
+  const dir = getBuildDir(id);
+  await fs.mkdir(dir, { recursive: true });
+  const current = await readBuildInfoFile(id);
+  const next: BuildInfoMetadata = { ...current, ...patch };
+  await fs.writeFile(path.join(dir, BUILD_INFO_FILENAME), JSON.stringify(next, null, 2), 'utf8');
+}
+
+// Lightweight metadata persisted by publish routes for worker to read
+export async function getBuildData(id: string): Promise<BuildInfoMetadata | undefined> {
+  try {
+    return await readBuildInfoFile(id);
   } catch {
     return undefined;
   }

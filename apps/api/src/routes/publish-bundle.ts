@@ -4,9 +4,8 @@ import fs from 'node:fs/promises';
 import extract from 'extract-zip';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyBaseLogger } from 'fastify';
 import { getConfig } from '../config.js';
-import { getBuildDir } from '../paths.js';
 import { readApps, writeApps, listEntitlements, updateApp, db } from '../db.js';
-import { initBuild } from '../models/Build.js';
+import { initBuild, updateBuild, writeBuildInfo } from '../models/Build.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import { enqueueBundleBuild } from '../workers/bundleBuildWorker.js';
 import { computeNextVersion } from '../lib/versioning.js';
@@ -18,6 +17,9 @@ import {
   normalizeCustomAssetList,
 } from '../lib/customAssets.js';
 import type { CustomAsset } from '../types.js';
+import { detectPreferredLocale } from '../lib/locale.js';
+import { detectStorageUsageInCode } from '../lib/storageUsage.js';
+import { getStorageWarning } from '../lib/messages.js';
 
 const AI_MARKERS = [
   'generativelanguage.googleapis.com',
@@ -40,18 +42,30 @@ const AI_SCAN_EXTENSIONS = new Set([
 ]);
 const MAX_SCAN_FILE_BYTES = 512 * 1024;
 
-async function detectAiMarkers(
+function parseBooleanFlag(value: unknown): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return false;
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+}
+
+interface BundleAnalysis {
+  aiMarker: string | null;
+  storageUsed: boolean;
+}
+
+async function analyzeBundleZip(
   zipPath: string,
   tempDir: string,
   logger: FastifyBaseLogger,
-): Promise<string | null> {
+): Promise<BundleAnalysis> {
   const inspectDir = path.join(tempDir, 'inspect');
   try {
     await extract(zipPath, { dir: inspectDir });
   } catch (err) {
     logger.warn({ err }, 'publish-bundle:ai_scan_extract_failed');
-    return null;
+    return { aiMarker: null, storageUsed: false };
   }
+  let storageUsed = false;
 
   async function walk(dir: string): Promise<string | null> {
     const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -72,6 +86,9 @@ async function detectAiMarkers(
       } catch {
         continue;
       }
+      if (!storageUsed && detectStorageUsageInCode(contents)) {
+        storageUsed = true;
+      }
       for (const marker of AI_MARKERS) {
         if (contents.includes(marker)) {
           return marker;
@@ -82,7 +99,8 @@ async function detectAiMarkers(
   }
 
   try {
-    return await walk(inspectDir);
+    const aiMarker = await walk(inspectDir);
+    return { aiMarker, storageUsed };
   } finally {
     await fs.rm(inspectDir, { recursive: true, force: true });
   }
@@ -262,6 +280,7 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     const appId = (data.fields.id as any)?.value;
     const llmApiKeyRaw = ((data.fields.llmApiKey as any)?.value || '').toString().trim();
     const llmApiKey = llmApiKeyRaw ? llmApiKeyRaw.slice(0, 400) : undefined;
+    const skipStorageWarning = parseBooleanFlag((data.fields.skipStorageWarning as any)?.value);
 
     // 2. Authentication & Authorization (copied from publish.ts)
     const apps = await readApps();
@@ -288,6 +307,8 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     }
 
     const buildId = randomUUID();
+    const claims: any = (req as any).authUser?.claims || {};
+    const creatorLocale = detectPreferredLocale(req.headers['accept-language']);
 
     // 3. Save the uploaded ZIP file to a temporary location
     // TODO: Define a proper temporary directory structure
@@ -318,18 +339,28 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       }
     }
 
-    if (!llmApiKey) {
-      const marker = await detectAiMarkers(zipPath, tempDir, req.log);
-      if (marker) {
-        await fs.rm(tempDir, { recursive: true, force: true });
-        return reply.code(400).send({
-          ok: false,
-          error: 'llm_api_key_missing',
-          message:
-            'Ovaj bundle sadrži AI pozive (npr. prema Gemini API-ju), ali API ključ nije unesen. Dodajte ključ prije objave.',
-          marker,
-        });
-      }
+    const analysis = await analyzeBundleZip(zipPath, tempDir, req.log);
+    if (!llmApiKey && analysis.aiMarker) {
+      await fs.rm(tempDir, { recursive: true, force: true });
+      return reply.code(400).send({
+        ok: false,
+        error: 'llm_api_key_missing',
+        message:
+          'Ovaj bundle sadrži AI pozive (npr. prema Gemini API-ju), ali API ključ nije unesen. Dodajte ključ prije objave.',
+        marker: analysis.aiMarker,
+      });
+    }
+    if (!analysis.storageUsed && !skipStorageWarning) {
+      const storageWarning = getStorageWarning(creatorLocale);
+      await fs.rm(tempDir, { recursive: true, force: true });
+      return reply.code(409).send({
+        ok: false,
+        error: 'storage_usage_missing',
+        code: 'storage_usage_missing',
+        message: storageWarning.message,
+        docsUrl: storageWarning.docsUrl,
+        canOverride: true,
+      });
     }
 
     // 4. Create DB records (similar to publish.ts)
@@ -353,19 +384,26 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     });
 
     await initBuild(buildId);
-
-    // Persist basic build info for the worker early so the worker can read
-    // listingId immediately after the job is dequeued. Writing before
-    // enqueue avoids a race where the worker starts before the listingId
-    // is available and emits a final event without it.
+    const authorUid = author?.uid || uid;
     try {
-      const dir = getBuildDir(buildId);
-      await fs.mkdir(dir, { recursive: true });
-      await fs.writeFile(
-        path.join(dir, 'build-info.json'),
-        JSON.stringify({ listingId: String(listingId) }, null, 2),
-        'utf8'
-      );
+      await updateBuild(buildId, { creatorLanguage: creatorLocale });
+    } catch (err) {
+      req.log?.warn?.({ err, buildId }, 'publish-bundle:set_creator_language_failed');
+    }
+
+    try {
+      await writeBuildInfo(buildId, {
+        listingId: String(listingId),
+        creatorLanguage: creatorLocale,
+        authorUid,
+        authorName: author?.name,
+        authorHandle: author?.handle,
+        authorEmail: claims.email,
+        submitterUid: uid,
+        submitterEmail: claims.email,
+        submittedAt: Date.now(),
+        appTitle: title || existing?.title,
+      });
     } catch (err) {
       req.log?.warn?.({ err, buildId }, 'publish-bundle:build_info_write_failed');
     }
@@ -452,6 +490,16 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
 
       await writeApps(apps);
       req.log.info({ buildId, listingId, slug }, 'publish-bundle:created');
+      try {
+        await writeBuildInfo(buildId, {
+          slug,
+          appTitle: title || existing?.title,
+          authorName: author?.name,
+          authorHandle: author?.handle,
+        });
+      } catch (err) {
+        req.log?.warn?.({ err, buildId }, 'publish-bundle:build_info_update_failed');
+      }
 
 
 

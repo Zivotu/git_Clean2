@@ -10,6 +10,7 @@ import { db, storage } from '@/lib/firebase';
 import { doc, updateDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'; // Added getDoc, collection, query, where, getDocs
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { PUBLIC_API_URL } from '@/lib/config';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 function Toast({
   message,
@@ -198,7 +199,7 @@ export default function SettingsPage() {
   }
 
   if (!user) {
-    router.push('/login');
+    sendToLogin(router);
     return null;
   }
 

@@ -128,10 +128,11 @@ async function handler(
     const rec = await readBuild(buildId);
     if (rec) {
       const status = normalizeStatus(rec.state);
+      const friendly = rec.publicMessage ?? rec.error ?? null;
       send('status', {
         buildId,
         status,
-        reason: rec.error ?? null,
+        reason: friendly,
         progress: rec.progress ?? 0,
       });
 
@@ -144,7 +145,7 @@ async function handler(
         send('final', {
           buildId,
           status,
-          reason: rec.error ?? null,
+          reason: friendly,
           listingId,
           progress: rec.progress ?? (status === 'success' ? 100 : undefined),
         });

@@ -31,6 +31,8 @@ import { getPlayUrl } from '@/lib/play';
 import readFileAsDataUrl from '@/lib/readFileAsDataUrl';
 import { PUBLIC_API_URL, PUBLIC_APPS_HOST } from '@/lib/config';
 import type { AccessMode, RoomsMode } from '@/lib/types';
+import { normalizeTags } from '@/lib/tags';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 // ------------------------------------------------------------------
 // Types
@@ -278,7 +280,7 @@ export function useAppDetails() {
             setPreviewError('');
 
             if (file.size > MAX_PREVIEW_SIZE_BYTES) {
-                setPreviewError(`${tApp('previewFileTooLarge')} ${maxPreviewMb}MB`);
+                setPreviewError(`${tApp('AppDetails.gallery.previewFileTooLarge')} ${maxPreviewMb}MB`);
                 setCustomPreview(null);
                 setPreviewChoice('preset');
                 if (previewInputRef.current) previewInputRef.current.value = '';
@@ -290,7 +292,7 @@ export function useAppDetails() {
                 setCustomPreview({ file, dataUrl });
                 setPreviewChoice('custom');
             } catch {
-                setPreviewError(tApp('previewFileReadFailed'));
+                setPreviewError(tApp('AppDetails.gallery.previewFileReadFailed'));
                 setCustomPreview(null);
                 setPreviewChoice('preset');
                 if (previewInputRef.current) previewInputRef.current.value = '';
@@ -396,7 +398,7 @@ export function useAppDetails() {
     const applySelectedPreview = useCallback(async () => {
         if (!item || !canEdit || previewBusy) return;
         if (previewChoice === 'custom' && !customPreview?.file) {
-            setPreviewError(tApp('previewSelectFileFirst'));
+            setPreviewError(tApp('AppDetails.gallery.previewSelectFileFirst'));
             return;
         }
 
@@ -418,9 +420,9 @@ export function useAppDetails() {
             }
             setImgVersion((v) => v + 1);
             setPreviewApplied(true);
-            setToast({ message: tApp('previewUploadSuccess'), type: 'success' });
+            setToast({ message: tApp('AppDetails.gallery.previewUploadSuccess'), type: 'success' });
         } catch (err: any) {
-            let message = tApp('previewUploadFailed');
+            let message = tApp('AppDetails.gallery.previewUploadFailed');
             if (err instanceof PreviewUploadError) {
                 message = err.message || message;
             } else if (err instanceof Error) {
@@ -515,7 +517,7 @@ export function useAppDetails() {
             handleFetchError(err, 'Failed to load custom assets');
             setCustomAssetError(
                 tApp(
-                    'customAssets.loadFailed',
+                    'AppDetails.customAssets.loadFailed',
                     undefined,
                     'Failed to load custom graphics. Please try again.',
                 ),
@@ -578,7 +580,7 @@ export function useAppDetails() {
                 });
                 if (res.status === 401) {
                     if (auth) await signOut(auth);
-                    router.push('/login');
+                    sendToLogin(router);
                     return;
                 }
                 if (res.status === 429) {
@@ -704,7 +706,12 @@ export function useAppDetails() {
 
                 const it: Listing | undefined = json.item;
                 if (it) {
-                    setItem(it);
+                    const normalizedTags = normalizeTags(it.tags, { fallbackToOther: false });
+                    const normalizedItem: Listing = {
+                        ...it,
+                        tags: normalizedTags,
+                    };
+                    setItem(normalizedItem);
                     setPreviewApplied(Boolean(it.previewUrl));
                     setTitle(it.title ?? '');
                     setDescription(it.description ?? '');
@@ -719,7 +726,7 @@ export function useAppDetails() {
                         setTrDe({ title: tr?.de?.title || '', description: tr?.de?.description || '' });
                         setTrHr({ title: tr?.hr?.title || '', description: tr?.hr?.description || '' });
                     } catch { }
-                    setTags(it.tags ?? []);
+                    setTags(normalizedTags);
                     setPrice(typeof it.price === 'number' ? String(it.price) : '');
                     setVisibility((it.visibility as any) ?? 'public');
                     setAccessMode((it.accessMode as any) ?? 'public');
@@ -1272,6 +1279,7 @@ export function useAppDetails() {
                 : typeof overrides.tags === 'string'
                     ? (overrides.tags as unknown as string).split(',').map(t => t.trim()).filter(Boolean)
                     : tags;
+        const normalizedSubmitTags = normalizeTags(parsedTags, { fallbackToOther: false });
 
         const norm = (s: string) => s.trim();
         const translations: Record<string, { title?: string; description?: string }> = {};
@@ -1334,7 +1342,7 @@ export function useAppDetails() {
             description,
             longDescription: trimmedLongDescription,
             screenshotUrls: normalizedScreens,
-            tags: parsedTags,
+            tags: normalizedSubmitTags,
             visibility,
             accessMode,
             maxConcurrentPins: maxPins,
@@ -1375,7 +1383,7 @@ export function useAppDetails() {
             }
             const json = await res.json();
             if (json?.ok) {
-                setItem(json.item);
+                setItem(json.item ? { ...json.item, tags: normalizeTags(json.item.tags, { fallbackToOther: false }) } : json.item);
                 if (typeof json.item?.price === 'number') setPrice(String(json.item.price));
                 if (overrides.visibility) setVisibility(overrides.visibility);
                 if (overrides.accessMode) setAccessMode(overrides.accessMode);
@@ -1385,7 +1393,7 @@ export function useAppDetails() {
                 setScreenshotUrls(normalizeScreenshotState(updatedScreens));
                 if (typeof overrides.title === 'string') setTitle(overrides.title);
                 if (typeof overrides.description === 'string') setDescription(overrides.description);
-                if (Array.isArray(overrides.tags)) setTags(overrides.tags);
+                if (Array.isArray(overrides.tags)) setTags(normalizeTags(overrides.tags, { fallbackToOther: false }));
                 if (typeof overrides.maxConcurrentPins === 'number') setMaxPins(overrides.maxConcurrentPins);
                 const updatedRoomsMode =
                     (json.item?.capabilities?.storage?.roomsMode as RoomsMode | undefined) ?? roomsMode;

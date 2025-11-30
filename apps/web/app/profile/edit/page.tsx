@@ -13,6 +13,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 function Toast({
   message,
@@ -150,7 +151,7 @@ export default function EditProfilePage() {
   }
 
   if (!user) {
-    router.push('/login');
+    sendToLogin(router);
     return null;
   }
 

@@ -766,7 +766,6 @@ export default function CreatePage() {
         try {
           const appId = deriveAppId(manifest.name || bundleFile.name);
           const form = new FormData();
-          form.append('file', bundleFile, bundleFile.name);
           form.append('title', manifest.name || bundleFile.name);
           form.append('description', manifest.description || '');
           form.append('visibility', 'public');
@@ -789,6 +788,8 @@ export default function CreatePage() {
           if (previewAttachment?.dataUrl) {
             form.append('preview', previewAttachment.dataUrl);
           }
+          // Append the ZIP last so Fastify's req.file() sees the metadata fields first.
+          form.append('file', bundleFile, bundleFile.name);
           const bundlePublish = await apiPost<{ ok?: boolean; buildId?: string; listingId?: string | number; slug?: string; error?: string; }>(
             '/publish/bundle',
             form,

@@ -1,5 +1,9 @@
+'use client';
+
 import Image from 'next/image';
+import Link from 'next/link';
 import React, { useState } from 'react';
+import { useLoginHref } from '@/hooks/useLoginHref';
 
 const StatusChip = ({ label, completed }: { label: string, completed: boolean }) => (
   <span className={`text-[10px] px-2 py-1 rounded border flex items-center gap-1 ${completed ? 'bg-emerald-100 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400' : 'bg-gray-100 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-600'}`}>
@@ -86,6 +90,7 @@ export default function CreateRedesign(props: any) {
     selectedTags = [],
     setSelectedTags,
   } = props;
+  const loginHref = useLoginHref();
 
   const [showRooms, setShowRooms] = useState(false);
   const [showTrans, setShowTrans] = useState(false);
@@ -699,17 +704,17 @@ export default function CreateRedesign(props: any) {
                     {!isSignedIn && (
                       <p className="text-xs text-red-600 dark:text-red-400 text-center">
                         {tCreate('mustSignIn')}{' '}
-                        <a href="/login" className="underline font-bold">
+                        <Link href={loginHref} className="underline font-bold">
                           {tCreate('login')}
-                        </a>
+                        </Link>
                       </p>
                     )}
                     {authError && (
                       <p className="text-xs text-red-600 dark:text-red-400 text-center">
                         {authError}{' '}
-                        <a href="/login" className="underline font-bold">
+                        <Link href={loginHref} className="underline font-bold">
                           {tCreate('login')}
-                        </a>
+                        </Link>
                       </p>
                     )}
                     {publishError && (

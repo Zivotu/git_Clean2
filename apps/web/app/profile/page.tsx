@@ -6,6 +6,7 @@ import { PUBLIC_API_URL } from '@/lib/config';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import Avatar from '@/components/Avatar';
+import { useLoginHref } from '@/hooks/useLoginHref';
 // Using global header from layout; no local header
 import { type Listing } from '@/components/AppCard';
 import { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
@@ -112,6 +113,7 @@ async function buildHeaders(withJson: boolean): Promise<Record<string, string>> 
 export default function ProfilePage() {
   const t = useT('Profile');
   const { user, loading } = useAuth();
+  const loginHref = useLoginHref();
   const [data, setData] = useState<ProfileData | null>(null);
   const [busy, setBusy] = useState(false);
   const [userInfo, setUserInfo] = useState<any | null>(null);
@@ -800,7 +802,7 @@ export default function ProfilePage() {
     return (
       <main className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-gray-600">Sign in to view profile</p>
-        <Link href="/login" className={buttonVariants({})}>
+        <Link href={loginHref} className={buttonVariants({})}>
           Sign In
         </Link>
       </main>

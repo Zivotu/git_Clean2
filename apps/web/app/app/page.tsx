@@ -43,13 +43,13 @@ function AppDetailClient() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <p className={`text-lg font-medium ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
-          {fetchError === 'failed_to_load' ? 'Failed to load app details' : 'App not found'}
+          {fetchError === 'failed_to_load' ? tApp('AppDetails.modals.loadError', undefined, 'Failed to load app details') : tApp('AppDetails.modals.notFound', undefined, 'App not found')}
         </p>
         <button
           onClick={() => window.location.reload()}
           className="rounded-full bg-emerald-600 px-6 py-2 text-white hover:bg-emerald-700"
         >
-          Retry
+          {tApp('AppDetails.modals.retry', undefined, 'Retry')}
         </button>
       </div>
     );
@@ -59,7 +59,7 @@ function AppDetailClient() {
   const isNew = false; // Logic for new apps can be added if needed
   const formattedPrice = typeof item.price === 'number' && item.price > 0
     ? new Intl.NumberFormat('hr-HR', { style: 'currency', currency: 'EUR' }).format(item.price)
-    : 'Besplatno';
+    : tApp('AppDetails.badges.free', undefined, 'Besplatno');
 
   const playButtonState = !details.user
     ? 'login'
@@ -167,9 +167,9 @@ function AppDetailClient() {
 
       <ConfirmDialog
         open={showSoftDialog}
-        title="Remove from Marketplace?"
-        message="This will hide your app from the public marketplace. Users with the direct link can still play it."
-        confirmLabel="Remove"
+        title={tApp('AppDetails.modals.softDelete.title', undefined, 'Remove from Marketplace?')}
+        message={tApp('AppDetails.modals.softDelete.message', undefined, 'This will hide your app from the public marketplace. Users with the direct link can still play it.')}
+        confirmLabel={tApp('AppDetails.modals.softDelete.confirm', undefined, 'Remove')}
         confirmTone="danger"
         onConfirm={() => performDelete(false)}
         onClose={() => setShowSoftDialog(false)}
@@ -177,9 +177,9 @@ function AppDetailClient() {
 
       <ConfirmDialog
         open={showHardDialog}
-        title="Delete Permanently?"
-        message="This action cannot be undone. This will permanently delete your app, all assets, and data."
-        confirmLabel="Delete Forever"
+        title={tApp('AppDetails.modals.hardDelete.title', undefined, 'Delete Permanently?')}
+        message={tApp('AppDetails.modals.hardDelete.message', undefined, 'This action cannot be undone. This will permanently delete your app, all assets, and data.')}
+        confirmLabel={tApp('AppDetails.modals.hardDelete.confirm', undefined, 'Delete Forever')}
         confirmTone="danger"
         requireText="delete"
         onConfirm={() => performDelete(true)}
@@ -205,14 +205,14 @@ function AppDetailClient() {
       {showReport && (
         <ReportModal
           open={showReport}
-          title="Report an Issue"
-          description="Describe the technical issue you are facing with your app."
+          title={tApp('AppDetails.modals.reportIssue.title', undefined, 'Report an Issue')}
+          description={tApp('AppDetails.modals.reportIssue.description', undefined, 'Describe the technical issue you are facing with your app.')}
           value={reportText}
           onChange={setReportText}
           onSubmit={submitReport}
           onClose={() => setShowReport(false)}
           busy={reportBusy}
-          placeholder="Describe the bug or issue..."
+          placeholder={tApp('AppDetails.modals.reportIssue.placeholder', undefined, 'Describe the bug or issue...')}
         />
       )}
 
@@ -220,14 +220,14 @@ function AppDetailClient() {
       {showContentReport && (
         <ReportModal
           open={showContentReport}
-          title="Report Content"
-          description="Why are you reporting this content?"
+          title={tApp('AppDetails.modals.reportContent.title', undefined, 'Report Content')}
+          description={tApp('AppDetails.modals.reportContent.description', undefined, 'Why are you reporting this content?')}
           value={contentReportText}
           onChange={setContentReportText}
           onSubmit={submitContentReport}
           onClose={() => setShowContentReport(false)}
           busy={contentReportBusy}
-          placeholder="Describe why this content is inappropriate..."
+          placeholder={tApp('AppDetails.modals.reportContent.placeholder', undefined, 'Describe why this content is inappropriate...')}
         />
       )}
     </div>

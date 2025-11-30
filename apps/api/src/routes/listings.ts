@@ -147,15 +147,19 @@ export default async function listingsRoutes(app: FastifyInstance) {
         (a) => a.author?.uid === ownerId || (a as any).ownerUid === ownerId || (a as any).authorUid === ownerId,
       );
 
-      const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
+      // SECURITY: When requesting a specific owner's projects, only the authenticated owner
+      // can see all their projects (including drafts, unlisted, etc.).
+      // Admin privileges are intentionally ignored here to prevent data leakage.
+      // This is critical in development mode where dev-user gets auto-admin rights.
       const isOwner = req.authUser?.uid === ownerId;
 
       // DEBUG LOGGING
       if (matchCount > 0 && items.length === 0) {
-        req.log?.warn?.({ ownerId, authUserUid: req.authUser?.uid, isOwner, isAdmin }, 'listings_filtered_out_by_visibility');
+        req.log?.warn?.({ ownerId, authUserUid: req.authUser?.uid, isOwner }, 'listings_filtered_out_by_visibility');
       }
 
-      if (!isOwner && !isAdmin) {
+      // Only the actual owner can see all their projects
+      if (!isOwner) {
         items = items.filter((a) => (a.status === 'published' || a.state === 'active') && a.visibility !== 'unlisted');
       }
     } else {

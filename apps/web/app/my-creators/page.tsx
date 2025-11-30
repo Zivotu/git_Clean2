@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
 import { resolvePreviewUrl } from '@/lib/preview';
 import { syncFavorites } from '@/lib/favorites';
+import { useLoginHref } from '@/hooks/useLoginHref';
 
 type FavoriteCreator = {
   id: string;
@@ -72,6 +73,7 @@ async function loadEntitledCreators(): Promise<FavoriteCreator[]> {
 
 export default function MyCreatorsPage() {
   const { user } = useAuth();
+  const loginHref = useLoginHref();
   const { locale } = useI18n();
   const [loading, setLoading] = useState(true);
   const [creators, setCreators] = useState<FavoriteCreator[]>([]);
@@ -148,7 +150,7 @@ export default function MyCreatorsPage() {
       return (
         <div className={`rounded-3xl border p-8 text-center ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white/70'}`}>
           <p className={isDark ? 'text-zinc-400' : 'text-gray-600'}>Prijavite se kako biste vidjeli svoje favorite.</p>
-          <Link href="/login" className="mt-4 inline-block px-4 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-semibold transition">Prijava</Link>
+          <Link href={loginHref} className="mt-4 inline-block px-4 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-semibold transition">Prijava</Link>
         </div>
       );
     }

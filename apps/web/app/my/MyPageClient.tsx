@@ -18,12 +18,15 @@ import {
   startStripeOnboarding,
 } from '@/hooks/useConnectStatus';
 import { playHref, appDetailsHref } from '@/lib/urls';
+import { sendToLogin } from '@/lib/loginRedirect';
+import { useLoginHref } from '@/hooks/useLoginHref';
 import { getPlayUrl } from '@/lib/play';
 import CongratsModal from '@/components/CongratsModal';
 import ConfirmDeleteModal from '@/components/ConfirmDeleteModal';
 import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
 
 import { useTheme } from '@/components/ThemeProvider';
+import { normalizeTags } from '@/lib/tags';
 
 // ————————————————————————————————————————
 // Types
@@ -122,6 +125,7 @@ function Toast({
 // ————————————————————————————————————————
 export default function MyProjectsPage() {
   const { user } = useAuth();
+  const loginHref = useLoginHref();
   const name = getDisplayName(user);
   const searchParams = useSafeSearchParams();
   const router = useRouter();
@@ -166,7 +170,7 @@ export default function MyProjectsPage() {
 
         if (res.status === 401) {
           if (auth) await signOut(auth);
-          window.location.href = '/login';
+          sendToLogin(router);
           return;
         }
         if (res.status === 429) {
@@ -413,7 +417,7 @@ export default function MyProjectsPage() {
         <div className={`p-8 text-center max-w-md rounded-2xl ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-100' : 'bg-white border shadow-md text-gray-900'}`}>
           <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
           <p className="mb-6">{t('signInMessage')}</p>
-          <Link href="/login" className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title={t('goToLogin')}>{t('goToLogin')}</Link>
+          <Link href={loginHref} className="px-6 py-3 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition" title={t('goToLogin')}>{t('goToLogin')}</Link>
         </div>
       </div>
     );
@@ -649,6 +653,7 @@ export default function MyProjectsPage() {
               // Deterministic gradient based on ID
               const gradientIndex = it.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % gradientPalette.length;
 
+              const normalizedTags = normalizeTags(it.tags);
               const betaApp: BetaApp = {
                 id: it.id,
                 slug: it.slug,
@@ -666,7 +671,7 @@ export default function MyProjectsPage() {
                 price: (it as any).price,
                 previewUrl: it.previewUrl || null,
                 gradientClass: gradientPalette[gradientIndex],
-                tags: it.tags || [],
+                tags: normalizedTags,
                 createdAt: it.createdAt || Date.now(),
                 likedByMe: it.likedByMe,
               };

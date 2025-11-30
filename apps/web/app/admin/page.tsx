@@ -34,6 +34,7 @@ import Tabs from '@/components/Tabs';
 import AmbassadorProgram from '@/components/AmbassadorProgram';
 import { fetchAllowedAdminEmails, saveAllowedAdminEmails } from '@/lib/adminAccess';
 import { useI18n } from '@/lib/i18n-provider';
+import { buildLoginUrl, getCurrentRelativeUrl } from '@/lib/loginRedirect';
 
 async function buildHeaders(withJson: boolean): Promise<Record<string, string>> {
   const headers: Record<string, string> = withJson
@@ -852,7 +853,8 @@ export default function AdminDashboard() {
             </button>
             <button
               onClick={() => {
-                window.location.href = '/login';
+                const target = getCurrentRelativeUrl();
+                window.location.href = buildLoginUrl(target);
               }}
               className="px-2 py-1 border rounded"
             >

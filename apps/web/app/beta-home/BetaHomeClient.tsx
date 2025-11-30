@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import type { Listing as ApiListing } from '@/lib/types';
 import { resolvePreviewUrl } from '@/lib/preview';
+import { sendToLogin } from '@/lib/loginRedirect';
 import { playHref, appDetailsHref } from '@/lib/urls';
 import LocaleSwitcher from '@/components/LocaleSwitcher';
 import Logo from '@/components/Logo';
@@ -55,6 +56,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
 import { useTheme } from '@/components/ThemeProvider';
+import { getTagFallbackLabel, normalizeTags } from '@/lib/tags';
 
 
 
@@ -117,20 +119,11 @@ function formatMetric(count?: number | null, newLabel = 'New') {
   return `${count}`;
 }
 
-const legacyTagMap: Record<string, string> = {
-  'Igre': 'games', 'Spiele': 'games', 'Games': 'games',
-  'Kvizovi': 'quiz', 'Quiz': 'quiz', 'Quizzes': 'quiz',
-  'Učenje': 'learning', 'Lernen': 'learning', 'Learning': 'learning',
-  'Alati': 'tools', 'Werkzeuge': 'tools', 'Tools': 'tools',
-  'Posao': 'business', 'Geschäft': 'business', 'Business': 'business',
-  'Zabava': 'entertainment', 'Unterhaltung': 'entertainment', 'Entertainment': 'entertainment',
-  'Ostalo': 'other', 'Sonstiges': 'other', 'Other': 'other',
-};
-
 function pickCategory(tags: string[] | null, translator: (key: string, fallback: string) => string, fallback: string) {
   if (!tags?.length) return fallback;
   const tag = tags[0];
-  return translator(`tags.${tag}`, tag)
+  const fallbackLabel = getTagFallbackLabel(tag);
+  return translator(`tags.${tag}`, fallbackLabel)
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (match) => match.toUpperCase());
 }
@@ -176,11 +169,7 @@ function mapListings(
       : [];
 
     // Normalize tags
-    const tags = rawTags.map(tag => legacyTagMap[tag] || tag);
-
-    if (tags.length === 0) {
-      tags.push('other');
-    }
+    const tags = normalizeTags(rawTags);
     const createdAt =
       typeof item.createdAt === 'number'
         ? item.createdAt
@@ -655,7 +644,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const closeDetails = useCallback(() => setSelectedApp(null), []);
   const handleSubscribe = useCallback(async () => {
     if (!user) {
-      router.push('/login');
+      sendToLogin(router);
       return;
     }
     setSubscribeStatus('loading');

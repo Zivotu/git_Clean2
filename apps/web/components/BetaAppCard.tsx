@@ -9,6 +9,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useI18n } from '@/lib/i18n-provider';
+import { formatTagLabel } from '@/lib/tags';
 
 export type BetaApp = {
     id: string;
@@ -72,7 +73,9 @@ export function BetaAppCard({
     const [showShareMenu, setShowShareMenu] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const { messages } = useI18n();
-    const tTag = (tag: string) => (messages[`BetaHome.tags.${tag}`] as string) || tag;
+    const betaHomeTranslator = (key: string, fallback: string) =>
+        (messages[`BetaHome.${key}`] as string) ?? fallback;
+    const tTag = (tag: string) => formatTagLabel(tag, betaHomeTranslator);
 
     useEffect(() => {
         setLiked(!!app.likedByMe);
@@ -209,6 +212,16 @@ export function BetaAppCard({
             </Link>
         )
         : null;
+    const shareButtonStyles = isDark
+        ? 'bg-black/50 text-white hover:bg-black/70 border border-white/10'
+        : 'bg-white/80 text-slate-800 hover:bg-white border border-white/60 shadow-lg';
+    const shareIconStyles = isDark ? 'text-white' : 'text-slate-700';
+    const shareMenuSurface = isDark
+        ? 'bg-[#1E1E1E] border-white/10 text-zinc-100'
+        : 'bg-white border-slate-200 text-slate-700';
+    const shareMenuItemHover = isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50';
+    const shareDividerColor = isDark ? 'border-white/10' : 'border-slate-200';
+    const shareCopySuccessColor = isDark ? 'text-emerald-400' : 'text-emerald-600';
     return (
         <div
             className={`${wrapperBase} ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white shadow-sm'
@@ -250,21 +263,21 @@ export function BetaAppCard({
                         <div className="relative share-menu-container">
                             <button
                                 onClick={handleShareClick}
-                                className="rounded-full bg-black/50 p-2 backdrop-blur-sm hover:bg-black/70 transition-colors"
+                                className={`rounded-full p-2 backdrop-blur-sm transition-colors ${shareButtonStyles}`}
                                 title="Podijeli"
                             >
-                                <Share2 className="h-4 w-4 text-white" />
+                                <Share2 className={`h-4 w-4 ${shareIconStyles}`} />
                             </button>
                             {showShareMenu && (
-                                <div className="absolute top-full right-0 mt-2 w-48 rounded-xl bg-white dark:bg-[#1E1E1E] border border-gray-200 dark:border-white/10 shadow-xl overflow-hidden z-50">
+                                <div className={`absolute top-full right-0 mt-2 w-48 rounded-xl border shadow-xl overflow-hidden z-50 ${shareMenuSurface}`}>
                                     <button
                                         onClick={handleCopyLink}
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-left"
+                                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors text-left ${shareMenuItemHover}`}
                                     >
                                         {copySuccess ? (
                                             <>
-                                                <Check className="h-4 w-4 text-emerald-500" />
-                                                <span className="text-emerald-500 font-medium">Link kopiran!</span>
+                                                <Check className={`h-4 w-4 ${shareCopySuccessColor}`} />
+                                                <span className={`${shareCopySuccessColor} font-medium`}>Link kopiran!</span>
                                             </>
                                         ) : (
                                             <>
@@ -273,12 +286,12 @@ export function BetaAppCard({
                                             </>
                                         )}
                                     </button>
-                                    <div className="border-t border-gray-200 dark:border-white/10"></div>
+                                    <div className={`border-t ${shareDividerColor}`}></div>
                                     <a
                                         href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + appDetailsHref(app.slug))}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${shareMenuItemHover}`}
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -290,7 +303,7 @@ export function BetaAppCard({
                                         href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.origin + appDetailsHref(app.slug))}&text=${encodeURIComponent(app.name)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${shareMenuItemHover}`}
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -302,7 +315,7 @@ export function BetaAppCard({
                                         href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.origin + appDetailsHref(app.slug))}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${shareMenuItemHover}`}
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">

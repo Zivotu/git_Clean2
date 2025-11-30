@@ -69,7 +69,7 @@ export default async function buildRoutes(app: FastifyInstance) {
     const { id } = req.params as { id: string };
     const job = await readBuild(id);
     if (!job) return reply.code(404).send({ ok: false, error: 'not_found' });
-    const { state, progress, error } = job;
+    const { state, progress, error, publicMessage } = job;
     try {
       await fs.access(getBuildDir(id));
     } catch (e: any) {
@@ -111,7 +111,12 @@ export default async function buildRoutes(app: FastifyInstance) {
 
     const resp: any = { ok: true, state, progress, artifacts };
     if (listing) resp.listingId = listing.id;
-    if (error && !resp.error) resp.error = error;
+    if (publicMessage) resp.publicMessage = publicMessage;
+    if (publicMessage && !resp.error) {
+      resp.error = publicMessage;
+    } else if (error && !resp.error) {
+      resp.error = error;
+    }
     if (publicUrl) resp.public = publicUrl;
     reply.send(resp);
   };

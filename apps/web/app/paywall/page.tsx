@@ -4,6 +4,8 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { PUBLIC_API_URL } from '@/lib/config';
+import { sendToLogin } from '@/lib/loginRedirect';
+import { useLoginHref } from '@/hooks/useLoginHref';
 import type { AccessMode } from '@/lib/types';
 import { useAuth } from '@/lib/auth';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
@@ -84,11 +86,12 @@ function PurchaseOptions({
 }
 
 function LoginPrompt() {
+  const loginHref = useLoginHref();
   return (
     <div className="flex flex-col gap-2 mt-4">
       <p>Prijavite se za kupnju</p>
       <Link
-        href="/login"
+        href={loginHref}
         className="px-3 py-1 bg-blue-600 text-white rounded text-center"
       >
         Prijava
@@ -322,7 +325,7 @@ function PaywallClient() {
     try {
       const token = await (user as any)?.getIdToken?.();
       if (!token) {
-        router.push('/login');
+        sendToLogin(router);
         return;
       }
       const key = JSON.stringify(body);
@@ -456,7 +459,7 @@ function PaywallClient() {
     setError(null);
     try {
       const token = await (user as any)?.getIdToken?.();
-      if (!token) { router.push('/login'); return; }
+      if (!token) { sendToLogin(router); return; }
       const res = await fetch(`${PUBLIC_API_URL}/trial/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -476,7 +479,7 @@ function PaywallClient() {
     setError(null);
     try {
       const token = await (user as any)?.getIdToken?.();
-      if (!token) { router.push('/login'); return; }
+      if (!token) { sendToLogin(router); return; }
       const res = await fetch(`${PUBLIC_API_URL}/trial/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

@@ -9,13 +9,14 @@ import {
   signInWithEmailAndPassword,
   signOut,
 } from 'firebase/auth';
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent, useCallback, useRef } from 'react';
 import { useAuth, getDisplayName } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ensureUserDoc } from '@/lib/ensureUserDoc';
 import Link from 'next/link';
 import { SITE_NAME } from '@/lib/config';
 import { useI18n } from '@/lib/i18n-provider';
+import { rememberRedirectTarget, consumeRedirectTarget, sanitizeRedirectPath } from '@/lib/loginRedirect';
 
 export default function LoginPage() {
   const { messages, locale } = useI18n();
@@ -26,9 +27,26 @@ export default function LoginPage() {
   };
   const { user, loading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams?.get('next');
+  const safeNextParam = sanitizeRedirectPath(nextParam);
+  const registerHref = safeNextParam ? `/register?next=${encodeURIComponent(safeNextParam)}` : '/register';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const hasRedirectedRef = useRef(false);
+  const redirectAfterAuth = useCallback(() => {
+    if (hasRedirectedRef.current) return;
+    const destination = consumeRedirectTarget() ?? '/';
+    hasRedirectedRef.current = true;
+    router.replace(destination);
+  }, [router]);
+
+  useEffect(() => {
+    if (nextParam) {
+      rememberRedirectTarget(nextParam);
+    }
+  }, [nextParam]);
 
   useEffect(() => {
     if (!auth) return;
@@ -50,9 +68,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/');
+      redirectAfterAuth();
     }
-  }, [user, loading, router]);
+  }, [user, loading, redirectAfterAuth]);
 
   const login = async () => {
     const provider = new GoogleAuthProvider();
@@ -66,7 +84,7 @@ export default function LoginPage() {
         photoURL: user.photoURL,
       });
       await auth.currentUser?.getIdToken(true);
-      router.push('/');
+      redirectAfterAuth();
     } catch (e: any) {
       if (auth && (e?.code === 'auth/popup-blocked' || e?.code === 'auth/cancelled-popup-request')) {
         await signInWithRedirect(auth, provider);
@@ -93,7 +111,7 @@ export default function LoginPage() {
         photoURL: user.photoURL,
       });
       await auth.currentUser?.getIdToken(true);
-      router.push('/');
+      redirectAfterAuth();
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
     }
@@ -203,7 +221,7 @@ export default function LoginPage() {
 
                   <div className="mt-4 text-sm text-gray-500">
                     {tLogin('noAccount')}{' '}
-                    <Link href="/register" className="text-emerald-700 hover:underline dark:text-emerald-400">
+                    <Link href={registerHref} className="text-emerald-700 hover:underline dark:text-emerald-400">
                       {tLogin('register')}
                     </Link>
                   </div>

@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PUBLIC_API_URL } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 interface Props {
   creatorUid: string;
@@ -27,7 +28,7 @@ export default function CreatorAllAccessCard({ creatorUid, price }: Props) {
       }
       const token = await (user as any)?.getIdToken?.();
       if (!token) {
-        router.push('/login');
+        sendToLogin(router);
         return;
       }
       const res = await fetch(`${PUBLIC_API_URL}/billing/subscriptions/creator`, {

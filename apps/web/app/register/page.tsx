@@ -2,7 +2,7 @@
 
 import { useState, useCallback, ChangeEvent, FormEvent, useEffect } from "react";
 import Image from 'next/image';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
   UserCredential,
@@ -13,9 +13,11 @@ import { auth, db, storage } from "@/lib/firebase";
 import { ensureUserDoc } from "@/lib/ensureUserDoc";
 import { useI18n } from "@/lib/i18n-provider";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { rememberRedirectTarget, consumeRedirectTarget } from "@/lib/loginRedirect";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { messages } = useI18n();
   const t = useCallback(
     (key: string) => messages[`Register.${key}`] || key,
@@ -38,6 +40,13 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
+
+  useEffect(() => {
+    const nextParam = searchParams?.get('next');
+    if (nextParam) {
+      rememberRedirectTarget(nextParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     return () => {
@@ -99,7 +108,8 @@ export default function RegisterPage() {
         { merge: true }
       );
       await auth.currentUser?.getIdToken(true);
-      router.push("/?welcome=1");
+      const destination = consumeRedirectTarget() ?? "/?welcome=1";
+      router.replace(destination);
     } catch (err: any) {
       console.error(`Error writing to ${collection} for user ${cred?.user?.uid}`, err);
       const fallback = err?.message || t("errors.generic");

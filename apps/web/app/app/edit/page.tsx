@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth';
 import { apiGet, apiPatch } from '@/lib/api';
 import { appDetailsHref } from '@/lib/urls';
 import type { AppCapabilities, RoomsMode } from '@/lib/types';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 interface Listing {
   slug: string;
@@ -52,7 +53,7 @@ function EditAppClient() {
     if (!slug) return;
     if (loading) return;
     if (!user) {
-      router.push('/login');
+      sendToLogin(router);
       return;
     }
     (async () => {

@@ -14,10 +14,13 @@ import { writeArtifact } from '../utils/artifacts.js';
 import { sseEmitter } from '../sse.js';
 import { ensureDependencies } from '../lib/dependencies.js';
 import { ensureListingTranslations } from '../lib/translate.js';
-import { initBuild } from '../models/Build.js';
+import { initBuild, updateBuild, writeBuildInfo } from '../models/Build.js';
 import { getStorageBackend, StorageError } from '../storageV2.js';
 import type { RoomsMode } from '../types.js';
 import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
+import { detectPreferredLocale } from '../lib/locale.js';
+import { detectStorageUsageInCode } from '../lib/storageUsage.js';
+import { getStorageWarning } from '../lib/messages.js';
 import { normalizeRoomsMode } from '../lib/rooms.js';
 
 function slugify(input: string): string {
@@ -55,6 +58,7 @@ interface PublishPayload {
     features?: string[];
   };
   inlineCode: string;
+  skipStorageWarning?: boolean;
   visibility?: string;
   preview?: {
     dataUrl?: string;
@@ -198,6 +202,8 @@ export default async function publishRoutes(app: FastifyInstance) {
     const apiBaseHint = publicBase ? `${publicBase}/api` : '/api';
     const buildPlayUrl = (id: string | number) => (webBase ? `${webBase}/play/${id}/?run=1` : '');
     const normalizedCapabilities = normalizeCapabilities(body.capabilities);
+    const claims: any = (req as any).authUser?.claims || {};
+    const creatorLocale = detectPreferredLocale(req.headers['accept-language']);
 
     if (!existingOwned && !isAdmin) {
       const ents = await listEntitlements(uid);
@@ -230,6 +236,20 @@ export default async function publishRoutes(app: FastifyInstance) {
       });
     }
 
+    const skipStorageWarning = Boolean(body.skipStorageWarning);
+    const storageUsed = detectStorageUsageInCode(code);
+    if (!storageUsed && !skipStorageWarning) {
+      const storageWarning = getStorageWarning(creatorLocale);
+      return reply.code(409).send({
+        ok: false,
+        error: 'storage_usage_missing',
+        code: 'storage_usage_missing',
+        message: storageWarning.message,
+        docsUrl: storageWarning.docsUrl,
+        canOverride: true,
+      });
+    }
+
     const now = Date.now();
     const numericIds = apps
       .map((a) => Number(a.id))
@@ -247,12 +267,34 @@ export default async function publishRoutes(app: FastifyInstance) {
       author: body.author,
       buildId,
     });
+    const authorUid = body.author?.uid || uid;
 
     // 2) Initialize filesystem build record so Admin panel can list it
     try {
       await initBuild(buildId);
     } catch (e) {
       req.log?.warn?.({ e, buildId }, 'publish:init_fs_build_failed');
+    }
+    try {
+      await updateBuild(buildId, { creatorLanguage: creatorLocale });
+    } catch (err) {
+      req.log?.warn?.({ err, buildId }, 'publish:set_creator_language_failed');
+    }
+    try {
+      await writeBuildInfo(buildId, {
+        listingId: String(listingId),
+        creatorLanguage: creatorLocale,
+        authorUid,
+        authorName: (body.author as any)?.name || claims.name || claims.displayName,
+        authorHandle: body.author?.handle,
+        authorEmail: claims.email,
+        submitterUid: uid,
+        submitterEmail: claims.email,
+        submittedAt: Date.now(),
+        appTitle: (body as any)?.title || existing?.title,
+      });
+    } catch (err) {
+      req.log?.warn?.({ err, buildId }, 'publish:build_info_write_failed');
     }
 
     sseEmitter.emit(buildId, 'status', { status: 'queued' });
@@ -717,9 +759,7 @@ if (typeof window !== 'undefined') {
 
       // Hoist some notification vars so subsequent try blocks can reference them
       let title = (body.title || '').trim() || `App ${listingId}`;
-      let authorUid = body.author?.uid || uid;
       let authorHandle = (body.author as any)?.handle || undefined;
-      const claims: any = (req as any).authUser?.claims || {};
       let displayName = claims.name || claims.displayName || undefined;
       let email = claims.email || undefined;
 
@@ -792,11 +832,17 @@ if (typeof window !== 'undefined') {
         req.log?.warn?.({ err }, 'publish:translations_enqueue_failed');
       }
 
-      // Persist basic build info for the worker (e.g., for final SSE redirect)
       try {
-        const dir = getBuildDir(buildId);
-        await fs.writeFile(path.join(dir, 'build-info.json'), JSON.stringify({ listingId: String(listingId) }, null, 2), 'utf8');
-      } catch { }
+        await writeBuildInfo(buildId, {
+          listingId: String(listingId),
+          slug,
+          appTitle: title || existing?.title,
+          authorUid,
+          authorName: ((body.author as any)?.name || claims.name || claims.displayName),
+        });
+      } catch (err) {
+        req.log?.warn?.({ err, buildId }, 'publish:build_info_update_failed');
+      }
 
       const responsePayload = { ok: true as const, buildId, listingId, slug };
       return reply.code(202).send(responsePayload);

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAppDetails } from '../hooks/useAppDetails';
 import { PREVIEW_PRESET_PATHS } from '@/lib/previewClient';
+import { formatTagLabel, normalizeTags } from '@/lib/tags';
 
 type AppGalleryProps = {
     details: ReturnType<typeof useAppDetails>;
@@ -47,6 +48,9 @@ export default function AppGallery({ details }: AppGalleryProps) {
 
     if (!item) return null;
 
+    const displayTags = normalizeTags(item.tags, { fallbackToOther: false });
+    const translateAppTag = (key: string, fallback: string) => tApp(key, undefined, fallback);
+
     return (
         <div className="space-y-6">
             {/* Main Preview Card */}
@@ -66,7 +70,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                     ) : (
                         <div className={`flex h-full w-full items-center justify-center text-sm font-medium ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-slate-100 text-slate-500'
                             }`}>
-                            {tApp('previewGraphicHint')}
+                            {tApp('AppDetails.gallery.previewGraphicHint', undefined, 'This will be displayed on the app card.')}
                         </div>
                     )}
 
@@ -86,7 +90,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                             <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
                                 <path d="M8 5v14l11-7z" />
                             </svg>
-                            {tApp('playInNewTab')}
+                            {tApp('AppDetails.gallery.playInNewTab', undefined, 'Play in new tab')}
                         </button>
                     </div>
                 </div>
@@ -104,10 +108,10 @@ export default function AppGallery({ details }: AppGalleryProps) {
                         <div className="p-5 space-y-5">
                             <div>
                                 <h3 className={`text-sm font-semibold ${isDark ? 'text-zinc-200' : 'text-gray-900'}`}>
-                                    {tApp('previewGraphic')}
+                                    {tApp('AppDetails.gallery.previewGraphic', undefined, 'Preview Graphic')}
                                 </h3>
                                 <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
-                                    {tApp('previewGraphicHint')}
+                                    {tApp('AppDetails.gallery.previewGraphicHint', undefined, 'This will be displayed on the app card.')}
                                 </p>
                             </div>
 
@@ -148,9 +152,9 @@ export default function AppGallery({ details }: AppGalleryProps) {
                             {previewChoice === 'preset' && (
                                 <div>
                                     <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-gray-700'}`}>
-                                        {tApp('previewTitleLabel')}{' '}
+                                        {tApp('AppDetails.gallery.previewTitleLabel', undefined, 'Title on image')}{' '}
                                         <span className={`font-normal ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
-                                            ({overlayMaxChars} {tApp('characters')})
+                                            ({overlayMaxChars} {tApp('AppDetails.gallery.characters', undefined, 'characters')})
                                         </span>
                                     </label>
                                     <input
@@ -165,7 +169,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                             ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-emerald-500 placeholder:text-zinc-600'
                                             : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500 placeholder:text-gray-400'
                                             } focus:ring-2 focus:ring-emerald-500/20 outline-none`}
-                                        placeholder={tApp('previewTitlePlaceholder')}
+                                        placeholder={tApp('AppDetails.gallery.previewTitlePlaceholder', undefined, 'Enter title...')}
                                     />
                                 </div>
                             )}
@@ -180,7 +184,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                                     disabled={previewBusy}
                                 >
-                                    {tApp('chooseCustomGraphic')}
+                                    {tApp('AppDetails.gallery.chooseCustomGraphic', undefined, 'Choose custom graphic')}
                                 </button>
                                 {customPreview && (
                                     <button
@@ -190,11 +194,11 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                             }`}
                                         disabled={previewBusy}
                                     >
-                                        {tApp('removeCustomGraphic')}
+                                        {tApp('AppDetails.gallery.removeCustomGraphic', undefined, 'Remove custom graphic')}
                                     </button>
                                 )}
                                 <span className={`text-[11px] ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
-                                    {tApp('customGraphicHint')} {maxPreviewMb}MB
+                                    {tApp('AppDetails.gallery.customGraphicHint', undefined, 'Max')} {maxPreviewMb}MB (JPG, PNG, GIF)
                                 </span>
                             </div>
 
@@ -220,7 +224,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                             unoptimized
                                         />
                                         <div className="absolute inset-0 flex items-center justify-center">
-                                            <span className="text-white font-medium drop-shadow-md">Current Preview</span>
+                                            <span className="text-white font-medium drop-shadow-md">{tApp('AppDetails.gallery.currentPreview', undefined, 'Current Preview')}</span>
                                         </div>
                                     </div>
                                 ) : (
@@ -228,7 +232,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                         ? 'bg-zinc-800/50 border-zinc-700 text-zinc-500'
                                         : 'bg-slate-50 border-slate-300 text-slate-500'
                                         }`}>
-                                        <span className="font-semibold">{tApp('previewGraphicHint')}</span>
+                                        <span className="font-semibold">{tApp('AppDetails.gallery.previewGraphicHint', undefined, 'This will be displayed on the app card.')}</span>
                                     </div>
                                 )}
                             </div>
@@ -244,19 +248,19 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                     }
                                     className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold disabled:opacity-60 disabled:cursor-not-allowed hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20"
                                 >
-                                    {previewBusy ? tApp('savingGraphic') : tApp('saveGraphic')}
+                                    {previewBusy ? tApp('AppDetails.gallery.savingGraphic', undefined, 'Saving...') : tApp('AppDetails.gallery.saveGraphic', undefined, 'Save Graphic')}
                                 </button>
                                 {!previewBusy && previewApplied && !previewError && (
                                     <span className="text-xs font-medium text-emerald-500 flex items-center gap-1">
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                         </svg>
-                                        {tApp('previewUploadSuccess')}
+                                        {tApp('AppDetails.gallery.previewUploadSuccess', undefined, 'Successfully saved')}
                                     </span>
                                 )}
                                 {previewBusy && (
                                     <span className={`text-xs ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>
-                                        {tApp('previewUploading')}
+                                        {tApp('AppDetails.gallery.previewUploading', undefined, 'Uploading...')}
                                     </span>
                                 )}
                             </div>
@@ -264,7 +268,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                         </div>
                         <div className={`px-5 pb-5 ${isDark ? 'bg-zinc-900/30' : 'bg-gray-50/30'}`}>
                             <div className="flex items-center justify-between text-sm">
-                                <span className={`font-medium ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>App ID:</span>
+                                <span className={`font-medium ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>{tApp('AppDetails.gallery.appId', undefined, 'App ID:')}</span>
                                 <code className={`font-mono px-3 py-1 rounded border text-xs ${isDark
                                     ? 'bg-zinc-950 border-zinc-800 text-emerald-400'
                                     : 'bg-white border-gray-200 text-emerald-600'
@@ -278,13 +282,13 @@ export default function AppGallery({ details }: AppGalleryProps) {
             </div>
 
             {/* Tags Display */}
-            {item.tags && item.tags.length > 0 && (
+            {displayTags.length > 0 && (
                 <div className={`rounded-xl border p-5 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}>
                     <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-zinc-200' : 'text-gray-900'}`}>
-                        Categories
+                        {tApp('AppDetails.gallery.categories', undefined, 'Categories')}
                     </h3>
                     <div className="flex flex-wrap gap-2">
-                        {item.tags.map(tag => (
+                        {displayTags.map(tag => (
                             <span
                                 key={tag}
                                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors cursor-default ${isDark
@@ -292,7 +296,7 @@ export default function AppGallery({ details }: AppGalleryProps) {
                                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:border-emerald-300 hover:text-emerald-700'
                                     }`}
                             >
-                                #{tag}
+                                #{formatTagLabel(tag, translateAppTag)}
                             </span>
                         ))}
                     </div>

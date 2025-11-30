@@ -14,6 +14,7 @@ import { useEarlyAccessCampaign } from "@/hooks/useEarlyAccessCampaign";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { useAuth } from "@/lib/auth";
 import { apiPost } from "@/lib/api";
+import { sendToLogin } from "@/lib/loginRedirect";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -90,7 +91,7 @@ export default function SiteHeader() {
 
   const handleSubscribe = async () => {
     if (!user) {
-      router.push("/login");
+      sendToLogin(router);
       return;
     }
     setSubscribeStatus("loading");

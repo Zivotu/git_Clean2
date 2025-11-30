@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Avatar from '@/components/Avatar';
 import { Crown } from 'lucide-react';
+import { useLoginHref } from '@/hooks/useLoginHref';
 
 type ProfileCardProps = {
   user?: any | null;
@@ -37,6 +38,7 @@ export default function ProfileCard({
   const subTextClasses = 'text-[11px] dark:text-zinc-500 text-slate-500';
   const logoutBtnClasses = 'rounded-full border px-3 py-1 text-xs font-semibold dark:border-[#27272A] dark:text-zinc-200 dark:hover:bg-white/5 border-slate-200 text-slate-600 hover:bg-slate-50';
   const loginBtnClasses = `rounded-full border px-4 py-2 text-sm font-semibold dark:border-[#27272A] dark:text-zinc-100 dark:hover:bg-black/40 border-slate-200 text-slate-700 hover:bg-slate-50 ${className}`;
+  const loginHref = useLoginHref();
 
   if (user) {
     if (compact) {
@@ -77,14 +79,14 @@ export default function ProfileCard({
 
   if (compact) {
     return (
-      <Link href="/login" className={`text-xs font-semibold px-3 py-1.5 rounded-full border dark:border-[#27272A] dark:text-zinc-200 dark:hover:bg-white/5 border-slate-200 text-slate-700 hover:bg-slate-50 ${className}`}>
+      <Link href={loginHref} className={`text-xs font-semibold px-3 py-1.5 rounded-full border dark:border-[#27272A] dark:text-zinc-200 dark:hover:bg-white/5 border-slate-200 text-slate-700 hover:bg-slate-50 ${className}`}>
         {loginLabel}
       </Link>
     );
   }
 
   return (
-    <Link href="/login" className={loginBtnClasses}>
+    <Link href={loginHref} className={loginBtnClasses}>
       {loginLabel}
     </Link>
   );

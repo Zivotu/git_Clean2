@@ -1,45 +1,14 @@
-import path from 'node:path';
-import { promises as fs } from 'node:fs';
-import { getConfig } from '../config.js';
-import { getBucket } from '../storage.js';
+const STORAGE_MARKERS = [
+  'localstorage',
+  'window.localstorage',
+  'globalthis.localstorage',
+  'thesara.storage',
+  'thesaraStorage'.toLowerCase(),
+];
 
-async function dirSize(dir: string): Promise<number> {
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    let total = 0;
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        total += await dirSize(full);
-      } else {
-        const stat = await fs.stat(full);
-        total += stat.size;
-      }
-    }
-    return total;
-  } catch {
-    return 0;
-  }
+export function detectStorageUsageInCode(source?: string | null): boolean {
+  if (!source) return false;
+  const normalized = source.toLowerCase();
+  return STORAGE_MARKERS.some((marker) => normalized.includes(marker));
 }
 
-export async function getUserStorageBytes(buildIds: string[]): Promise<number> {
-  const { STORAGE_DRIVER, BUNDLE_STORAGE_PATH } = getConfig();
-  if (STORAGE_DRIVER === 'local') {
-    let total = 0;
-    for (const id of buildIds) {
-      const dir = path.join(BUNDLE_STORAGE_PATH, 'builds', id);
-      total += await dirSize(dir);
-    }
-    return total;
-  }
-  const bucket = getBucket();
-  let total = 0;
-  for (const id of buildIds) {
-    const [files] = await bucket.getFiles({ prefix: `builds/${id}/` });
-    for (const file of files) {
-      const size = Number(file.metadata?.size || 0);
-      total += size;
-    }
-  }
-  return total;
-}

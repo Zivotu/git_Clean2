@@ -11,6 +11,7 @@ import TermsPreviewModal from '@/components/terms/TermsPreviewModal';
 import { TERMS_POLICY } from '@thesara/policies/terms';
 import { useI18n } from '@/lib/i18n-provider';
 import { useTermsLabel } from '@/hooks/useTermsLabel';
+import { sendToLogin } from '@/lib/loginRedirect';
 
 export default function CheckoutPage() {
   return (
@@ -134,7 +135,7 @@ function CheckoutClient() {
       }
       const token = await (user as any)?.getIdToken?.();
       if (!token) {
-        router.push('/login');
+        sendToLogin(router);
         return;
       }
       let url = `${PUBLIC_API_URL}/billing/subscriptions/app`;
