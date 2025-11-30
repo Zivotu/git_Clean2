@@ -1,5 +1,3 @@
-import type { AppRouterInstance } from 'next/navigation';
-
 const REDIRECT_PARAM = 'next';
 const REDIRECT_COOKIE = 'thesara_next_target';
 const COOKIE_MAX_AGE_SECONDS = 60 * 30; // 30 minutes
@@ -46,7 +44,9 @@ export function getCurrentRelativeUrl(): string | null {
   return sanitizeRedirectPath(combined) ?? pathname;
 }
 
-export function sendToLogin(router: AppRouterInstance, target?: string | null): void {
+type RouterLike = { push: (href: string) => void };
+
+export function sendToLogin(router: RouterLike, target?: string | null): void {
   const resolvedTarget = target ?? getCurrentRelativeUrl();
   router.push(buildLoginUrl(resolvedTarget));
 }

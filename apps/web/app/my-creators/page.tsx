@@ -213,7 +213,7 @@ export default function MyCreatorsPage() {
         })}
       </div>
     );
-  }, [user, loading, creators, appsByCreator, isDark]);
+  }, [user, loading, creators, appsByCreator, isDark, loginHref]);
 
   return (
     <div className="w-full">

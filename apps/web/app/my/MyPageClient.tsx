@@ -202,7 +202,7 @@ export default function MyProjectsPage() {
         setBusy((prev) => ({ ...prev, [slug]: false }));
       }
     },
-    [busy, items, user, t]
+    [busy, items, user, t, router]
   );
 
   const deleteItem = useCallback(
