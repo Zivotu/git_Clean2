@@ -887,6 +887,15 @@ function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boo
       if (escaped !== rawText) mutated = true;
       output += escaped;
     }
+    const nextChar = html[nextTagStart + 1] ?? '';
+    const likelyTagStart = /[A-Za-z!/]/.test(nextChar) || nextChar === '/' || nextChar === '?';
+    if (!likelyTagStart) {
+      output += '&lt;';
+      mutated = true;
+      index = nextTagStart + 1;
+      continue;
+    }
+
     const capture = captureHtmlTagSegment(html, nextTagStart);
     if (!capture) {
       output += html.slice(nextTagStart);
