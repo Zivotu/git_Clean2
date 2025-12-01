@@ -883,7 +883,9 @@ function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boo
 
     const rawText = html.slice(index, nextTagStart);
     if (rawText) {
-      output += escapeHtmlText(rawText);
+      const escaped = escapeHtmlText(rawText);
+      if (escaped !== rawText) mutated = true;
+      output += escaped;
     }
     const capture = captureHtmlTagSegment(html, nextTagStart);
     if (!capture) {
