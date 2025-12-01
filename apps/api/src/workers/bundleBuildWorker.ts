@@ -45,9 +45,9 @@ async function copyDir(src: string, dest: string) {
 }
 
 const FRIENDLY_FAILURE_MESSAGES: Record<'hr' | 'en' | 'de', string> = {
-  hr: 'Primijetili smo neocekivanu gresku u tvojoj aplikaciji i nas tim je vec zapoceo istragu. Cim otkrijemo uzrok javit cemo ti se s detaljima i rjesenjem, a vrlo brzo ces dobiti i email s dodatnim informacijama.',
-  en: 'We detected an unexpected issue in your app and our team already started investigating it. We will follow up with details and a fix as soon as we identify the cause, and you should receive an email with more information shortly.',
-  de: 'Wir haben ein unerwartetes Problem in deiner App erkannt und unser Team untersucht es bereits. Sobald wir die Ursache gefunden haben, melden wir uns mit Details und einer Losung, und du erhaeltst in Kurze eine E-Mail mit weiteren Informationen.',
+  hr: '--- Thesara obavijest ---\nPrimijetili smo neocekivanu gresku u tvojoj aplikaciji i nas tim je vec zapoceo istragu. Cim otkrijemo uzrok javit cemo ti se s detaljima i rjesenjem, a vrlo brzo ces dobiti i email s dodatnim informacijama.\nHvala ti na strpljenju! - Thesara tim',
+  en: '--- Thesara Support ---\nWe detected an unexpected issue in your app and our team already started investigating it. As soon as we find the cause we will follow up with details and a fix, and you should receive an email with more information shortly.\nThanks for your patience! - The Thesara Team',
+  de: '--- Thesara Hinweis ---\nWir haben ein unerwartetes Problem in deiner App erkannt und unser Team untersucht es bereits. Sobald wir die Ursache gefunden haben, melden wir uns mit Details und einer Losung, und du erhaeltst in Kurze eine E-Mail mit weiteren Informationen.\nDanke fur deine Geduld! - Dein Thesara Team',
 };
 
 function getFriendlyFailureMessage(locale?: string | null): string {
@@ -605,6 +605,9 @@ const REACT_ATTR_ALIASES: Record<string, string> = {
   htmlFor: 'for',
 };
 
+type HtmlTagSegment = { segment: string; endIndex: number };
+type JsxExpressionCapture = { expression: string; endIndex: number };
+
 function escapeHtmlAttributeValue(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -651,45 +654,137 @@ function fixReactLikeAttributesInTag(tag: string): { tag: string; changed: boole
     return `${mapped}="${escapeHtmlAttributeValue(expr)}"`;
   });
 
-  const singleExprRe = /([A-Za-z_:][\w:.-]*)\s*=\s*{\s*([\s\S]*?)\s*}/g;
-  updated = updated.replace(singleExprRe, (match, rawName, expr) => {
-    const mapped = REACT_ATTR_ALIASES[rawName] ?? rawName;
-    const trimmed = expr.trim();
-    if (!trimmed) {
-      changed = true;
-      return `${mapped}=""`;
-    }
-    const firstChar = trimmed[0];
-    if ((firstChar === '"' || firstChar === "'") && trimmed.endsWith(firstChar)) {
-      changed = true;
-      const inner = trimmed.slice(1, -1);
-      return `${mapped}="${escapeHtmlAttributeValue(inner)}"`;
-    }
-    if (firstChar === '`' && trimmed.endsWith('`')) {
-      changed = true;
-      const inner = trimmed.slice(1, -1);
-      const { literal, expressions } = normalizeTemplateLiteral(inner);
-      let replacement = `${mapped}="${escapeHtmlAttributeValue(literal)}"`;
-      if (expressions.length) {
-        replacement += ` data-ai-${toDataAttrKey(mapped)}-expr="${escapeHtmlAttributeValue(
-          expressions.join('; '),
-        )}"`;
-      }
-      return replacement;
-    }
-    if (/^(true|false|null|undefined|\d+(\.\d+)?)/i.test(trimmed)) {
-      changed = true;
-      return `${mapped}="${escapeHtmlAttributeValue(trimmed)}"`;
-    }
+  const expressionResult = replaceJsxExpressionAttributes(updated);
+  updated = expressionResult.output;
+  if (expressionResult.changed) {
     changed = true;
-    const dataAttr = `data-ai-${toDataAttrKey(mapped)}-expr`;
-    return `${dataAttr}="${escapeHtmlAttributeValue(trimmed)}"`;
-  });
+  }
 
   return { tag: updated, changed };
 }
 
-type HtmlTagSegment = { segment: string; endIndex: number };
+function captureJsxExpression(text: string, startIndex: number): JsxExpressionCapture | null {
+  let i = startIndex;
+  let depth = 1;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+
+  while (i < text.length) {
+    const ch = text[i];
+    const prev = text[i - 1];
+
+    if (inSingle) {
+      if (ch === "'" && prev !== '\\') inSingle = false;
+      i += 1;
+      continue;
+    }
+    if (inDouble) {
+      if (ch === '"' && prev !== '\\') inDouble = false;
+      i += 1;
+      continue;
+    }
+    if (inBacktick) {
+      if (ch === '`' && prev !== '\\') inBacktick = false;
+      i += 1;
+      continue;
+    }
+
+    if (ch === "'") {
+      inSingle = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      inDouble = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '`') {
+      inBacktick = true;
+      i += 1;
+      continue;
+    }
+
+    if (ch === '{') {
+      depth += 1;
+      i += 1;
+      continue;
+    }
+    if (ch === '}') {
+      depth -= 1;
+      if (depth === 0) {
+        return { expression: text.slice(startIndex, i), endIndex: i + 1 };
+      }
+      i += 1;
+      continue;
+    }
+
+    i += 1;
+  }
+
+  return null;
+}
+
+function buildAttributeReplacement(rawName: string, expr: string): string {
+  const mapped = REACT_ATTR_ALIASES[rawName] ?? rawName;
+  const trimmed = expr.trim();
+  if (!trimmed) {
+    return `${mapped}=""`;
+  }
+  const firstChar = trimmed[0];
+  if ((firstChar === '"' || firstChar === "'") && trimmed.endsWith(firstChar)) {
+    const inner = trimmed.slice(1, -1);
+    return `${mapped}="${escapeHtmlAttributeValue(inner)}"`;
+  }
+  if (firstChar === '`' && trimmed.endsWith('`')) {
+    const inner = trimmed.slice(1, -1);
+    const { literal, expressions } = normalizeTemplateLiteral(inner);
+    let replacement = `${mapped}="${escapeHtmlAttributeValue(literal)}"`;
+    if (expressions.length) {
+      replacement += ` data-ai-${toDataAttrKey(mapped)}-expr="${escapeHtmlAttributeValue(
+        expressions.join('; '),
+      )}"`;
+    }
+    return replacement;
+  }
+  if (/^(true|false|null|undefined|\d+(\.\d+)?)/i.test(trimmed)) {
+    return `${mapped}="${escapeHtmlAttributeValue(trimmed)}"`;
+  }
+  const dataAttr = `data-ai-${toDataAttrKey(mapped)}-expr`;
+  return `${dataAttr}="${escapeHtmlAttributeValue(trimmed)}"`;
+}
+
+function replaceJsxExpressionAttributes(tag: string): { output: string; changed: boolean } {
+  const attrStartRe = /([A-Za-z_:][\w:.-]*)\s*=\s*{/g;
+  let cursor = 0;
+  let result = '';
+  let mutated = false;
+
+  while (cursor < tag.length) {
+    attrStartRe.lastIndex = cursor;
+    const match = attrStartRe.exec(tag);
+    if (!match) {
+      result += tag.slice(cursor);
+      break;
+    }
+    const matchIndex = match.index;
+    const matchText = match[0];
+    const rawName = match[1];
+    const exprStart = matchIndex + matchText.length;
+    const capture = captureJsxExpression(tag, exprStart);
+    if (!capture) {
+      result += tag.slice(cursor);
+      return { output: result, changed: mutated };
+    }
+    result += tag.slice(cursor, matchIndex);
+    result += buildAttributeReplacement(rawName, capture.expression);
+    cursor = capture.endIndex;
+    mutated = true;
+  }
+
+  return { output: result, changed: mutated };
+}
 
 function captureHtmlTagSegment(html: string, startIndex: number): HtmlTagSegment | null {
   let i = startIndex + 1;
