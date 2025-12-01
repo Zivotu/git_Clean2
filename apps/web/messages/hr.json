@@ -1657,5 +1657,98 @@
         "notFound": "Aplikacija nije pronađena"
       }
     }
+  },
+  "TeamCreation": {
+    "title": "TRAŽIM EKIPU ZA AI MARKETPLACE IZ GARAŽE",
+    "subtitle": "(Thesara – www.thesara.space)",
+    "intro": {
+      "greeting": "Ljudi,",
+      "text": "pokrenuo sam Thesaru, marketplace za mini aplikacije, igre i alate koje ljudi rade uz pomoć ChatGPT-a, Geminija i sličnih servisa – i tražim par suradnika/ca (FER, Ekonomija, marketing…) koji žele uskočiti u ovu priču od samog početka."
+    },
+    "whatIs": {
+      "title": "Što je Thesara?",
+      "url": "www.thesara.space",
+      "list": {
+        "1": "mjesto gdje možeš objaviti svoju AI-made mini aplikaciju u par klikova",
+        "2": "Svaki korisnik ima 1 besplatnu objavu, veći paketi se simbolično naplaćuju",
+        "3": "Kreatori mogu odrediti cijenu i pokušati zaraditi na svojim uracima",
+        "4": "Zajednička pohrana podataka → multiuser experience (više ljudi koristi istu app/igru)",
+        "5": "Privatne “sobe” s PIN-om za zatvorene grupe",
+        "6": "Ideja: okupiti zajednicu kreatora i korisnika dok AI još tek ulazi među “obične” ljude"
+      }
+    },
+    "whoAmILookingFor": {
+      "title": "Koga tražim?",
+      "text": "Ne tražim CV, titule ni “savršene” kandidate, nego znatiželju i energiju:",
+      "list": {
+        "1": "Ljude koji vole AI, promptanje i igranje s mini-appovima",
+        "2": "Nekoga tko se vidi u marketingu / društvenim mrežama / contentu",
+        "3": "Nekoga tko ima ono “ajmo probat, pa ćemo vidjet” mindset",
+        "4": "Ljude koji žele biti dio malog, opuštenog tima, a ne korporacije"
+      }
+    },
+    "whatYouGet": {
+      "title": "Što ti dobivaš?",
+      "list": {
+        "1": "Rad na realnom projektu koji tek izlazi u svijet",
+        "2": "Šansu da budeš core ekipa od prvog dana",
+        "3": "Slobodu da predlažeš ideje i oblikuješ smjer projekta",
+        "4": "Mogućnost buduće zarade / partner programa / udjela, ako projekt krene kako treba"
+      },
+      "text": "Nema korporativne birokracije ni “šefovanja” – ovo je doslovno projekt “iz garaže” s puno nepoznanica, ali i puno prostora da zajedno nešto napravimo."
+    },
+    "contact": {
+      "title": "Ako ti ovo zvuči zanimljivo:",
+      "text": "Ne šalji CV.\nSamo mi se javi i u par rečenica napiši tko si i zašto ti je ovo simpatično:",
+      "email": "📧 e-mail:",
+      "whatsapp": "📱 Telegram: @ThesaraSpace",
+      "closing": "Veselim se upoznati ekipu koja u ovome vidi potencijal. 😊"
+    },
+    "form": {
+      "title": "Prijava za Thesara tim",
+      "subtitle": "Ovaj formular stiže direktno na welcome@thesara.space. Polja označena",
+      "subtitleSuffix": "su obavezna.",
+      "success": "Hvala ti na prijavi! Javit ću ti se čim prije na e-mail ili mobitel koje si naveo/la.",
+      "errorGeneric": "Ups, nešto je pošlo po zlu. Pokušaj ponovno za par trenutaka ili mi se javi direktno na welcome@thesara.space.",
+      "disclaimer": "Slanjem potvrđuješ da smijemo koristiti navedene podatke kako bismo te kontaktirali oko Thesare.",
+      "submit": "Pošalji prijavu",
+      "submitting": "Slanje u tijeku...",
+      "fields": {
+        "firstName": "Ime",
+        "lastName": "Prezime",
+        "faculty": "Fakultet",
+        "birthYear": "Godište",
+        "studyYear": "Godina studija",
+        "email": "Kontakt e-mail",
+        "phone": "Broj mobitela",
+        "firstImpression": "Prvi dojam o Thesari",
+        "contribution": "Kako misliš da možeš doprinijeti projektu?",
+        "extraComment": "Dodatni komentar ili pitanje (opcionalno)"
+      },
+      "placeholders": {
+        "firstName": "npr. Ana",
+        "lastName": "npr. Horvat",
+        "faculty": "npr. FER, EFZG, TVZ...",
+        "birthYear": "npr. 2000",
+        "studyYear": "npr. \"2.\" ili \"diplomski\"",
+        "email": "npr. ti@primjer.hr",
+        "phone": "npr. +385 91 123 4567",
+        "firstImpression": "Što ti je prvo palo na pamet kad si vidio/la Thesaru?",
+        "contribution": "U kojoj ulozi se vidiš, koje vještine želiš donijeti timu?",
+        "extraComment": "Ako želiš podijeliti još nešto, napiši ovdje."
+      },
+      "validation": {
+        "firstName": "Ime je obavezno.",
+        "lastName": "Prezime je obavezno.",
+        "faculty": "Fakultet je obavezan.",
+        "birthYear": "Godište je obavezno.",
+        "studyYear": "Godina studija je obavezna.",
+        "firstImpression": "Prvi dojam o Thesari mora sadržavati barem 5 znakova.",
+        "contribution": "Opiši kako možeš doprinijeti projektu.",
+        "email": "Kontakt e-mail je obavezan.",
+        "emailInvalid": "Unesi valjanu e-mail adresu.",
+        "phone": "Unesi valjan broj mobitela."
+      }
+    }
   }
 }

@@ -1513,5 +1513,98 @@
     "errorOccurred": "Ein Fehler ist aufgetreten.",
     "percentComplete": "{progress}% abgeschlossen",
     "close": "Schließen"
+  },
+  "TeamCreation": {
+    "title": "SUCHE TEAM FÜR AI-MARKETPLACE AUS DER GARAGE",
+    "subtitle": "(Thesara – www.thesara.space)",
+    "intro": {
+      "greeting": "Leute,",
+      "text": "ich habe Thesara gestartet, einen Marktplatz für Mini-Apps, Spiele und Tools, die Leute mit Hilfe von ChatGPT, Gemini und ähnlichen Diensten erstellen – und ich suche ein paar Mitarbeiter (Informatik, Wirtschaft, Marketing…), die von Anfang an in diese Geschichte einsteigen wollen."
+    },
+    "whatIs": {
+      "title": "Was ist Thesara?",
+      "url": "www.thesara.space",
+      "list": {
+        "1": "– ein Ort, an dem du deine AI-made Mini-App mit wenigen Klicks veröffentlichen kannst",
+        "2": "Jeder Nutzer hat 1 kostenlose Veröffentlichung, größere Pakete werden symbolisch berechnet",
+        "3": "Creator können einen Preis festlegen und versuchen, mit ihren Werken zu verdienen",
+        "4": "Gemeinsame Datenspeicherung → Multiuser-Experience (mehrere Leute nutzen dieselbe App/Spiel)",
+        "5": "Private „Räume“ mit PIN für geschlossene Gruppen",
+        "6": "Idee: eine Gemeinschaft von Creatorn und Nutzern versammeln, während KI gerade erst unter „normale“ Leute kommt"
+      }
+    },
+    "whoAmILookingFor": {
+      "title": "Wen suche ich?",
+      "text": "Ich suche keinen Lebenslauf, Titel oder „perfekte“ Kandidaten, sondern Neugier und Energie:",
+      "list": {
+        "1": "Leute, die KI, Prompting und das Spielen mit Mini-Apps lieben",
+        "2": "Jemanden, der sich im Marketing / Social Media / Content sieht",
+        "3": "Jemanden, der dieses „lass uns probieren und sehen“ Mindset hat",
+        "4": "Leute, die Teil eines kleinen, entspannten Teams sein wollen, keiner Korporation"
+      }
+    },
+    "whatYouGet": {
+      "title": "Was bekommst du?",
+      "list": {
+        "1": "Arbeit an einem realen Projekt, das gerade erst in die Welt hinausgeht",
+        "2": "Die Chance, vom ersten Tag an das Kernteam zu sein",
+        "3": "Freiheit, Ideen vorzuschlagen und die Richtung des Projekts zu gestalten",
+        "4": "Möglichkeit zukünftiger Einnahmen / Partnerprogramm / Anteile, wenn das Projekt gut läuft"
+      },
+      "text": "Keine Unternehmensbürokratie oder „Chef-Gehabe“ – das ist buchstäblich ein „Garagen“-Projekt mit vielen Unbekannten, aber auch viel Raum, um gemeinsam etwas zu schaffen."
+    },
+    "contact": {
+      "title": "Wenn das für dich interessant klingt:",
+      "text": "Schick keinen Lebenslauf.\nMeld dich einfach bei mir und schreib in ein paar Sätzen, wer du bist und warum dir das sympathisch ist:",
+      "email": "📧 E-Mail:",
+      "whatsapp": "📱 Telegram: @ThesaraSpace",
+      "closing": "Ich freue mich darauf, das Team kennenzulernen, das darin Potenzial sieht. 😊"
+    },
+    "form": {
+      "title": "Bewerbung für das Thesara-Team",
+      "subtitle": "Dieses Formular geht direkt an welcome@thesara.space. Felder markiert mit",
+      "subtitleSuffix": "sind Pflichtfelder.",
+      "success": "Danke für deine Bewerbung! Ich melde mich so schnell wie möglich per E-Mail oder Handynummer, die du angegeben hast.",
+      "errorGeneric": "Hoppla, etwas ist schiefgelaufen. Versuch es in ein paar Augenblicken erneut oder melde dich direkt unter welcome@thesara.space.",
+      "disclaimer": "Mit dem Absenden bestätigst du, dass wir die angegebenen Daten verwenden dürfen, um dich bezüglich Thesara zu kontaktieren.",
+      "submit": "Bewerbung absenden",
+      "submitting": "Wird gesendet...",
+      "fields": {
+        "firstName": "Vorname",
+        "lastName": "Nachname",
+        "faculty": "Fakultät",
+        "birthYear": "Geburtsjahr",
+        "studyYear": "Studienjahr",
+        "email": "Kontakt-E-Mail",
+        "phone": "Handynummer",
+        "firstImpression": "Erster Eindruck von Thesara",
+        "contribution": "Wie denkst du, kannst du zum Projekt beitragen?",
+        "extraComment": "Zusätzlicher Kommentar oder Frage (optional)"
+      },
+      "placeholders": {
+        "firstName": "z. B. Anna",
+        "lastName": "z. B. Müller",
+        "faculty": "z. B. Informatik, BWL...",
+        "birthYear": "z. B. 2000",
+        "studyYear": "z. B. „2.“ oder „Master“",
+        "email": "z. B. du@beispiel.de",
+        "phone": "z. B. +49 123 4567890",
+        "firstImpression": "Was kam dir als Erstes in den Sinn, als du Thesara gesehen hast?",
+        "contribution": "In welcher Rolle siehst du dich, welche Fähigkeiten möchtest du ins Team einbringen?",
+        "extraComment": "Wenn du noch etwas teilen möchtest, schreib es hier."
+      },
+      "validation": {
+        "firstName": "Vorname ist erforderlich.",
+        "lastName": "Nachname ist erforderlich.",
+        "faculty": "Fakultät ist erforderlich.",
+        "birthYear": "Geburtsjahr ist erforderlich.",
+        "studyYear": "Studienjahr ist erforderlich.",
+        "firstImpression": "Der erste Eindruck von Thesara muss mindestens 5 Zeichen enthalten.",
+        "contribution": "Beschreibe, wie du zum Projekt beitragen kannst.",
+        "email": "Kontakt-E-Mail ist erforderlich.",
+        "emailInvalid": "Gib eine gültige E-Mail-Adresse ein.",
+        "phone": "Gib eine gültige Handynummer ein."
+      }
+    }
   }
 }

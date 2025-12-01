@@ -1577,5 +1577,98 @@
         "notFound": "App not found"
       }
     }
+  },
+  "TeamCreation": {
+    "title": "LOOKING FOR A TEAM FOR A GARAGE AI MARKETPLACE",
+    "subtitle": "(Thesara – www.thesara.space)",
+    "intro": {
+      "greeting": "Hi everyone,",
+      "text": "I started Thesara, a marketplace for mini apps, games, and tools that people create with the help of ChatGPT, Gemini, and similar services – and I'm looking for a few collaborators (CS, Economics, Marketing...) who want to jump into this story from the very beginning."
+    },
+    "whatIs": {
+      "title": "What is Thesara?",
+      "url": "www.thesara.space",
+      "list": {
+        "1": "– a place where you can publish your AI-made mini app in a few clicks",
+        "2": "Every user has 1 free publication, larger packages are charged symbolically",
+        "3": "Creators can set a price and try to earn from their works",
+        "4": "Shared data storage → multiuser experience (multiple people using the same app/game)",
+        "5": "Private “rooms” with a PIN for closed groups",
+        "6": "Idea: gather a community of creators and users while AI is just entering among “ordinary” people"
+      }
+    },
+    "whoAmILookingFor": {
+      "title": "Who am I looking for?",
+      "text": "I'm not looking for a CV, titles, or “perfect” candidates, but curiosity and energy:",
+      "list": {
+        "1": "People who love AI, prompting, and playing with mini-apps",
+        "2": "Someone who sees themselves in marketing / social media / content",
+        "3": "Someone who has that “let's try it and see” mindset",
+        "4": "People who want to be part of a small, relaxed team, not a corporation"
+      }
+    },
+    "whatYouGet": {
+      "title": "What do you get?",
+      "list": {
+        "1": "Work on a real project that is just coming out into the world",
+        "2": "A chance to be the core team from day one",
+        "3": "Freedom to propose ideas and shape the direction of the project",
+        "4": "Possibility of future earnings / partner program / shares, if the project goes well"
+      },
+      "text": "No corporate bureaucracy or “bossing around” – this is literally a “garage” project with many unknowns, but also a lot of room to create something together."
+    },
+    "contact": {
+      "title": "If this sounds interesting to you:",
+      "text": "Don't send a CV.\nJust contact me and write in a few sentences who you are and why you find this likeable:",
+      "email": "📧 e-mail:",
+      "whatsapp": "📱 Telegram: @ThesaraSpace",
+      "closing": "Looking forward to meeting the team that sees potential in this. 😊"
+    },
+    "form": {
+      "title": "Application for Thesara Team",
+      "subtitle": "This form arrives directly at welcome@thesara.space. Fields marked with",
+      "subtitleSuffix": "are mandatory.",
+      "success": "Thank you for applying! I'll get back to you as soon as possible via the email or mobile number you provided.",
+      "errorGeneric": "Oops, something went wrong. Please try again in a few moments or contact me directly at welcome@thesara.space.",
+      "disclaimer": "By sending, you confirm that we may use the provided data to contact you regarding Thesara.",
+      "submit": "Send Application",
+      "submitting": "Sending...",
+      "fields": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "faculty": "Faculty",
+        "birthYear": "Year of Birth",
+        "studyYear": "Year of Study",
+        "email": "Contact E-mail",
+        "phone": "Mobile Number",
+        "firstImpression": "First impression of Thesara",
+        "contribution": "How do you think you can contribute to the project?",
+        "extraComment": "Additional comment or question (optional)"
+      },
+      "placeholders": {
+        "firstName": "e.g. Ann",
+        "lastName": "e.g. Smith",
+        "faculty": "e.g. CS, Economics...",
+        "birthYear": "e.g. 2000",
+        "studyYear": "e.g. \"2nd\" or \"graduate\"",
+        "email": "e.g. you@example.com",
+        "phone": "e.g. +1 234 567 890",
+        "firstImpression": "What first came to your mind when you saw Thesara?",
+        "contribution": "In what role do you see yourself, what skills do you want to bring to the team?",
+        "extraComment": "If you want to share something else, write it here."
+      },
+      "validation": {
+        "firstName": "First name is required.",
+        "lastName": "Last name is required.",
+        "faculty": "Faculty is required.",
+        "birthYear": "Year of birth is required.",
+        "studyYear": "Year of study is required.",
+        "firstImpression": "First impression of Thesara must contain at least 5 characters.",
+        "contribution": "Describe how you can contribute to the project.",
+        "email": "Contact e-mail is required.",
+        "emailInvalid": "Enter a valid e-mail address.",
+        "phone": "Enter a valid mobile number."
+      }
+    }
   }
 }
