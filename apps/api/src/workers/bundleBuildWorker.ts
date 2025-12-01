@@ -858,21 +858,38 @@ function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boo
   let mutated = false;
   let index = 0;
   let output = '';
+  let activeRawTag: 'script' | 'style' | null = null;
+  const lowerHtml = html.toLowerCase();
 
   while (index < html.length) {
+    if (activeRawTag) {
+      const closingSeq = `</${activeRawTag}`;
+      const closingIndex = lowerHtml.indexOf(closingSeq, index);
+      if (closingIndex === -1) {
+        output += html.slice(index);
+        break;
+      }
+      output += html.slice(index, closingIndex);
+      index = closingIndex;
+      activeRawTag = null;
+      continue;
+    }
+
     const nextTagStart = html.indexOf('<', index);
     if (nextTagStart === -1) {
-      output += html.slice(index);
+      output += escapeHtmlText(html.slice(index));
       break;
     }
 
+    const rawText = html.slice(index, nextTagStart);
+    if (rawText) {
+      output += escapeHtmlText(rawText);
+    }
     const capture = captureHtmlTagSegment(html, nextTagStart);
     if (!capture) {
-      output += html.slice(index);
+      output += html.slice(nextTagStart);
       break;
     }
-
-    output += html.slice(index, nextTagStart);
     const { segment, endIndex } = capture;
     const trimmed = segment.trimStart();
     if (
@@ -886,11 +903,21 @@ function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boo
       const { tag, changed } = fixReactLikeAttributesInTag(segment);
       if (changed) mutated = true;
       output += tag;
+      if (/^<\s*script\b/i.test(segment)) {
+        activeRawTag = 'script';
+      } else if (/^<\s*style\b/i.test(segment)) {
+        activeRawTag = 'style';
+      }
     }
     index = endIndex;
   }
 
   return { output, changed: mutated };
+}
+
+function escapeHtmlText(segment: string): string {
+  if (!segment) return segment;
+  return segment.replace(/</g, '&lt;');
 }
 
 async function fixCommonAiErrors(projectDir: string) {
