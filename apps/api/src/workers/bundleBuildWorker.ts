@@ -45,9 +45,9 @@ async function copyDir(src: string, dest: string) {
 }
 
 const FRIENDLY_FAILURE_MESSAGES: Record<'hr' | 'en' | 'de', string> = {
-  hr: 'Primijetili smo poteškoće u vašem kodu, ali odmah istražujemo i pokušat ćemo sve popraviti umjesto vas. Pričekajte daljnje obavijesti — bacamo se na posao!',
-  en: "We noticed a hiccup in your code, but we're digging into it and will try to fix it for you. Sit tight for further updates — we're on it!",
-  de: 'Wir haben ein Problem in deinem Code bemerkt, prüfen es sofort und versuchen es für dich zu beheben. Bitte warte auf weitere Updates – wir legen gleich los!',
+  hr: 'Primijetili smo neocekivanu gresku u tvojoj aplikaciji i nas tim je vec zapoceo istragu. Cim otkrijemo uzrok javit cemo ti se s detaljima i rjesenjem, a vrlo brzo ces dobiti i email s dodatnim informacijama.',
+  en: 'We detected an unexpected issue in your app and our team already started investigating it. We will follow up with details and a fix as soon as we identify the cause, and you should receive an email with more information shortly.',
+  de: 'Wir haben ein unerwartetes Problem in deiner App erkannt und unser Team untersucht es bereits. Sobald wir die Ursache gefunden haben, melden wir uns mit Details und einer Losung, und du erhaeltst in Kurze eine E-Mail mit weiteren Informationen.',
 };
 
 function getFriendlyFailureMessage(locale?: string | null): string {
@@ -689,9 +689,96 @@ function fixReactLikeAttributesInTag(tag: string): { tag: string; changed: boole
   return { tag: updated, changed };
 }
 
+type HtmlTagSegment = { segment: string; endIndex: number };
+
+function captureHtmlTagSegment(html: string, startIndex: number): HtmlTagSegment | null {
+  let i = startIndex + 1;
+  let inSingle = false;
+  let inDouble = false;
+  let inBacktick = false;
+  let braceDepth = 0;
+
+  while (i < html.length) {
+    const ch = html[i];
+    const prev = html[i - 1];
+
+    if (inSingle) {
+      if (ch === "'" && prev !== '\\') inSingle = false;
+      i += 1;
+      continue;
+    }
+
+    if (inDouble) {
+      if (ch === '"' && prev !== '\\') inDouble = false;
+      i += 1;
+      continue;
+    }
+
+    if (inBacktick) {
+      if (ch === '`' && prev !== '\\') {
+        inBacktick = false;
+      }
+      i += 1;
+      continue;
+    }
+
+    if (ch === "'") {
+      inSingle = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '"') {
+      inDouble = true;
+      i += 1;
+      continue;
+    }
+    if (ch === '`') {
+      inBacktick = true;
+      i += 1;
+      continue;
+    }
+
+    if (ch === '{') {
+      braceDepth += 1;
+      i += 1;
+      continue;
+    }
+    if (ch === '}' && braceDepth > 0) {
+      braceDepth -= 1;
+      i += 1;
+      continue;
+    }
+
+    if (ch === '>' && braceDepth === 0) {
+      return { segment: html.slice(startIndex, i + 1), endIndex: i + 1 };
+    }
+
+    i += 1;
+  }
+
+  return null;
+}
+
 function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boolean } {
   let mutated = false;
-  const output = html.replace(/<[^>]+>/g, (segment) => {
+  let index = 0;
+  let output = '';
+
+  while (index < html.length) {
+    const nextTagStart = html.indexOf('<', index);
+    if (nextTagStart === -1) {
+      output += html.slice(index);
+      break;
+    }
+
+    const capture = captureHtmlTagSegment(html, nextTagStart);
+    if (!capture) {
+      output += html.slice(index);
+      break;
+    }
+
+    output += html.slice(index, nextTagStart);
+    const { segment, endIndex } = capture;
     const trimmed = segment.trimStart();
     if (
       !trimmed.startsWith('<') ||
@@ -699,12 +786,15 @@ function sanitizeReactSyntaxInHtml(html: string): { output: string; changed: boo
       /^<\s*!/.test(trimmed) ||
       /^<\s*\?/.test(trimmed)
     ) {
-      return segment;
+      output += segment;
+    } else {
+      const { tag, changed } = fixReactLikeAttributesInTag(segment);
+      if (changed) mutated = true;
+      output += tag;
     }
-    const { tag, changed } = fixReactLikeAttributesInTag(segment);
-    if (changed) mutated = true;
-    return tag;
-  });
+    index = endIndex;
+  }
+
   return { output, changed: mutated };
 }
 
