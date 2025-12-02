@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import { useTheme } from '@/components/ThemeProvider';
 import { useI18n } from '@/lib/i18n-provider';
@@ -40,6 +40,40 @@ export default function StvaranjeTimaClient() {
   const [form, setForm] = useState<FormState>(DEFAULT_STATE);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const trackEvent = async (eventName: string, params?: Record<string, any>) => {
+    // Clarity
+    if (typeof window !== 'undefined' && (window as any).clarity) {
+      (window as any).clarity('event', eventName);
+    }
+
+    // Firebase
+    try {
+      const { getAnalytics, logEvent } = await import('firebase/analytics');
+      const { default: app } = await import('@/lib/firebase');
+      const analytics = getAnalytics(app);
+      logEvent(analytics, eventName, params);
+    } catch (e) {
+      // Analytics might fail if ad blockers are present or if not configured
+      // console.error('Analytics error', e);
+    }
+  };
+
+  useEffect(() => {
+    trackEvent('view_team_creation');
+
+    // Notify backend about the view
+    const notifyView = async () => {
+      try {
+        const apiBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
+        const endpoint = apiBase ? `${apiBase}/team-application/view` : '/api/team-application/view';
+        await fetch(endpoint, { method: 'POST' });
+      } catch (e) {
+        // Ignore errors for view notification
+      }
+    };
+    notifyView();
+  }, []);
 
   const cardClasses = useMemo(
     () =>
@@ -107,6 +141,7 @@ export default function StvaranjeTimaClient() {
 
       if (!response.ok) {
         setStatus('error');
+        trackEvent('submit_team_application_error', { reason: 'http_error', status: response.status });
         setErrorMessage(
           messages['TeamCreation.form.errorGeneric'] || 'Ups, nešto je pošlo po zlu. Pokušaj ponovno za par trenutaka ili mi se javi direktno na welcome@thesara.space.',
         );
@@ -115,9 +150,11 @@ export default function StvaranjeTimaClient() {
 
       setStatus('success');
       setForm(DEFAULT_STATE);
+      trackEvent('submit_team_application', { email: payload.contactEmail });
     } catch (err) {
       console.error('team_application_submit_failed', err);
       setStatus('error');
+      trackEvent('submit_team_application_error', { reason: 'exception', message: String(err) });
       setErrorMessage(messages['TeamCreation.form.errorGeneric'] || 'Ups, nešto je pošlo po zlu. Pokušaj ponovno za par trenutaka ili mi se javi direktno na welcome@thesara.space.');
     }
   };

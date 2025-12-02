@@ -144,6 +144,54 @@ export default async function teamApplicationsRoutes(app: FastifyInstance) {
     },
   };
 
+  const handleView = async (req: any, reply: any) => {
+    const host =
+      process.env.WELCOME_SMTP_HOST ||
+      process.env.SMTP_HOST ||
+      process.env.REPORTS_SMTP_HOST;
+    const port =
+      Number(process.env.WELCOME_SMTP_PORT || process.env.SMTP_PORT || process.env.REPORTS_SMTP_PORT || 0) || undefined;
+    const user =
+      process.env.WELCOME_SMTP_USER ||
+      process.env.SMTP_USER ||
+      process.env.REPORTS_SMTP_USER;
+    const pass =
+      process.env.WELCOME_SMTP_PASS ||
+      process.env.SMTP_PASS ||
+      process.env.REPORTS_SMTP_PASS;
+    const from =
+      process.env.WELCOME_EMAIL_FROM ||
+      process.env.ADMIN_EMAIL_FROM ||
+      user ||
+      'welcome@thesara.space';
+    const to = 'welcome@thesara.space';
+
+    if (!host || !user || !pass) {
+      // Silently fail if config is missing, it's just a notification
+      req.log.error({ host, user }, 'team_application_view_smtp_missing');
+      return { ok: false };
+    }
+
+    const transporter = nodemailer.createTransport({
+      host,
+      port: port || 465,
+      secure: Boolean(port === 465),
+      auth: { user, pass },
+    });
+
+    try {
+      await transporter.sendMail({
+        from,
+        to,
+        subject: 'StudentNaVidiku',
+        text: `Netko je upravo otvorio stranicu za prijavu u tim.\nVrijeme: ${new Date().toISOString()}`,
+      });
+    } catch (err) {
+      req.log.error({ err }, 'team_application_view_send_failed');
+    }
+    return { ok: true };
+  };
+
   app.route({
     method: 'POST',
     url: '/team-application',
@@ -157,4 +205,7 @@ export default async function teamApplicationsRoutes(app: FastifyInstance) {
     schema,
     handler,
   });
+
+  app.post('/team-application/view', handleView);
+  app.post('/api/team-application/view', handleView);
 }
