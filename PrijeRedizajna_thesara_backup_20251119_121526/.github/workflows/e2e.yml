@@ -1,0 +1,56 @@
+
+name: E2E (Playwright)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: true
+      BASE_URL: ${{ secrets.E2E_BASE_URL || 'https://thesara.space' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      # Optional: build web app if tests hit local build output
+      - name: Build (optional)
+        run: |
+          if [ -f apps/web/package.json ]; then pnpm --filter "./apps/web" run build || true; fi
+
+      - name: Run E2E tests
+        run: |
+          pnpm -w exec playwright test --reporter=line
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+            **/playwright-report
+            **/test-results

@@ -1,0 +1,34 @@
+{
+  "name": "createx-starter-v0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0+sha512.b4106707c7225b1748b61595953ccbebff97b54ad05d002aa3635f633b9c53cd666f7ce9b8bc44704f1fa048b9a49b55371ab2d9e9d667d1efe2ef1514bcd513",
+  "scripts": {
+    "dev:redis": "docker compose -f docker-compose.dev.yml up -d",
+    "dev:redis:down": "docker compose -f docker-compose.dev.yml down",
+    "dev": "pnpm run dev:redis && node tools/dev.mjs",
+    "dev:reset": "node -e \"require('fs').rmSync('.devdata',{recursive:true,force:true});console.log('✔ .devdata cleaned')\"",
+    "build:api": "pnpm --filter @thesara/api build",
+    "build:web": "pnpm --filter @thesara/web build",
+    "build": "pnpm build:api && pnpm build:web",
+    "typecheck": "pnpm -r --filter @thesara/api run typecheck",
+    "db:push": "pnpm --filter @thesara/api exec cross-env DATABASE_URL=\"file:../../.devdata/sqlite.db\" prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.18.0",
+    "@radix-ui/react-slider": "^1.1.2",
+    "cross-env": "^7.0.3",
+    "firebase-admin": "^13.6.0",
+    "pdf-parse": "2.4.5"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.7",
+    "cpx": "^1.5.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.1.9",
+      "@types/react-dom": "19.1.7"
+    }
+  }
+}

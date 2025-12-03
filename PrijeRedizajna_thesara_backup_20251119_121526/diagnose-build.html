@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build Diagnostics</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0e27;
+      color: #e0e0e0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #00ff88; }
+    h2 { color: #00ccff; margin-top: 30px; }
+    .test { 
+      background: #1a1e3a; 
+      padding: 15px; 
+      margin: 10px 0; 
+      border-left: 4px solid #555;
+      border-radius: 4px;
+    }
+    .test.pass { border-left-color: #00ff88; }
+    .test.fail { border-left-color: #ff4444; }
+    .test.warn { border-left-color: #ffaa00; }
+    .status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .status.pass { background: #00ff88; color: #000; }
+    .status.fail { background: #ff4444; color: #fff; }
+    .status.warn { background: #ffaa00; color: #000; }
+    pre {
+      background: #0d1117;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .summary {
+      background: #2d3748;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    button {
+      background: #00ccff;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    button:hover { background: #00ff88; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Build Diagnostics Tool</h1>
+  <p>Sistematska provjera svih komponenti build procesa</p>
+  
+  <div class="summary">
+    <h3>Status: <span id="overallStatus">Running...</span></h3>
+    <div>Passed: <span id="passCount">0</span> | Failed: <span id="failCount">0</span> | Warnings: <span id="warnCount">0</span></div>
+  </div>
+
+  <button onclick="runDiagnostics()">▶️ Run Full Diagnostics</button>
+  <button onclick="location.reload()">🔄 Reset</button>
+  <button onclick="fixListing203()">🔧 Fix Listing 203 (BuildId Corruption)</button>
+
+  <div id="results"></div>
+  
+  <div id="fixSection" style="display: none; margin-top: 30px;">
+    <div class="summary">
+      <h2>🔧 Fix Listing 203 BuildId Corruption</h2>
+      <div class="test warn">
+        <strong>Problem:</strong><br>
+        Browser requests: <code>2c6be31-d612-48f2-b056-aacf1faf21cd</code><br>
+        Correct buildId: <code>c2cb6e31-d612-48f2-b056-aac1f1af71cd</code><br>
+        <em>Hex digits are permuted in Firestore!</em>
+      </div>
+      <button onclick="runFix203()">▶️ Call Approve Endpoint</button>
+      <button onclick="verifyFix203()">✓ Verify Fix</button>
+      <div id="fixLog"></div>
+    </div>
+  </div>
+
+  <script>
+    const results = [];
+    let passCount = 0;
+    let failCount = 0;
+    let warnCount = 0;
+
+    function log(title, status, message, details = null) {
+      const result = { title, status, message, details, timestamp: new Date().toISOString() };
+      results.push(result);
+      
+      if (status === 'pass') passCount++;
+      else if (status === 'fail') failCount++;
+      else if (status === 'warn') warnCount++;
+
+      document.getElementById('passCount').textContent = passCount;
+      document.getElementById('failCount').textContent = failCount;
+      document.getElementById('warnCount').textContent = warnCount;
+
+      const div = document.createElement('div');
+      div.className = `test ${status}`;
+      div.innerHTML = `
+        <div>
+          <span class="status ${status}">${status.toUpperCase()}</span>
+          <strong>${title}</strong>
+        </div>
+        <div style="margin-top: 10px;">${message}</div>
+        ${details ? `<pre>${JSON.stringify(details, null, 2)}</pre>` : ''}
+      `;
+      document.getElementById('results').appendChild(div);
+    }
+
+    async function testFetch(url, expectedType) {
+      try {
+        const response = await fetch(url);
+        const contentType = response.headers.get('content-type') || '';
+        const size = response.headers.get('content-length') || 'unknown';
+        const status = response.status;
+        
+        if (status !== 200) {
+          return { 
+            success: false, 
+            error: `HTTP ${status}`,
+            contentType,
+            size 
+          };
+        }
+
+        const matchesExpected = contentType.includes(expectedType);
+        
+        return {
+          success: matchesExpected,
+          status,
+          contentType,
+          size,
+          body: await response.text()
+        };
+      } catch (err) {
+        return {
+          success: false,
+          error: err.message
+        };
+      }
+    }
+
+    async function runDiagnostics() {
+      document.getElementById('results').innerHTML = '';
+      results.length = 0;
+      passCount = failCount = warnCount = 0;
+      
+      document.getElementById('overallStatus').textContent = 'Running...';
+
+      // TEST 1: Check if build directory exists
+      log('Build Directory Access', 'info', 'Testing /builds/70d7fff9-b63c-4cde-9915-6b17aeb866d6/build/ endpoint...');
+      
+      const indexResult = await testFetch(
+        'http://127.0.0.1:8789/builds/70d7fff9-b63c-4cde-9915-6b17aeb866d6/build/',
+        'text/html'
+      );
+
+      if (indexResult.success) {
+        log('index.html Load', 'pass', `✓ index.html loads correctly (${indexResult.size} bytes)`, {
+          contentType: indexResult.contentType,
+          status: indexResult.status
+        });
+      } else {
+        log('index.html Load', 'fail', `✗ Failed to load index.html: ${indexResult.error}`, indexResult);
+        return;
+      }
+
+      // TEST 2: Parse index.html and extract script tags
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(indexResult.body, 'text/html');
+      const scripts = Array.from(doc.querySelectorAll('script'));
+      
+      log('HTML Structure', 'pass', `Found ${scripts.length} script tags in index.html`, {
+        scriptTags: scripts.map(s => ({
+          src: s.src || '(inline)',
+          type: s.type || 'text/javascript',
+          hasImportMap: s.type === 'importmap',
+          length: s.textContent?.length || 0
+        }))
+      });
+
+      // TEST 3: Check for React UMD
+      const reactScript = scripts.find(s => s.src && s.src.includes('react') && s.src.includes('umd'));
+      if (reactScript) {
+        log('React UMD Script', 'pass', `✓ Found React UMD: ${reactScript.src}`);
+        
+        const reactResult = await testFetch(reactScript.src, 'javascript');
+        if (reactResult.success) {
+          log('React UMD Load', 'pass', `✓ React UMD loads successfully (${reactResult.size} bytes)`);
+        } else {
+          log('React UMD Load', 'fail', `✗ React UMD failed to load: ${reactResult.error}`);
+        }
+      } else {
+        log('React UMD Script', 'warn', '⚠ No React UMD script found - using ESM?');
+      }
+
+      // TEST 4: Check for app.js
+      const appJsResult = await testFetch(
+        'http://127.0.0.1:8789/builds/70d7fff9-b63c-4cde-9915-6b17aeb866d6/build/app.js',
+        'javascript'
+      );
+
+      if (appJsResult.success) {
+        log('app.js Load', 'pass', `✓ app.js loads with correct MIME type (${appJsResult.size} bytes)`, {
+          contentType: appJsResult.contentType
+        });
+
+        // TEST 5: Analyze app.js content
+        const hasESMImport = /^import\s+/m.test(appJsResult.body);
+        const hasESMExport = /^export\s+/m.test(appJsResult.body);
+        const hasWindowReact = /window\.React/.test(appJsResult.body);
+        const hasGlobalExport = /window\.PeoplePiePlayground/.test(appJsResult.body);
+
+        const isESM = hasESMImport || hasESMExport;
+        const isUMD = hasWindowReact && hasGlobalExport;
+
+        if (isESM && !isUMD) {
+          log('app.js Format', 'fail', '✗ app.js uses ESM imports/exports without UMD compatibility', {
+            hasESMImport,
+            hasESMExport,
+            hasWindowReact,
+            hasGlobalExport,
+            firstLines: appJsResult.body.split('\n').slice(0, 20).join('\n')
+          });
+        } else if (isUMD) {
+          log('app.js Format', 'pass', '✓ app.js uses UMD globals (window.React)', {
+            hasWindowReact,
+            hasGlobalExport
+          });
+        } else {
+          log('app.js Format', 'warn', '⚠ app.js format unclear', {
+            hasESMImport,
+            hasESMExport,
+            hasWindowReact,
+            hasGlobalExport
+          });
+        }
+      } else {
+        log('app.js Load', 'fail', `✗ Failed to load app.js: ${appJsResult.error}`, appJsResult);
+      }
+
+      // TEST 6: Check import map if present
+      const importMapScript = scripts.find(s => s.type === 'importmap');
+      if (importMapScript) {
+        try {
+          const importMap = JSON.parse(importMapScript.textContent);
+          const hasDataURL = Object.values(importMap.imports || {}).some(v => v.startsWith('data:'));
+          const hasESMsh = Object.values(importMap.imports || {}).some(v => v.includes('esm.sh'));
+          const hasUnpkg = Object.values(importMap.imports || {}).some(v => v.includes('unpkg.com'));
+
+          if (hasDataURL) {
+            log('Import Map', 'warn', '⚠ Import map uses data: URLs (may not work in all browsers)', importMap);
+          } else if (hasESMsh) {
+            log('Import Map', 'warn', '⚠ Import map uses esm.sh CDN (may cause React hooks issues)', importMap);
+          } else if (hasUnpkg) {
+            log('Import Map', 'pass', '✓ Import map uses unpkg.com', importMap);
+          } else {
+            log('Import Map', 'info', 'Import map detected', importMap);
+          }
+        } catch (err) {
+          log('Import Map', 'fail', `✗ Failed to parse import map: ${err.message}`);
+        }
+      } else {
+        log('Import Map', 'info', 'No import map found (using UMD globals or direct URLs)');
+      }
+
+      // TEST 7: Check render script
+      const moduleScript = scripts.find(s => s.type === 'module' && !s.src);
+      const normalScript = scripts.find(s => !s.type && !s.src && s.textContent.includes('root'));
+      
+      if (moduleScript) {
+        const hasImportApp = /import.*from.*app\.js/i.test(moduleScript.textContent);
+        const hasCreateRoot = /createRoot/.test(moduleScript.textContent);
+        
+        if (hasImportApp) {
+          log('Render Script', 'warn', '⚠ Using ESM module script to import app.js', {
+            snippet: moduleScript.textContent.substring(0, 200)
+          });
+        } else {
+          log('Render Script', 'info', 'Module script found', {
+            snippet: moduleScript.textContent.substring(0, 200)
+          });
+        }
+      } else if (normalScript) {
+        const usesGlobal = /window\.(React|PeoplePiePlayground)/.test(normalScript.textContent);
+        
+        if (usesGlobal) {
+          log('Render Script', 'pass', '✓ Render script uses UMD globals', {
+            snippet: normalScript.textContent.substring(0, 200)
+          });
+        } else {
+          log('Render Script', 'warn', '⚠ Render script format unclear', {
+            snippet: normalScript.textContent.substring(0, 200)
+          });
+        }
+      } else {
+        log('Render Script', 'fail', '✗ No render script found');
+      }
+
+      // FINAL SUMMARY
+      document.getElementById('overallStatus').textContent = 
+        failCount === 0 ? '✅ All Critical Tests Passed' : 
+        `❌ ${failCount} Critical Failure(s)`;
+
+      // Generate recommendations
+      const recommendations = [];
+      
+      if (results.some(r => r.title === 'app.js Format' && r.status === 'fail')) {
+        recommendations.push({
+          issue: 'app.js uses ESM imports with React hooks',
+          solution: 'Convert app.js to use window.React instead of "import React"',
+          priority: 'HIGH',
+          steps: [
+            'Replace "import React from \'react\'" with "const React = window.React"',
+            'Replace "import { useState } from \'react\'" with "const { useState } = React"',
+            'Replace "export default Component" with "window.ComponentName = Component"'
+          ]
+        });
+      }
+
+      if (results.some(r => r.title === 'Import Map' && r.status === 'warn' && r.message.includes('esm.sh'))) {
+        recommendations.push({
+          issue: 'Using esm.sh CDN causes React hooks initialization issues',
+          solution: 'Switch to UMD builds from unpkg.com',
+          priority: 'HIGH',
+          steps: [
+            'Remove import map or convert to data: URLs',
+            'Load React as <script src="https://unpkg.com/react@18/umd/react.production.min.js">',
+            'Load ReactDOM as <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js">',
+            'Update app.js to use window.React'
+          ]
+        });
+      }
+
+      if (results.some(r => r.title === 'Render Script' && r.status === 'warn')) {
+        recommendations.push({
+          issue: 'Render script not using UMD globals properly',
+          solution: 'Update render script to call ReactDOM.createRoot with window globals',
+          priority: 'MEDIUM',
+          steps: [
+            'Change from ESM "import { createRoot }" to direct window.ReactDOM.createRoot',
+            'Use React.createElement(window.ComponentName) instead of JSX'
+          ]
+        });
+      }
+
+      if (recommendations.length > 0) {
+        const recDiv = document.createElement('div');
+        recDiv.className = 'summary';
+        recDiv.innerHTML = `
+          <h2>📋 Recommended Actions</h2>
+          ${recommendations.map((rec, i) => `
+            <div style="margin: 15px 0; padding: 15px; background: #1a1e3a; border-left: 4px solid ${rec.priority === 'HIGH' ? '#ff4444' : '#ffaa00'}; border-radius: 4px;">
+              <strong>${i + 1}. ${rec.issue}</strong><br>
+              <em>Solution: ${rec.solution}</em> <span style="color: ${rec.priority === 'HIGH' ? '#ff4444' : '#ffaa00'}">[${rec.priority}]</span>
+              <details style="margin-top: 10px;">
+                <summary style="cursor: pointer;">Show steps</summary>
+                <ol style="margin: 10px 0;">
+                  ${rec.steps.map(step => `<li>${step}</li>`).join('')}
+                </ol>
+              </details>
+            </div>
+          `).join('')}
+        `;
+        document.getElementById('results').appendChild(recDiv);
+      }
+
+      // Export results
+      const exportDiv = document.createElement('div');
+      exportDiv.innerHTML = `
+        <h2>💾 Export Results</h2>
+        <button onclick="downloadResults()">Download JSON Report</button>
+        <button onclick="copyToClipboard()">Copy to Clipboard</button>
+      `;
+      document.getElementById('results').appendChild(exportDiv);
+    }
+
+    function downloadResults() {
+      const data = {
+        timestamp: new Date().toISOString(),
+        summary: { passed: passCount, failed: failCount, warnings: warnCount },
+        results
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `build-diagnostics-${Date.now()}.json`;
+      a.click();
+    }
+
+    function copyToClipboard() {
+      const text = results.map(r => 
+        `[${r.status.toUpperCase()}] ${r.title}: ${r.message}`
+      ).join('\n');
+      navigator.clipboard.writeText(text);
+      alert('Results copied to clipboard!');
+    }
+
+    // Fix Listing 203 functions
+    const CORRECT_BUILD_ID_203 = 'c2cb6e31-d612-48f2-b056-aac1f1af71cd';
+    
+    function fixListing203() {
+      document.getElementById('fixSection').style.display = 'block';
+      document.getElementById('fixSection').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function fixLog(msg, isError = false) {
+      const logDiv = document.getElementById('fixLog');
+      const line = document.createElement('div');
+      line.style.color = isError ? '#ff4444' : '#00ff88';
+      line.style.marginTop = '10px';
+      line.textContent = msg;
+      logDiv.appendChild(line);
+    }
+    
+    async function runFix203() {
+      document.getElementById('fixLog').innerHTML = '';
+      fixLog('🔧 Starting fix...');
+      fixLog(`Calling approve for buildId: ${CORRECT_BUILD_ID_203}`);
+      
+      try {
+        const response = await fetch(`http://localhost:8789/review/approve/${CORRECT_BUILD_ID_203}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const result = await response.json();
+        fixLog('✅ Approve successful!');
+        fixLog(`Response: ${JSON.stringify(result)}`);
+        fixLog('\n🎉 Firestore should now have correct buildId. Verify below.');
+      } catch (err) {
+        fixLog(`❌ Error: ${err.message}`, true);
+        fixLog('Make sure API is running: cd apps/api && pnpm run dev', true);
+      }
+    }
+    
+    async function verifyFix203() {
+      document.getElementById('fixLog').innerHTML = '';
+      fixLog('🔍 Verifying fix...');
+      
+      try {
+        const response = await fetch('http://localhost:8789/api/app-meta/203');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const app = await response.json();
+        fixLog(`App: ${app.title} (id: ${app.id})`);
+        fixLog(`buildId: ${app.buildId || 'NOT SET'}`);
+        fixLog(`pendingBuildId: ${app.pendingBuildId || 'NONE'}`);
+        
+        if (app.buildId === CORRECT_BUILD_ID_203) {
+          fixLog('\n✅ BuildId is CORRECT! Mini-app should now load.');
+        } else if (app.buildId === '2c6be31-d612-48f2-b056-aacf1faf21cd') {
+          fixLog('\n❌ BuildId is still CORRUPTED. Run fix again.', true);
+        } else {
+          fixLog(`\n⚠️ BuildId is different: ${app.buildId}`, true);
+        }
+      } catch (err) {
+        fixLog(`❌ Error: ${err.message}`, true);
+      }
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      setTimeout(runDiagnostics, 500);
+    });
+  </script>
+</body>
+</html>

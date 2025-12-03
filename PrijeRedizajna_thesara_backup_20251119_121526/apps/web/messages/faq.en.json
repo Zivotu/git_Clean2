@@ -1,0 +1,209 @@
+[
+  {
+    "id": "basic",
+    "title": "Basic",
+    "items": [
+      {
+        "q": "What is Thesara?",
+        "a": "Thesara is a platform for quickly and easily publishing apps in a few clicks. The focus is on making your app available to users worldwide and giving your creativity a place to park."
+      },
+      {
+        "q": "What kinds of apps can I publish?",
+        "a": "Any app that stays within a respectful boundary — no hate, scams, theft or lies. Technically, apps you build with LLMs (like ChatGPT and similar systems) will work here as well."
+      }
+    ]
+  },
+  {
+    "id": "publishing",
+    "title": "Publishing",
+    "items": [
+      {
+        "q": "How do I publish an app?",
+        "a": "Click the green 'Publish App' button, paste the code you copied from ChatGPT or another LLM, or upload the bundle you downloaded. Add a title, description, choose an image and publish. Then wait for our review and approval — that's it!"
+      },
+      {
+        "q": "How long does publishing take?",
+        "a": "Publishing can take from a few minutes to a few hours. We're working to speed things up — still young, still improving — so it will get faster over time!"
+      },
+      {
+        "q": "What if publishing fails?",
+        "a": "Publishing fails only if we reject the app — you'll get a notification. If the app is published but doesn't behave as expected, use the 'Report Problem' button in the app details to describe the issue and we'll investigate."
+      }
+    ]
+  },
+  {
+    "id": "storage",
+    "title": "Storage & upload",
+    "items": [
+      {
+        "q": "Where are my builds and uploads stored?",
+        "a": "Builds are stored in the Thesara system, but keep your originals — we don't take responsibility for backups or permanent storage of your apps."
+      },
+      {
+        "q": "What if an upload fails?",
+        "a": "If an upload fails, please email reports@thesara.space and we'll check what happened. Uploads should normally succeed."
+      }
+    ]
+  },
+  {
+    "id": "usage",
+    "title": "Using apps",
+    "items": [
+      {
+        "q": "How can I use my app?",
+        "a": "You can keep an app private or make it available to everyone. You can offer it for free or set a monthly price — for individual apps or your whole repository. Other users can access everything you publish for one price. We take a 30% commission; see Terms in the footer for details."
+      },
+      {
+        "q": "When can I withdraw earnings?",
+        "a": "You can request a payout once you have at least $50 in your account. Transaction fees depend on the payout service and will be shown during the payout process."
+      }
+    ]
+  },
+  {
+    "id": "support",
+    "title": "Suggestions & support",
+    "items": [
+      {
+        "q": "How can I send a suggestion?",
+        "a": "Use the 'Your suggestions' link on the homepage — click and send whatever comes to mind. We love ideas, especially those that help Thesara improve!"
+      },
+      {
+        "q": "Where can I find more guidance?",
+        "a": "Find more info in this FAQ or contact us directly at support@thesara.space."
+      }
+    ]
+  },
+  {
+    "id": "ambassador",
+    "title": "Ambassador program",
+    "items": [
+      {
+        "q": "What is the Ambassador program?",
+        "a": "A short program for enthusiasts who want to promote Thesara. Sign up via the form in the UI and join the team building the future of creativity!"
+      }
+    ]
+  },
+  {
+    "id": "general",
+    "title": "General",
+    "items": [
+      {
+        "q": "What is {site}?",
+        "a": "{site} is a marketplace for mini web apps and games. You can run them in the browser, like and share them, and as a creator you can publish in minutes."
+      },
+      {
+        "q": "Do I need an account?",
+        "a": "Browsing is open, but to play/run, like and publish apps you need to sign in or register."
+      },
+      {
+        "q": "Is {site} free?",
+        "a": "Basic usage is free. Advanced features and higher quotas are available on the Pro plan."
+      }
+    ]
+  },
+  {
+    "id": "account-privacy",
+    "title": "Account & Privacy",
+    "items": [
+      {
+        "q": "How do I sign in?",
+        "a": "Sign in with Google or email + password. After sign‑in we create your profile to sync usage."
+      },
+      {
+        "q": "How do I delete my account?",
+        "a": "Contact support or reach us via your profile — we can permanently delete your account and related data."
+      },
+      {
+        "q": "What data do you store?",
+        "a": "We store essential sign‑in data (email, name, avatar) and aggregated metrics (likes, views). We do not sell data to third parties."
+      }
+    ]
+  },
+  {
+    "id": "publishing-creators",
+    "title": "Publishing & Creators",
+    "items": [
+      {
+        "q": "How do I publish an app?",
+        "a": "On the homepage click ‘Publish App’, upload a ZIP bundle or repo and follow the steps. You’ll get a preview, network policy, and fields for description, tags and price."
+      },
+      {
+        "q": "Why is my app ‘pending review’?",
+        "a": "Apps undergo a safety review (automated + manual if needed). If something needs fixing, you’ll receive reasons and guidance."
+      },
+      {
+        "q": "Can I charge for access?",
+        "a": "Yes. Set a price in app details. Paid users or those with a PIN can play/run the app."
+      },
+      {
+        "q": "How do I build multi-user experiences (rooms, sessions)?",
+        "a": "Enable \"Thesara Storage\" when publishing. In your project use our `@thesara/client` package and call `initializeThesara()` on startup. It returns a storage object with async `getItem`, `setItem` and `removeItem` helpers. If the host injects a global `window.thesara.storage`, the SDK picks it up immediately; otherwise it falls back to the postMessage handshake."
+      }
+    ]
+  },
+  {
+    "id": "pricing-subscriptions",
+    "title": "Pricing & Subscriptions",
+    "items": [
+      {
+        "q": "What plans are available?",
+        "a": "Free plan (up to 2 apps) and Gold plan with higher quotas and extras (e.g. larger uploads, priority review)."
+      },
+      {
+        "q": "How do paid apps work?",
+        "a": "Creators set a price. After purchase, users get access (PIN or entitlement) and can play without limits."
+      },
+      {
+        "q": "Refunds?",
+        "a": "If something doesn’t work, contact support within 14 days and we’ll help — including refunds where appropriate."
+      }
+    ]
+  },
+  {
+    "id": "security",
+    "title": "Security & Sandbox",
+    "items": [
+      {
+        "q": "What is the ‘security cage’?",
+        "a": "Apps run in a sandboxed iframe with a strict CSP, limiting network access, cookies and browser APIs."
+      },
+      {
+        "q": "What are network policies (No Net / Media Only / Open Net)?",
+        "a": "No Net: no network calls. Media Only: images/CDN only. Open Net: broader access (with declared domains). The policy is shown on the app details."
+      },
+      {
+        "q": "How to report a problem or abuse?",
+        "a": "Use ‘Report’ on the app details (if visible) or send us the URL and a short description via support."
+      }
+    ]
+  },
+  {
+    "id": "compatibility",
+    "title": "Compatibility & Performance",
+    "items": [
+      {
+        "q": "Which browsers are supported?",
+        "a": "Best with latest Chrome, Edge, Safari and Firefox. On mobile we recommend Chrome (Android) and Safari (iOS)."
+      },
+      {
+        "q": "App loads slowly — what to do?",
+        "a": "Check your connection and try again. If it persists, contact the creator via comments or support with the app URL."
+      }
+    ]
+  },
+  {
+    "id": "help",
+    "title": "Help & Support",
+    "items": [
+      {
+        "q": "How do I reach support?",
+        "a": "Write via the support page or from your profile. Include the app URL and a short problem description."
+      },
+      {
+        "q": "Where are updates and roadmap?",
+        "a": "We publish updates in the app and on our channels — look for ‘Changelog’ in the menu or follow us on social."
+      }
+    ]
+  }
+]
+

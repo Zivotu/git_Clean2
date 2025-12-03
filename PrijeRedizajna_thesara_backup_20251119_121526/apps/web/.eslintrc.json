@@ -1,0 +1,19 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "overrides": [
+    {
+      "files": [
+        "**/next.config.js",
+        "**/next.config.mjs",
+        "**/next-sitemap.config.js",
+        "**/*.cjs"
+      ],
+      "parser": "espree",
+      "parserOptions": {
+        "ecmaVersion": 2022,
+        "sourceType": "module"
+      },
+      "env": { "node": true }
+    }
+  ]
+}

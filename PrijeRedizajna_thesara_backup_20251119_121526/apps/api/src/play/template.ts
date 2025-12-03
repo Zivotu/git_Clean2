@@ -14,7 +14,6 @@ export function playHtmlTemplate(title: string, buildId?: string) {
     "<body class=\"dark\">",
     "  <div id=\"root\"></div>",
     "  <script type=\"module\" src=\"./__name-shim.js\"></script>",
-    "  <script src=\"/shims/localstorage.js\"></script>",
     "  <script type=\"module\" src=\"./bootstrap.js\"></script>",
     process.env.DEV_ADMIN_HTML === '1' && buildId
       ? `  <a href=\"/admin?buildId=${buildId}\">Admin Review</a>`

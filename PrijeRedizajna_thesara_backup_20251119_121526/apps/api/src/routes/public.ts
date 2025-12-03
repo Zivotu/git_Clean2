@@ -1,0 +1,727 @@
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { getBucket } from '../storage.js';
+import {
+  readApps,
+  type AppRecord,
+  listEntitlements,
+  hasAppSubscription,
+  hasCreatorAllAccess,
+  incrementAppPlay,
+} from '../db.js';
+import { getBuildDir, BUNDLE_ROOT } from '../paths.js';
+import { getConfig } from '../config.js';
+import { createHmac } from 'node:crypto';
+import { getAuth } from 'firebase-admin/auth';
+
+const tempRedirect = (reply: FastifyReply, location: string) =>
+  reply.code(307).header('Location', location).send();
+
+function appendQuery(location: string, request: FastifyRequest): string {
+  try {
+    const rawUrl = request.raw.url;
+    if (!rawUrl || rawUrl.indexOf('?') === -1) return location;
+    const query = rawUrl.slice(rawUrl.indexOf('?') + 1);
+    if (!query) return location;
+    const separator = location.includes('?') ? '&' : '?';
+    return `${location}${separator}${query}`;
+  } catch {
+    return location;
+  }
+}
+
+export const __testing: Record<string, any> = {};
+
+export default async function publicRoutes(app: FastifyInstance) {
+  const cfg = getConfig();
+  const playWebBase = (cfg.WEB_BASE || '').replace(/\/$/, '');
+
+  app.addHook('onRequest', async (req, reply) => {
+    try {
+      const rawUrl = req.raw.url || '';
+      if (!rawUrl.startsWith('/builds/')) return;
+      const dest = String((req.headers['sec-fetch-dest'] as string) || '').toLowerCase();
+      if (dest && dest !== 'document') return;
+      const urlObj = new URL(rawUrl, 'http://thesara.local');
+      if (urlObj.searchParams.get('run') === '1') return;
+      const referer = String((req.headers.referer || req.headers.referrer || '') ?? '');
+      if (referer.includes('/play/')) return;
+      const [, buildId] = urlObj.pathname.split('/');
+      if (!buildId) return;
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
+      const match = apps.find((a) => a.buildId === buildId || a.pendingBuildId === buildId);
+      if (!match || !playWebBase) return;
+      const appIdentifier = match.slug || match.id;
+      const playUrl = `${playWebBase}/play/${appIdentifier}/?run=1`;
+      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8" />\n<style>body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#0f172a;color:#f8fafc;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center}button{background:#10b981;border:none;border-radius:999px;color:#fff;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer;margin-top:20px}</style></head><body><div><div style=\"font-size:20px;font-weight:700;margin-bottom:12px;\">Otvorite aplikaciju kroz Thesara Play</div><div style=\"font-size:15px;line-height:1.6;opacity:.9;\">Ovaj URL radi samo lokalno. Da bi se podaci sinkronizirali između uređaja, pokrenite ga preko Play sučelja.</div><button onclick=\"window.location.href='${playUrl}'\">Otvori u Play</button></div><script>setTimeout(function(){ try { window.location.href='${playUrl}'; } catch(e){} }, 1500);</script></body></html>`;
+      reply.code(403).type('text/html').send(html);
+    } catch (err) {
+      req.log?.trace?.({ err }, 'play_guard_error');
+    }
+  });
+
+  const encSeg = (s: string) => encodeURIComponent(String(s));
+  const encRest = (p: string) =>
+    String(p || '')
+      .split('/')
+      .filter(Boolean)
+      .map((x) => encodeURIComponent(x))
+      .join('/');
+  
+  // Diagnostics: Verify build availability across storage backends
+  // Requires admin privileges (ID token with admin=true or role=admin)
+  app.get('/diag/build/:id', async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const cfg = getConfig();
+    // Lightweight auth: allow only admins
+    try {
+      await ensureAuthUid(req as any);
+    } catch {}
+    const isAdmin = (req as any)?.authUser?.role === 'admin' || ((req as any)?.authUser as any)?.claims?.admin === true;
+    if (!isAdmin) return reply.code(403).send({ error: 'forbidden' });
+
+    const dir = getBuildDir(id);
+    const res: any = {
+      id,
+      STORAGE_DRIVER: cfg.STORAGE_DRIVER,
+      BUNDLE_STORAGE_PATH: cfg.BUNDLE_STORAGE_PATH,
+      PREVIEW_STORAGE_PATH: cfg.PREVIEW_STORAGE_PATH,
+      buildDir: dir,
+      files: {
+        indexHtml: path.join(dir, 'index.html'),
+        bundleIndexHtml: path.join(dir, 'bundle', 'index.html'),
+        appJs: path.join(dir, 'build', 'app.js'),
+        manifestJson: path.join(dir, 'build', 'manifest.json'),
+      },
+      exists: {} as Record<string, boolean>,
+      sizes: {} as Record<string, number>,
+      bucket: { configured: cfg.STORAGE_DRIVER !== 'local', exists: {} as Record<string, boolean> },
+      suggested: {} as Record<string, string>,
+    };
+
+    async function statIf(p: string, key: string) {
+      try {
+        const st = await fs.stat(p);
+        res.exists[key] = st.isFile();
+        res.sizes[key] = st.size;
+      } catch {
+        res.exists[key] = false;
+      }
+    }
+
+    await statIf(res.files.indexHtml, 'indexHtml');
+    await statIf(res.files.bundleIndexHtml, 'bundleIndexHtml');
+    await statIf(res.files.appJs, 'appJs');
+    await statIf(res.files.manifestJson, 'manifestJson');
+
+    // Bucket checks
+    if (res.bucket.configured) {
+      try {
+        const bucket = getBucket();
+        const keys = {
+          indexHtml: `builds/${id}/index.html`,
+          bundleIndexHtml: `builds/${id}/bundle/index.html`,
+          appJs: `builds/${id}/build/app.js`,
+          manifestJson: `builds/${id}/build/manifest.json`,
+        } as const;
+        for (const [k, key] of Object.entries(keys)) {
+          try {
+            const [exists] = await bucket.file(key).exists();
+            (res.bucket.exists as any)[k] = Boolean(exists);
+          } catch {
+            (res.bucket.exists as any)[k] = false;
+          }
+        }
+      } catch {
+        res.bucket.error = 'bucket_unavailable';
+      }
+    }
+
+    // Suggest best public URL based on availability order: bucket -> bundle -> root -> review
+    const encId = encSeg(id);
+    if (res.bucket.configured && (res.bucket.exists.indexHtml || res.bucket.exists.bundleIndexHtml)) {
+      res.suggested.index = `/public/builds/${encId}/index.html`;
+      res.suggested.base = `/public/builds/${encId}/`;
+    } else if (res.exists.bundleIndexHtml) {
+      res.suggested.index = `/builds/${encId}/bundle/`;
+      res.suggested.base = `/builds/${encId}/bundle/`;
+    } else if (res.exists.indexHtml) {
+      res.suggested.index = `/builds/${encId}/`;
+      res.suggested.base = `/builds/${encId}/`;
+    } else {
+      res.suggested.index = `/review/builds/${encId}/`;
+      res.suggested.base = `/review/builds/${encId}/`;
+    }
+
+    return reply.send(res);
+  });
+  // Proxy public assets from the storage bucket under /public/builds/*
+  if (getConfig().STORAGE_DRIVER !== 'local') {
+    app.get('/public/builds/*', async (req, reply) => {
+      const rest = (req.params as any)['*'] as string;
+      // Normalize the captured path segment and ensure we address the intended
+      // GCS object key under builds/<rest>. Avoid removing the first separator
+      // inside "builds/…" which previously produced keys like "buildshhh/index.html".
+      const cleanRest = (rest || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+      const key = `builds/${cleanRest}`;
+      const bucket = getBucket();
+      const file = bucket.file(key);
+      const [exists] = await file.exists();
+      if (!exists) return reply.code(404).send({ error: 'not_found' });
+      try {
+        const [meta] = await file.getMetadata();
+        if (meta.contentType) reply.type(meta.contentType);
+        if (meta.cacheControl) reply.header('Cache-Control', meta.cacheControl);
+      } catch {}
+      return reply.send(file.createReadStream());
+    });
+  } else {
+    // LOCAL STORAGE: Redirect /public/builds/:buildId/* to /builds/:buildId/build/*
+    // This fixes relative asset paths in index.html (e.g., ./app.js -> /public/builds/.../build/app.js)
+    app.get('/public/builds/*', async (req, reply) => {
+      const rest = (req.params as any)['*'] as string;
+      const cleanRest = (rest || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+      
+      // Parse buildId and file path: :buildId/file.ext or :buildId/build/file.ext
+      const parts = cleanRest.split('/');
+      if (parts.length < 1) return reply.code(404).send({ error: 'invalid_path' });
+      
+      const buildId = parts[0];
+      const filePath = parts.slice(1).join('/') || 'index.html';
+      
+      // If filePath already starts with 'build/', don't add it again
+      const targetPath = filePath.startsWith('build/') ? filePath : `build/${filePath}`;
+      const targetUrl = appendQuery(
+        `/builds/${encodeURIComponent(buildId)}/${targetPath}`,
+        req,
+      );
+      return reply.redirect(targetUrl, 307);
+    });
+  }
+
+  const bumpPlayCount = (appId: string | undefined, req: FastifyRequest) => {
+    if (!appId) return;
+    incrementAppPlay(appId).catch((err) => {
+      req.log?.warn?.({ err, appId }, 'increment_play_failed');
+    });
+  };
+
+  // Lightweight player routes -------------------------------------------------
+  // Redirect /play/:appId[/...rest] to the built bundle for the latest build
+  app.get('/play/:id', async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    try {
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
+      const item = apps.find((a) => a.slug === id || String(a.id) === id) as
+        | (AppRecord & { buildId?: string })
+        | undefined;
+      if (item?.buildId) {
+        bumpPlayCount(item.id, req);
+        const mapped = item.buildId;
+        // Prefer bucket-hosted public files if present
+        try {
+          const bucket = getBucket();
+          const file = bucket.file(`builds/${mapped}/index.html`);
+          const [exists] = await file.exists();
+          if (exists) {
+            return tempRedirect(
+              reply,
+              appendQuery(`/public/builds/${encSeg(mapped)}/index.html`, req),
+            );
+          }
+        } catch {}
+        const dir = getBuildDir(mapped);
+        // Prefer bundled output; fall back to root if missing
+        try {
+          await fs.access(path.join(dir, 'bundle', 'index.html'));
+          return tempRedirect(reply, appendQuery(`/builds/${encSeg(mapped)}/bundle/`, req));
+        } catch {}
+        try {
+          await fs.access(path.join(dir, 'index.html'));
+          return tempRedirect(reply, appendQuery(`/builds/${encSeg(mapped)}/`, req));
+        } catch {}
+        return tempRedirect(reply, appendQuery(`/review/builds/${encSeg(mapped)}/`, req));
+      }
+      const byBuild = apps.find((a) => a.buildId === id);
+      if (byBuild) {
+        bumpPlayCount(byBuild.id, req);
+        return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
+      }
+    } catch {}
+    return reply.code(404).send({ error: 'not_found' });
+  });
+  app.get('/play/:id/*', async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const restRaw = (req.params as any)['*'] as string;
+    const rest = (restRaw || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
+    const encRestSafe = encRest(rest);
+    try {
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
+      const item = apps.find((a) => a.slug === id || String(a.id) === id) as
+        | (AppRecord & { buildId?: string })
+        | undefined;
+      if (item?.buildId) {
+        const mapped = item.buildId;
+        // Prefer bucket-hosted assets when available
+        try {
+          const bucket = getBucket();
+          const bundleFile = bucket.file(`builds/${mapped}/bundle/${rest}`);
+          const [bundleExists] = await bundleFile.exists();
+          if (bundleExists) {
+            return tempRedirect(
+              reply,
+              appendQuery(`/public/builds/${encSeg(mapped)}/bundle/${encRestSafe}`, req),
+            );
+          }
+          const rootFile = bucket.file(`builds/${mapped}/${rest}`);
+          const [rootExists] = await rootFile.exists();
+          if (rootExists) {
+            return tempRedirect(
+              reply,
+              appendQuery(`/public/builds/${encSeg(mapped)}/${encRestSafe}`, req),
+            );
+          }
+        } catch {}
+        const dir = getBuildDir(mapped);
+        try {
+          await fs.access(path.join(dir, 'bundle', rest));
+          return tempRedirect(
+            reply,
+            appendQuery(`/builds/${encSeg(mapped)}/bundle/${encRestSafe}`, req),
+          );
+        } catch {}
+        try {
+          await fs.access(path.join(dir, rest));
+        return tempRedirect(
+          reply,
+          appendQuery(`/builds/${encSeg(mapped)}/${encRestSafe}`, req),
+        );
+        } catch {}
+    return tempRedirect(
+      reply,
+      appendQuery(`/review/builds/${encSeg(mapped)}/${encRestSafe}`, req),
+    );
+      }
+      const byBuild = apps.find((a) => a.buildId === id);
+      if (byBuild) {
+        return tempRedirect(
+          reply,
+          appendQuery(`/play/${encSeg(byBuild.id)}/${encRestSafe}`, req),
+        );
+      }
+    } catch {}
+    return reply.code(404).send({ error: 'not_found' });
+  });
+
+  function readTrialFromSignedCookie(req: FastifyRequest): { uid: string; appId?: string | number } | undefined {
+    try {
+      const raw = (req as any).cookies?.['cx_trial'];
+      if (!raw) return undefined;
+      const cfg = getConfig();
+      const decoded = Buffer.from(raw, 'base64url').toString('utf8');
+      const idx = decoded.lastIndexOf('.');
+      if (idx <= 0) return undefined;
+      const payload = decoded.slice(0, idx);
+      const sig = decoded.slice(idx + 1);
+      const expect = createHmac('sha256', cfg.IP_SALT).update(payload).digest('hex');
+      if (expect !== sig) return undefined;
+      const data = JSON.parse(payload);
+      if (typeof data?.uid !== 'string') return undefined;
+      if (typeof data?.exp === 'number' && Date.now() > data.exp) return undefined;
+      return { uid: data.uid as string, appId: data.appId };
+    } catch {
+      return undefined;
+    }
+  }
+
+  function readOwnerFromSignedCookie(req: FastifyRequest): string | undefined {
+    try {
+      const raw = (req as any).cookies?.['cx_owner'];
+      if (!raw) return undefined;
+      const cfg = getConfig();
+      const decoded = Buffer.from(raw, 'base64url').toString('utf8');
+      const idx = decoded.lastIndexOf('.');
+      if (idx <= 0) return undefined;
+      const payload = decoded.slice(0, idx);
+      const sig = decoded.slice(idx + 1);
+      const expect = createHmac('sha256', cfg.IP_SALT).update(payload).digest('hex');
+      if (expect !== sig) return undefined;
+      const data = JSON.parse(payload);
+      if (typeof data?.uid !== 'string') return undefined;
+      return data.uid as string;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async function ensureAuthUid(req: FastifyRequest) {
+    if (req.authUser?.uid) return;
+    let token: string | undefined;
+
+    const authHeader = req.headers['authorization'];
+    if (typeof authHeader === 'string') {
+      const m = authHeader.match(/^Bearer\s+(.+)$/i);
+      if (m) token = m[1];
+    }
+
+    if (token) {
+      try {
+        const decoded = await getAuth().verifyIdToken(token);
+        const claims: any = decoded;
+        const role = claims.role || (claims.admin ? 'admin' : 'user');
+        req.authUser = { uid: decoded.uid, role, claims: decoded };
+        return;
+      } catch {}
+    }
+
+    const ownerUid = readOwnerFromSignedCookie(req);
+    if (ownerUid) {
+      req.authUser = { uid: ownerUid, role: 'user', claims: { uid: ownerUid } as any };
+      return;
+    }
+
+    const q = req.query as any;
+    token = typeof q.token === 'string' ? (q.token as string) : undefined;
+    if (token) {
+      try {
+        const decoded = await getAuth().verifyIdToken(token);
+        const claims: any = decoded;
+        const role = claims.role || (claims.admin ? 'admin' : 'user');
+        req.authUser = { uid: decoded.uid, role, claims: decoded };
+      } catch {}
+    }
+  }
+
+  async function isAllowedToPlay(req: FastifyRequest, item: AppRecord & { buildId?: string }) {
+    const price = (item as any).price as number | undefined;
+    const ownerUid = item.author?.uid || (item as any).ownerUid;
+    const trial = readTrialFromSignedCookie(req);
+    const ownerCookie = readOwnerFromSignedCookie(req);
+    const uid =
+      (req.authUser?.uid as string | undefined) || ownerCookie || trial?.uid || undefined;
+    const isAdmin = req.authUser?.role === 'admin' || (req.authUser as any)?.claims?.admin === true;
+    const isOwner = Boolean(uid && ownerUid && uid === ownerUid);
+    if (!price || price <= 0) return true;
+    if (isOwner || isAdmin) return true;
+    if (!uid) return false;
+    try {
+      const hasAppSub = await hasAppSubscription(uid, item.id);
+      const hasCreatorAll = ownerUid ? await hasCreatorAllAccess(uid, ownerUid) : false;
+      const ents = await listEntitlements(uid);
+      const now = Date.now();
+      let hasTrial = ents.some((e) => {
+        if (e.feature !== 'app-trial') return false;
+        const data = (e.data || {}) as any;
+        // Accept either numeric appId or legacy slug string
+        if (!(String(data.appId) === String(item.id) || data.appId === item.slug)) return false;
+        const exp = typeof data.expiresAt === 'string' ? Date.parse(data.expiresAt) : (typeof data.expiresAt === 'number' ? data.expiresAt : undefined);
+        return (e.active !== false) && (!exp || exp > now);
+      });
+      // Fallback: if signed trial cookie exists and matches this app, allow
+      if (!hasTrial && trial?.appId != null) {
+        if (String(trial.appId) === String(item.id) || trial.appId === item.slug) {
+          hasTrial = true;
+        }
+      }
+      return hasAppSub || hasCreatorAll || hasTrial;
+    } catch {
+      return false;
+    }
+  }
+
+  __testing.isAllowedToPlay = isAllowedToPlay;
+
+  // Try to locate a local build directory that matches the provided slug.
+  // This reads build-info.json files under the bundle builds directory and
+  // attempts to match common fields to the requested slug. It's intentionally
+  // permissive for local-dev convenience but conservative: verifies that
+  // index/bundle files exist before returning a candidate.
+  async function findBuildForSlug(slug: string): Promise<string | undefined> {
+    try {
+      const buildsRoot = path.join(BUNDLE_ROOT, 'builds');
+      const entries = await fs.readdir(buildsRoot, { withFileTypes: true });
+      for (const e of entries) {
+        if (!e.isDirectory()) continue;
+        const id = e.name;
+        const infoPath = path.join(buildsRoot, id, 'build-info.json');
+        try {
+          const txt = await fs.readFile(infoPath, 'utf8');
+          const parsed = JSON.parse(txt || '{}') as any;
+          const candidates = [parsed.listingId, parsed.listing_id, parsed.slug, parsed.appId, parsed.id, parsed.title].filter(Boolean).map(String);
+          if (candidates.some((c) => c === slug || c === `/${slug}`)) {
+            // verify presence of bundle/index.html or index.html
+            const bundleIndex = path.join(buildsRoot, id, 'bundle', 'index.html');
+            const rootIndex = path.join(buildsRoot, id, 'index.html');
+            try {
+              await fs.access(bundleIndex);
+              return id;
+            } catch {}
+            try {
+              await fs.access(rootIndex);
+              return id;
+            } catch {}
+          }
+        } catch {
+          // ignore unreadable or unparsable build-info
+        }
+      }
+
+      // Last resort: look for a directory name that contains the slug (helps
+      // with names like local-vv-72 when slug is 'vv') and ensure it has content.
+      for (const e of entries) {
+        if (!e.isDirectory()) continue;
+        const id = e.name;
+        if (!id.toLowerCase().includes(slug.toLowerCase())) continue;
+        const bundleIndex = path.join(BUNDLE_ROOT, 'builds', id, 'bundle', 'index.html');
+        const rootIndex = path.join(BUNDLE_ROOT, 'builds', id, 'index.html');
+        try {
+          await fs.access(bundleIndex);
+          return id;
+        } catch {}
+        try {
+          await fs.access(rootIndex);
+          return id;
+        } catch {}
+      }
+    } catch (err) {
+      // ignore and return undefined
+    }
+    return undefined;
+  }
+
+  const appMetaHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    try {
+      const apps = (await readApps()).filter((a) => !a.deletedAt);
+      // Debug: log all app ids and slugs
+      const allIds = apps.map(a => a.id);
+      const allSlugs = apps.map(a => a.slug);
+      req.log.info({ requested: id, allIds, allSlugs }, 'app-meta-debug');
+      const item = apps.find((a) => a.slug === id || String(a.id) === id);
+      if (item) {
+        req.log.info({ found: item.id, slug: item.slug }, 'app-meta-found');
+        return reply.send(item);
+      }
+      req.log.warn({ requested: id }, 'app-meta-not-found');
+    } catch (err) {
+      req.log.error({ err }, 'app-meta-error');
+    }
+    return reply.code(404).send({ error: 'not_found' });
+  };
+
+  // Primary route
+  app.route({ method: ['GET', 'HEAD'], url: '/app-meta/:id', handler: appMetaHandler });
+  // Defensive alias when '/api' prefix stripping isn't applied by upstream proxy
+  app.route({ method: ['GET', 'HEAD'], url: '/api/app-meta/:id', handler: appMetaHandler });
+
+  // Public app route by slug for published listings
+  const appBySlugHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { slug } = req.params as { slug: string };
+    const apps = (await readApps()).filter((a) => !a.deletedAt);
+    const allIds = apps.map(a => a.id);
+    const allSlugs = apps.map(a => a.slug);
+    const item = apps.find((a) => a.slug === slug || String(a.id) === slug) as
+      | (AppRecord & { buildId?: string; pendingBuildId?: string })
+      | undefined;
+
+    const buildId = item?.pendingBuildId || item?.buildId;
+
+    if (!item || !buildId) {
+      req.log.info({ requested: slug, allIds, allSlugs, found: Boolean(item), buildId }, 'app-by-slug-not-found');
+      // Fallback (local-dev): try to find a build directory whose build-info.json
+      // references this slug/listing id. This helps when Firestore is out of sync
+      // but the local build artifacts are present (common in local development).
+      try {
+        const candidate = await findBuildForSlug(slug);
+        if (candidate) {
+          req.log.info({ requested: slug, fallbackBuild: candidate }, 'app-by-slug-fallback-found');
+          return tempRedirect(reply, `/builds/${encSeg(candidate)}/bundle/`);
+        }
+      } catch (err) {
+        req.log.error({ err, slug }, 'app-by-slug-fallback-error');
+      }
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    const isPublic = item.status === 'published' || item.state === 'active';
+    if (!isPublic) {
+      req.log.info({ requested: slug, status: item.status, state: item.state }, 'app-by-slug-not-public');
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    await ensureAuthUid(req);
+    const canPlay = await isAllowedToPlay(req, item);
+    if (!canPlay) {
+      const lang = String((req.headers['accept-language'] || '')).toLowerCase();
+      const starts = (p: string) => lang.startsWith(p);
+      const locale = starts('hr') ? 'hr' : starts('de') ? 'de' : 'en';
+      const t = (key: 'title'|'lead'|'cta'|'home') => {
+        if (locale === 'hr') {
+          return key === 'title' ? 'Potrebna je potvrda za probnu verziju'
+            : key === 'lead' ? 'Ovo je probna (trial) verzija dostupna isključivo uz važeći kod.'
+            : key === 'cta' ? 'Pročitaj kako do koda (FAQ)'
+            : 'Nazad na naslovnicu';
+        }
+        if (locale === 'de') {
+          return key === 'title' ? 'Bestätigung für Testversion erforderlich'
+            : key === 'lead' ? 'Dies ist eine Testversion (Trial), die nur mit gültigem Code verfügbar ist.'
+            : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
+            : 'Zur Startseite';
+        }
+        return key === 'title' ? 'Trial access required'
+          : key === 'lead' ? 'This is a trial version available only with a valid code.'
+          : key === 'cta' ? 'Learn how to get a code (FAQ)'
+          : 'Back to Home';
+      };
+      const wantsHtml = String(req.headers['accept'] || '').includes('text/html');
+      if (wantsHtml) {
+        const html = `<!DOCTYPE html><html lang="${locale}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${t('title')}</title>
+<style>
+  :root{--fg:#111827;--muted:#6b7280;--bg:#f9fafb;--card:#ffffff;--pri:#10b981;}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,'Noto Sans',sans-serif;color:var(--fg)}
+  .wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .card{max-width:720px;background:var(--card);border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.06);padding:28px}
+  h1{margin:0 0 8px 0;font-size:22px}
+  p{margin:0 0 18px 0;color:var(--muted);line-height:1.6}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  a.btn{display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;color:white;background:var(--pri)}
+  a.link{color:#2563eb;text-decoration:none}
+  a.link:hover{text-decoration:underline}
+</style></head><body><div class="wrap"><div class="card">
+<h1>${t('title')}</h1>
+<p>${t('lead')}</p>
+<div class="row">
+  <a class="btn" href="/faq">${t('cta')}</a>
+  <a class="link" href="/">${t('home')}</a>
+ </div>
+</div></div></body></html>`;
+        reply.type('text/html; charset=utf-8');
+        return reply.code(403).send(html);
+      }
+      const message = t('lead');
+      return reply.code(403).send({ error: 'payment_required', code: 'trial_code_required', message, locale });
+    }
+    // Prefer bucket-hosted public files if present
+    try {
+      const bucket = getBucket();
+      const file = bucket.file(`builds/${buildId}/index.html`);
+      const [exists] = await file.exists();
+      if (exists) return tempRedirect(reply, `/public/builds/${encSeg(buildId)}/index.html`);
+    } catch {}
+    const dir = getBuildDir(buildId);
+    try {
+      await fs.access(path.join(dir, 'bundle', 'index.html'));
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/bundle/`);
+    } catch {}
+    try {
+      await fs.access(path.join(dir, 'index.html'));
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/`);
+    } catch {}
+    return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/`);
+  };
+  app.get('/app/:slug', appBySlugHandler);
+  app.get('/api/app/:slug', appBySlugHandler);
+  const appBySlugWildcardHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const { slug } = req.params as { slug: string };
+    const rest = (req.params as any)['*'] as string;
+    const apps = (await readApps()).filter((a) => !a.deletedAt);
+    const allIds = apps.map(a => a.id);
+    const allSlugs = apps.map(a => a.slug);
+    const item = apps.find((a) => a.slug === slug || String(a.id) === slug) as
+      | (AppRecord & { buildId?: string; pendingBuildId?: string })
+      | undefined;
+
+    const buildId = item?.pendingBuildId || item?.buildId;
+
+    if (!item || !buildId) {
+      req.log.info({ requested: slug, allIds, allSlugs, found: Boolean(item), buildId }, 'app-by-slug-wildcard-not-found');
+      try {
+        const candidate = await findBuildForSlug(slug);
+        if (candidate) {
+          req.log.info({ requested: slug, fallbackBuild: candidate }, 'app-by-slug-wildcard-fallback-found');
+          return tempRedirect(reply, `/builds/${encSeg(candidate)}/bundle/${encRest(rest)}`);
+        }
+      } catch (err) {
+        req.log.error({ err, slug }, 'app-by-slug-wildcard-fallback-error');
+      }
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    const isPublic = item.status === 'published' || item.state === 'active';
+    if (!isPublic) {
+      req.log.info({ requested: slug, status: item.status, state: item.state }, 'app-by-slug-wildcard-not-public');
+      return reply.code(404).send({ error: 'not_found' });
+    }
+    await ensureAuthUid(req);
+    const canPlay = await isAllowedToPlay(req, item);
+    if (!canPlay) {
+      const lang = String((req.headers['accept-language'] || '')).toLowerCase();
+      const starts = (p: string) => lang.startsWith(p);
+      const locale = starts('hr') ? 'hr' : starts('de') ? 'de' : 'en';
+      const t = (key: 'title'|'lead'|'cta'|'home') => {
+        if (locale === 'hr') {
+          return key === 'title' ? 'Potrebna je potvrda za probnu verziju'
+            : key === 'lead' ? 'Ovo je probna (trial) verzija dostupna isključivo uz važeći kod.'
+            : key === 'cta' ? 'Pročitaj kako do koda (FAQ)'
+            : 'Nazad na naslovnicu';
+        }
+        if (locale === 'de') {
+          return key === 'title' ? 'Bestätigung für Testversion erforderlich'
+            : key === 'lead' ? 'Dies ist eine Testversion (Trial), die nur mit gültigem Code dostupna ist.'
+            : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
+            : 'Zur Startseite';
+        }
+        return key === 'title' ? 'Trial access required'
+          : key === 'lead' ? 'This is a trial version available only with a valid code.'
+          : key === 'cta' ? 'Learn how to get a code (FAQ)'
+          : 'Back to Home';
+      };
+      const wantsHtml = String(req.headers['accept'] || '').includes('text/html');
+      if (wantsHtml) {
+        const html = `<!DOCTYPE html><html lang="${locale}"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${t('title')}</title>
+<style>
+  :root{--fg:#111827;--muted:#6b7280;--bg:#f9fafb;--card:#ffffff;--pri:#10b981;}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue',Arial,'Noto Sans',sans-serif;color:var(--fg)}
+  .wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+  .card{max-width:720px;background:var(--card);border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.06);padding:28px}
+  h1{margin:0 0 8px 0;font-size:22px}
+  p{margin:0 0 18px 0;color:var(--muted);line-height:1.6}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  a.btn{display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;color:white;background:var(--pri)}
+  a.link{color:#2563eb;text-decoration:none}
+  a.link:hover{text-decoration:underline}
+ </style></head><body><div class="wrap"><div class="card">
+<h1>${t('title')}</h1>
+<p>${t('lead')}</p>
+<div class="row">
+  <a class="btn" href="/faq">${t('cta')}</a>
+  <a class="link" href="/">${t('home')}</a>
+ </div>
+</div></div></body></html>`;
+        reply.type('text/html; charset=utf-8');
+        return reply.code(403).send(html);
+      }
+      const message = t('lead');
+      return reply.code(403).send({ error: 'payment_required', code: 'trial_code_required', message, locale });
+    }
+    // Prefer bucket-hosted public files if present
+    try {
+      const bucket = getBucket();
+      const file = bucket.file(`builds/${buildId}/index.html`);
+      const [exists] = await file.exists();
+      if (exists) return tempRedirect(reply, `/public/builds/${encSeg(buildId)}/${encRest(rest)}`);
+    } catch {}
+    const dir = getBuildDir(buildId);
+    try {
+      await fs.access(path.join(dir, 'bundle', 'index.html'));
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/bundle/${encRest(rest)}`);
+    } catch {}
+    try {
+      await fs.access(path.join(dir, 'index.html'));
+      return tempRedirect(reply, `/builds/${encSeg(buildId)}/${encRest(rest)}`);
+    } catch {}
+    return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/${encRest(rest)}`);
+  };
+  app.get('/app/:slug/*', appBySlugWildcardHandler);
+  app.get('/api/app/:slug/*', appBySlugWildcardHandler);
+}

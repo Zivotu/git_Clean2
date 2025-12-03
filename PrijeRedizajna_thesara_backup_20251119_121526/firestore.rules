@@ -1,0 +1,87 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // --- Default Security --- 
+    // By default, deny all reads and writes.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- User Profiles ---
+    // Users can read their own profile.
+    // Users can create their own profile upon signup.
+    // Users can update specific, non-critical fields on their own profile.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
+      match /entitlements/{entitlementId} {
+        allow read: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    match /adminSettings/accessControl {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // --- Ambassador Promo Codes ---
+    // Promo codes are public readable so clients can check for existence.
+    // Only the backend (or an admin) can create or modify promo codes.
+    match /promoCodes/{code} {
+      allow read: if true;
+      allow write: if isAdmin(); // Backend functions operate with admin-like privileges
+    }
+
+    // --- Ambassador Content Posts ---
+    match /ambassadorPosts/{postId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.ambassadorUid);
+      allow create: if isSignedIn() && request.resource.data.ambassadorUid == request.auth.uid;
+      // Only admins can verify or reject posts
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Ambassador Payouts ---
+    // Users can read their own payout documents.
+    // Users can create a new payout request for themselves.
+    // Only admins can update a payout's status (e.g., to 'paid').
+    match /payouts/{payoutId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.ambassadorUid == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.ambassadorUid == request.auth.uid;
+      allow update: if isAdmin();
+    }
+
+    // --- Other Collections (Example Rules) ---
+    // These are placeholders and should be reviewed.
+
+    // Publicly readable content like apps or creator profiles
+    match /apps/{appId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isSignedIn() && resource.data.author.uid == request.auth.uid);
+    }
+
+    match /creators/{creatorId} {
+      allow read: if true;
+      allow write: if isAdmin() || isOwner(creatorId);
+    }
+
+    // Other collections should have explicit rules.
+    // match /oglasi/{oglasId} { ... }
+    // match /billing_events/{eventId} { ... }
+  }
+}

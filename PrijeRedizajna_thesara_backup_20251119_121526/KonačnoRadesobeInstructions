@@ -1,0 +1,187 @@
+KonačnoRadeSobe – Forenzički priručnik
+=====================================
+
+0. Kontekst i cilj
+------------------
+Korisnici na Thesari objavljuju mini React aplikacije koje podatke čuvaju isključivo u localStorage-u. Da bi takve aplikacije radile "copy → publish → multi-device", morali smo:
+
+1. Interceptirati sve pozive `localStorage` (i po potrebi `sessionStorage`) unutar iframea u kojem Play pokreće aplikaciju.
+2. Svaku promjenu liste (ili bilo kojeg ključa u `localStorage`u) slati na `/api/storage?ns=app:<listingId>` uz `Authorization`, `X-Thesara-App-Id`, `X-Thesara-Scope: shared` i `If-Match` ETag.
+3. Kod učitavanja iframea odmah napuniti cache snimkom sa servera kako drugi preglednik dobije identičan `localStorage` i ne vidi "Soba ne postoji".
+4. Zatvoriti sve rupe: direktno otvaranje `/builds` izvan Playa, nedostupan token u standalone režimu, dvostruki `/api//` u URL-u, session-leak (drugi tab ulazi u zadnju sobu), keširani shimovi itd.
+
+Ovaj dokument opisuje svaki problem, konačna rješenja i redoslijed koraka potreban da "sobe" stvarno rade.
+
+
+1. Glavni dijelovi sustava
+--------------------------
+
+1.1. Publish pipeline (`apps/api/src/routes/publish.ts`)
+- Linije 249–266 i 374+ ubacuju skriptu u svaki build:
+  ```
+  <script>
+    window.__THESARA_APP_NS = 'app:<listingId>';
+    window.__THESARA_APP_ID__ = '<listingId>';
+    window.__THESARA_API_BASE__ = '<PUBLIC_BASE>/api';
+    window.__THESARA_PLAY_URL__ = '<webBase>/play/<listingId>/?run=1';
+    window.thesara = window.thesara || {};
+    window.thesara.app = { id: '<listingId>' };
+  </script>
+  <script type="module" src="/shims/rooms.js?v=<buildId>"></script>
+  <script type="module" src="/shims/storage.js?v=<buildId>"></script>
+  <script src="/shims/localstorage.js?v=<buildId>"></script>
+  ```
+- `?v=<buildId>` forsira browser da povuče novu verziju shimova kada objavimo novi build.
+- Ako korisnik zalijepi kompletan HTML (`body.inlineCode`), isti blok se ubrizgava kroz `inject` string – po potrebi ga dodatno doradimo da sadrži `?v=`.
+
+1.2. Play iframe host (`apps/web/app/play/[appId]/PlayPageClient.tsx`)
+Glavne faze:
+- **Bootstrap** (linije ~70–210): čita `appId`, dohvaća JWT ili ga uzima iz `?token`, poziva `fetchSnapshot` iz `apps/web/lib/storage/snapshot-loader.ts` i tek nakon toga postavlja `iframe.src`. Snapshot + verzija se dodatno zapakiraju u `window.name` (prefiks `thesara-bootstrap:` + base64 JSON) kako bi shim u iframeu imao podatke i prije prvog `postMessage`.
+- **Rooms session**: ako je `capabilities.storage.roomsMode` `optional/required` ili je `NEXT_PUBLIC_ROOMS_ENABLED` prisiljen, host odmah udara `/api/rooms/storage/demo`. Odgovor sadrži `namespace` (`app:<id>:room:<code>`) i `roomToken`; oba završavaju u query param (iframe `src` dobiva `?token=<jwt>&ns=...&roomToken=<signed>`). Time je i demo soba automatski aktivna.
+- **PostMessage protokol** (linije 220+):
+  - Kreira capability (random 16 bajtova) i šalje djetetu `thesara:storage:init` sa snapshotom, verzijom, auth tokenom i `roomToken`.
+  - Prima `thesara:storage:flush` i šalje PATCH na `/api/storage?ns=<namespace>`. Ako PATCH padne s 412, loader radi GET i ponovno primjenjuje batch.
+  - Nakon uspješnog PATCH-a šalje `thesara:shim:ack` i broadcasta snapshot (`BroadcastChannel`) kako bi svi tabovi vidjeli promjenu.
+  - Na `beforeunload` šalje `thesara:storage:flush-now` kako ništa ne bi ostalo u limbu.
+
+1.3. Snapshot loader (`apps/web/lib/storage/snapshot-loader.ts`)
+- `fetchSnapshot` i `patchStorage` rade GET/PATCH prema `/api/storage?ns=app:<id>`.
+- Headeri: `Authorization: Bearer <firebase jwt>`, `X-Thesara-App-Id: <id>`, `X-Thesara-Scope: shared`, `If-Match: "<etag>"`.
+- Ako PATCH vrati 412, loader automatski radi GET, ažurira `storageVersionRef` i ponavlja batch (optimistic locking).
+
+- **STANDALONE vs iframe**: u standalone režimu (netko otvori `/builds/...` direktno) shim prikazuje overlay, upozorenje i pokušava prebaciti korisnika u Play (`window.__THESARA_PLAY_URL__`).
+- **Cache + batching**: interceptira `window.localStorage` i `window.sessionStorage`, vodi Map cache i offline queue. Session scope nikad ne ide na server.
+- **Synchronous bootstrap**: čim iframe krene, shim čita `window.name`. Ako vrijednost počinje s `thesara-bootstrap:` decodira base64 snapshot + verziju i odmah puni cache prije nego mini-app napravi prvi `getItem`. Ako snapshot ne stigne tim putem, shim blokira flush dok ne dobije `thesara:storage:init`.
+- **Room token awareness**: `ROOM_TOKEN` se čita iz query stringa (`roomToken`) i kasnije iz svake `storage:init/sync` poruke. Svaki `fetch` ili `patch` prema `/api/storage` dobiva header `X-Thesara-Room-Token`, pa niti jedan batch ne može prijeći u tuđi namespace.
+- **Flush**:
+  - Standalone → `directSync(batch)` (PATCH lokalni API ili GCS).
+  - Iframe → ako capability još nije potvrđen, a imamo JWT (iz `?token` ili referrera), shim radi privremeni `directSync` kako prvi upisi ne bi ostali lokalni; čim parent potvrdi CAP, batch ide preko `postMessage`.
+- **Handshake**: sluša `thesara:storage:init`, `thesara:storage:sync`, `thesara:shim:ack`, `thesara:storage:flush-now` i tek onda skida `awaitingAck`.
+- **Diagnostika**: kada `window.__THESARA_SHIM_DEBUG__ = '1'` ili se stranica vrti na `localhost`, shim logira svaku fazu (`boot`, `reconcile snapshot`, `flush attempt`, `sent batch to parent`, ...), uključujući popis ključeva u batchu.
+
+1.5. Rooms toolbar + storage tokeni (2025‑10)
+- Publish wizard ima toggle **“Sobe s PIN-om (beta)”** koji puni `capabilities.storage.roomsMode` (`off` | `optional` | `required`). Kada je `NEXT_PUBLIC_ROOMS_ENABLED` uključeno na webu, host ignorira `off` i tretira aplikaciju kao `optional` kako bi demo soba uvijek bila spremna.
+- Play prilikom svakog učitavanja prvo poziva `POST /api/rooms/storage/demo` i dobiva demo session (`namespace = app:<id>:room:demo`, `roomToken`). Demo iframe se zato odmah prikaže ispod forme, bez čekanja da korisnik klikne.
+- Privatne sobe koriste `/api/rooms/storage/create` / `/api/rooms/storage/join` i žive u Firestore-u pod `appRooms/{appId}/rooms/{roomCode}` (hashirani PIN preko `bcrypt`). Nema više `expiresAt = now + 24h` – sobe su trajne dok ih kreator ne obriše (limitirano na `MAX_ROOMS_PER_APP`).
+- Svaki storage namespace sada izgleda `app:<appId>:room:<slug>` i zahtijeva `X-Thesara-Room-Token`. `apps/api/src/routes/storage.ts` provjerava token prije nego što dopusti GET/PATCH, čime mini aplikacija nikada ne vidi PIN niti token.
+- Shim prima `roomToken` kroz `thesara:storage:init` / `thesara:storage:sync` i šalje ga u svim `fetch` pozivima kao `X-Thesara-Room-Token`, pa čak i standalone fallback (`directSync`) radi s pravom sobom.
+
+1.6. Rooms storage API (`apps/api/src/routes/roomsStorage.ts`)
+- Endpointi:
+  - `POST /api/rooms/storage/demo { appId }` → vraća demo sobu (kreira je ako ne postoji) i potpisani `token`.
+  - `POST /api/rooms/storage/create { appId, roomName, pin }` → validira limit soba po aplikaciji, sprema hash PIN-a (`bcrypt`), vraća `namespace` + `token`.
+  - `POST /api/rooms/storage/join { appId, roomName, pin }` → dohvaća sobu, uspoređuje PIN, vraća `token`.
+- Token payload (`apps/api/src/lib/roomAccessTokens.ts`): `{ appId, roomCode, namespace, isDemo, roomName, exp }`. Storage rute prihvaćaju token preko headera `X-Thesara-Room-Token` i provjeravaju da namespace i app odgovaraju.
+- Firestore struktura: `appRooms/<appId>/rooms/<roomCode>` dokument s `displayName`, `pinHash`, `isDemo`, `createdAt`, `updatedAt`, `lastUsedAt`.
+- Toolbar u Playu uvijek prikazuje aktivnu sobu, tipku za povratak na demo (PIN 1111) te formu za naziv + PIN. Ako je `roomsMode="required"`, korisnik dobije dodatni hint da mora otvoriti vlastitu sobu prije trajne upotrebe.
+
+1.5. storage shim (`apps/api/src/shims/storageClient.ts`)
+- Exponira `window.storage` API (rooms/preview koriste ovaj shim).
+- `buildApiUrl` normalizira bazu baš kao i localStorage shim.
+- `window.addEventListener('message', …)` sluša `thesara:storage:init` kako bi znao namespace/token.
+
+1.6. API storage route (`apps/api/src/routes/storage.ts`)
+- `requireRole('user')` (dev fallback u `apps/api/src/middleware/auth.ts` postavlja `dev-user`).
+- GET vraća JSON + `ETag` u headeru, PATCH očekuje batch (max 100) i `If-Match` – inače 400.
+- Stanje se upisuje u `storage/kv/app-<id>.json` (+ `.meta` ETag).
+
+1.7. Guardovi
+- `/builds/:buildId/build/` se blokira u `apps/api/src/routes/public.ts` (linije 23–60) i vraća HTML s gumbom "Otvori u Play" + automatskim redirectom.
+- Shim overlay također detektira `missing_token` i prikazuje upozorenje.
+
+
+2. Popis problema i rješenja
+----------------------------
+1. Local-only demo → riješeno spremanjem u `/api/storage` kroz shim + Play handshake.
+2. Race (iframe čita prazan cache) → iframe src se postavlja tek nakon `fetchSnapshot`; shim radi `bootstrapStandalone()` čim vidi token.
+3. Standalone load (`/builds/...`) → overlay + redirect + guard u `public.ts`.
+4. Direct sync fallback → kada CAP nije spreman, shim radi PATCH direktno prema API-ju.
+5. Token iz referrera → `getJwtToken()` sada čita i `document.referrer`.
+6. Double slash (`/api//storage`) → novi `buildApiUrl` u oba shima.
+7. Cache busting → publish injektira `?v=<buildId>`.
+8. Template escaping → export preko `String.raw`, `catch (e)` umjesto praznih `catch {}`.
+9. Session leak → `createFacade('session', false)` i `applySnapshot('session', …)` ignoriraju session scope.
+10. Dev-auth 401 → fallback na `dev-user` ako Firebase Admin nije konfiguriran.
+
+
+3. Operativni koraci – Kako pokrenuti "sobe"
+-------------------------------------------
+**Lokalno:**
+1. `cd apps/api && npm run dev` (port 8789).
+2. `cd apps/web && npm run dev:local` (port 3000, proxy prema 8789).
+3. Objavi aplikaciju (Publish App → zalijepi React kod → dobiješ `listingId`).
+4. Otvori Play URL `http://localhost:3000/play/<listingId>/?run=1&token=<...>` u Pregledniku A i B.
+5. U A kreiraj sobu (npr. 2222). U Network tabu moraš vidjeti `PATCH /api/storage?ns=app:<listingId>` = 200/201.
+6. U B samo osvježi – prvi `GET /api/storage?ns=app:<listingId>` vraća 200 s JSON-om koji sadrži `shopping/rooms/v1`.
+
+**Produkcija / republish:**
+- Svaki put kad se shim promijeni → republishaj app (jer `?v=<buildId>` osigurava novu verziju).
+- Ako vidiš `404 /shims/...`, API nije restartan ili build još nije dostupan.
+- Stanje provjeri u `storage/kv/app-<id>.json`.
+
+**Verifikacija:**
+- `curl -H "Authorization: Bearer <token>" -H "X-Thesara-App-Id: <id>" -H "X-Thesara-Scope: shared" http://127.0.0.1:8789/api/storage?ns=app:<id>`
+- `storage/kv/app-<id>.json` mora sadržavati `shopping/rooms/v1`.
+
+
+4. Troubleshooting matrica
+--------------------------
+| Simptom | Uzrok | Provjera | Rješenje |
+| --- | --- | --- | --- |
+| `localstorage.js:295 Unexpected token '}'` | Stara verzija šima (bez `String.raw`) | Otvori `/shims/localstorage.js?v=999` i provjeri regex | Restart API + republish |
+| `Failed to load resource /shims/...` | Build bez `?v=<id>` ili API nije restartan | Network tab → 404 | Restart i republish |
+| `GET /api/storage ... 401` | Nema valjanog Firebase tokena | Pogledaj log `apps/api/src/middleware/auth.ts` | U dev-u fallback radi automatski; u produkciji konfiguriraj Firebase Admin |
+| `PATCH /api/storage ... 412` | ETag mismatch (drugi uređaj je već zapisao) | Response 412 + `ETag` | Pričekaj roditeljski retri (automatski) ili ručno osvježi |
+| Drugi preglednik odmah otvara zadnju sobu | Session scope se sinka | `storage/kv/app-*.json` sadrži `shopping/session/v1` | Nakon patcha (sessionFacade bez synca) republish aplikaciju |
+| Aplikacija radi samo u jednom tabu | CAP se ne šalje (postMessage blokiran) | Console `thesara:shim:ready` se ne pojavljuje | Provjeri CSP i `sandbox` (`allow-same-origin`) |
+
+
+5. Produkcijske postavke (XI/2025)
+----------------------------------
+- **Env i PM2**
+  - `ecosystem.config.cjs`: `DOTENV_CONFIG_PATH` mora pokazivati na `apps/api/.env.production` kako bi server koristio iste vrijednosti koje držimo u Git-u.
+  - Nakon izmjene `.env.production` za web, potrebno je `pnpm --filter @thesara/web build` pa `pm2 restart thesara-web`.
+  - Logovi se čitaju preko `pm2 logs thesara-api` (kada `THESARA_LOG_STDOUT=1` datoteka se ne generira).
+- **CSP za Play**
+  - `apps/web/next.config.js`: u `headers()` za `/play/:path*` dodani su Firebase i Google hostovi (`identitytoolkit`, `securetoken`, `firestore`, `*.googleapis.com`, `*.gstatic.com` + `https://<FIREBASE_AUTH_DOMAIN>`) u `connect-src`, te AdSense hostovi (`pagead2`, `googletagservices`) u `script-src`.
+  - `frame-src` ostaje `NEXT_PUBLIC_APPS_HOST` (npr. `https://apps.thesara.space`).
+- **Nginx**
+  - `thesara` site: `/play/` proxy ide na Next (port 3000), sve `/builds*`, `/public/builds*`, `/rooms`, `/shims` i `/review/builds` i dalje idu na API (8788). `uploads` služe se s diska (`alias /srv/thesara/storage/uploads`).
+  - `apps.thesara.space`: uklonjen `X-Frame-Options`. `/builds/` proxy ide na API bez dodatnih headera tako da Play iframe može učitati bundle.
+  - Nakon promjena: `sudo nginx -t && sudo systemctl reload nginx`, pa `curl -I https://apps.thesara.space/builds/<id>/build/index.html` (nema `X-Frame-Options`).
+- **Firestore provjere**
+  - Sobe su u Firestore-u, npr.:
+    ```bash
+    node -e "const admin=require('firebase-admin');admin.initializeApp({credential:admin.credential.cert(require('/etc/thesara/creds/firebase-sa.json'))});const db=admin.firestore();db.collection('rooms').orderBy('createdAt','desc').limit(5).get().then(snap=>snap.forEach(doc=>console.log(doc.id,doc.data())));"
+    ```
+  - Igrače/evente provjeriti preko `rooms/<id>/players` i `rooms/<id>/events`.
+- **Storage dijagnostika**
+  - U Play iframeu: `localStorage.THESARA_DEBUG="storage"` pokazuje `thesara:storage:flush` i `thesara:shim:ack`.
+  - Network mora sadržavati `GET /api/storage?ns=app:<id>`, `PATCH /api/storage?ns=app:<id>` i `GET /api/storage/events?ns=app:<id>`.
+  - Snapshot JSON (iz `/api/storage` ili loga) potvrđuje da backend zadržava listu (`shopping/rooms/v1`). Ako snapshot izgleda dobro, problem je u samom bundleu.
+- **Health checklist prije deploya**
+  1. `pnpm install && pnpm --filter @thesara/web build`
+  2. `pm2 restart thesara-web && pm2 restart thesara-api`
+  3. `curl -I https://thesara.space/play/<id>` → 200, CSP sadrži Firebase hostove.
+  4. `curl -I https://apps.thesara.space/builds/<buildId>/build/index.html` → nema `X-Frame-Options`.
+  5. `node scripts/check-room.js <roomId>` ili ručni Firestore upit → room postoji, `joinTokenExpiresAt` nije istekao.
+  6. `pm2 logs thesara-api --lines 200 | grep storage` → vidi se `Storage patch successful`.
+
+
+6. Kronologija fixeva
+----------------------
+1. Intercept `localStorage` + Play handshake.
+2. Gating iframe src + eager bootstrap.
+3. Standalone overlay + guard.
+4. Direct sync fallback kad CAP kasni.
+5. Token iz referrera.
+6. Normalizacija `buildApiUrl`.
+7. Cache busting (`?v=`).
+8. `String.raw` + `catch (e)`.
+9. Session scope lokalni.
+10. Dev auth fallback.
+
+
+7. Zaključak
+------------
+Kombinacijom Play hosta, shimova i storage API-ja sada imamo experience u kojem korisnik ne mora mijenjati svoj localStorage demo – sve radi kroz Thesara infrastrukturu. Svaki korak (od publish pipelinea do `storage/kv` zapisa) opisan je u ovom priručniku i služi kao referenca za buduća održavanja i nadogradnje.
