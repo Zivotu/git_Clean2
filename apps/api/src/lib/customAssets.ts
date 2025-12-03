@@ -6,8 +6,9 @@ import { getBuildDir } from '../paths.js';
 import { dirExists } from './fs.js';
 import type { CustomAsset } from '../types.js';
 
-export const MAX_CUSTOM_ASSET_COUNT = 30;
-export const MAX_CUSTOM_ASSET_BYTES = 100 * 1024;
+export const MAX_CUSTOM_ASSET_COUNT = 60;
+export const MAX_REGULAR_ASSET_BYTES = 100 * 1024;
+export const MAX_LARGE_ASSET_BYTES = 1 * 1024 * 1024;
 export const ALLOWED_CUSTOM_ASSET_MIME_TYPES = new Set([
   'image/png',
   'image/jpeg',
@@ -42,9 +43,11 @@ export function normalizeCustomAssetList(
   if (input.length > MAX_CUSTOM_ASSET_COUNT) {
     throw new Error('too_many_custom_assets');
   }
-    const existingMap = new Map((existing || []).map((asset) => [asset.id, asset]));
+  const existingMap = new Map((existing || []).map((asset) => [asset.id, asset]));
   const usedNames = new Set<string>();
-    const result: CustomAsset[] = [];
+  const result: CustomAsset[] = [];
+  let largeAssetCount = 0;
+
   for (const entry of input) {
     if (!entry || typeof entry !== 'object') {
       throw new Error('invalid_custom_asset');
@@ -58,35 +61,50 @@ export function normalizeCustomAssetList(
     usedNames.add(lowerName);
 
     const hasDataUrl = typeof (entry as any).dataUrl === 'string' && (entry as any).dataUrl.trim();
+    let size = 0;
+    let assetToPush: CustomAsset | null = null;
+
     if (hasDataUrl) {
       const { buffer, mimeType } = decodeDataUrl((entry as any).dataUrl);
       if (!ALLOWED_CUSTOM_ASSET_MIME_TYPES.has(mimeType)) {
         throw new Error('invalid_custom_asset_type');
       }
-      if (buffer.length > MAX_CUSTOM_ASSET_BYTES) {
-        throw new Error('custom_asset_too_large');
-      }
-      result.push({
+      size = buffer.length;
+      assetToPush = {
         id: randomUUID(),
         name,
         mimeType,
-        size: buffer.length,
+        size,
         dataUrl: (entry as any).dataUrl.trim(),
         updatedAt: Date.now(),
-      });
-      continue;
+      };
+    } else {
+      const refId = typeof (entry as any).id === 'string' ? (entry as any).id : '';
+      if (!refId || !existingMap.has(refId)) {
+        throw new Error('invalid_custom_asset_reference');
+      }
+      const referenced = existingMap.get(refId)!;
+      size = referenced.size || 0;
+      assetToPush = {
+        ...referenced,
+        name,
+        updatedAt: Date.now(),
+      };
     }
 
-    const refId = typeof (entry as any).id === 'string' ? (entry as any).id : '';
-    if (!refId || !existingMap.has(refId)) {
-      throw new Error('invalid_custom_asset_reference');
+    if (size > MAX_LARGE_ASSET_BYTES) {
+      throw new Error('custom_asset_too_large');
     }
-    const referenced = existingMap.get(refId)!;
-    result.push({
-      ...referenced,
-      name,
-      updatedAt: Date.now(),
-    });
+    if (size > MAX_REGULAR_ASSET_BYTES) {
+      if (largeAssetCount >= 1) {
+        throw new Error('too_many_large_assets');
+      }
+      largeAssetCount++;
+    }
+
+    if (assetToPush) {
+      result.push(assetToPush);
+    }
   }
   return result;
 }

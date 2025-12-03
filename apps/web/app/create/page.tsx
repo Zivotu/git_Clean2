@@ -52,8 +52,9 @@ const overlayMaxChars = 22;
 const LONG_DESCRIPTION_LIMIT = 4000;
 const MIN_LONG_DESCRIPTION = 20;
 const SCREENSHOT_FIELD_COUNT = 2;
-const MAX_CUSTOM_ASSET_COUNT = 30;
-const MAX_CUSTOM_ASSET_BYTES = 100 * 1024;
+const MAX_CUSTOM_ASSET_COUNT = 60;
+const MAX_REGULAR_ASSET_BYTES = 100 * 1024;
+const MAX_LARGE_ASSET_BYTES = 1 * 1024 * 1024;
 const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
 interface CustomAsset {
@@ -379,7 +380,7 @@ export default function CreatePage() {
     [],
   );
   const customAssetMaxKb = useMemo(
-    () => Math.round((MAX_CUSTOM_ASSET_BYTES / 1024) * 10) / 10,
+    () => Math.round((MAX_REGULAR_ASSET_BYTES / 1024) * 10) / 10,
     [],
   );
 
@@ -527,6 +528,10 @@ export default function CreatePage() {
     setCustomAssetError(null);
     const next: CustomAsset[] = [];
     const existingNames = new Set(customAssets.map((asset) => asset.name.toLowerCase()));
+
+    // Count existing large assets
+    let largeAssetCount = customAssets.filter(asset => asset.size > MAX_REGULAR_ASSET_BYTES).length;
+
     for (const file of files) {
       if (customAssets.length + next.length >= MAX_CUSTOM_ASSET_COUNT) {
         setCustomAssetError(tCreate('advancedAssetsLimitError', { limit: MAX_CUSTOM_ASSET_COUNT }));
@@ -537,10 +542,20 @@ export default function CreatePage() {
         setCustomAssetError(tCreate('advancedAssetsTypeError'));
         continue;
       }
-      if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+
+      if (file.size > MAX_LARGE_ASSET_BYTES) {
         setCustomAssetError(tCreate('advancedAssetsSizeError'));
         continue;
       }
+
+      if (file.size > MAX_REGULAR_ASSET_BYTES) {
+        if (largeAssetCount >= 1) {
+          setCustomAssetError(tCreate('advancedAssetsLargeLimitError'));
+          continue;
+        }
+        largeAssetCount++;
+      }
+
       const name = file.name.trim();
       if (!name) {
         setCustomAssetError(tCreate('advancedAssetsNameError'));
