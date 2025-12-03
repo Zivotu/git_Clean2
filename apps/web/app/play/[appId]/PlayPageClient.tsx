@@ -16,6 +16,7 @@ import { ApiError, apiFetch } from '@/lib/api'
 import AdSlot from '@/components/AdSlot'
 import { useAds } from '@/components/AdsProvider'
 import { AD_SLOT_IDS } from '@/config/ads'
+import GameLoadingOverlay from '@/components/GameLoadingOverlay'
 import {
   getJwt,
   fetchSnapshot,
@@ -797,10 +798,10 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <>
         {roomsControl}
-        <div>Loading app...</div>
-      </div>
+        <GameLoadingOverlay />
+      </>
     )
   }
 
@@ -815,10 +816,10 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   if (!bootstrap) {
     return (
-      <div className="flex flex-col gap-4 p-6">
+      <>
         {roomsControl}
-        <div>Preparing app bootstrap...</div>
-      </div>
+        <GameLoadingOverlay />
+      </>
     )
   }
 
