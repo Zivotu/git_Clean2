@@ -322,7 +322,7 @@ export default function CreateRedesign(props: any) {
                             {customAssets.length} / {MAX_CUSTOM_ASSET_COUNT} files
                           </span>
                         </div>
-                        {customAssetError && <p className="text-xs text-red-500">{customAssetError}</p>}
+
                         {customAssets.length > 0 && (
                           <div className="grid gap-3 sm:grid-cols-2">
                             {customAssets.map((asset: any) => (

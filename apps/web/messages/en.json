@@ -925,7 +925,8 @@
     "tag_tools": "Tools",
     "tag_business": "Business",
     "tag_entertainment": "Entertainment",
-    "tag_other": "Other"
+    "tag_other": "Other",
+    "advancedAssetsSizeError": "Image is larger than 100kb. Please select a smaller image."
   },
   "App": {
     "notFound": "App not found",

@@ -1039,7 +1039,8 @@
     "tag_tools": "Werkzeuge",
     "tag_business": "Geschäft",
     "tag_entertainment": "Unterhaltung",
-    "tag_other": "Sonstiges"
+    "tag_other": "Sonstiges",
+    "advancedAssetsSizeError": "Das Bild ist größer als 100kb. Bitte wählen Sie ein kleineres Bild."
   },
   "App": {
     "notFound": "App nicht gefunden",

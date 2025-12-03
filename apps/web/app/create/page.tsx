@@ -126,6 +126,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     roomsFootnote: 'You can change this option the next time you publish the app.',
     customGraphicLabel: 'Choose your own graphic',
     shortVideoButton: 'Thesara Short Video',
+    advancedAssetsSizeError: 'Image is larger than 100kb. Please select a smaller image.',
   },
   hr: {
     bundlePreviewHint: 'Nakon uspješnog builda dobit ćeš lokalni preview prije administratorskog pregleda.',
@@ -185,6 +186,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     roomsFootnote: 'Opciju možeš naknadno promijeniti prilikom sljedeće objave aplikacije.',
     customGraphicLabel: 'Odaberi vlastitu grafiku',
     shortVideoButton: 'Thesara kratki video',
+    advancedAssetsSizeError: 'Slika je veća od 100kb. Molimo odaberite manju sliku.',
   },
   de: {
     bundlePreviewHint:
@@ -246,6 +248,7 @@ const createFallbacks: Record<string, Record<string, string>> = {
     roomsFootnote: 'Diese Option kannst du bei der nächsten Veröffentlichung ändern.',
     customGraphicLabel: 'Eigene Grafik wählen',
     shortVideoButton: 'Thesara Kurzvideo',
+    advancedAssetsSizeError: 'Das Bild ist größer als 100kb. Bitte wählen Sie ein kleineres Bild.',
   },
 };
 
@@ -1198,6 +1201,12 @@ export default function CreatePage() {
         title="Greška pri grafici"
         message={previewError ?? ''}
         onClose={() => setPreviewError(null)}
+      />
+      <AlertDialog
+        open={Boolean(customAssetError)}
+        title={tCreate('advancedAssetsSizeError').split('.')[0]}
+        message={customAssetError ?? ''}
+        onClose={() => setCustomAssetError(null)}
       />
     </main>
   );

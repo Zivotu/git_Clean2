@@ -1312,7 +1312,8 @@
     "tag_tools": "Alati",
     "tag_business": "Posao",
     "tag_entertainment": "Zabava",
-    "tag_other": "Ostalo"
+    "tag_other": "Ostalo",
+    "advancedAssetsSizeError": "Slika je veća od 100kb. Molimo odaberite manju sliku."
   },
   "GoldenBook": {
     "anonymousDonor": "Anonimni donator",
@@ -1749,6 +1750,17 @@
         "emailInvalid": "Unesi valjanu e-mail adresu.",
         "phone": "Unesi valjan broj mobitela."
       }
+    }
+  },
+  "Play": {
+    "enterFullscreen": "Puni zaslon",
+    "exitFullscreen": "Izađi iz punog zaslona",
+    "fullScreenPrompt": {
+      "title": "Puni zaslon?",
+      "message": "Želiš li pokrenuti igru preko cijelog ekrana za bolje iskustvo?",
+      "yes": "Da, uključi",
+      "no": "Ne, hvala",
+      "remember": "Zapamti moj odabir"
     }
   }
 }

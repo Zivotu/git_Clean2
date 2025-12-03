@@ -17,6 +17,7 @@ import AdSlot from '@/components/AdSlot'
 import { useAds } from '@/components/AdsProvider'
 import { AD_SLOT_IDS } from '@/config/ads'
 import GameLoadingOverlay from '@/components/GameLoadingOverlay'
+import FullScreenPrompt from '@/components/FullScreenPrompt'
 import {
   getJwt,
   fetchSnapshot,
@@ -796,14 +797,39 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     )
   }
 
-  if (loading) {
-    return (
-      <>
-        {roomsControl}
-        <GameLoadingOverlay />
-      </>
-    )
-  }
+  const [minLoadTimePassed, setMinLoadTimePassed] = useState(false)
+  const [showFSPrompt, setShowFSPrompt] = useState(false)
+
+  useEffect(() => {
+    // Force a minimum splash screen time to mask initial flickers
+    const timer = setTimeout(() => setMinLoadTimePassed(true), 3500)
+
+    // Check fullscreen preference
+    const pref = localStorage.getItem('thesara_fullscreen_pref')
+    if (!pref) {
+      setShowFSPrompt(true)
+    }
+
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleFSPromptConfirm = useCallback((remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('thesara_fullscreen_pref', 'always')
+    }
+    setShowFSPrompt(false)
+    toggleFullscreen()
+  }, [toggleFullscreen])
+
+  const handleFSPromptCancel = useCallback((remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('thesara_fullscreen_pref', 'never')
+    }
+    setShowFSPrompt(false)
+  }, [])
+
+  const isReady = !loading && !!bootstrap && !error
+  const showOverlay = !isReady || !minLoadTimePassed
 
   if (error) {
     return (
@@ -814,17 +840,11 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     )
   }
 
-  if (!bootstrap) {
-    return (
-      <>
-        {roomsControl}
-        <GameLoadingOverlay />
-      </>
-    )
-  }
-
   return (
-    <div className="flex min-h-screen flex-col gap-4 px-4 pb-6">
+    <div className="flex min-h-screen flex-col gap-4 px-4 pb-6 relative">
+      {/* Overlay sits on top of everything when active */}
+      {/* Overlay moved inside iframe container */}
+
       {!isFullscreen && roomsControl}
       {!isFullscreen && showTopAd && (
         <AdSlot
@@ -843,6 +863,22 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             : { minHeight: baseViewportMinHeight }
         }
       >
+        {showOverlay && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white">
+            <GameLoadingOverlay />
+          </div>
+        )}
+
+        <FullScreenPrompt
+          open={showFSPrompt}
+          title={messages['Play.fullScreenPrompt.title'] ?? 'Puni zaslon?'}
+          message={messages['Play.fullScreenPrompt.message'] ?? 'Želiš li pokrenuti igru preko cijelog ekrana?'}
+          confirmLabel={messages['Play.fullScreenPrompt.yes'] ?? 'Da'}
+          cancelLabel={messages['Play.fullScreenPrompt.no'] ?? 'Ne'}
+          rememberLabel={messages['Play.fullScreenPrompt.remember'] ?? 'Zapamti'}
+          onConfirm={handleFSPromptConfirm}
+          onCancel={handleFSPromptCancel}
+        />
         <button
           type="button"
           onClick={toggleFullscreen}
@@ -853,17 +889,21 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             ? messages['Play.exitFullscreen'] ?? 'Exit full screen'
             : messages['Play.enterFullscreen'] ?? 'Full screen'}
         </button>
-        <iframe
-          ref={iframeRef}
-          src={iframeUrl}
-          title="Thesara App"
-          name={iframeBootstrapName}
-          referrerPolicy="no-referrer"
-          allow="geolocation"
-          sandbox={sandboxFlags}
-          className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
-          style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
-        />
+
+        {/* Only render iframe when we have bootstrap data, but it might be hidden behind overlay */}
+        {!!bootstrap && (
+          <iframe
+            ref={iframeRef}
+            src={iframeUrl}
+            title="Thesara App"
+            name={iframeBootstrapName}
+            referrerPolicy="no-referrer"
+            allow="geolocation"
+            sandbox={sandboxFlags}
+            className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
+            style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
+          />
+        )}
       </div>
       {!isFullscreen && showBottomAd && (
         <AdSlot

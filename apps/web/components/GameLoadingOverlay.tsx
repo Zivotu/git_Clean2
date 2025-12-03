@@ -7,8 +7,8 @@ export default function GameLoadingOverlay() {
     const [progress, setProgress] = useState(0)
 
     useEffect(() => {
-        // Animate progress to 90% over ~2 seconds to match the "reload" feel
-        const duration = 2000
+        // Animate progress to 90% over ~3 seconds to match the "reload" feel
+        const duration = 3000
         const interval = 50
         const steps = duration / interval
         const increment = 90 / steps
