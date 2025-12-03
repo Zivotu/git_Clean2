@@ -287,6 +287,8 @@ const mapJobState = (state: string): ProgressModalState => {
   return 'running';
 };
 
+
+
 export default function CreatePage() {
   const [step, setStep] = useState(0);
   const [submissionType, setSubmissionType] = useState<SubmissionType>('code');
@@ -402,6 +404,9 @@ export default function CreatePage() {
     () => Boolean(user && termsStatus && termsStatus.accepted === false),
     [user, termsStatus],
   );
+
+  const [showStorageWarningModal, setShowStorageWarningModal] = useState(false);
+  const [storageWarningMessage, setStorageWarningMessage] = useState('');
 
 
   const { status: buildStatus, reason: buildError, listingId } = useBuildEvents(currentBuildId);
@@ -700,7 +705,7 @@ export default function CreatePage() {
     [longDescription, screenshots],
   );
 
-  const publish = async () => {
+  const publish = async (skipStorageWarning = false) => {
     setPublishError('');
     setAuthError('');
     setBundleError('');
@@ -773,6 +778,9 @@ export default function CreatePage() {
           if (llmApiKey.trim()) {
             form.append('llmApiKey', llmApiKey.trim());
           }
+          if (skipStorageWarning) {
+            form.append('skipStorageWarning', 'true');
+          }
           if (customAssets.length) {
             form.append(
               'customAssets',
@@ -795,7 +803,6 @@ export default function CreatePage() {
             form,
             { auth: true },
           );
-
           if (bundlePublish?.buildId) {
             setCurrentBuildId(bundlePublish.buildId);
             if (bundlePublish.slug) {
@@ -826,6 +833,9 @@ export default function CreatePage() {
               setPublishTermsError(tCreate('publishTermsErrorBundle'));
               setShowTermsModal(true);
               void refreshTermsStatus();
+            } else if (err.code === 'storage_usage_missing') {
+              setStorageWarningMessage(err.message || 'Nedostaje korištenje pohrane.');
+              setShowStorageWarningModal(true);
             } else {
               setPublishError(err.message || 'Upload nije uspio.');
             }
@@ -841,7 +851,7 @@ export default function CreatePage() {
       const sesRe =
         /(lockdown\s*\(|\brequire\s*\(\s*['"]ses['"]\s*\)|\bfrom\s+['"]ses['"]|import\s*\(\s*['"]ses['"]\s*\))/;
       if (sesRe.test(code)) {
-        setPublishError('SES/lockdown nije podrÅ¾an u browseru. Ukloni ga iz koda ili ga pokreni samo na serveru.');
+        setPublishError('SES/lockdown nije podržan u browseru. Ukloni ga iz koda ili ga pokreni samo na serveru.');
         return;
       }
 
@@ -893,6 +903,7 @@ export default function CreatePage() {
         },
         inlineCode: code,
         visibility: 'public',
+        skipStorageWarning,
         ...(previewAttachment ? { preview: previewAttachment } : {}),
       };
 
@@ -918,7 +929,7 @@ export default function CreatePage() {
           }
         }
       } else {
-        setPublishError('Build ID nije vra��en s poslu�_itelja.');
+        setPublishError('Build ID nije vraćen s poslužitelja.');
         setShowProgress(false);
         setManualBuildState(null);
       }
@@ -930,9 +941,12 @@ export default function CreatePage() {
           setPublishTermsError(tCreate('publishTermsErrorPublish'));
           setShowTermsModal(true);
           void refreshTermsStatus();
+        } else if (err.code === 'storage_usage_missing') {
+          setStorageWarningMessage(err.message || 'Nedostaje korištenje pohrane.');
+          setShowStorageWarningModal(true);
         } else {
           const code = err.code as string | undefined;
-          const friendly = (code && friendlyByCode[code]) || err.message || code || 'GreÅ¡ka pri objavi.';
+          const friendly = (code && friendlyByCode[code]) || err.message || code || 'Greška pri objavi.';
           setPublishError(friendly);
           setPublishErrorCode(code || null);
           if (code === 'max_apps') {
@@ -977,9 +991,9 @@ export default function CreatePage() {
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/50" onClick={() => setShowUpgradeModal(false)} />
         <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold mb-2">TrebaÅ¡ Gold za viÅ¡e aplikacija</h3>
+          <h3 className="text-xl font-semibold mb-2">Trebaš Gold za više aplikacija</h3>
           <p className="text-sm text-gray-700 mb-4">
-            U besplatnom paketu moÅ¾eÅ¡ imati 1 aplikaciju ukupno. ObriÅ¡i postojeÄ‡u u <a href="/my" className="underline text-emerald-700">Mojim aplikacijama</a> ili nadogradi na Gold paket.
+            U besplatnom paketu možeš imati 1 aplikaciju ukupno. Obriši postojeću u <a href="/my" className="underline text-emerald-700">Mojim aplikacijama</a> ili nadogradi na Gold paket.
           </p>
           <div className="flex gap-2 justify-end">
             <button
@@ -1003,6 +1017,38 @@ export default function CreatePage() {
     );
   };
 
+  const StorageWarningModal = () => {
+    if (!showStorageWarningModal) return null;
+    return (
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/50" onClick={() => setShowStorageWarningModal(false)} />
+        <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
+          <h3 className="text-xl font-semibold mb-2 text-amber-600">Upozorenje o pohrani</h3>
+          <p className="text-sm text-gray-700 mb-4">
+            {storageWarningMessage}
+          </p>
+          <div className="flex gap-2 justify-end">
+            <button
+              onClick={() => setShowStorageWarningModal(false)}
+              className="rounded-lg border px-4 py-2 text-gray-700 hover:bg-gray-50"
+            >
+              Odustani
+            </button>
+            <button
+              onClick={() => {
+                setShowStorageWarningModal(false);
+                publish(true);
+              }}
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-white shadow-sm hover:bg-emerald-700"
+            >
+              Nastavi svejedno
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const progressPct = useMemo(
     () => ((step + 1) / stepsList.length) * 100,
     [step],
@@ -1017,7 +1063,7 @@ export default function CreatePage() {
         />
         <span className={done ? 'text-gray-700' : 'text-gray-500'}>{label}</span>
       </div>
-      <span className={`text-xs ${done ? 'text-emerald-700' : 'text-gray-400'}`}>{done ? 'âœ”' : 'â€”'}</span>
+      <span className={`text-xs ${done ? 'text-emerald-700' : 'text-gray-400'}`}>{done ? '✔' : '—'}</span>
     </div>
   );
 
@@ -1141,6 +1187,7 @@ export default function CreatePage() {
       </div>
 
       <UpgradeModal />
+      <StorageWarningModal />
       <TermsPreviewModal
         open={showTermsModal}
         onClose={() => setShowTermsModal(false)}
@@ -1148,7 +1195,7 @@ export default function CreatePage() {
       />
       <AlertDialog
         open={Boolean(previewError)}
-        title="Gre\u0161ka pri grafici"
+        title="Greška pri grafici"
         message={previewError ?? ''}
         onClose={() => setPreviewError(null)}
       />
