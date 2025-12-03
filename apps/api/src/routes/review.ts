@@ -731,6 +731,10 @@ export default async function reviewRoutes(app: FastifyInstance) {
         payload.playUrl = `/play/${app.id}/`;
         payload.bundlePublicUrl = bundlePublicUrl;
 
+        // Ensure we clear any deletion flags if the app is being approved
+        payload.deletedAt = FieldValue.delete();
+        payload.adminDeleteSnapshot = FieldValue.delete();
+
         const ensured = ensureListingPreview({ ...app, ...payload });
         if (ensured.changed) {
           Object.assign(payload, ensured.next);
