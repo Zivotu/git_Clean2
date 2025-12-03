@@ -1,4 +1,4 @@
-﻿{
+{
   "Nav": {
     "publishApp": "Objavi aplikaciju",
     "shortVideo": "Thesara kratki video",
@@ -832,9 +832,8 @@
     "themeToggle": "Promijeni temu",
     "backLink": "← Natrag na uživo",
     "backLinkMobile": "← Natrag"
-  }
-},
-"Toasts": {
+  },
+  "Toasts": {
   "welcome": "Dobrodošli na Thesaru!",
   "loginToLike": "Prijavite se za lajkanje aplikacija",
   "slowDown": "Polako 🙂",

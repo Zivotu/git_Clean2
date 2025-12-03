@@ -443,6 +443,11 @@ export default function StvaranjeTimaClient() {
                     ))}
                   </ul>
                 )}
+                {section.footerParagraphs?.map((paragraph, index) => (
+                  <p key={section.heading + '-footer-' + index} className="text-sm leading-relaxed text-slate-600 dark:text-zinc-300">
+                    {paragraph}
+                  </p>
+                ))}
               </li>
             ))}
           </ol>

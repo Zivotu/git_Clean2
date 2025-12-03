@@ -7,6 +7,7 @@ export type GiveawayRuleSection = {
   heading: string;
   paragraphs?: string[];
   bullets?: GiveawayRuleBullet[];
+  footerParagraphs?: string[];
 };
 
 export type GiveawayRulesCopy = {
@@ -71,7 +72,7 @@ const GIVEAWAY_RULES: LocaleRulesMap = {
           { text: "Like the official Giveaway post on the Promoter's TikTok or Instagram account (as specified in the post)." },
           { text: "Follow the Promoter's account on the same platform." },
         ],
-        paragraphs: [
+        footerParagraphs: [
           'No purchase or payment is required to enter or win. A purchase does not increase your chances of winning.',
           'One entry per person per platform. Using multiple accounts, bots or any automated methods to gain extra entries may result in disqualification.',
         ],
@@ -255,7 +256,7 @@ const GIVEAWAY_RULES: LocaleRulesMap = {
           { text: 'Lajkati službenu objavu nagradne igre na TikTok ili Instagram profilu Organizatora (kako je navedeno u objavi).' },
           { text: 'Zaprati profil Organizatora na istoj platformi.' },
         ],
-        paragraphs: [
+        footerParagraphs: [
           'Kupnja ili plaćanje nisu uvjet za sudjelovanje niti povećavaju šanse za dobitak.',
           'Dozvoljen je jedan unos po osobi i po platformi. Korištenje više profila, botova ili automatiziranih metoda za povećanje broja prijava može rezultirati diskvalifikacijom.',
         ],
@@ -409,7 +410,7 @@ const GIVEAWAY_RULES: LocaleRulesMap = {
           { text: 'Den offiziellen Gewinnspiel-Post auf dem TikTok- oder Instagram-Konto des Veranstalters liken (wie im Post angegeben).' },
           { text: 'Dem Konto des Veranstalters auf derselben Plattform folgen.' },
         ],
-        paragraphs: [
+        footerParagraphs: [
           'Für die Teilnahme oder einen Gewinn ist kein Kauf oder eine Zahlung erforderlich. Ein Kauf erhöht nicht die Gewinnchancen.',
           'Pro Person und Plattform ist nur eine Teilnahme zulässig. Mehrere Konten, Bots oder automatisierte Methoden können zur Disqualifikation führen.',
         ],

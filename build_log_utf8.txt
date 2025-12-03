@@ -1,0 +1,24 @@
+﻿
+> createx-starter-v0@ build:web C:\thesara_RollBack
+> pnpm --filter @thesara/web build
+
+
+> @thesara/web@0.0.1 build C:\thesara_RollBack\apps\web
+> next build
+
+   Γû▓ Next.js 15.5.6
+   - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 5.4s
+   Linting and checking validity of types ...
+
+./app/beta-home/BetaHomeClient.tsx
+240:9  Warning: The 'tBeta' function makes the dependencies of useMemo Hook (at line 258) change on every render. To fix this, wrap the definition of 'tBeta' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+304:5  Warning: React Hook useMemo has unnecessary dependencies: '_predefinedTagKeysHash', 'locale', and 'messages'. Either exclude them or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+C:\thesara_RollBack\apps\web:
+ΓÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILΓÇë @thesara/web@0.0.1 build: `next build`
+Exit status 1
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.
