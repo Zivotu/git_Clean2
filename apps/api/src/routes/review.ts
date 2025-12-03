@@ -1043,8 +1043,23 @@ export default async function reviewRoutes(app: FastifyInstance) {
     const now = Date.now();
 
     try {
-      const resolved = await resolveBuildContext(id);
-      const appIndex = resolved?.appIndex ?? -1;
+      let resolved = await resolveBuildContext(id);
+      let appIndex = resolved?.appIndex ?? -1;
+
+      // Fallback: if not found via build context, try direct lookup
+      if (appIndex < 0) {
+        const apps = await readApps();
+        appIndex = apps.findIndex(a => a.id === id || a.slug === id);
+        if (appIndex >= 0 && !resolved) {
+          // Construct a partial resolved context so we can proceed
+          resolved = {
+            buildId: apps[appIndex].buildId || '',
+            apps,
+            appIndex,
+            build: undefined
+          };
+        }
+      }
       const buildId = resolved?.buildId;
       const build = resolved?.build ?? (buildId ? await readBuild(buildId) : undefined);
 
@@ -1070,6 +1085,9 @@ export default async function reviewRoutes(app: FastifyInstance) {
         }
 
         await updateApp(app.id, payload);
+        req.log.info({ appId: app.id, payload }, 'soft_delete_app_updated');
+      } else {
+        req.log.warn({ id, resolved }, 'soft_delete_app_not_found');
       }
 
       if (buildId) {

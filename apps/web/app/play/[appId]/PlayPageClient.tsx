@@ -203,6 +203,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   const [minLoadTimePassed, setMinLoadTimePassed] = useState(false)
   const [showFSPrompt, setShowFSPrompt] = useState(false)
+  const [gameReady, setGameReady] = useState(false)
+  const iframeReadyRef = useRef(false)
 
   useEffect(() => {
     notifyPlay(app.slug || app.id)
@@ -252,7 +254,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return `${base}/builds/${encodedId}/build/`;
   }, [appId, buildId])
   // Delay setting iframe URL until we have token/snapshot to avoid first-load race
-  const [iframeUrl, setIframeUrl] = useState<string>('')
+  // const [iframeUrl, setIframeUrl] = useState<string>('')
   const [frameHeight, setFrameHeight] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -264,6 +266,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return flags.join(' ');
   }, [securityPolicy]);
 
+  /*
   const updateIframeSrc = useCallback(
     (token: string | null, namespace: string, roomToken?: string | null) => {
       const params: Record<string, string> = { ns: namespace };
@@ -274,6 +277,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     },
     [baseIframeSrc],
   );
+  */
 
   const ensureJwt = useCallback(async () => {
     if (jwtRef.current) return jwtRef.current
@@ -415,12 +419,14 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return () => clearTimeout(timer)
   }, [])
 
+  /*
   useEffect(() => {
     if (!roomsReady || !SHIM_ENABLED) return
     if (jwtRef.current) {
       updateIframeSrc(jwtRef.current, activeNamespace, roomTokenRef.current)
     }
   }, [roomsReady, activeNamespace, roomSession?.token, updateIframeSrc])
+  */
 
   useEffect(() => {
     setRoomSession(null)
@@ -530,13 +536,13 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           token = searchParams.get('token')
           if (token) {
             jwtRef.current = token
-            updateIframeSrc(token, activeNamespace, roomTokenRef.current)
+            // updateIframeSrc(token, activeNamespace, roomTokenRef.current)
           }
         }
 
         const jwt = token ?? (await ensureJwt())
         if (!token) {
-          updateIframeSrc(jwt, activeNamespace, roomTokenRef.current)
+          // updateIframeSrc(jwt, activeNamespace, roomTokenRef.current)
         }
         const { snapshot, version } = await fetchSnapshot(
           jwt,
@@ -568,7 +574,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return () => {
       cancelled = true
     }
-  }, [activeNamespace, ensureJwt, roomsReady, updateIframeSrc, roomSession?.token, redirectToLogin])
+  }, [activeNamespace, ensureJwt, roomsReady, roomSession?.token, redirectToLogin])
 
   useEffect(() => {
     if (!bootstrap) return
@@ -599,13 +605,39 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     }
 
     channel.addEventListener('message', handleBroadcast)
-
     return () => {
       channel.removeEventListener('message', handleBroadcast)
       channel.close()
       if (bcRef.current === channel) bcRef.current = null
     }
   }, [activeNamespace, bootstrap])
+
+  // Send init to iframe if it became ready while we were bootstrapping
+  useEffect(() => {
+    if (bootstrap && iframeReadyRef.current && !gameReady && capRef.current && iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: 'thesara:storage:init',
+          snapshot: snapshotRef.current,
+          version: storageVersionRef.current,
+          namespace: namespaceRef.current,
+          token: jwtRef.current,
+          roomToken: roomTokenRef.current,
+          cap: capRef.current,
+        },
+        '*',
+      )
+      setTimeout(() => setGameReady(true), 1000)
+    }
+  }, [bootstrap, gameReady])
+
+  // Fallback: If game doesn't send shim:ready within 8 seconds, hide overlay anyway
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGameReady(true)
+    }, 8000)
+    return () => clearTimeout(timer)
+  }, [])
 
   // debug logs removed
 
@@ -736,18 +768,26 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
       if (msg.type === 'thesara:shim:ready') {
         const cap = createCapability()
         capRef.current = cap
-        frame.postMessage(
-          {
-            type: 'thesara:storage:init',
-            snapshot: snapshotRef.current,
-            version: storageVersionRef.current,
-            namespace: namespaceRef.current,
-            token: jwtRef.current,
-            roomToken: roomTokenRef.current,
-            cap,
-          },
-          '*',
-        )
+        iframeReadyRef.current = true
+
+        // Only send init if we have bootstrap data. 
+        // If not, we wait for bootstrap useEffect to trigger it.
+        if (bootstrap) {
+          frame.postMessage(
+            {
+              type: 'thesara:storage:init',
+              snapshot: snapshotRef.current,
+              version: storageVersionRef.current,
+              namespace: namespaceRef.current,
+              token: jwtRef.current,
+              roomToken: roomTokenRef.current,
+              cap,
+            },
+            '*',
+          )
+          // Give the game a moment to process init and render before hiding overlay
+          setTimeout(() => setGameReady(true), 1000)
+        }
         return
       }
 
@@ -831,7 +871,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
 
   const isReady = !loading && !!bootstrap && !error
-  const showOverlay = !isReady || !minLoadTimePassed
+  const showOverlay = !isReady || !minLoadTimePassed || !gameReady
 
   if (error) {
     return (
@@ -892,20 +932,20 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             : messages['Play.enterFullscreen'] ?? 'Full screen'}
         </button>
 
-        {/* Only render iframe when we have bootstrap data, but it might be hidden behind overlay */}
-        {!!bootstrap && (
-          <iframe
-            ref={iframeRef}
-            src={iframeUrl}
-            title="Thesara App"
-            name={iframeBootstrapName}
-            referrerPolicy="no-referrer"
-            allow="geolocation"
-            sandbox={sandboxFlags}
-            className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
-            style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
-          />
-        )}
+        {/* Only render iframe when we have bootstrap data, but it might be hidden behind overlay */
+          /* Render iframe immediately to start loading assets in parallel with bootstrap */
+        }
+        <iframe
+          ref={iframeRef}
+          src={baseIframeSrc}
+          title="Thesara App"
+          name={iframeBootstrapName}
+          referrerPolicy="no-referrer"
+          allow="geolocation"
+          sandbox={sandboxFlags}
+          className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
+          style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
+        />
       </div>
       {!isFullscreen && showBottomAd && (
         <AdSlot
