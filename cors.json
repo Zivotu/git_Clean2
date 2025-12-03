@@ -16,11 +16,15 @@
         "maxAgeSeconds": 3600,
         "responseHeader": [
             "Content-Type",
+            "Content-Length",
             "Authorization",
+            "X-Firebase-Storage-Version",
             "X-Goog-Upload-Protocol",
             "X-Goog-Upload-Command",
             "X-Goog-Upload-Status",
-            "X-Goog-Upload-URL"
+            "X-Goog-Upload-URL",
+            "X-Goog-Upload-Header-Content-Length",
+            "X-Goog-Upload-Header-Content-Type"
         ]
     }
 ]
