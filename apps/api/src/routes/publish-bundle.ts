@@ -459,7 +459,12 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
           pendingBuildId: buildId,
           pendingVersion: version,
           previewUrl: payloadPreviewUrl ?? existing.previewUrl,
-          customAssets: storedCustomAssets.length ? storedCustomAssets : undefined,
+          customAssets: storedCustomAssets.length
+            ? storedCustomAssets.map((a) => {
+              const { dataUrl, ...rest } = a;
+              return rest;
+            })
+            : undefined,
         };
         const { next } = ensureListingPreview(base);
         apps[idx] = next;
@@ -482,7 +487,12 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
           version,
           archivedVersions,
           previewUrl: payloadPreviewUrl,
-          customAssets: storedCustomAssets.length ? storedCustomAssets : undefined,
+          customAssets: storedCustomAssets.length
+            ? storedCustomAssets.map((a) => {
+              const { dataUrl, ...rest } = a;
+              return rest;
+            })
+            : undefined,
         };
         const { next } = ensureListingPreview(base);
         apps.push(next);
