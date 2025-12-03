@@ -16,6 +16,7 @@ export async function ensureUserDoc(user: MinimalUser) {
   const snap = await getDoc(ref);
 
   if (!snap.exists()) {
+    // Novi korisnik - koristi merge:false da spriječiš miješanje podataka
     await setDoc(
       ref,
       {
@@ -38,17 +39,20 @@ export async function ensureUserDoc(user: MinimalUser) {
       console.warn('Failed to trigger welcome email', err);
     }
   } else {
-    await setDoc(
-      ref,
-      {
-        email: user.email ?? null,
-        displayName: user.displayName ?? null,
-        photoURL: user.photoURL ?? null,
-        username: user.email?.split('@')[0] ?? null,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+    // Postojeći korisnik - ažuriraj samo email i username, NE photoURL i displayName
+    // da spriječiš session confusion gdje se podaci miješaju između korisnika
+    const updates: any = {
+      email: user.email ?? null,
+      updatedAt: serverTimestamp(),
+    };
+
+    // Ažuriraj username samo ako ne postoji
+    const existingData = snap.data() as any;
+    if (!existingData?.username && user.email) {
+      updates.username = user.email.split('@')[0];
+    }
+
+    await setDoc(ref, updates, { merge: true });
   }
 }
 

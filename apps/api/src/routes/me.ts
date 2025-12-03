@@ -533,21 +533,38 @@ export default async function meRoutes(app: FastifyInstance) {
           if (!data?.handle) {
             const handle = await generateUniqueHandle(displayName ?? data?.displayName)
 
-            // Create creator record with the generated handle
+            // Determine the best display name for the creator profile
+            const creatorDisplayName = displayName ?? data?.displayName ?? handle
+            const creatorPhotoURL = data?.photoURL ?? null
+
+            // Create creator record with the generated handle AND display name
             await upsertCreator({
               id: uid,
               handle,
+              displayName: creatorDisplayName,
+              photoURL: creatorPhotoURL,
             })
 
             // Update user document with the handle
             await userRef.set({ handle }, { merge: true })
 
             generatedHandle = handle
-            req.log.info({ uid, handle }, 'auto_generated_handle_for_new_user')
+            req.log.info({ uid, handle, displayName: creatorDisplayName }, 'auto_generated_handle_and_profile_for_new_user')
           }
         } catch (handleErr) {
           // Log error but don't fail the welcome email
           req.log.error({ err: handleErr, uid }, 'auto_handle_generation_failed')
+        }
+
+        // Automatically create Early Access entitlements (Gold + NoAds) for new users
+        try {
+          const earlyAccessResult = await ensureEarlyAccessForUser({ uid })
+          if (earlyAccessResult.entitlementsChanged) {
+            req.log.info({ uid, campaign: earlyAccessResult.campaign?.id }, 'early_access_entitlements_created_for_new_user')
+          }
+        } catch (earlyAccessErr) {
+          // Log error but don't fail the welcome email
+          req.log.error({ err: earlyAccessErr, uid }, 'early_access_creation_failed')
         }
 
         const adminLines = [
@@ -573,33 +590,39 @@ export default async function meRoutes(app: FastifyInstance) {
     },
   )
 
-  app.post(
-    '/me/visit',
-    { preHandler: requireRole(['user']) },
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const uid = req.authUser?.uid
-      if (!uid) {
-        return reply.code(401).send({ ok: false, error: 'unauthorized' })
-      }
 
-      try {
-        const userRef = db.collection('users').doc(uid)
-        // Use a transaction or just an update. Since accuracy isn't critical (it's just stats),
-        // a simple update with FieldValue.increment is best.
-        const now = Date.now()
-        await userRef.set(
-          {
-            visitCount: require('firebase-admin/firestore').FieldValue.increment(1),
-            lastVisitAt: now,
-          },
-          { merge: true },
-        )
-        return reply.send({ ok: true })
-      } catch (err) {
-        req.log.error({ err, uid }, 'visit_tracking_failed')
-        // Don't fail the request for the client, just log it
-        return reply.send({ ok: true, ignored: true })
-      }
-    },
-  )
+  const visitHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const uid = req.authUser?.uid
+    if (!uid) {
+      return reply.code(401).send({ ok: false, error: 'unauthorized' })
+    }
+
+    try {
+      const userRef = db.collection('users').doc(uid)
+      // Use a transaction or just an update. Since accuracy isn't critical (it's just stats),
+      // a simple update with FieldValue.increment is best.
+      const now = Date.now()
+      await userRef.set(
+        {
+          visitCount: require('firebase-admin/firestore').FieldValue.increment(1),
+          lastVisitAt: now,
+        },
+        { merge: true },
+      )
+      return reply.send({ ok: true })
+    } catch (err) {
+      req.log.error({ err, uid }, 'visit_tracking_failed')
+      // Don't fail the request for the client, just log it
+      return reply.send({ ok: true, ignored: true })
+    }
+  }
+
+  for (const prefix of ['', '/api']) {
+    app.post(
+      `${prefix}/me/visit`,
+      { preHandler: requireRole('user') },
+      visitHandler,
+    )
+  }
+
 }
