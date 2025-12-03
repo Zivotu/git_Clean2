@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { applyToAmbassadorProgram } from '@/lib/ambassador';
+import { useTranslations } from 'next-intl';
 
 // A simple modal component
 const Modal = ({ isOpen, onClose, title, children }: any) => {
@@ -52,6 +53,7 @@ type ProfileAmbassadorInfo = {
 };
 
 export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
+  const t = useTranslations('Profile.ambassadorSection');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [socialLinks, setSocialLinks] = useState({
     tiktok: '',
@@ -103,7 +105,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
           status: 'pending',
         },
       });
-      setSuccess('Zahtjev je poslan! Obavijestit ćemo te čim ga pregledamo.');
+      setSuccess(t('applicationSuccess'));
       setIsModalOpen(false);
       setSocialLinks({ tiktok: '', instagram: '', youtube: '', newsletter: '', other: '' });
       setMotivation('');
@@ -124,11 +126,11 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
       return (
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            🎉 Čestitamo! Odobren si kao Thesara ambasador.
+            {t('statusApproved')}
           </p>
           {ambassadorInfo?.promoCode ? (
             <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-900/30 rounded-2xl p-5 shadow-sm">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Tvoj kod</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('yourCode')}</p>
               <p className="text-3xl font-bold tracking-wide text-emerald-700 dark:text-emerald-400">{ambassadorInfo.promoCode}</p>
               <button
                 className="mt-4 px-4 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-emerald-200 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors font-medium text-sm shadow-sm"
@@ -138,14 +140,14 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                     .catch(() => { });
                 }}
               >
-                📋 Kopiraj kod
+                {t('copyCode')}
               </button>
             </div>
           ) : null}
           <div className="flex flex-wrap gap-3">
             <Link href="/ambassador/dashboard" className="inline-flex">
               <button className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium shadow-sm hover:shadow-md">
-                📊 Otvori dashboard
+                {t('openDashboard')}
               </button>
             </Link>
             <a
@@ -154,7 +156,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
               rel="noopener noreferrer"
               className="inline-flex">
               <button className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors font-medium shadow-sm">
-                🎨 Marketing kit
+                {t('marketingKit')}
               </button>
             </a>
           </div>
@@ -166,7 +168,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
       return (
         <div className="rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-900/30 p-4">
           <p className="text-sm text-blue-800 dark:text-blue-200">
-            ⏳ Tvoja prijava je u obradi. Javit ćemo ti se e-mailom čim donesemo odluku.
+            {t('statusPending')}
           </p>
         </div>
       );
@@ -177,15 +179,14 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
         <div className="space-y-4">
           <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900/30 p-4">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              Prethodna prijava nije odobrena, ali možeš se ponovno prijaviti kad osjetiš da je tvoja
-              zajednica spremna.
+              {t('statusRejected')}
             </p>
           </div>
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium shadow-sm hover:shadow-md"
           >
-            Nova prijava
+            {t('newApplication')}
           </button>
         </div>
       );
@@ -200,7 +201,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
           onClick={() => setIsModalOpen(true)}
           className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium shadow-sm hover:shadow-md"
         >
-          🚀 Prijavi se
+          {t('applyButton')}
         </button>
       </div>
     );
@@ -216,12 +217,12 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
             </svg>
           </div>
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Thesara Ambassador Program</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t('title')}</h2>
           </div>
         </div>
         <div className="text-sm text-gray-700 dark:text-gray-300 space-y-3">
           <p>
-            Zaradi kao partner: <span className="font-semibold text-emerald-600 dark:text-emerald-400">80% provizije od prve uplate</span>
+            Zaradi kao partner: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{t('commissionRate')}</span>
             {' '}korisnika koji iskoristi tvoj kod.
           </p>
           <ul className="space-y-2">
@@ -262,22 +263,22 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
         {renderContent()}
       </Card>
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Prijava za Ambassador program">
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('modal.title')}>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-900/30 p-4 text-sm text-amber-800 dark:text-amber-200">
-            <p className="font-medium mb-1">📋 Prije slanja, potvrdi da razumiješ uvjete:</p>
+            <p className="font-medium mb-1">{t('modal.confirmTerms')}</p>
             <ul className="list-disc list-inside space-y-1 text-xs">
-              <li>80% provizije na prvu uplatu</li>
-              <li>30 dana Gold trial tvojoj publici</li>
-              <li>Prag isplate 50 €</li>
-              <li>Isplata mjesečno (net 30)</li>
+              <li>{t('modal.term1')}</li>
+              <li>{t('modal.term2')}</li>
+              <li>{t('modal.term3')}</li>
+              <li>{t('modal.term4')}</li>
             </ul>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
             <div>
               <label htmlFor="tiktok" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                TikTok profil
+                {t('modal.tiktokLabel')}
               </label>
               <Input
                 id="tiktok"
@@ -285,13 +286,13 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                 type="url"
                 value={socialLinks.tiktok}
                 onChange={(e) => setSocialLinks({ ...socialLinks, tiktok: e.target.value })}
-                placeholder="https://www.tiktok.com/@username"
+                placeholder={t('modal.tiktokPlaceholder')}
                 className="w-full"
               />
             </div>
             <div>
               <label htmlFor="instagram" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Instagram profil
+                {t('modal.instagramLabel')}
               </label>
               <Input
                 id="instagram"
@@ -299,13 +300,13 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                 type="url"
                 value={socialLinks.instagram}
                 onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })}
-                placeholder="https://www.instagram.com/username"
+                placeholder={t('modal.instagramPlaceholder')}
                 className="w-full"
               />
             </div>
             <div>
               <label htmlFor="youtube" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                YouTube kanal
+                {t('modal.youtubeLabel')}
               </label>
               <Input
                 id="youtube"
@@ -313,13 +314,13 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                 type="url"
                 value={socialLinks.youtube}
                 onChange={(e) => setSocialLinks({ ...socialLinks, youtube: e.target.value })}
-                placeholder="https://www.youtube.com/@username"
+                placeholder={t('modal.youtubePlaceholder')}
                 className="w-full"
               />
             </div>
             <div>
               <label htmlFor="newsletter" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Newsletter ili blog
+                {t('modal.newsletterLabel')}
               </label>
               <Input
                 id="newsletter"
@@ -327,13 +328,13 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                 type="url"
                 value={socialLinks.newsletter}
                 onChange={(e) => setSocialLinks({ ...socialLinks, newsletter: e.target.value })}
-                placeholder="https://newsletter.example.com"
+                placeholder={t('modal.newsletterPlaceholder')}
                 className="w-full"
               />
             </div>
             <div>
               <label htmlFor="other" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Ostali kanali (link)
+                {t('modal.otherLabel')}
               </label>
               <Input
                 id="other"
@@ -341,20 +342,20 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                 type="url"
                 value={socialLinks.other}
                 onChange={(e) => setSocialLinks({ ...socialLinks, other: e.target.value })}
-                placeholder="https://"
+                placeholder={t('modal.otherPlaceholder')}
                 className="w-full"
               />
             </div>
             <div>
               <label htmlFor="primaryPlatform" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Primarna platforma
+                {t('modal.primaryPlatformLabel')}
               </label>
               <Input
                 id="primaryPlatform"
                 name="primaryPlatform"
                 value={primaryPlatform}
                 onChange={(e) => setPrimaryPlatform(e.target.value)}
-                placeholder="npr. TikTok, YouTube, Instagram"
+                placeholder={t('modal.primaryPlatformPlaceholder')}
                 className="w-full"
               />
             </div>
@@ -362,21 +363,21 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
 
           <div>
             <label htmlFor="audienceSize" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Veličina publike
+              {t('modal.audienceSizeLabel')}
             </label>
             <Input
               id="audienceSize"
               name="audienceSize"
               value={audienceSize}
               onChange={(e) => setAudienceSize(e.target.value)}
-              placeholder="npr. 12.5k pratitelja"
+              placeholder={t('modal.audienceSizePlaceholder')}
               className="w-full"
             />
           </div>
 
           <div>
             <label htmlFor="motivation" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Zašto želiš biti ambasador? <span className="text-red-500">*</span>
+              {t('modal.motivationLabel')} <span className="text-red-500">{t('modal.motivationRequired')}</span>
             </label>
             <Textarea
               id="motivation"
@@ -384,7 +385,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
               rows={4}
               value={motivation}
               onChange={(e) => setMotivation(e.target.value)}
-              placeholder="Volim Thesara jer..."
+              placeholder={t('modal.motivationPlaceholder')}
               required
               className="w-full"
             />
@@ -392,7 +393,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
 
           {error && (
             <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-900/30 p-4 text-sm text-red-600 dark:text-red-400">
-              <p className="font-medium">❌ Greška:</p>
+              <p className="font-medium">{t('modal.errorTitle')}</p>
               <p>{error}</p>
             </div>
           )}
@@ -403,7 +404,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
               onClick={() => setIsModalOpen(false)}
               className="px-5 py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors font-medium"
             >
-              Odustani
+              {t('modal.cancelButton')}
             </button>
             <button
               type="submit"
@@ -416,10 +417,10 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Slanje...
+                  {t('modal.submittingButton')}
                 </>
               ) : (
-                'Pošalji prijavu'
+                t('modal.submitButton')
               )}
             </button>
           </div>

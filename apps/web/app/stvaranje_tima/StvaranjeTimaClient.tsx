@@ -5,6 +5,7 @@ import { useMemo, useState, useEffect } from 'react';
 
 import { useTheme } from '@/components/ThemeProvider';
 import { useI18n } from '@/lib/i18n-provider';
+import { getGiveawayRules } from './giveawayRulesContent';
 
 type FormState = {
   firstName: string;
@@ -36,10 +37,11 @@ type Status = 'idle' | 'submitting' | 'success' | 'error';
 
 export default function StvaranjeTimaClient() {
   const { isDark } = useTheme();
-  const { messages } = useI18n();
+  const { messages, locale } = useI18n();
   const [form, setForm] = useState<FormState>(DEFAULT_STATE);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const giveawayRules = useMemo(() => getGiveawayRules(locale), [locale]);
 
   const trackEvent = async (eventName: string, params?: Record<string, any>) => {
     // Clarity
@@ -407,6 +409,43 @@ export default function StvaranjeTimaClient() {
               {messages['TeamCreation.form.errorGeneric']}
             </div>
           )}
+        </section>
+        <section className={cardClasses + ' p-8 md:p-12 space-y-6'}>
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-500">{giveawayRules.notice}</p>
+            <h2 className="text-2xl font-bold md:text-3xl">{giveawayRules.title}</h2>
+            {giveawayRules.intro && (
+              <p className="text-sm text-slate-600 dark:text-zinc-400">{giveawayRules.intro}</p>
+            )}
+          </div>
+          <ol className="list-decimal space-y-6 pl-6 text-base">
+            {giveawayRules.sections.map((section) => (
+              <li key={section.heading} className="space-y-3">
+                <h3 className="text-xl font-semibold">{section.heading}</h3>
+                {section.paragraphs?.map((paragraph, index) => (
+                  <p key={section.heading + index} className="text-sm leading-relaxed text-slate-600 dark:text-zinc-300">
+                    {paragraph}
+                  </p>
+                ))}
+                {section.bullets && (
+                  <ul className="list-disc space-y-2 pl-5 text-sm text-slate-600 dark:text-zinc-300">
+                    {section.bullets.map((bullet) => (
+                      <li key={bullet.text}>
+                        <span>{bullet.text}</span>
+                        {bullet.subBullets && (
+                          <ul className="mt-2 list-[circle] space-y-1 pl-5 text-xs text-slate-500 dark:text-zinc-400">
+                            {bullet.subBullets.map((subBullet) => (
+                              <li key={subBullet}>{subBullet}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ol>
         </section>
       </div>
     </div>

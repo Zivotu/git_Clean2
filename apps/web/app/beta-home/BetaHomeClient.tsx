@@ -53,7 +53,8 @@ import { triggerConfetti } from '@/components/Confetti';
 import Avatar from '@/components/Avatar';
 import PartnershipModal from '@/components/PartnershipModal';
 import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
 import { useTheme } from '@/components/ThemeProvider';
 import { getTagFallbackLabel, normalizeTags } from '@/lib/tags';
@@ -1254,6 +1255,33 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
 
 function TrendingCard({ app, isDark, labels }: { app: BetaApp; isDark: boolean; labels: ListingLabels }) {
+  const [authorProfile, setAuthorProfile] = useState<{ name: string; handle?: string; photo?: string } | null>(null);
+
+  useEffect(() => {
+    if (app.authorId) {
+      const fetchProfile = async () => {
+        try {
+          const creatorRef = doc(db, 'creators', app.authorId!);
+          const creatorSnap = await getDoc(creatorRef);
+          if (creatorSnap.exists()) {
+            const data = creatorSnap.data();
+            setAuthorProfile({
+              name: data.displayName || data.handle || app.authorName,
+              handle: data.customRepositoryName || data.handle,
+              photo: data.photoURL || data.photo || app.authorPhoto
+            });
+          }
+        } catch (e) {
+          // Ignore errors
+        }
+      };
+      fetchProfile();
+    }
+  }, [app.authorId, app.authorName, app.authorPhoto]);
+
+  const displayAuthorName = authorProfile?.name || app.authorName;
+  const displayAuthorPhoto = authorProfile?.photo || app.authorPhoto;
+
   return (
     <div
       className={`flex min-w-[220px] flex-col overflow-hidden rounded-2xl border text-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white'
@@ -1282,10 +1310,10 @@ function TrendingCard({ app, isDark, labels }: { app: BetaApp; isDark: boolean; 
         <p className={`line-clamp-2 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>{app.description}</p>
         <div className="mt-2 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            {app.authorPhoto ? (
+            {displayAuthorPhoto ? (
               <Image
-                src={app.authorPhoto}
-                alt={app.authorName}
+                src={displayAuthorPhoto}
+                alt={displayAuthorName}
                 width={24}
                 height={24}
                 className="h-6 w-6 rounded-full object-cover"
@@ -1299,7 +1327,7 @@ function TrendingCard({ app, isDark, labels }: { app: BetaApp; isDark: boolean; 
               </div>
             )}
             <div className="flex flex-col">
-              <span className="text-xs font-semibold">{app.authorName}</span>
+              <span className="text-xs font-semibold">{displayAuthorName}</span>
               <span className={isDark ? 'text-zinc-500' : 'text-slate-500'}>{labels.creator}</span>
             </div>
           </div>

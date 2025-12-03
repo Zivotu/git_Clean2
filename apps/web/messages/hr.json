@@ -714,876 +714,914 @@
       "quiz": "Kvizovi",
       "learning": "Učenje",
       "tools": "Alati",
-      "business": "Posao",
-      "entertainment": "Zabava",
-      "other": "Ostalo"
+      "play": "Igraj",
+      "fullDetails": "Detalji",
+      "edit": "Uredi"
     },
-    "listing": {
-      "badge": {
-        "free": "BESPLATNO"
-      },
-      "label": {
-        "creator": "Kreator"
-      },
-      "actions": {
-        "play": "Igraj",
-        "fullDetails": "Detalji",
-        "edit": "Uredi"
-      },
-      "tag": {
-        "trending": "Popularno"
-      }
-    },
-    "hero": {
-      "badge": "Otkrijte nevjerojatne mini aplikacije i igre",
-      "random": {
-        "label": "Nasumični odabir",
-        "details": "Pogledaj detalje"
-      },
-      "actions": {
-        "submit": "Objavi aplikaciju"
-      },
-      "badges": {
-        "curated": "Odabrano"
-      },
-      "card": {
-        "description": "Izradite kolekcije AI iskustava i podijelite ih putem linka.",
-        "stats": {
-          "apps": "{count}+ Mini aplikacija",
-          "favorites": "{count} favorita"
-        }
-      }
-    },
-    "promo": {
-      "featuredLabel": "Izdvojeno",
-      "learnMore": "Saznaj više"
-    },
-    "view": {
-      "gridLabel": "Mreža",
-      "decreaseGrid": "Prikaži manje kartica po redu",
-      "increaseGrid": "Prikaži više kartica po redu"
-    },
-    "sort": {
-      "newest": "Najnovije",
-      "popular": "Najpopularnije",
-      "alpha": "Abecedno",
-      "label": "Sortiraj po"
-    },
-    "metrics": {
-      "liveUsage": "Korištenje uživo",
-      "apps": "Objavljene aplikacije",
-      "members": "Članova zajednice",
-      "runs": "Ukupno pokretanja"
-    },
-    "empty": {
-      "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
-      "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
-      "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
-    },
-    "filters": {
-      "tagsHeading": "Popularne oznake",
-      "clear": "Poništi filtere"
-    },
-    "actions": {
-      "refresh": "Osvježi",
-      "retry": "Pokušaj ponovo"
-    },
-    "errors": {
-      "listings": "Ne mogu osvježiti feed. Pokušajte ponovo."
-    },
-    "sections": {
-      "trending": {
-        "count": "{count} aplikacija"
-      }
-    },
-    "search": {
-      "liveStats": "{apps} aktivnih aplikacija · {plays} igranja"
-    },
-    "sidebar": {
-      "title": "Thesara Space v2.0",
-      "subtitle": "Od AI razgovora do vaše mini aplikacije.",
-      "nav": {
-        "discover": "Otkrij",
-        "games": "Igre",
-        "productivity": "Produktivnost",
-        "myApps": "Moje aplikacije",
-        "paidApps": "Plaćene aplikacije",
-        "myProjects": "Projekti",
-        "myCreators": "Kreatori",
-        "feelingLucky": "Osjećam se sretno"
-      },
-      "creatorMode": {
-        "badge": "Kreatorski način",
-        "title": "Od AI razgovora do vaše mini aplikacije",
-        "description": "Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.",
-        "steps": {
-          "0": {
-            "title": "Razgovaraj s AI-jem",
-            "text": "Zatraži asistenta da isporuči mini aplikaciju."
-          },
-          "1": {
-            "title": "Preuzmi kod",
-            "text": "Dobivaš bundle spreman za upload."
-          },
-          "2": {
-            "title": "Objavi na Thesari",
-            "text": "Upload, potvrdi i klikni Play."
-          }
-        },
-        "memory": {
-          "title": "Memorija i sobe",
-          "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
-          "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
-        },
-        "cta": "Objavi svoju aplikaciju"
-      }
-    },
-    "header": {
-      "homeAria": "Thesara naslovnica",
-      "liveBadge": "Uživo",
-      "themeToggle": "Promijeni temu",
-      "backLink": "← Natrag na uživo",
-      "backLinkMobile": "← Natrag"
+    "tag": {
+      "trending": "Popularno"
     }
   },
-  "Toasts": {
-    "welcome": "Dobrodošli na Thesaru!",
-    "loginToLike": "Prijavite se za lajkanje aplikacija",
-    "slowDown": "Polako 🙂",
-    "likeError": "Ne mogu lajkati aplikaciju. Provjerite API URL i status poslužitelja.",
-    "loadError": "Ne mogu učitati aplikacije. Provjerite API URL i status poslužitelja.",
-    "retry": "Pokušaj ponovo"
-  },
-  "Footer": {
-    "slogan": "Tržnica za aplikacije i igre u pregledniku.",
-    "allRights": "Sva prava pridržana.",
-    "partnershipLink": "Partnerstvo s nama"
-  },
-  "Partnership": {
-    "title": "Partnerstvo s nama",
-    "description": "Recite nam nešto o svojoj organizaciji i vrsti suradnje koju želite ostvariti.",
-    "nameLabel": "Vaše ime",
-    "companyLabel": "Tvrtka ili projekt",
-    "emailLabel": "Poslovni email",
-    "phoneLabel": "Telefon (neobavezno)",
-    "messagePlaceholder": "Opišite svoju ideju, ciljanu publiku, rokove ili vrijednost koju očekujete za obje strane.",
-    "submit": "Pošalji zahtjev za partnerstvo",
-    "sending": "Šaljem...",
-    "cancel": "Odustani",
-    "successMessage": "Hvala! Odgovorit ćemo uskoro.",
-    "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo.",
-    "errorEmail": "Unesite valjanu email adresu.",
-    "errorMessage": "Opišite ideju partnerstva (najmanje 5 znakova).",
-    "footerNote": "Također možete poslati email na activity(at)thesara.space",
-    "closeLabel": "Zatvori obrazac za partnerstvo"
-  },
-  "Pro": {
-    "choosePlan": "Odaberite plan",
-    "subtitle": "Nadogradite svoju aplikaciju s našim naprednim paketima",
-    "usageTitle": "Vaše trenutno korištenje",
-    "currentPlan": "Trenutni plan",
-    "apps": "Aplikacije",
-    "storage": "Pohrana",
-    "purchased": "Kupljeno",
-    "recommended": "Preporučeno",
-    "loading": "Učitavam…",
-    "subscribed": "Pretplaćeno",
-    "noPackagesTitle": "Nema dostupnih paketa",
-    "noPackagesText": "Paketi će uskoro biti dostupni",
-    "loadError": "Učitavanje paketa nije uspjelo. Pokušajte ponovo.",
-    "perMonth": "mjesečno",
-    "Gold": "Gold",
-    "Free": "Besplatno",
-    "cardBrandVisa": "VISA",
-    "cardMasked": "•••• 4242",
-    "goldDescription": "Otključajte veća ograničenja, premium pohranu i prioritetnu podršku za objavljivanje.",
-    "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Besplatno uključuje {freeLimit})",
-    "goldFeatureStorage": "Veća kvota za prijenos i pohranu paketa i resursa",
-    "goldFeatureAds": "Uklanja THESARA.SPACE oglase za vas i vaše objavljene aplikacije",
-    "goldFeatureSupport": "Prioritetni pregled objave i namjenski kanal za podršku",
-    "noAdsDescription": "Uklonite THESARA.SPACE oglasne utore s nadzornih ploča i svakog objavljenog iskustva.",
-    "noAdsFeatureRemoval": "Nula oglasa u editoru, nadzornoj ploči i vašim aplikacijama",
-    "noAdsFeatureFocus": "Održava igrače usredotočenima na vaš sadržaj (bez bannera ili međuprostornih oglasa)",
-    "earlyAccessNotice": "Rani pristup je aktivan – naplata je privremeno pauzirana dok je sve besplatno.",
-    "earlyAccessButtonLabel": "Dostupno uskoro",
-    "contactSupport": "Kontaktirajte podršku",
-    "upgradePlan": "Nadogradi plan",
-    "active": "Aktivno",
-    "inactive": "Neaktivno",
-    "nextPayment": "Obnavlja se",
-    "planDescription": "Vaš trenutni plan i status naplate. Upravljajte pretplatom i detaljima plaćanja u nastavku.",
-    "manageSubscription": "Upravljaj pretplatom",
-    "paymentMethod": "Način plaćanja",
-    "lastInvoice": "Zadnji račun",
-    "invoiceSampleDate": "—",
-    "downloadPdf": "Preuzmi PDF",
-    "resetsIn": "Resetira se za 14 dana",
-    "earlyAccess": "Rani pristup",
-    "promoTitle": "Creator Studio Pro",
-    "promoText": "Otključajte naprednu analitiku i alate za generiranje resursa uz pomoć umjetne inteligencije.",
-    "joinWaitlist": "Pridruži se listi čekanja",
-    "availablePlans": "Dostupni planovi",
-    "selectPackage": "Odaberi paket",
-    "recentActivity": "Nedavna aktivnost",
-    "invoiceId": "ID računa",
-    "date": "Datum",
-    "amount": "Iznos",
-    "status": "Status",
-    "action": "Radnja",
-    "paid": "Plaćeno"
-  },
-  "Login": {
-    "backToHome": "Natrag na početnu",
-    "welcomeTitle": "Dobrodošli na {site}",
-    "welcomeBody": "Otkrijte, igrajte i objavljujte mini-aplikacije. Prijavite se kako biste lajkali aplikacije, objavljivali vlastite i sinkronizirali napredak.",
-    "bulletOne": "Prijava jednim klikom putem Googlea",
-    "bulletTwo": "Uključeni alati za kreatore",
-    "bulletThree": "Sigurno po zadanim postavkama",
-    "title": "Prijava",
-    "subtitle": "Koristite Google ili svoj e-mail račun.",
-    "checking": "Provjeravam sesiju…",
-    "signedInAs": "Prijavljeni kao",
-    "goToCreate": "Idi na Kreiraj",
-    "signOut": "Odjava",
-    "continueWithGoogle": "Nastavi s Googleom",
-    "or": "ili",
-    "email": "E-pošta",
-    "password": "Lozinka",
-    "signInWithEmail": "Prijavi se e-poštom",
-    "noAccount": "Nemate račun?",
-    "register": "Registriraj se"
-  },
-  "App": {
-    "notFound": "Aplikacija nije pronađena",
-    "backToMarketplace": "Natrag na Tržnicu",
-    "playNow": "Igraj sada",
-    "playInNewTab": "Igraj u novoj kartici",
-    "about": "O aplikaciji",
-    "noDescription": "Nije naveden opis.",
-    "previewGraphic": "Grafika aplikacije",
-    "previewGraphicHint": "Odaberite jednu od naših predložaka ili prenesite vlastitu sliku (maks. 1MB).",
-    "previewOverlayPlaceholder": "Naslov vaše aplikacije",
-    "previewTitleLabel": "Naslov preklapanja",
-    "characters": "znakova",
-    "previewTitlePlaceholder": "Unesite naslov za preklapanje",
-    "previewTitleHint": "Prikazano na poluprozirnom banneru preko odabrane grafike.",
-    "tag_Igre": "Igre",
-    "tag_Kvizovi": "Kvizovi",
-    "tag_Učenje": "Učenje",
-    "tag_Alati": "Alati",
-    "tag_Business": "Posao",
-    "tag_Zabava": "Zabava",
-    "tag_Ostalo": "Ostalo",
-    "chooseCustomGraphic": "Odaberite vlastitu grafiku",
-    "removeCustomGraphic": "Koristite predložak umjesto toga",
-    "customGraphicHint": "PNG ili JPG do",
-    "previewUploading": "Spremam grafiku…",
-    "previewUploadSuccess": "Grafika spremljena.",
-    "previewUploadFailed": "Spremanje grafike nije uspjelo. Pokušajte ponovo.",
-    "previewFileTooLarge": "Slika mora biti manja od",
-    "previewFileReadFailed": "Čitanje odabrane slike nije uspjelo.",
-    "previewSelectFileFirst": "Molimo prvo odaberite sliku.",
-    "saveGraphic": "Spremi grafiku",
-    "savingGraphic": "Spremam…",
-    "creator": {
-      "longDescriptionLabel": "Detaljan pregled",
-      "longDescriptionHelper": "Dajte čitateljima barem {min} znakova kako bi znali što mogu očekivati.",
-      "longDescriptionPlaceholder": "Podijelite priču, značajke i prednosti svoje aplikacije...",
-      "longDescriptionCounter": "{used}/{limit} znakova",
-      "longDescriptionTooShort": "Detaljan pregled treba imati barem {min} znakova.",
-      "screenshotsLabel": "Snimke zaslona",
-      "screenshotsHint": "Učitajte do dvije snimke zaslona (PNG/JPG/WebP, maks. 1MB svaka). Pojavljuju se na javnom popisu uz pregled heroja.",
-      "screenshotsPlaceholder": "https://example.com/screenshot.jpg",
-      "screenshotsInvalid": "Unesite valjanu https:// URL sliku.",
-      "screenshotsInvalidToast": "Provjerite da veze snimaka zaslona počinju s https:// i pokušajte ponovo.",
-      "screenshotsPreviewAlt": "Snimka zaslona {index}",
-      "screenshotsFileHint": "PNG/JPG/WebP do {size}MB.",
-      "screenshotsUploadButton": "Učitaj snimku zaslona",
-      "screenshotsReplaceButton": "Zamijeni snimku zaslona",
-      "screenshotsRemoveButton": "Ukloni",
-      "screenshotsUploading": "Učitavam...",
-      "screenshotsEmptyPlaceholder": "Učitaj snimku zaslona",
-      "screenshotsUploadSuccess": "Snimka zaslona spremljena.",
-      "screenshotsUploadFailed": "Učitavanje snimke zaslona nije uspjelo. Pokušajte ponovo.",
-      "screenshotsDeleteFailed": "Uklanjanje snimke zaslona nije uspjelo. Pokušajte ponovo.",
-      "screenshotsRemoveSuccess": "Snimka zaslona uklonjena.",
-      "screenshotsTooLarge": "Snimka zaslona mora biti {size}MB ili manja."
+  "hero": {
+    "badge": "Otkrijte nevjerojatne mini aplikacije i igre",
+    "random": {
+      "label": "Nasumični odabir",
+      "details": "Pogledaj detalje"
     },
-    "viewer": {
-      "play": {
-        "default": "Pokreni aplikaciju",
-        "login": "Prijavite se za igranje",
-        "pay": "Otključaj pristup"
-      },
-      "tagline": "Istaknuta aplikacija",
-      "added": "Dodano {time}",
-      "author": {
-        "unknown": "Anonimni kreator"
-      },
-      "status": {
-        "active": "Aktivno",
-        "inactive": "Pauzirano"
-      },
-      "badges": {
-        "new": "Novo",
-        "paused": "Pauzirano",
-        "public": "Javno",
-        "unlisted": "Neizlistano"
-      },
-      "banner": {
-        "pending": "Ova aplikacija čeka odobrenje. Trenutno je mogu vidjeti samo kreator i moderatori.",
-        "private": "Ovaj oglas još nije javan. Vidite ga jer imate povišeni pristup."
-      },
-      "actions": {
-        "copied": "Poveznica kopirana",
-        "copy": "Kopiraj poveznicu",
-        "like": "Sviđa mi se",
-        "liked": "Spremljeno"
-      },
+    "actions": {
+      "submit": "Objavi aplikaciju"
+    },
+    "badges": {
+      "curated": "Odabrano"
+    },
+    "card": {
+      "description": "Izradite kolekcije AI iskustava i podijelite ih putem linka.",
       "stats": {
-        "likes": "Lajkovi",
-        "plays": "Igranja",
-        "price": "Cijena",
-        "status": "Status"
-      },
-      "description": {
-        "title": "Što dobivate",
-        "empty": "Kreator će uskoro dodati više detalja."
-      },
-      "gallery": {
-        "title": "Snimke zaslona",
-        "empty": "Snimke zaslona pojavit će se čim ih kreator učita.",
-        "alt": "Snimka zaslona {index}"
-      },
-      "preview": {
-        "title": "Pregled uživo",
-        "fallback": "Slika za pregled pojavit će se kada je kreator učita."
-      },
-      "securityTitle": "Sigurnosne značke",
-      "identity": {
-        "missing": "Gost korisnik"
-      },
-      "report": {
-        "title": "Prijavi sadržaj",
-        "link": "Prijavi sadržaj",
-        "hide": "Sakrij obrazac",
-        "identityLabel": "Vaš profil",
-        "identityHint": "Automatski popunjeno kako bi moderatori mogli stupiti u kontakt ako je potrebno.",
-        "reasonLabel": "Razlog",
-        "reasonPlaceholder": "Objasnite što vam se čini neobično…",
-        "reasonHint": "Najmanje 10 znakova. Bilješku prosljeđujemo izravno moderatorima.",
-        "cancel": "Odustani",
-        "submit": "Pošalji prijavu",
-        "busy": "Šaljem…"
+        "apps": "{count}+ Mini aplikacija",
+        "favorites": "{count} favorita"
       }
-    },
-    "reviews": {
-      "title": "Recenzije",
-      "subtitle": "{count} recenzija",
-      "averageLabel": "Prosječna ocjena",
-      "breakdown": "Distribucija ocjena",
-      "ratingLabel": "Ocjena",
-      "commentLabel": "Komentar",
-      "commentPlaceholder": "Što vam se svidjelo? Što bi moglo biti bolje?",
-      "leaveReview": "Podijelite svoje iskustvo",
-      "loginHint": "Prijavite se za ostavljanje recenzije.",
-      "loginRequired": "Prijavite se za ostavljanje recenzije.",
-      "requirePurchase": "Samo osobe koje su isprobale aplikaciju mogu ostaviti recenziju.",
-      "requirePurchaseHint": "Samo osobe koje su isprobale aplikaciju mogu ostaviti recenziju.",
-      "tooShort": "Poruka treba imati barem 10 znakova.",
-      "loading": "Učitavam recenzije...",
-      "empty": "Još nema recenzija.",
-      "submit": "Pošalji recenziju",
-      "submitting": "Šaljem...",
-      "sent": "Hvala! Vaša recenzija je primljena.",
-      "error": "Trenutno ne možemo spremiti recenziju. Pokušajte ponovo."
-    },
-    "categoriesLabel": "Kategorije"
-  },
-  "Rooms": {
-    "headerActiveLabel": "Aktivna soba",
-    "panelLabel": "Panel soba",
-    "defaultRoomName": "Javna demo soba (PIN 1111)",
-    "descriptionDemoCompact": "Demo soba je javna i koristi se za brzo testiranje. Svi dijele iste podatke.",
-    "descriptionPrivateCompact": "Ova soba ima privatnu pohranu dijeljenu samo između članova s istim PIN-om.",
-    "descriptionDemoFull": "Ova demo soba je javna i dizajnirana za prikaz aplikacije. Kreirajte vlastitu sobu i PIN za privatnu pohranu.",
-    "descriptionPrivateFull": "Soba koju ste odabrali ima privatnu pohranu dijeljenu sa svima koji znaju ime i PIN.",
-    "roomLabel": "Naziv sobe",
-    "pinLabel": "PIN",
-    "roomPlaceholder": "Naziv sobe (npr. Kuhinja)",
-    "pinPlaceholder": "PIN (4-8 znamenki)",
-    "modeHint": "Za trajnu i privatnu pohranu, kreirajte vlastitu sobu i PIN.",
-    "toggleLabel": "Prebaci panel soba",
-    "createButton": "Kreiraj novu sobu",
-    "joinButton": "Pridruži se postojećoj sobi",
-    "demoButton": "Vrati se na demo (PIN 1111)",
-    "errors": {
-      "missingCredentials": "Unesite naziv sobe i PIN.",
-      "generic": "Rad sa sobama privremeno nije dostupan."
     }
-  },
-  "MyProjectsPage": {
-    "title": "Moji projekti",
-    "signInMessage": "Prijavite se za upravljanje i pregled vaših kreiranih projekata.",
-    "goToLogin": "Idi na prijavu",
-    "stats": "{total} ukupno · {public} javno · {unlisted} neizlistano",
-    "finances": "Financije",
-    "createNew": "Kreiraj novi",
-    "handle": {
-      "title": "Postavi korisničko ime (handle)",
-      "description": "Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.",
-      "label": "Korisničko ime",
-      "placeholder": "npr. amir_dev",
-      "submit": "Spremi handle",
-      "submitting": "Spremanje…",
-      "errorFormat": "Dozvoljena su mala slova, brojevi, - i _. Min 3 znaka.",
-      "errorTaken": "Korisničko ime je zauzeto. Pokušajte drugo.",
-      "errorGeneric": "Spremanje nije uspjelo"
-    },
-    "repoPrice": {
-      "title": "Cijena repozitorija",
-      "locked": "Postavljanje cijena je zaključano dok ne dovršiš Stripe onboarding.",
-      "setupStripe": "Podesi isplate (Stripe)",
-      "allAccess": "All‑Access {price}/mj",
-      "lastUpdated": "Zadnja promjena: {date}",
-      "edit": "Uredi",
-      "description": "Postavite mjesečnu cijenu za All‑Access (pristup svim vašim aplikacijama). Ako ostavite prazno ili 0, All‑Access je isključen.",
-      "priceLabel": "Cijena (USD)",
-      "save": "Spremi",
-      "saving": "Spremanje…",
-      "cancel": "Odustani",
-      "success": "Cijena repozitorija spremljena",
-      "error": "Spremanje nije uspjelo"
-    },
-    "searchPlaceholder": "Pretraži po naslovu, oznaci, opisu...",
-    "filters": {
-      "all": "Sve",
-      "public": "Javno",
-      "unlisted": "Neizlistano"
-    },
-    "sort": {
-      "label": "Sortiraj",
-      "newest": "Najnovije",
-      "mostLiked": "Najpopularnije",
-      "titleAZ": "Naslov A–Z"
-    },
-    "noProjects": "Nema projekata koji odgovaraju pretrazi. Pokušajte prilagoditi filtere.",
-    "createFirst": "Kreiraj svoj prvi projekt",
-    "appDeleted": "Aplikacija obrisana.",
-    "deleteSuccess": "Aplikacija obrisana",
-    "deleteError": "Brisanje aplikacije nije uspjelo",
-    "actions": {
-      "edit": "Uredi",
-      "delete": "Obriši"
-    },
-    "notPublished": "Aplikacija mora biti odobrena prije nego što se može pokrenuti.",
-    "linkCopied": "Link kopiran u međuspremnik!",
-    "slowDown": "Polako 🙂",
-    "congrats": {
-      "title": "Čestitamo!",
-      "message": "Vaša aplikacija je uspješno predana.",
-      "confirm": "U redu"
-    }
-  },
-  "GoldenBookPage": {
-    "title": "Zlatna knjiga podržavatelja",
-    "heroTitle": "Pomozite nam izaći iz garaže i ugravirajte svoj doprinos u Zlatnu knjigu kako biste postali dio povijesti!",
-    "subtitle": "Svaki doprinos održava Thesaru online i neovisnom. Imena ostaju u knjizi zauvijek.",
-    "activeWindow": "Donacije su otvorene od {start} do {end}.",
-    "alwaysOpen": "Donacije su otvorene tijekom ovog 90-dnevnog sprinta.",
-    "closedWindow": "Donacije su trenutno zatvorene, ali Zlatna knjiga ostaje javna.",
-    "listTitle": "Donatori",
-    "empty": "Još nema javnih donatora. Budite prvi heroj!",
-    "pendingBadge": "Čeka se alias",
-    "cta": "Doniraj sada",
-    "ctaClosed": "Donacije zatvorene",
-    "permanentNote": "Unosi ostaju vidljivi zauvijek, čak i nakon završetka sprinta.",
-    "highlightToast": "Vaše ime je upravo dodano!"
-  },
-  "DonateThankYou": {
-    "title": "Hvala vam što podržavate Thesaru",
-    "celebrationKicker": "Uljepšali ste nam dan",
-    "celebrationBody": "Vaša donacija održava platformu neovisnom. Odaberite kako će se vaše ime prikazati i mi ćemo vas zauvijek slaviti u Zlatnoj knjizi.",
-    "stepOne": "Unesite svoje prikazno ime",
-    "stepTwo": "Skoči na Zlatnu knjigu",
-    "aliasTitle": "Kako da vas navedemo?",
-    "intro": "Odaberite kako će se vaše ime pojaviti u Zlatnoj knjizi. Ostavite prazno da biste ostali anonimni.",
-    "missingPaymentIntent": "Nismo mogli otkriti referencu plaćanja. Otvorite poveznicu iz Stripe e-pošte ili kontaktirajte podršku.",
-    "notFound": "Donacija nije pronađena. Molimo osvježite ili kontaktirajte podršku.",
-    "aliasLabel": "Prikazano ime",
-    "aliasPlaceholder": "npr. Thesara Fan, Studio Kaktus…",
-    "aliasOptional": "Ostavljanjem polja praznim prikazat će se „Anonimni donator”.",
-    "submit": "Spremi ime",
-    "saving": "Spremam…",
-    "success": "Alias spremljen! Sada ste u Zlatnoj knjizi.",
-    "alreadySet": "Alias je već spremljen. Hvala!",
-    "alreadySetHint": "Već imate ime? Ažurirajte ga bilo kada i ponovno spremite.",
-    "sessionResolving": "Strpite se — usklađujemo vaše detalje donacije…",
-    "sessionResolveFailed": "Nismo mogli pronaći tu sesiju naplate. Molimo ponovno otvorite poveznicu iz Stripe e-pošte ili kontaktirajte podršku.",
-    "errorGeneric": "Nismo mogli spremiti vaš alias. Pokušajte ponovo.",
-    "backHome": "Natrag na početnu",
-    "redirecting": "Preusmjeravam vas na Zlatnu knjigu…"
   },
   "promo": {
-    "banners": {
-      "0": {
-        "title": "Jednostavne upute",
-        "subtitle": "Kako iz razgovora s AI-jem doći do objave na Thesari."
-      },
-      "1": {
-        "title": "Pravila objave",
-        "subtitle": "Sve o monetizaciji, licencama i uvjetima."
-      }
+    "featuredLabel": "Izdvojeno",
+    "learnMore": "Saznaj više"
+  },
+  "view": {
+    "gridLabel": "Mreža",
+    "decreaseGrid": "Prikaži manje kartica po redu",
+    "increaseGrid": "Prikaži više kartica po redu"
+  },
+  "sort": {
+    "newest": "Najnovije",
+    "popular": "Najpopularnije",
+    "alpha": "Abecedno",
+    "label": "Sortiraj po"
+  },
+  "metrics": {
+    "liveUsage": "Korištenje uživo",
+    "apps": "Objavljene aplikacije",
+    "members": "Članova zajednice",
+    "runs": "Ukupno pokretanja"
+  },
+  "empty": {
+    "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
+    "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
+    "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
+  },
+  "filters": {
+    "tagsHeading": "Popularne oznake",
+    "clear": "Poništi filtere"
+  },
+  "actions": {
+    "refresh": "Osvježi",
+    "retry": "Pokušaj ponovo"
+  },
+  "errors": {
+    "listings": "Ne mogu osvježiti feed. Pokušajte ponovo."
+  },
+  "sections": {
+    "trending": {
+      "count": "{count} aplikacija"
     }
   },
-  "Create": {
-    "source": "Izvor",
-    "pageTitle": "Objavi novu aplikaciju",
-    "pasteCode": "Zalijepi kod",
-    "placeholderHtml": "<!-- HTML code here -->\\n<div>\\n  <h1>Hello</h1>\\n</div>",
-    "placeholderReact": "// React code here\\nexport default function App(){\\n  return <h1>Hello</h1>;\\n}",
-    "basics": "Osnove",
-    "name": "Naziv",
-    "description": "Opis",
-    "sourceSection": "Izvor aplikacije",
-    "optionPasteCode": "Zalijepi kod",
-    "optionUploadBundle": "Učitaj paket (.zip)",
-    "bundleHintPart1": "ZIP paket mora sadržavati izlaz izrade zajedno s",
-    "bundleHintPart2": "i",
-    "bundleHintPart3": "Radnik ga instalira lokalno i pokreće",
-    "bundleAiWarning": "VAŽNO: Aplikacije koje se oslanjaju na Google AI Studio, Gemini, Kimi ili bilo kojeg drugog LLM pružatelja moraju uključivati vlastiti API ključ. Bez njega paket neće raditi nakon objavljivanja.",
-    "bundleAiWarningDetail": "Unesite svoj ključ u nastavku (mi ga ne isporučujemo). Ostavite ga praznim samo ako vaša AI aplikacija radi bez privatnog ključa. Dokumentacija o AI paketima dolazi uskoro.",
-    "bundleAiNoKeyNote": "I dalje možete objavljivati demo verzije koje ne zahtijevaju ključeve — to ovisi o tome kako ste izgradili aplikaciju.",
-    "bundleAiApiLabel": "AI / LLM API ključ",
-    "bundleAiApiPlaceholder": "Zalijepite svoj ključ pružatelja (pohranjen samo za ovu izradu)",
-    "bundleAiApiHelp": "Ubacujemo ovaj ključ u paket kako bi mogao doći do vaše AI usluge. Ako aplikacija kasnije prestane raditi, rotirajte ili ažurirajte ključ.",
-    "chooseZip": "Odaberi ZIP",
-    "placeholderHtmlLong": "HTML isječak ili cijela stranica...",
-    "placeholderReactLong": "React komponenta...",
-    "previewGraphic": "Odaberite grafiku za svoju aplikaciju",
-    "previewGraphicHint": "Odaberite jednu od naših predložaka ili prenesite vlastitu sliku (maks. 1MB).",
-    "previewOverlayPlaceholder": "Naslov vaše aplikacije",
-    "previewTitleLabel": "Naslov preklapanja",
-    "characters": "znakova",
-    "previewTitlePlaceholder": "Unesite naslov za preklapanje",
-    "previewTitleHint": "Prikazano na poluprozirnom banneru preko odabrane grafike.",
-    "chooseCustomGraphic": "Odaberite vlastitu grafiku",
-    "removeCustomGraphic": "Koristite predložak umjesto toga",
-    "customGraphicHint": "PNG ili JPG do",
-    "previewUploading": "Spremam grafiku…",
-    "previewUploadSuccess": "Grafika spremljena.",
-    "previewFileTooLarge": "Slika mora biti manja od",
-    "previewFileReadFailed": "Čitanje odabrane slike nije uspjelo.",
-    "previewUploadFailed": "Spremanje grafike nije uspjelo. Pokušajte ponovo.",
+  "search": {
+    "liveStats": "{apps} aktivnih aplikacija · {plays} igranja"
+  },
+  "sidebar": {
+    "title": "Thesara Space v2.0",
+    "subtitle": "Od AI razgovora do vaše mini aplikacije.",
+    "nav": {
+      "discover": "Otkrij",
+      "games": "Igre",
+      "productivity": "Produktivnost",
+      "myApps": "Moje aplikacije",
+      "paidApps": "Plaćene aplikacije",
+      "myProjects": "Projekti",
+      "myCreators": "Kreatori",
+      "feelingLucky": "Osjećam se sretno"
+    },
+    "creatorMode": {
+      "badge": "Kreatorski način",
+      "title": "Od AI razgovora do vaše mini aplikacije",
+      "description": "Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.",
+      "steps": {
+        "0": {
+          "title": "Razgovaraj s AI-jem",
+          "text": "Zatraži asistenta da isporuči mini aplikaciju."
+        },
+        "1": {
+          "title": "Preuzmi kod",
+          "text": "Dobivaš bundle spreman za upload."
+        },
+        "2": {
+          "title": "Objavi na Thesari",
+          "text": "Upload, potvrdi i klikni Play."
+        }
+      },
+      "memory": {
+        "title": "Memorija i sobe",
+        "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
+        "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
+      },
+      "cta": "Objavi svoju aplikaciju"
+    }
+  },
+  "header": {
+    "homeAria": "Thesara naslovnica",
+    "liveBadge": "Uživo",
+    "themeToggle": "Promijeni temu",
+    "backLink": "← Natrag na uživo",
+    "backLinkMobile": "← Natrag"
+  }
+},
+"Toasts": {
+  "welcome": "Dobrodošli na Thesaru!",
+  "loginToLike": "Prijavite se za lajkanje aplikacija",
+  "slowDown": "Polako 🙂",
+  "likeError": "Ne mogu lajkati aplikaciju. Provjerite API URL i status poslužitelja.",
+  "loadError": "Ne mogu učitati aplikacije. Provjerite API URL i status poslužitelja.",
+  "retry": "Pokušaj ponovo"
+},
+"Footer": {
+  "slogan": "Tržnica za aplikacije i igre u pregledniku.",
+  "allRights": "Sva prava pridržana.",
+  "partnershipLink": "Partnerstvo s nama"
+},
+"Partnership": {
+  "title": "Partnerstvo s nama",
+  "description": "Recite nam nešto o svojoj organizaciji i vrsti suradnje koju želite ostvariti.",
+  "nameLabel": "Vaše ime",
+  "companyLabel": "Tvrtka ili projekt",
+  "emailLabel": "Poslovni email",
+  "phoneLabel": "Telefon (neobavezno)",
+  "messagePlaceholder": "Opišite svoju ideju, ciljanu publiku, rokove ili vrijednost koju očekujete za obje strane.",
+  "submit": "Pošalji zahtjev za partnerstvo",
+  "sending": "Šaljem...",
+  "cancel": "Odustani",
+  "successMessage": "Hvala! Odgovorit ćemo uskoro.",
+  "errorGeneric": "Nismo mogli poslati zahtjev. Pokušajte ponovo.",
+  "errorEmail": "Unesite valjanu email adresu.",
+  "errorMessage": "Opišite ideju partnerstva (najmanje 5 znakova).",
+  "footerNote": "Također možete poslati email na activity(at)thesara.space",
+  "closeLabel": "Zatvori obrazac za partnerstvo"
+},
+"Pro": {
+  "choosePlan": "Odaberite plan",
+  "subtitle": "Nadogradite svoju aplikaciju s našim naprednim paketima",
+  "usageTitle": "Vaše trenutno korištenje",
+  "currentPlan": "Trenutni plan",
+  "apps": "Aplikacije",
+  "storage": "Pohrana",
+  "purchased": "Kupljeno",
+  "recommended": "Preporučeno",
+  "loading": "Učitavam…",
+  "subscribed": "Pretplaćeno",
+  "noPackagesTitle": "Nema dostupnih paketa",
+  "noPackagesText": "Paketi će uskoro biti dostupni",
+  "loadError": "Učitavanje paketa nije uspjelo. Pokušajte ponovo.",
+  "perMonth": "mjesečno",
+  "Gold": "Gold",
+  "Free": "Besplatno",
+  "cardBrandVisa": "VISA",
+  "cardMasked": "•••• 4242",
+  "goldDescription": "Otključajte veća ograničenja, premium pohranu i prioritetnu podršku za objavljivanje.",
+  "goldFeatureApps": "Do {goldLimit} aktivnih aplikacija (Besplatno uključuje {freeLimit})",
+  "goldFeatureStorage": "Veća kvota za prijenos i pohranu paketa i resursa",
+  "goldFeatureAds": "Uklanja THESARA.SPACE oglase za vas i vaše objavljene aplikacije",
+  "goldFeatureSupport": "Prioritetni pregled objave i namjenski kanal za podršku",
+  "noAdsDescription": "Uklonite THESARA.SPACE oglasne utore s nadzornih ploča i svakog objavljenog iskustva.",
+  "noAdsFeatureRemoval": "Nula oglasa u editoru, nadzornoj ploči i vašim aplikacijama",
+  "noAdsFeatureFocus": "Održava igrače usredotočenima na vaš sadržaj (bez bannera ili međuprostornih oglasa)",
+  "earlyAccessNotice": "Rani pristup je aktivan – naplata je privremeno pauzirana dok je sve besplatno.",
+  "earlyAccessButtonLabel": "Dostupno uskoro",
+  "contactSupport": "Kontaktirajte podršku",
+  "upgradePlan": "Nadogradi plan",
+  "active": "Aktivno",
+  "inactive": "Neaktivno",
+  "nextPayment": "Obnavlja se",
+  "planDescription": "Vaš trenutni plan i status naplate. Upravljajte pretplatom i detaljima plaćanja u nastavku.",
+  "manageSubscription": "Upravljaj pretplatom",
+  "paymentMethod": "Način plaćanja",
+  "lastInvoice": "Zadnji račun",
+  "invoiceSampleDate": "—",
+  "downloadPdf": "Preuzmi PDF",
+  "resetsIn": "Resetira se za 14 dana",
+  "earlyAccess": "Rani pristup",
+  "promoTitle": "Creator Studio Pro",
+  "promoText": "Otključajte naprednu analitiku i alate za generiranje resursa uz pomoć umjetne inteligencije.",
+  "joinWaitlist": "Pridruži se listi čekanja",
+  "availablePlans": "Dostupni planovi",
+  "selectPackage": "Odaberi paket",
+  "recentActivity": "Nedavna aktivnost",
+  "invoiceId": "ID računa",
+  "date": "Datum",
+  "amount": "Iznos",
+  "status": "Status",
+  "action": "Radnja",
+  "paid": "Plaćeno"
+},
+"Login": {
+  "backToHome": "Natrag na početnu",
+  "welcomeTitle": "Dobrodošli na {site}",
+  "welcomeBody": "Otkrijte, igrajte i objavljujte mini-aplikacije. Prijavite se kako biste lajkali aplikacije, objavljivali vlastite i sinkronizirali napredak.",
+  "bulletOne": "Prijava jednim klikom putem Googlea",
+  "bulletTwo": "Uključeni alati za kreatore",
+  "bulletThree": "Sigurno po zadanim postavkama",
+  "title": "Prijava",
+  "subtitle": "Koristite Google ili svoj e-mail račun.",
+  "checking": "Provjeravam sesiju…",
+  "signedInAs": "Prijavljeni kao",
+  "goToCreate": "Idi na Kreiraj",
+  "signOut": "Odjava",
+  "continueWithGoogle": "Nastavi s Googleom",
+  "or": "ili",
+  "email": "E-pošta",
+  "password": "Lozinka",
+  "signInWithEmail": "Prijavi se e-poštom",
+  "noAccount": "Nemate račun?",
+  "register": "Registriraj se"
+},
+"App": {
+  "notFound": "Aplikacija nije pronađena",
+  "backToMarketplace": "Natrag na Tržnicu",
+  "playNow": "Igraj sada",
+  "playInNewTab": "Igraj u novoj kartici",
+  "about": "O aplikaciji",
+  "noDescription": "Nije naveden opis.",
+  "previewGraphic": "Grafika aplikacije",
+  "previewGraphicHint": "Odaberite jednu od naših predložaka ili prenesite vlastitu sliku (maks. 1MB).",
+  "previewOverlayPlaceholder": "Naslov vaše aplikacije",
+  "previewTitleLabel": "Naslov preklapanja",
+  "characters": "znakova",
+  "previewTitlePlaceholder": "Unesite naslov za preklapanje",
+  "previewTitleHint": "Prikazano na poluprozirnom banneru preko odabrane grafike.",
+  "tag_Igre": "Igre",
+  "tag_Kvizovi": "Kvizovi",
+  "tag_Učenje": "Učenje",
+  "tag_Alati": "Alati",
+  "tag_Business": "Posao",
+  "tag_Zabava": "Zabava",
+  "tag_Ostalo": "Ostalo",
+  "chooseCustomGraphic": "Odaberite vlastitu grafiku",
+  "removeCustomGraphic": "Koristite predložak umjesto toga",
+  "customGraphicHint": "PNG ili JPG do",
+  "previewUploading": "Spremam grafiku…",
+  "previewUploadSuccess": "Grafika spremljena.",
+  "previewUploadFailed": "Spremanje grafike nije uspjelo. Pokušajte ponovo.",
+  "previewFileTooLarge": "Slika mora biti manja od",
+  "previewFileReadFailed": "Čitanje odabrane slike nije uspjelo.",
+  "previewSelectFileFirst": "Molimo prvo odaberite sliku.",
+  "saveGraphic": "Spremi grafiku",
+  "savingGraphic": "Spremam…",
+  "creator": {
     "longDescriptionLabel": "Detaljan pregled",
-    "longDescriptionHint": "Dajte čitateljima barem {min} znakova kako bi znali što mogu očekivati.",
+    "longDescriptionHelper": "Dajte čitateljima barem {min} znakova kako bi znali što mogu očekivati.",
     "longDescriptionPlaceholder": "Podijelite priču, značajke i prednosti svoje aplikacije...",
     "longDescriptionCounter": "{used}/{limit} znakova",
     "longDescriptionTooShort": "Detaljan pregled treba imati barem {min} znakova.",
     "screenshotsLabel": "Snimke zaslona",
-    "screenshotsHint": "Učitajte do dvije snimke zaslona (PNG/JPG/WebP, maks. {size}MB).",
+    "screenshotsHint": "Učitajte do dvije snimke zaslona (PNG/JPG/WebP, maks. 1MB svaka). Pojavljuju se na javnom popisu uz pregled heroja.",
+    "screenshotsPlaceholder": "https://example.com/screenshot.jpg",
+    "screenshotsInvalid": "Unesite valjanu https:// URL sliku.",
+    "screenshotsInvalidToast": "Provjerite da veze snimaka zaslona počinju s https:// i pokušajte ponovo.",
     "screenshotsPreviewAlt": "Snimka zaslona {index}",
     "screenshotsFileHint": "PNG/JPG/WebP do {size}MB.",
     "screenshotsUploadButton": "Učitaj snimku zaslona",
     "screenshotsReplaceButton": "Zamijeni snimku zaslona",
     "screenshotsRemoveButton": "Ukloni",
+    "screenshotsUploading": "Učitavam...",
     "screenshotsEmptyPlaceholder": "Učitaj snimku zaslona",
-    "screenshotsTooLarge": "Snimka zaslona mora biti {size}MB ili manja.",
-    "screenshotsRequired": "Dodajte barem jednu snimku zaslona prije objavljivanja.",
-    "metadataSyncFailed": "Objavili smo izradu, ali spremanje vašeg detaljnog opisa ili snimaka zaslona nije uspjelo. Otvorite detalje oglasa da biste pokušali ponovo.",
-    "back": "Natrag",
-    "next": "Sljedeće",
-    "publish": "Objavi",
-    "shortVideoButton": "Thesara kratki video",
-    "mustSignIn": "Molimo prijavite se prvo za objavu.",
-    "login": "Prijava",
-    "tag_Igre": "Igre",
-    "tag_Kvizovi": "Kvizovi",
-    "tag_Učenje": "Učenje",
-    "tag_Alati": "Alati",
-    "tag_Business": "Posao",
-    "tag_Zabava": "Zabava",
-    "tag_Ostalo": "Ostalo",
-    "tagsLabel": "Oznake (Kategorije)",
-    "tagsHint": "Odaberite do 2 oznake",
-    "tag_games": "Igre",
-    "tag_quiz": "Kvizovi",
-    "tag_learning": "Učenje",
-    "tag_tools": "Alati",
-    "tag_business": "Posao",
-    "tag_entertainment": "Zabava",
-    "tag_other": "Ostalo",
-    "advancedAssetsSizeError": "Slika je veća od 100kb. Molimo odaberite manju sliku."
+    "screenshotsUploadSuccess": "Snimka zaslona spremljena.",
+    "screenshotsUploadFailed": "Učitavanje snimke zaslona nije uspjelo. Pokušajte ponovo.",
+    "screenshotsDeleteFailed": "Uklanjanje snimke zaslona nije uspjelo. Pokušajte ponovo.",
+    "screenshotsRemoveSuccess": "Snimka zaslona uklonjena.",
+    "screenshotsTooLarge": "Snimka zaslona mora biti {size}MB ili manja."
   },
-  "GoldenBook": {
-    "anonymousDonor": "Anonimni donator",
-    "addYourName": "Dodaj svoje ime",
-    "titlePrefix": "Upiši se u",
-    "titleSuffix": "Thesara Golden Book",
-    "descriptionPart1": "Podrži Thesaru u prvih",
-    "descriptionHighlight": "90 dana",
-    "descriptionPart2": "i ugraviraj svoje ime među prvim donatorima. Knjiga ostaje javno dostupna zauvijek.",
-    "yourNameLivesHere": "Tvoje ime živi ovdje",
-    "campaignWindow": "Razdoblje kampanje",
-    "campaignDates": "16. stu 2025. – 14. velj 2026.",
-    "campaignNote": "Nakon završetka sprinta, Golden Book ostaje javno dostupan i više se ne mijenja. Upisani donatori ostaju zauvijek vidljivi.",
-    "becomeEarlyDonor": "Postani rani donator",
-    "supportersTitle": "Golden Book Podržavatelja",
-    "mainTitlePrefix": "Pomozi nam izaći iz garaže",
-    "mainTitleSuffix": "i održati Thesaru online, neovisnom i otvorenom.",
-    "mainDescription": "Svaka donacija ide u razvoj platforme gdje svatko može objaviti vlastitu aplikaciju u samo nekoliko klikova. U prvom sprintu nam je cilj pokriti troškove infrastrukture, dizajna i prvog tima.",
-    "howItWorks": "Kako funkcionira",
-    "step1": "1. Uplatiš donaciju (kartica ili QR kod).",
-    "step2": "2. Upisuješ ime koje želiš u Golden Book.",
-    "step3": "3. Tvoje ime ostaje trajno zapisano među prvim podržavateljima.",
-    "transparentRecords": "Transparentna evidencija donacija",
-    "publicNames": "Imena ostaju javno vidljiva",
-    "qrDescription": "Skeniraj QR kod za brzu uplatu s mobitela ili nastavi na klasičnu kartičnu uplatu.",
-    "payWithCard": "Uplati karticom",
-    "donorsTitle": "Donatori",
-    "earlySupporters": "Rani podržavatelji Golden Booka",
-    "entriesCount": "upisa",
-    "loadingDonors": "Učitavanje donatora…",
-    "transparencyNote": "Iznosi donacija prikazuju se za transparentnost. Ako želiš ostati potpuno anoniman, možeš sakriti svoje ime i prikazati samo iznos."
-  },
-  "Profile": {
-    "header": {
-      "payoutsActive": "Isplate aktivne",
-      "onboardingRequired": "Potrebna registracija",
-      "joined": "Pridružen {date}",
-      "publicProfile": "Javni profil"
+  "viewer": {
+    "play": {
+      "default": "Pokreni aplikaciju",
+      "login": "Prijavite se za igranje",
+      "pay": "Otključaj pristup"
     },
-    "stats": {
-      "apps": "Aplikacije",
-      "likes": "Lajkovi",
-      "plays": "Igranja"
+    "tagline": "Istaknuta aplikacija",
+    "added": "Dodano {time}",
+    "author": {
+      "unknown": "Anonimni kreator"
     },
-    "payouts": {
-      "setupTitle": "Postavi isplate",
-      "setupDescription": "Da biste monetizirali svoje aplikacije ili repozitorij, morate dovršiti proces registracije na Stripe.",
-      "setupButton": "Postavi Stripe",
-      "dashboardButton": "Nadzorna ploča"
+    "status": {
+      "active": "Aktivno",
+      "inactive": "Pauzirano"
     },
-    "publicProfile": {
-      "title": "Postavke javnog profila",
-      "noHandle": "Dodajte korisničko ime ispod kako bi vaš javni profil bio dostupan na /u/korisnickoime.",
-      "displayNameLabel": "Prikazano ime",
-      "displayNamePlaceholder": "npr. Studio Pixel",
-      "displayNameHelp": "Ovo ime bit će vidljivo posjetiteljima na vašem javnom profilu.",
-      "repoNameLabel": "Ime repozitorija",
-      "repoNamePlaceholder": "npr. studio-pixel",
-      "repoNameHelp": "Ovo će biti adresa vašeg repozitorija. Možete je promijeniti jednom svaka 3 mjeseca.",
-      "saveButton": "Spremi javni profil",
-      "savingButton": "Spremanje...",
-      "success": "Javni profil ažuriran.",
-      "error": "Ažuriranje javnog profila nije uspjelo."
+    "badges": {
+      "new": "Novo",
+      "paused": "Pauzirano",
+      "public": "Javno",
+      "unlisted": "Neizlistano"
     },
-    "personalInfo": {
-      "title": "Osobni podaci",
-      "firstName": "Ime",
-      "lastName": "Prezime",
-      "username": "Korisničko ime",
-      "phone": "Telefon",
-      "bio": "Biografija",
-      "bioPlaceholder": "Recite nam nešto o sebi...",
-      "website": "Web stranica",
-      "twitter": "Twitter / X",
-      "github": "GitHub",
-      "saveButton": "Spremi promjene",
-      "savingButton": "Spremanje...",
-      "success": "Osobni podaci ažurirani.",
-      "error": "Ažuriranje osobnih podataka nije uspjelo."
-    },
-    "projects": {
-      "title": "Moji projekti",
-      "likes": "Lajkovi",
-      "plays": "Igranja",
-      "noProjectsTitle": "Još nema projekata",
-      "noProjectsDescription": "Niste objavili nijednu aplikaciju."
-    },
-    "subscription": {
-      "title": "Pretplata",
-      "activeBenefits": "Aktivne pogodnosti povezane s vašim računom.",
-      "noActive": "Trenutno nema aktivnih pretplata.",
-      "nextBilling": "Sljedeća naplata: {date}",
-      "manageBilling": "Upravljaj naplatom",
-      "upgradeGold": "Nadogradi na Gold",
-      "cancelDialog": {
-        "title": "Otkaži pretplatu",
-        "message": "Jeste li sigurni da želite otkazati pretplatu{label}? Ostat će aktivna do kraja trenutnog obračunskog razdoblja.",
-        "confirm": "Da, otkaži",
-        "cancel": "Ne, zadrži"
-      }
-    },
-    "usage": {
-      "title": "Limiti korištenja",
-      "apps": "Aplikacije",
-      "storage": "Pohrana",
-      "noData": "Nema dostupnih podataka o korištenju"
-    },
-    "billing": {
-      "title": "Povijest naplate",
-      "viewAll": "Vidi sve",
-      "noHistory": "Nema povijesti naplate"
-    }
-  },
-  "Finances": {
-    "title": "Financijski pregled",
-    "subtitle": "Upravljajte svojom zaradom i isplatama za @{handle}",
-    "stripeDashboard": "Stripe nadzorna ploča",
-    "onboardingSuccess": "Registracija uspješno završena!",
-    "setupPayouts": {
-      "title": "Postavi isplate",
-      "description": "Da biste primili zaradu, morate povezati račun za isplatu. Isplate obično stižu ~3 dana nakon uplate, a vi dobivate 70% prihoda.",
-      "button": "Postavi isplate"
-    },
-    "metrics": {
-      "estMonthlyRevenue": "Proc. mjesečni prihod",
-      "gross": "Bruto: {amount} (prije naknada/podjele)",
-      "subscribers": "All-Access pretplatnici",
-      "perMonthUser": "{amount} / mjesečno po korisniku",
-      "activeApps": "Aktivne aplikacije",
-      "generatingRevenue": "Generiraju prihod"
-    },
-    "table": {
-      "title": "Pretplate po aplikaciji",
-      "noApps": "Nisu pronađene monetizirane aplikacije.",
-      "header": {
-        "application": "Aplikacija",
-        "price": "Cijena",
-        "activeUsers": "Aktivni korisnici",
-        "monthlyRevenue": "Mjesečni prihod",
-        "yourShare": "Vaš udio (70%)"
-      }
-    },
-    "error": {
-      "loadFailed": "Učitavanje financijskih podataka nije uspjelo."
-    }
-  },
-  "UserProfile": {
-    "notFound": {
-      "title": "Korisnik nije pronađen",
-      "description": "Nismo mogli pronaći profil za @{username}",
-      "backHome": "Natrag na početnu"
+    "banner": {
+      "pending": "Ova aplikacija čeka odobrenje. Trenutno je mogu vidjeti samo kreator i moderatori.",
+      "private": "Ovaj oglas još nije javan. Vidite ga jer imate povišeni pristup."
     },
     "actions": {
-      "addToFavorites": "Dodaj u favorite",
-      "subscribe": "Pretplati se"
+      "copied": "Poveznica kopirana",
+      "copy": "Kopiraj poveznicu",
+      "like": "Sviđa mi se",
+      "liked": "Spremljeno"
     },
-    "apps": {
-      "title": "Aplikacije",
-      "noAppsTitle": "Još nema aplikacija",
-      "noAppsDescription": "Ovaj kreator nije objavio nijednu javnu aplikaciju."
-    }
-  },
-  "ProgressModal": {
-    "uploading": "Učitavanje vaše mini aplikacije na Thesaru...",
-    "errorOccurred": "Došlo je do greške.",
-    "percentComplete": "{progress}% završeno",
-    "close": "Zatvori"
-  },
-  "TeamCreation": {
-    "title": "TRAŽIM EKIPU ZA AI MARKETPLACE IZ GARAŽE",
-    "subtitle": "(Thesara – www.thesara.space)",
-    "intro": {
-      "greeting": "Ljudi,",
-      "text": "pokrenuo sam Thesaru, marketplace za mini aplikacije, igre i alate koje ljudi rade uz pomoć ChatGPT-a, Geminija i sličnih servisa – i tražim par suradnika/ca (FER, Ekonomija, marketing…) koji žele uskočiti u ovu priču od samog početka."
+    "stats": {
+      "likes": "Lajkovi",
+      "plays": "Igranja",
+      "price": "Cijena",
+      "status": "Status"
     },
-    "whatIs": {
-      "title": "Što je Thesara?",
-      "url": "www.thesara.space",
-      "list": {
-        "1": "mjesto gdje možeš objaviti svoju AI-made mini aplikaciju u par klikova",
-        "2": "Svaki korisnik ima 1 besplatnu objavu, veći paketi se simbolično naplaćuju",
-        "3": "Kreatori mogu odrediti cijenu i pokušati zaraditi na svojim uracima",
-        "4": "Zajednička pohrana podataka → multiuser experience (više ljudi koristi istu app/igru)",
-        "5": "Privatne “sobe” s PIN-om za zatvorene grupe",
-        "6": "Ideja: okupiti zajednicu kreatora i korisnika dok AI još tek ulazi među “obične” ljude"
-      }
+    "description": {
+      "title": "Što dobivate",
+      "empty": "Kreator će uskoro dodati više detalja."
     },
-    "whoAmILookingFor": {
-      "title": "Koga tražim?",
-      "text": "Ne tražim CV, titule ni “savršene” kandidate, nego znatiželju i energiju:",
-      "list": {
-        "1": "Ljude koji vole AI, promptanje i igranje s mini-appovima",
-        "2": "Nekoga tko se vidi u marketingu / društvenim mrežama / contentu",
-        "3": "Nekoga tko ima ono “ajmo probat, pa ćemo vidjet” mindset",
-        "4": "Ljude koji žele biti dio malog, opuštenog tima, a ne korporacije"
-      }
+    "gallery": {
+      "title": "Snimke zaslona",
+      "empty": "Snimke zaslona pojavit će se čim ih kreator učita.",
+      "alt": "Snimka zaslona {index}"
     },
-    "whatYouGet": {
-      "title": "Što ti dobivaš?",
-      "list": {
-        "1": "Rad na realnom projektu koji tek izlazi u svijet",
-        "2": "Šansu da budeš core ekipa od prvog dana",
-        "3": "Slobodu da predlažeš ideje i oblikuješ smjer projekta",
-        "4": "Mogućnost buduće zarade / partner programa / udjela, ako projekt krene kako treba"
-      },
-      "text": "Nema korporativne birokracije ni “šefovanja” – ovo je doslovno projekt “iz garaže” s puno nepoznanica, ali i puno prostora da zajedno nešto napravimo."
+    "preview": {
+      "title": "Pregled uživo",
+      "fallback": "Slika za pregled pojavit će se kada je kreator učita."
     },
-    "contact": {
-      "title": "Ako ti ovo zvuči zanimljivo:",
-      "text": "Ne šalji CV.\nSamo mi se javi i u par rečenica napiši tko si i zašto ti je ovo simpatično:",
-      "email": "📧 e-mail:",
-      "whatsapp": "📱 Telegram: @ThesaraSpace",
-      "closing": "Veselim se upoznati ekipu koja u ovome vidi potencijal. 😊"
+    "securityTitle": "Sigurnosne značke",
+    "identity": {
+      "missing": "Gost korisnik"
     },
-    "form": {
-      "title": "Prijava za Thesara tim",
-      "subtitle": "Ovaj formular stiže direktno na welcome@thesara.space. Polja označena",
-      "subtitleSuffix": "su obavezna.",
-      "success": "Hvala ti na prijavi! Javit ću ti se čim prije na e-mail ili mobitel koje si naveo/la.",
-      "errorGeneric": "Ups, nešto je pošlo po zlu. Pokušaj ponovno za par trenutaka ili mi se javi direktno na welcome@thesara.space.",
-      "disclaimer": "Slanjem potvrđuješ da smijemo koristiti navedene podatke kako bismo te kontaktirali oko Thesare.",
+    "report": {
+      "title": "Prijavi sadržaj",
+      "link": "Prijavi sadržaj",
+      "hide": "Sakrij obrazac",
+      "identityLabel": "Vaš profil",
+      "identityHint": "Automatski popunjeno kako bi moderatori mogli stupiti u kontakt ako je potrebno.",
+      "reasonLabel": "Razlog",
+      "reasonPlaceholder": "Objasnite što vam se čini neobično…",
+      "reasonHint": "Najmanje 10 znakova. Bilješku prosljeđujemo izravno moderatorima.",
+      "cancel": "Odustani",
       "submit": "Pošalji prijavu",
-      "submitting": "Slanje u tijeku...",
-      "fields": {
-        "firstName": "Ime",
-        "lastName": "Prezime",
-        "faculty": "Fakultet",
-        "birthYear": "Godište",
-        "studyYear": "Godina studija",
-        "email": "Kontakt e-mail",
-        "phone": "Broj mobitela",
-        "firstImpression": "Prvi dojam o Thesari",
-        "contribution": "Kako misliš da možeš doprinijeti projektu?",
-        "extraComment": "Dodatni komentar ili pitanje (opcionalno)"
-      },
-      "placeholders": {
-        "firstName": "npr. Ana",
-        "lastName": "npr. Horvat",
-        "faculty": "npr. FER, EFZG, TVZ...",
-        "birthYear": "npr. 2000",
-        "studyYear": "npr. \"2.\" ili \"diplomski\"",
-        "email": "npr. ti@primjer.hr",
-        "phone": "npr. +385 91 123 4567",
-        "firstImpression": "Što ti je prvo palo na pamet kad si vidio/la Thesaru?",
-        "contribution": "U kojoj ulozi se vidiš, koje vještine želiš donijeti timu?",
-        "extraComment": "Ako želiš podijeliti još nešto, napiši ovdje."
-      },
-      "validation": {
-        "firstName": "Ime je obavezno.",
-        "lastName": "Prezime je obavezno.",
-        "faculty": "Fakultet je obavezan.",
-        "birthYear": "Godište je obavezno.",
-        "studyYear": "Godina studija je obavezna.",
-        "firstImpression": "Prvi dojam o Thesari mora sadržavati barem 5 znakova.",
-        "contribution": "Opiši kako možeš doprinijeti projektu.",
-        "email": "Kontakt e-mail je obavezan.",
-        "emailInvalid": "Unesi valjanu e-mail adresu.",
-        "phone": "Unesi valjan broj mobitela."
-      }
+      "busy": "Šaljem…"
     }
   },
-  "Play": {
-    "enterFullscreen": "Puni zaslon",
-    "exitFullscreen": "Izađi iz punog zaslona",
-    "fullScreenPrompt": {
-      "title": "Puni zaslon?",
-      "message": "Želiš li pokrenuti igru preko cijelog ekrana za bolje iskustvo?",
-      "yes": "Da, uključi",
-      "no": "Ne, hvala",
-      "remember": "Zapamti moj odabir"
+  "reviews": {
+    "title": "Recenzije",
+    "subtitle": "{count} recenzija",
+    "averageLabel": "Prosječna ocjena",
+    "breakdown": "Distribucija ocjena",
+    "ratingLabel": "Ocjena",
+    "commentLabel": "Komentar",
+    "commentPlaceholder": "Što vam se svidjelo? Što bi moglo biti bolje?",
+    "leaveReview": "Podijelite svoje iskustvo",
+    "loginHint": "Prijavite se za ostavljanje recenzije.",
+    "loginRequired": "Prijavite se za ostavljanje recenzije.",
+    "requirePurchase": "Samo osobe koje su isprobale aplikaciju mogu ostaviti recenziju.",
+    "requirePurchaseHint": "Samo osobe koje su isprobale aplikaciju mogu ostaviti recenziju.",
+    "tooShort": "Poruka treba imati barem 10 znakova.",
+    "loading": "Učitavam recenzije...",
+    "empty": "Još nema recenzija.",
+    "submit": "Pošalji recenziju",
+    "submitting": "Šaljem...",
+    "sent": "Hvala! Vaša recenzija je primljena.",
+    "error": "Trenutno ne možemo spremiti recenziju. Pokušajte ponovo."
+  },
+  "categoriesLabel": "Kategorije"
+},
+"Rooms": {
+  "headerActiveLabel": "Aktivna soba",
+  "panelLabel": "Panel soba",
+  "defaultRoomName": "Javna demo soba (PIN 1111)",
+  "descriptionDemoCompact": "Demo soba je javna i koristi se za brzo testiranje. Svi dijele iste podatke.",
+  "descriptionPrivateCompact": "Ova soba ima privatnu pohranu dijeljenu samo između članova s istim PIN-om.",
+  "descriptionDemoFull": "Ova demo soba je javna i dizajnirana za prikaz aplikacije. Kreirajte vlastitu sobu i PIN za privatnu pohranu.",
+  "descriptionPrivateFull": "Soba koju ste odabrali ima privatnu pohranu dijeljenu sa svima koji znaju ime i PIN.",
+  "roomLabel": "Naziv sobe",
+  "pinLabel": "PIN",
+  "roomPlaceholder": "Naziv sobe (npr. Kuhinja)",
+  "pinPlaceholder": "PIN (4-8 znamenki)",
+  "modeHint": "Za trajnu i privatnu pohranu, kreirajte vlastitu sobu i PIN.",
+  "toggleLabel": "Prebaci panel soba",
+  "createButton": "Kreiraj novu sobu",
+  "joinButton": "Pridruži se postojećoj sobi",
+  "demoButton": "Vrati se na demo (PIN 1111)",
+  "errors": {
+    "missingCredentials": "Unesite naziv sobe i PIN.",
+    "generic": "Rad sa sobama privremeno nije dostupan."
+  }
+},
+"MyProjectsPage": {
+  "title": "Moji projekti",
+  "signInMessage": "Prijavite se za upravljanje i pregled vaših kreiranih projekata.",
+  "goToLogin": "Idi na prijavu",
+  "stats": "{total} ukupno · {public} javno · {unlisted} neizlistano",
+  "finances": "Financije",
+  "createNew": "Kreiraj novi",
+  "handle": {
+    "title": "Postavi korisničko ime (handle)",
+    "description": "Prije postavljanja cijene repozitorija, postavite svoje korisničko ime (npr. amir_dev). Dozvoljeni su mala slova, brojevi, crtica i donja crta. Minimalno 3 znaka.",
+    "label": "Korisničko ime",
+    "placeholder": "npr. amir_dev",
+    "submit": "Spremi handle",
+    "submitting": "Spremanje…",
+    "errorFormat": "Dozvoljena su mala slova, brojevi, - i _. Min 3 znaka.",
+    "errorTaken": "Korisničko ime je zauzeto. Pokušajte drugo.",
+    "errorGeneric": "Spremanje nije uspjelo"
+  },
+  "repoPrice": {
+    "title": "Cijena repozitorija",
+    "locked": "Postavljanje cijena je zaključano dok ne dovršiš Stripe onboarding.",
+    "setupStripe": "Podesi isplate (Stripe)",
+    "allAccess": "All‑Access {price}/mj",
+    "lastUpdated": "Zadnja promjena: {date}",
+    "edit": "Uredi",
+    "description": "Postavite mjesečnu cijenu za All‑Access (pristup svim vašim aplikacijama). Ako ostavite prazno ili 0, All‑Access je isključen.",
+    "priceLabel": "Cijena (USD)",
+    "save": "Spremi",
+    "saving": "Spremanje…",
+    "cancel": "Odustani",
+    "success": "Cijena repozitorija spremljena",
+    "error": "Spremanje nije uspjelo"
+  },
+  "searchPlaceholder": "Pretraži po naslovu, oznaci, opisu...",
+  "filters": {
+    "all": "Sve",
+    "public": "Javno",
+    "unlisted": "Neizlistano"
+  },
+  "sort": {
+    "label": "Sortiraj",
+    "newest": "Najnovije",
+    "mostLiked": "Najpopularnije",
+    "titleAZ": "Naslov A–Z"
+  },
+  "noProjects": "Nema projekata koji odgovaraju pretrazi. Pokušajte prilagoditi filtere.",
+  "createFirst": "Kreiraj svoj prvi projekt",
+  "appDeleted": "Aplikacija obrisana.",
+  "deleteSuccess": "Aplikacija obrisana",
+  "deleteError": "Brisanje aplikacije nije uspjelo",
+  "actions": {
+    "edit": "Uredi",
+    "delete": "Obriši"
+  },
+  "notPublished": "Aplikacija mora biti odobrena prije nego što se može pokrenuti.",
+  "linkCopied": "Link kopiran u međuspremnik!",
+  "slowDown": "Polako 🙂",
+  "congrats": {
+    "title": "Čestitamo!",
+    "message": "Vaša aplikacija je uspješno predana.",
+    "confirm": "U redu"
+  }
+},
+"GoldenBookPage": {
+  "title": "Zlatna knjiga podržavatelja",
+  "heroTitle": "Pomozite nam izaći iz garaže i ugravirajte svoj doprinos u Zlatnu knjigu kako biste postali dio povijesti!",
+  "subtitle": "Svaki doprinos održava Thesaru online i neovisnom. Imena ostaju u knjizi zauvijek.",
+  "activeWindow": "Donacije su otvorene od {start} do {end}.",
+  "alwaysOpen": "Donacije su otvorene tijekom ovog 90-dnevnog sprinta.",
+  "closedWindow": "Donacije su trenutno zatvorene, ali Zlatna knjiga ostaje javna.",
+  "listTitle": "Donatori",
+  "empty": "Još nema javnih donatora. Budite prvi heroj!",
+  "pendingBadge": "Čeka se alias",
+  "cta": "Doniraj sada",
+  "ctaClosed": "Donacije zatvorene",
+  "permanentNote": "Unosi ostaju vidljivi zauvijek, čak i nakon završetka sprinta.",
+  "highlightToast": "Vaše ime je upravo dodano!"
+},
+"DonateThankYou": {
+  "title": "Hvala vam što podržavate Thesaru",
+  "celebrationKicker": "Uljepšali ste nam dan",
+  "celebrationBody": "Vaša donacija održava platformu neovisnom. Odaberite kako će se vaše ime prikazati i mi ćemo vas zauvijek slaviti u Zlatnoj knjizi.",
+  "stepOne": "Unesite svoje prikazno ime",
+  "stepTwo": "Skoči na Zlatnu knjigu",
+  "aliasTitle": "Kako da vas navedemo?",
+  "intro": "Odaberite kako će se vaše ime pojaviti u Zlatnoj knjizi. Ostavite prazno da biste ostali anonimni.",
+  "missingPaymentIntent": "Nismo mogli otkriti referencu plaćanja. Otvorite poveznicu iz Stripe e-pošte ili kontaktirajte podršku.",
+  "notFound": "Donacija nije pronađena. Molimo osvježite ili kontaktirajte podršku.",
+  "aliasLabel": "Prikazano ime",
+  "aliasPlaceholder": "npr. Thesara Fan, Studio Kaktus…",
+  "aliasOptional": "Ostavljanjem polja praznim prikazat će se „Anonimni donator”.",
+  "submit": "Spremi ime",
+  "saving": "Spremam…",
+  "success": "Alias spremljen! Sada ste u Zlatnoj knjizi.",
+  "alreadySet": "Alias je već spremljen. Hvala!",
+  "alreadySetHint": "Već imate ime? Ažurirajte ga bilo kada i ponovno spremite.",
+  "sessionResolving": "Strpite se — usklađujemo vaše detalje donacije…",
+  "sessionResolveFailed": "Nismo mogli pronaći tu sesiju naplate. Molimo ponovno otvorite poveznicu iz Stripe e-pošte ili kontaktirajte podršku.",
+  "errorGeneric": "Nismo mogli spremiti vaš alias. Pokušajte ponovo.",
+  "backHome": "Natrag na početnu",
+  "redirecting": "Preusmjeravam vas na Zlatnu knjigu…"
+},
+"promo": {
+  "banners": {
+    "0": {
+      "title": "Jednostavne upute",
+      "subtitle": "Kako iz razgovora s AI-jem doći do objave na Thesari."
+    },
+    "1": {
+      "title": "Pravila objave",
+      "subtitle": "Sve o monetizaciji, licencama i uvjetima."
     }
   }
+},
+"Create": {
+  "source": "Izvor",
+  "pageTitle": "Objavi novu aplikaciju",
+  "pasteCode": "Zalijepi kod",
+  "placeholderHtml": "<!-- HTML code here -->\\n<div>\\n  <h1>Hello</h1>\\n</div>",
+  "placeholderReact": "// React code here\\nexport default function App(){\\n  return <h1>Hello</h1>;\\n}",
+  "basics": "Osnove",
+  "name": "Naziv",
+  "description": "Opis",
+  "sourceSection": "Izvor aplikacije",
+  "optionPasteCode": "Zalijepi kod",
+  "optionUploadBundle": "Učitaj paket (.zip)",
+  "bundleHintPart1": "ZIP paket mora sadržavati izlaz izrade zajedno s",
+  "bundleHintPart2": "i",
+  "bundleHintPart3": "Radnik ga instalira lokalno i pokreće",
+  "bundleAiWarning": "VAŽNO: Aplikacije koje se oslanjaju na Google AI Studio, Gemini, Kimi ili bilo kojeg drugog LLM pružatelja moraju uključivati vlastiti API ključ. Bez njega paket neće raditi nakon objavljivanja.",
+  "bundleAiWarningDetail": "Unesite svoj ključ u nastavku (mi ga ne isporučujemo). Ostavite ga praznim samo ako vaša AI aplikacija radi bez privatnog ključa. Dokumentacija o AI paketima dolazi uskoro.",
+  "bundleAiNoKeyNote": "I dalje možete objavljivati demo verzije koje ne zahtijevaju ključeve — to ovisi o tome kako ste izgradili aplikaciju.",
+  "bundleAiApiLabel": "AI / LLM API ključ",
+  "bundleAiApiPlaceholder": "Zalijepite svoj ključ pružatelja (pohranjen samo za ovu izradu)",
+  "bundleAiApiHelp": "Ubacujemo ovaj ključ u paket kako bi mogao doći do vaše AI usluge. Ako aplikacija kasnije prestane raditi, rotirajte ili ažurirajte ključ.",
+  "chooseZip": "Odaberi ZIP",
+  "placeholderHtmlLong": "HTML isječak ili cijela stranica...",
+  "placeholderReactLong": "React komponenta...",
+  "previewGraphic": "Odaberite grafiku za svoju aplikaciju",
+  "previewGraphicHint": "Odaberite jednu od naših predložaka ili prenesite vlastitu sliku (maks. 1MB).",
+  "previewOverlayPlaceholder": "Naslov vaše aplikacije",
+  "previewTitleLabel": "Naslov preklapanja",
+  "characters": "znakova",
+  "previewTitlePlaceholder": "Unesite naslov za preklapanje",
+  "previewTitleHint": "Prikazano na poluprozirnom banneru preko odabrane grafike.",
+  "chooseCustomGraphic": "Odaberite vlastitu grafiku",
+  "removeCustomGraphic": "Koristite predložak umjesto toga",
+  "customGraphicHint": "PNG ili JPG do",
+  "previewUploading": "Spremam grafiku…",
+  "previewUploadSuccess": "Grafika spremljena.",
+  "previewFileTooLarge": "Slika mora biti manja od",
+  "previewFileReadFailed": "Čitanje odabrane slike nije uspjelo.",
+  "previewUploadFailed": "Spremanje grafike nije uspjelo. Pokušajte ponovo.",
+  "longDescriptionLabel": "Detaljan pregled",
+  "longDescriptionHint": "Dajte čitateljima barem {min} znakova kako bi znali što mogu očekivati.",
+  "longDescriptionPlaceholder": "Podijelite priču, značajke i prednosti svoje aplikacije...",
+  "longDescriptionCounter": "{used}/{limit} znakova",
+  "longDescriptionTooShort": "Detaljan pregled treba imati barem {min} znakova.",
+  "screenshotsLabel": "Snimke zaslona",
+  "screenshotsHint": "Učitajte do dvije snimke zaslona (PNG/JPG/WebP, maks. {size}MB).",
+  "screenshotsPreviewAlt": "Snimka zaslona {index}",
+  "screenshotsFileHint": "PNG/JPG/WebP do {size}MB.",
+  "screenshotsUploadButton": "Učitaj snimku zaslona",
+  "screenshotsReplaceButton": "Zamijeni snimku zaslona",
+  "screenshotsRemoveButton": "Ukloni",
+  "screenshotsEmptyPlaceholder": "Učitaj snimku zaslona",
+  "screenshotsTooLarge": "Snimka zaslona mora biti {size}MB ili manja.",
+  "screenshotsRequired": "Dodajte barem jednu snimku zaslona prije objavljivanja.",
+  "metadataSyncFailed": "Objavili smo izradu, ali spremanje vašeg detaljnog opisa ili snimaka zaslona nije uspjelo. Otvorite detalje oglasa da biste pokušali ponovo.",
+  "back": "Natrag",
+  "next": "Sljedeće",
+  "publish": "Objavi",
+  "shortVideoButton": "Thesara kratki video",
+  "mustSignIn": "Molimo prijavite se prvo za objavu.",
+  "login": "Prijava",
+  "tag_Igre": "Igre",
+  "tag_Kvizovi": "Kvizovi",
+  "tag_Učenje": "Učenje",
+  "tag_Alati": "Alati",
+  "tag_Business": "Posao",
+  "tag_Zabava": "Zabava",
+  "tag_Ostalo": "Ostalo",
+  "tagsLabel": "Oznake (Kategorije)",
+  "tagsHint": "Odaberite do 2 oznake",
+  "tag_games": "Igre",
+  "tag_quiz": "Kvizovi",
+  "tag_learning": "Učenje",
+  "tag_tools": "Alati",
+  "tag_business": "Posao",
+  "tag_entertainment": "Zabava",
+  "tag_other": "Ostalo",
+  "advancedAssetsSizeError": "Slika je veća od 100kb. Molimo odaberite manju sliku."
+},
+"GoldenBook": {
+  "anonymousDonor": "Anonimni donator",
+  "addYourName": "Dodaj svoje ime",
+  "titlePrefix": "Upiši se u",
+  "titleSuffix": "Thesara Golden Book",
+  "descriptionPart1": "Podrži Thesaru u prvih",
+  "descriptionHighlight": "90 dana",
+  "descriptionPart2": "i ugraviraj svoje ime među prvim donatorima. Knjiga ostaje javno dostupna zauvijek.",
+  "yourNameLivesHere": "Tvoje ime živi ovdje",
+  "campaignWindow": "Razdoblje kampanje",
+  "campaignDates": "16. stu 2025. – 14. velj 2026.",
+  "campaignNote": "Nakon završetka sprinta, Golden Book ostaje javno dostupan i više se ne mijenja. Upisani donatori ostaju zauvijek vidljivi.",
+  "becomeEarlyDonor": "Postani rani donator",
+  "supportersTitle": "Golden Book Podržavatelja",
+  "mainTitlePrefix": "Pomozi nam izaći iz garaže",
+  "mainTitleSuffix": "i održati Thesaru online, neovisnom i otvorenom.",
+  "mainDescription": "Svaka donacija ide u razvoj platforme gdje svatko može objaviti vlastitu aplikaciju u samo nekoliko klikova. U prvom sprintu nam je cilj pokriti troškove infrastrukture, dizajna i prvog tima.",
+  "howItWorks": "Kako funkcionira",
+  "step1": "1. Uplatiš donaciju (kartica ili QR kod).",
+  "step2": "2. Upisuješ ime koje želiš u Golden Book.",
+  "step3": "3. Tvoje ime ostaje trajno zapisano među prvim podržavateljima.",
+  "transparentRecords": "Transparentna evidencija donacija",
+  "publicNames": "Imena ostaju javno vidljiva",
+  "qrDescription": "Skeniraj QR kod za brzu uplatu s mobitela ili nastavi na klasičnu kartičnu uplatu.",
+  "payWithCard": "Uplati karticom",
+  "donorsTitle": "Donatori",
+  "earlySupporters": "Rani podržavatelji Golden Booka",
+  "entriesCount": "upisa",
+  "loadingDonors": "Učitavanje donatora…",
+  "transparencyNote": "Iznosi donacija prikazuju se za transparentnost. Ako želiš ostati potpuno anoniman, možeš sakriti svoje ime i prikazati samo iznos."
+},
+"Profile": {
+  "header": {
+    "payoutsActive": "Isplate aktivne",
+    "onboardingRequired": "Potrebna registracija",
+    "joined": "Pridružen {date}",
+    "publicProfile": "Javni profil"
+  },
+  "stats": {
+    "apps": "Aplikacije",
+    "likes": "Lajkovi",
+    "plays": "Igranja"
+  },
+  "payouts": {
+    "setupTitle": "Postavi isplate",
+    "setupDescription": "Da biste monetizirali svoje aplikacije ili repozitorij, morate dovršiti proces registracije na Stripe.",
+    "setupButton": "Postavi Stripe",
+    "dashboardButton": "Nadzorna ploča"
+  },
+  "publicProfile": {
+    "title": "Postavke javnog profila",
+    "noHandle": "Dodajte korisničko ime ispod kako bi vaš javni profil bio dostupan na /u/korisnickoime.",
+    "displayNameLabel": "Prikazano ime",
+    "displayNamePlaceholder": "npr. Studio Pixel",
+    "displayNameHelp": "Ovo ime bit će vidljivo posjetiteljima na vašem javnom profilu.",
+    "repoNameLabel": "Ime repozitorija",
+    "repoNamePlaceholder": "npr. studio-pixel",
+    "repoNameHelp": "Ovo će biti adresa vašeg repozitorija. Možete je promijeniti jednom svaka 3 mjeseca.",
+    "saveButton": "Spremi javni profil",
+    "savingButton": "Spremanje...",
+    "success": "Javni profil ažuriran.",
+    "error": "Ažuriranje javnog profila nije uspjelo."
+  },
+  "personalInfo": {
+    "title": "Osobni podaci",
+    "firstName": "Ime",
+    "lastName": "Prezime",
+    "username": "Korisničko ime",
+    "phone": "Telefon",
+    "bio": "Biografija",
+    "bioPlaceholder": "Recite nam nešto o sebi...",
+    "website": "Web stranica",
+    "twitter": "Twitter / X",
+    "github": "GitHub",
+    "saveButton": "Spremi promjene",
+    "savingButton": "Spremanje...",
+    "success": "Osobni podaci ažurirani.",
+    "error": "Ažuriranje osobnih podataka nije uspjelo."
+  },
+  "projects": {
+    "title": "Moji projekti",
+    "likes": "Lajkovi",
+    "plays": "Igranja",
+    "noProjectsTitle": "Još nema projekata",
+    "noProjectsDescription": "Niste objavili nijednu aplikaciju."
+  },
+  "subscription": {
+    "title": "Pretplata",
+    "activeBenefits": "Aktivne pogodnosti povezane s vašim računom.",
+    "noActive": "Trenutno nema aktivnih pretplata.",
+    "nextBilling": "Sljedeća naplata: {date}",
+    "manageBilling": "Upravljaj naplatom",
+    "upgradeGold": "Nadogradi na Gold",
+    "cancelDialog": {
+      "title": "Otkaži pretplatu",
+      "message": "Jeste li sigurni da želite otkazati pretplatu{label}? Ostat će aktivna do kraja trenutnog obračunskog razdoblja.",
+      "confirm": "Da, otkaži",
+      "cancel": "Ne, zadrži"
+    }
+  },
+  "usage": {
+    "title": "Limiti korištenja",
+    "apps": "Aplikacije",
+    "storage": "Pohrana",
+    "noData": "Nema dostupnih podataka o korištenju"
+  },
+  "billing": {
+    "title": "Povijest naplate",
+    "viewAll": "Vidi sve",
+    "noHistory": "Nema povijesti naplate"
+  },
+  "ambassadorSection": {
+    "title": "Thesara Ambassador Program",
+    "description": "Postani Thesara ambasador i zaradi proviziju dijeleći svoj jedinstveni kod s publikom.",
+    "commissionRate": "80% provizije od prve uplate",
+    "commissionText": "Zaradi kao partner: {rate} korisnika koji iskoristi tvoj kod.",
+    "benefit1": "Prednost za tvoju publiku: {trial} besplatnog Gold plana.",
+    "benefit2": "Isplata: prag {threshold}, isplata {frequency} preko PayPala.",
+    "benefit3": "Jednostavno dijeljenje: jedinstveni promo kod i link.",
+    "benefit4": "Transparentnost: dashboard s uvidom u iskorištenja, konverzije i zaradu.",
+    "note": "💡 Napomena: provizija se obračunava na {period} korisnika unutar 60 dana od aktivacije koda.",
+    "applyButton": "🚀 Prijavi se",
+    "statusApproved": "🎉 Čestitamo! Odobren si kao Thesara ambasador.",
+    "statusPending": "⏳ Tvoja prijava je u obradi. Javit ćemo ti se e-mailom čim donesemo odluku.",
+    "statusRejected": "Prethodna prijava nije odobrena, ali možeš se ponovno prijaviti kad osjetiš da je tvoja zajednica spremna.",
+    "yourCode": "Tvoj kod",
+    "copyCode": "📋 Kopiraj kod",
+    "openDashboard": "📊 Otvori dashboard",
+    "marketingKit": "🎨 Marketing kit",
+    "newApplication": "Nova prijava",
+    "applicationSuccess": "Zahtjev je poslan! Obavijestit ćemo te čim ga pregledamo.",
+    "modal": {
+      "title": "Prijava za Ambassador program",
+      "confirmTerms": "📋 Prije slanja, potvrdi da razumiješ uvjete:",
+      "term1": "80% provizije na prvu uplatu",
+      "term2": "30 dana Gold trial tvojoj publici",
+      "term3": "Prag isplate 50 €",
+      "term4": "Isplata mjesečno (net 30)",
+      "tiktokLabel": "TikTok profil",
+      "tiktokPlaceholder": "https://www.tiktok.com/@username",
+      "instagramLabel": "Instagram profil",
+      "instagramPlaceholder": "https://www.instagram.com/username",
+      "youtubeLabel": "YouTube kanal",
+      "youtubePlaceholder": "https://www.youtube.com/@username",
+      "newsletterLabel": "Newsletter ili blog",
+      "newsletterPlaceholder": "https://newsletter.example.com",
+      "otherLabel": "Ostali kanali (link)",
+      "otherPlaceholder": "https://",
+      "primaryPlatformLabel": "Primarna platforma",
+      "primaryPlatformPlaceholder": "npr. TikTok, YouTube, Instagram",
+      "audienceSizeLabel": "Veličina publike",
+      "audienceSizePlaceholder": "npr. 12.5k pratitelja",
+      "motivationLabel": "Zašto želiš biti ambasador?",
+      "motivationPlaceholder": "Volim Thesara jer...",
+      "motivationRequired": "*",
+      "errorTitle": "❌ Greška:",
+      "cancelButton": "Odustani",
+      "submitButton": "Pošalji prijavu",
+      "submittingButton": "Slanje..."
+    }
+  }
+},
+"Finances": {
+  "title": "Financijski pregled",
+  "subtitle": "Upravljajte svojom zaradom i isplatama za @{handle}",
+  "stripeDashboard": "Stripe nadzorna ploča",
+  "onboardingSuccess": "Registracija uspješno završena!",
+  "setupPayouts": {
+    "title": "Postavi isplate",
+    "description": "Da biste primili zaradu, morate povezati račun za isplatu. Isplate obično stižu ~3 dana nakon uplate, a vi dobivate 70% prihoda.",
+    "button": "Postavi isplate"
+  },
+  "metrics": {
+    "estMonthlyRevenue": "Proc. mjesečni prihod",
+    "gross": "Bruto: {amount} (prije naknada/podjele)",
+    "subscribers": "All-Access pretplatnici",
+    "perMonthUser": "{amount} / mjesečno po korisniku",
+    "activeApps": "Aktivne aplikacije",
+    "generatingRevenue": "Generiraju prihod"
+  },
+  "table": {
+    "title": "Pretplate po aplikaciji",
+    "noApps": "Nisu pronađene monetizirane aplikacije.",
+    "header": {
+      "application": "Aplikacija",
+      "price": "Cijena",
+      "activeUsers": "Aktivni korisnici",
+      "monthlyRevenue": "Mjesečni prihod",
+      "yourShare": "Vaš udio (70%)"
+    }
+  },
+  "error": {
+    "loadFailed": "Učitavanje financijskih podataka nije uspjelo."
+  }
+},
+"UserProfile": {
+  "notFound": {
+    "title": "Korisnik nije pronađen",
+    "description": "Nismo mogli pronaći profil za @{username}",
+    "backHome": "Natrag na početnu"
+  },
+  "actions": {
+    "addToFavorites": "Dodaj u favorite",
+    "subscribe": "Pretplati se"
+  },
+  "apps": {
+    "title": "Aplikacije",
+    "noAppsTitle": "Još nema aplikacija",
+    "noAppsDescription": "Ovaj kreator nije objavio nijednu javnu aplikaciju."
+  }
+},
+"ProgressModal": {
+  "uploading": "Učitavanje vaše mini aplikacije na Thesaru...",
+  "errorOccurred": "Došlo je do greške.",
+  "percentComplete": "{progress}% završeno",
+  "close": "Zatvori"
+},
+"TeamCreation": {
+  "title": "TRAŽIM EKIPU ZA AI MARKETPLACE IZ GARAŽE",
+  "subtitle": "(Thesara – www.thesara.space)",
+  "intro": {
+    "greeting": "Ljudi,",
+    "text": "pokrenuo sam Thesaru, marketplace za mini aplikacije, igre i alate koje ljudi rade uz pomoć ChatGPT-a, Geminija i sličnih servisa – i tražim par suradnika/ca (FER, Ekonomija, marketing…) koji žele uskočiti u ovu priču od samog početka."
+  },
+  "whatIs": {
+    "title": "Što je Thesara?",
+    "url": "www.thesara.space",
+    "list": {
+      "1": "mjesto gdje možeš objaviti svoju AI-made mini aplikaciju u par klikova",
+      "2": "Svaki korisnik ima 1 besplatnu objavu, veći paketi se simbolično naplaćuju",
+      "3": "Kreatori mogu odrediti cijenu i pokušati zaraditi na svojim uracima",
+      "4": "Zajednička pohrana podataka → multiuser experience (više ljudi koristi istu app/igru)",
+      "5": "Privatne “sobe” s PIN-om za zatvorene grupe",
+      "6": "Ideja: okupiti zajednicu kreatora i korisnika dok AI još tek ulazi među “obične” ljude"
+    }
+  },
+  "whoAmILookingFor": {
+    "title": "Koga tražim?",
+    "text": "Ne tražim CV, titule ni “savršene” kandidate, nego znatiželju i energiju:",
+    "list": {
+      "1": "Ljude koji vole AI, promptanje i igranje s mini-appovima",
+      "2": "Nekoga tko se vidi u marketingu / društvenim mrežama / contentu",
+      "3": "Nekoga tko ima ono “ajmo probat, pa ćemo vidjet” mindset",
+      "4": "Ljude koji žele biti dio malog, opuštenog tima, a ne korporacije"
+    }
+  },
+  "whatYouGet": {
+    "title": "Što ti dobivaš?",
+    "list": {
+      "1": "Rad na realnom projektu koji tek izlazi u svijet",
+      "2": "Šansu da budeš core ekipa od prvog dana",
+      "3": "Slobodu da predlažeš ideje i oblikuješ smjer projekta",
+      "4": "Mogućnost buduće zarade / partner programa / udjela, ako projekt krene kako treba"
+    },
+    "text": "Nema korporativne birokracije ni “šefovanja” – ovo je doslovno projekt “iz garaže” s puno nepoznanica, ali i puno prostora da zajedno nešto napravimo."
+  },
+  "contact": {
+    "title": "Ako ti ovo zvuči zanimljivo:",
+    "text": "Ne šalji CV.\nSamo mi se javi i u par rečenica napiši tko si i zašto ti je ovo simpatično:",
+    "email": "📧 e-mail:",
+    "whatsapp": "📱 Telegram: @ThesaraSpace",
+    "closing": "Veselim se upoznati ekipu koja u ovome vidi potencijal. 😊"
+  },
+  "form": {
+    "title": "Prijava za Thesara tim",
+    "subtitle": "Ovaj formular stiže direktno na welcome@thesara.space. Polja označena",
+    "subtitleSuffix": "su obavezna.",
+    "success": "Hvala ti na prijavi! Javit ću ti se čim prije na e-mail ili mobitel koje si naveo/la.",
+    "errorGeneric": "Ups, nešto je pošlo po zlu. Pokušaj ponovno za par trenutaka ili mi se javi direktno na welcome@thesara.space.",
+    "disclaimer": "Slanjem potvrđuješ da smijemo koristiti navedene podatke kako bismo te kontaktirali oko Thesare.",
+    "submit": "Pošalji prijavu",
+    "submitting": "Slanje u tijeku...",
+    "fields": {
+      "firstName": "Ime",
+      "lastName": "Prezime",
+      "faculty": "Fakultet",
+      "birthYear": "Godište",
+      "studyYear": "Godina studija",
+      "email": "Kontakt e-mail",
+      "phone": "Broj mobitela",
+      "firstImpression": "Prvi dojam o Thesari",
+      "contribution": "Kako misliš da možeš doprinijeti projektu?",
+      "extraComment": "Dodatni komentar ili pitanje (opcionalno)"
+    },
+    "placeholders": {
+      "firstName": "npr. Ana",
+      "lastName": "npr. Horvat",
+      "faculty": "npr. FER, EFZG, TVZ...",
+      "birthYear": "npr. 2000",
+      "studyYear": "npr. \"2.\" ili \"diplomski\"",
+      "email": "npr. ti@primjer.hr",
+      "phone": "npr. +385 91 123 4567",
+      "firstImpression": "Što ti je prvo palo na pamet kad si vidio/la Thesaru?",
+      "contribution": "U kojoj ulozi se vidiš, koje vještine želiš donijeti timu?",
+      "extraComment": "Ako želiš podijeliti još nešto, napiši ovdje."
+    },
+    "validation": {
+      "firstName": "Ime je obavezno.",
+      "lastName": "Prezime je obavezno.",
+      "faculty": "Fakultet je obavezan.",
+      "birthYear": "Godište je obavezno.",
+      "studyYear": "Godina studija je obavezna.",
+      "firstImpression": "Prvi dojam o Thesari mora sadržavati barem 5 znakova.",
+      "contribution": "Opiši kako možeš doprinijeti projektu.",
+      "email": "Kontakt e-mail je obavezan.",
+      "emailInvalid": "Unesi valjanu e-mail adresu.",
+      "phone": "Unesi valjan broj mobitela."
+    }
+  }
+},
+"Play": {
+  "enterFullscreen": "Puni zaslon",
+  "exitFullscreen": "Izađi iz punog zaslona",
+  "fullScreenPrompt": {
+    "title": "Puni zaslon?",
+    "message": "Želiš li pokrenuti igru preko cijelog ekrana za bolje iskustvo?",
+    "yes": "Da, uključi",
+    "no": "Ne, hvala",
+    "remember": "Zapamti moj odabir"
+  }
+}
 }

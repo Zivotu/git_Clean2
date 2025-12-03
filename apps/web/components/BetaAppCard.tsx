@@ -33,6 +33,7 @@ export type BetaApp = {
     tags: string[];
     createdAt: number;
     likedByMe?: boolean;
+    status?: 'draft' | 'published' | 'pending-review' | 'rejected';
 };
 
 export type ListingLabels = {
@@ -43,6 +44,7 @@ export type ListingLabels = {
     trending: string;
     edit?: string;
     delete?: string;
+    pending?: string;
 };
 
 export function BetaAppCard({
@@ -76,6 +78,7 @@ export function BetaAppCard({
     const betaHomeTranslator = (key: string, fallback: string) =>
         (messages[`BetaHome.${key}`] as string) ?? fallback;
     const tTag = (tag: string) => formatTagLabel(tag, betaHomeTranslator);
+    const isPending = app.status === 'pending-review';
 
     useEffect(() => {
         setLiked(!!app.likedByMe);
@@ -177,7 +180,15 @@ export function BetaAppCard({
     const playButtonClass = isDark
         ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30 focus-visible:outline-emerald-500'
         : 'bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:outline-emerald-600';
-    const playButton = (
+    const playButton = isPending ? (
+        <button
+            disabled
+            className={`inline-flex items-center rounded-full px-3 py-2 transition opacity-50 cursor-not-allowed ${isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-gray-200 text-gray-400'}`}
+            title={labels.pending}
+        >
+            <Play className="h-5 w-5" />
+        </button>
+    ) : (
         <Link
             prefetch={false}
             href={playHref(app.id, { run: 1 })}
@@ -222,6 +233,7 @@ export function BetaAppCard({
     const shareMenuItemHover = isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50';
     const shareDividerColor = isDark ? 'border-white/10' : 'border-slate-200';
     const shareCopySuccessColor = isDark ? 'text-emerald-400' : 'text-emerald-600';
+
     return (
         <div
             className={`${wrapperBase} ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white shadow-sm'
@@ -247,7 +259,13 @@ export function BetaAppCard({
                 <div className="absolute inset-0 flex items-start justify-between p-4 text-[11px] text-white">
                     <div className="flex flex-col gap-1.5">
                         <span className="inline-flex items-center gap-1 rounded-full bg-black/40 px-3 py-1 font-medium backdrop-blur-sm">
-                            <span className="rounded-full bg-black/60 px-2 text-[10px] font-semibold">{labels.free}</span>
+                            {isPending ? (
+                                <span className="rounded-full bg-amber-500/90 px-2 text-[10px] font-semibold text-black">
+                                    {labels.pending || 'Pending'}
+                                </span>
+                            ) : (
+                                <span className="rounded-full bg-black/60 px-2 text-[10px] font-semibold">{labels.free}</span>
+                            )}
                             <span className="text-xs uppercase tracking-wide">{app.category}</span>
                         </span>
                         {app.tag && (

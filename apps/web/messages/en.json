@@ -728,7 +728,8 @@
     },
     "listing": {
       "badge": {
-        "free": "FREE"
+        "free": "FREE",
+        "pending": "Pending Approval"
       },
       "label": {
         "creator": "Creator"
@@ -1576,6 +1577,56 @@
         "retry": "Retry",
         "loadError": "Failed to load app details",
         "notFound": "App not found"
+      }
+    },
+    "ambassadorSection": {
+      "title": "Thesara Ambassador Program",
+      "description": "Become a Thesara ambassador and earn commission by sharing your unique code with your audience.",
+      "commissionRate": "80% commission on first payment",
+      "commissionText": "Earn as a partner: {rate} from users who use your code.",
+      "benefit1": "Advantage for your audience: {trial} of free Gold plan.",
+      "benefit2": "Payout: threshold {threshold}, payout {frequency} via PayPal.",
+      "benefit3": "Easy sharing: unique promo code and link.",
+      "benefit4": "Transparency: dashboard with insights into usage, conversions and earnings.",
+      "note": "💡 Note: commission is calculated on {period} of the user within 60 days of code activation.",
+      "applyButton": "🚀 Apply",
+      "statusApproved": "🎉 Congratulations! You've been approved as a Thesara ambassador.",
+      "statusPending": "⏳ Your application is being reviewed. We'll notify you by email as soon as we make a decision.",
+      "statusRejected": "Previous application was not approved, but you can apply again when you feel your community is ready.",
+      "yourCode": "Your code",
+      "copyCode": "📋 Copy code",
+      "openDashboard": "📊 Open dashboard",
+      "marketingKit": "🎨 Marketing kit",
+      "newApplication": "New application",
+      "applicationSuccess": "Request sent! We'll notify you as soon as we review it.",
+      "modal": {
+        "title": "Ambassador Program Application",
+        "confirmTerms": "📋 Before submitting, confirm you understand the terms:",
+        "term1": "80% commission on first payment",
+        "term2": "30 days Gold trial for your audience",
+        "term3": "Payout threshold €50",
+        "term4": "Monthly payout (net 30)",
+        "tiktokLabel": "TikTok profile",
+        "tiktokPlaceholder": "https://www.tiktok.com/@username",
+        "instagramLabel": "Instagram profile",
+        "instagramPlaceholder": "https://www.instagram.com/username",
+        "youtubeLabel": "YouTube channel",
+        "youtubePlaceholder": "https://www.youtube.com/@username",
+        "newsletterLabel": "Newsletter or blog",
+        "newsletterPlaceholder": "https://newsletter.example.com",
+        "otherLabel": "Other channels (link)",
+        "otherPlaceholder": "https://",
+        "primaryPlatformLabel": "Primary platform",
+        "primaryPlatformPlaceholder": "e.g. TikTok, YouTube, Instagram",
+        "audienceSizeLabel": "Audience size",
+        "audienceSizePlaceholder": "e.g. 12.5k followers",
+        "motivationLabel": "Why do you want to be an ambassador?",
+        "motivationPlaceholder": "I love Thesara because...",
+        "motivationRequired": "*",
+        "errorTitle": "❌ Error:",
+        "cancelButton": "Cancel",
+        "submitButton": "Submit application",
+        "submittingButton": "Sending..."
       }
     }
   },

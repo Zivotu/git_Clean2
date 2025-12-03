@@ -129,7 +129,7 @@ export default function MyProjectsPage() {
   const name = getDisplayName(user);
   const searchParams = useSafeSearchParams();
   const router = useRouter();
-  const { locale } = useI18n();
+  const { locale, messages } = useI18n();
   const t = useT('MyProjectsPage');
   const lastLocaleRef = useRef<string | null>(null);
 
@@ -674,6 +674,7 @@ export default function MyProjectsPage() {
                 tags: normalizedTags,
                 createdAt: it.createdAt || Date.now(),
                 likedByMe: it.likedByMe,
+                status: it.status,
               };
 
               const labels: ListingLabels = {
@@ -684,6 +685,7 @@ export default function MyProjectsPage() {
                 trending: 'Trending',
                 edit: t('actions.edit') || 'Edit',
                 delete: t('actions.delete') || 'Delete',
+                pending: (messages['BetaHome.listing.badge.pending'] as string) || 'Pending Approval',
               };
 
               return (

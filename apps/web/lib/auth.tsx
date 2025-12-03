@@ -1,9 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from './firebase';
+import { auth, db } from './firebase';
 import { apiAuthedPost } from './api';
 import { onAuthStateChanged, type User, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { ensureUserDoc } from './ensureUserDoc';
 
 type AuthCtx = { user: User | null; loading: boolean };
@@ -26,8 +27,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         void setPersistence(auth, inMemoryPersistence).catch(() => { });
       }
     } catch { }
+
+    let unsubscribeFirestore: (() => void) | null = null;
+
     const off = onAuthStateChanged(auth, async (u) => {
-      setUser(u ?? null);
+      // Clean up previous Firestore listener
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+        unsubscribeFirestore = null;
+      }
+
+      if (!u) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      // Set initial user from Firebase Auth
+      setUser(u);
       setLoading(false);
 
       if (u) {
@@ -58,6 +75,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
           // Track visit
           apiAuthedPost('/me/visit').catch(() => { });
+
+          // Set up real-time listener for Firestore creator data
+          if (db) {
+            const creatorRef = doc(db, 'creators', u.uid);
+            unsubscribeFirestore = onSnapshot(
+              creatorRef,
+              (snapshot) => {
+                if (snapshot.exists()) {
+                  const data = snapshot.data();
+                  // Create an enhanced user object with Firestore data
+                  const enhancedUser = Object.create(u) as User;
+                  // Override displayName and photoURL with Firestore data if available
+                  Object.defineProperty(enhancedUser, 'displayName', {
+                    value: data.displayName || u.displayName,
+                    writable: false,
+                    enumerable: true,
+                    configurable: true,
+                  });
+                  Object.defineProperty(enhancedUser, 'photoURL', {
+                    value: data.photoURL || data.photo || u.photoURL,
+                    writable: false,
+                    enumerable: true,
+                    configurable: true,
+                  });
+                  setUser(enhancedUser);
+                }
+              },
+              (error) => {
+                console.error('Error listening to creator data:', error);
+              }
+            );
+          }
         } catch (err) {
           // Retry once after a brief tick in case token/persistence just initialized
           try {
@@ -89,7 +138,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
     });
-    return () => off();
+    return () => {
+      off();
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+      }
+    };
   }, []);
 
   return <Ctx.Provider value={{ user, loading }}>{children}</Ctx.Provider>;

@@ -728,7 +728,8 @@
     },
     "listing": {
       "badge": {
-        "free": "KOSTENLOS"
+        "free": "KOSTENLOS",
+        "pending": "Wartet auf Freigabe"
       },
       "label": {
         "creator": "Ersteller"
@@ -1605,6 +1606,56 @@
         "email": "Kontakt-E-Mail ist erforderlich.",
         "emailInvalid": "Gib eine gültige E-Mail-Adresse ein.",
         "phone": "Gib eine gültige Handynummer ein."
+      }
+    },
+    "ambassadorSection": {
+      "title": "Thesara Ambassador-Programm",
+      "description": "Werde Thesara-Botschafter und verdiene Provision, indem du deinen einzigartigen Code mit deinem Publikum teilst.",
+      "commissionRate": "80% Provision auf erste Zahlung",
+      "commissionText": "Verdiene als Partner: {rate} von Nutzern, die deinen Code verwenden.",
+      "benefit1": "Vorteil für dein Publikum: {trial} kostenloser Gold-Plan.",
+      "benefit2": "Auszahlung: Schwelle {threshold}, Auszahlung {frequency} über PayPal.",
+      "benefit3": "Einfaches Teilen: einzigartiger Promo-Code und Link.",
+      "benefit4": "Transparenz: Dashboard mit Einblicken in Nutzung, Conversions und Einnahmen.",
+      "note": "💡 Hinweis: Provision wird auf {period} des Nutzers innerhalb von 60 Tagen nach Code-Aktivierung berechnet.",
+      "applyButton": "🚀 Bewerben",
+      "statusApproved": "🎉 Glückwunsch! Du wurdest als Thesara-Botschafter genehmigt.",
+      "statusPending": "⏳ Deine Bewerbung wird geprüft. Wir benachrichtigen dich per E-Mail, sobald wir eine Entscheidung getroffen haben.",
+      "statusRejected": "Vorherige Bewerbung wurde nicht genehmigt, aber du kannst dich erneut bewerben, wenn du das Gefühl hast, dass deine Community bereit ist.",
+      "yourCode": "Dein Code",
+      "copyCode": "📋 Code kopieren",
+      "openDashboard": "📊 Dashboard öffnen",
+      "marketingKit": "🎨 Marketing-Kit",
+      "newApplication": "Neue Bewerbung",
+      "applicationSuccess": "Anfrage gesendet! Wir benachrichtigen dich, sobald wir sie geprüft haben.",
+      "modal": {
+        "title": "Bewerbung für Ambassador-Programm",
+        "confirmTerms": "📋 Bestätige vor dem Absenden, dass du die Bedingungen verstehst:",
+        "term1": "80% Provision auf erste Zahlung",
+        "term2": "30 Tage Gold-Testphase für dein Publikum",
+        "term3": "Auszahlungsschwelle 50 €",
+        "term4": "Monatliche Auszahlung (net 30)",
+        "tiktokLabel": "TikTok-Profil",
+        "tiktokPlaceholder": "https://www.tiktok.com/@username",
+        "instagramLabel": "Instagram-Profil",
+        "instagramPlaceholder": "https://www.instagram.com/username",
+        "youtubeLabel": "YouTube-Kanal",
+        "youtubePlaceholder": "https://www.youtube.com/@username",
+        "newsletterLabel": "Newsletter oder Blog",
+        "newsletterPlaceholder": "https://newsletter.example.com",
+        "otherLabel": "Andere Kanäle (Link)",
+        "otherPlaceholder": "https://",
+        "primaryPlatformLabel": "Hauptplattform",
+        "primaryPlatformPlaceholder": "z.B. TikTok, YouTube, Instagram",
+        "audienceSizeLabel": "Publikumsgröße",
+        "audienceSizePlaceholder": "z.B. 12.5k Follower",
+        "motivationLabel": "Warum möchtest du Botschafter werden?",
+        "motivationPlaceholder": "Ich liebe Thesara, weil...",
+        "motivationRequired": "*",
+        "errorTitle": "❌ Fehler:",
+        "cancelButton": "Abbrechen",
+        "submitButton": "Bewerbung absenden",
+        "submittingButton": "Wird gesendet..."
       }
     }
   }
