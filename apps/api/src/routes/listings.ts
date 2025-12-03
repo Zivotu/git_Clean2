@@ -18,7 +18,7 @@ import { getBuildDir } from '../paths.js';
 import { getBucket } from '../storage.js';
 import { ensureListingTranslations } from '../lib/translate.js';
 import { ensureListingPreview, saveListingPreviewFile, removeExistingPreviewFile } from '../lib/preview.js';
-import { normalizeCustomAssetList, applyCustomAssetsToBuild } from '../lib/customAssets.js';
+import { normalizeCustomAssetList, applyCustomAssetsToBuild, saveCustomAssetToStorage } from '../lib/customAssets.js';
 import type { CustomAsset } from '../types.js';
 import { normalizeRoomsMode } from '../lib/rooms.js';
 
@@ -392,7 +392,13 @@ export default async function listingsRoutes(app: FastifyInstance) {
     if (!isOwner && !isAdmin) {
       return reply.code(403).send({ ok: false, error: 'not_owner' });
     }
-    return reply.send({ ok: true, assets: item.customAssets ?? [] });
+    const assets = (item.customAssets ?? []).map((a) => {
+      if (!a.dataUrl && a.storagePath) {
+        return { ...a, dataUrl: `/uploads/${a.storagePath}` };
+      }
+      return a;
+    });
+    return reply.send({ ok: true, assets });
   };
   app.get('/listing/:slug/custom-assets', customAssetsGetHandler);
   app.get('/api/listing/:slug/custom-assets', customAssetsGetHandler);
@@ -433,19 +439,41 @@ export default async function listingsRoutes(app: FastifyInstance) {
       });
     }
 
+    const dbAssets: CustomAsset[] = [];
+    for (const asset of nextAssets) {
+      const clone = { ...asset };
+      if (clone.dataUrl && clone.dataUrl.startsWith('data:')) {
+        try {
+          const relPath = await saveCustomAssetToStorage(clone, item.id);
+          clone.storagePath = relPath;
+          clone.dataUrl = '';
+        } catch (err) {
+          req.log.warn({ err, slug, assetName: asset.name }, 'custom_asset_save_disk_failed');
+        }
+      }
+      dbAssets.push(clone);
+    }
+
     const previousAssets = item.customAssets || [];
     const next: AppRecord = {
       ...item,
-      customAssets: nextAssets.length ? nextAssets : undefined,
+      customAssets: dbAssets.length ? dbAssets : undefined,
       updatedAt: Date.now(),
     };
     apps[idx] = next;
     await writeApps(apps);
 
+    const responseAssets = dbAssets.map((a) => {
+      if (!a.dataUrl && a.storagePath) {
+        return { ...a, dataUrl: `/uploads/${a.storagePath}` };
+      }
+      return a;
+    });
+
     if (!next.buildId) {
       return reply.send({
         ok: true,
-        assets: nextAssets,
+        assets: responseAssets,
         applied: false,
         message: 'build_missing',
       });
@@ -453,7 +481,7 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
     try {
       await applyCustomAssetsToBuild(next.buildId, nextAssets, previousAssets);
-      return reply.send({ ok: true, assets: nextAssets, applied: true, buildId: next.buildId });
+      return reply.send({ ok: true, assets: responseAssets, applied: true, buildId: next.buildId });
     } catch (err) {
       req.log?.error?.({ err, slug, buildId: next.buildId }, 'custom_assets_apply_failed');
       return reply.code(500).send({ ok: false, error: 'custom_assets_apply_failed' });

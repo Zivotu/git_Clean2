@@ -60,7 +60,9 @@ export function normalizeCustomAssetList(
     }
     usedNames.add(lowerName);
 
-    const hasDataUrl = typeof (entry as any).dataUrl === 'string' && (entry as any).dataUrl.trim();
+    const hasDataUrl =
+      typeof (entry as any).dataUrl === 'string' &&
+      (entry as any).dataUrl.trim().startsWith('data:');
     let size = 0;
     let assetToPush: CustomAsset | null = null;
 
@@ -126,6 +128,19 @@ export async function materializeCustomAssets(
   return files;
 }
 
+import { getConfig } from '../config.js';
+
+export async function saveCustomAssetToStorage(asset: CustomAsset, appId: string): Promise<string> {
+  const { buffer } = decodeDataUrl(asset.dataUrl);
+  const config = getConfig();
+  const safeName = sanitizeAssetName(asset.name);
+  const relPath = path.join('custom-assets', appId, safeName);
+  const fullPath = path.join(config.LOCAL_STORAGE_DIR, relPath);
+  await fs.mkdir(path.dirname(fullPath), { recursive: true });
+  await fs.writeFile(fullPath, buffer);
+  return relPath;
+}
+
 export async function applyCustomAssetsToBuild(
   buildId: string,
   nextAssets: CustomAsset[],
@@ -153,10 +168,21 @@ export async function applyCustomAssetsToBuild(
     }
   }
 
+  const config = getConfig();
   for (const dir of dirs) {
     if (!(await dirExists(dir))) continue;
     for (const asset of nextAssets) {
-      const { buffer } = decodeDataUrl(asset.dataUrl);
+      let buffer: Buffer;
+      if (asset.dataUrl && asset.dataUrl.startsWith('data:')) {
+        const decoded = decodeDataUrl(asset.dataUrl);
+        buffer = decoded.buffer;
+      } else if (asset.storagePath) {
+        const fullPath = path.join(config.LOCAL_STORAGE_DIR, asset.storagePath);
+        buffer = await fs.readFile(fullPath);
+      } else {
+        continue;
+      }
+
       const target = path.join(dir, sanitizeAssetName(asset.name));
       await fs.mkdir(path.dirname(target), { recursive: true });
       await fs.writeFile(target, buffer);

@@ -82,6 +82,7 @@ export interface CustomAsset {
   mimeType: string;
   size: number;
   dataUrl: string;
+  storagePath?: string;
   updatedAt: number;
 }
 
