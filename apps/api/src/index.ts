@@ -201,7 +201,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
 
   app = fastify({
     logger: loggerOptions,
-    bodyLimit: 5 * 1024 * 1024
+    bodyLimit: 50 * 1024 * 1024
   });
   app.log.info({ dest: LOG_FILE_PATH }, 'pino_file_logging_enabled');
 
@@ -374,8 +374,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   // Increase multipart limits to match bodyLimit (5 MB)
   await app.register(multipart, {
     limits: {
-      fileSize: 5 * 1024 * 1024,
-      fieldSize: 5 * 1024 * 1024, // Allow large JSON fields (e.g. customAssets)
+      fileSize: 50 * 1024 * 1024,
+      fieldSize: 50 * 1024 * 1024, // Allow large JSON fields (e.g. customAssets)
     },
   });
   await app.register(rawBody, { field: 'rawBody', global: false, encoding: 'utf8' });

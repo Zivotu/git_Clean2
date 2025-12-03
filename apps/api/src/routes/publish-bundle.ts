@@ -62,8 +62,9 @@ async function analyzeBundleZip(
   try {
     await extract(zipPath, { dir: inspectDir });
   } catch (err) {
-    logger.warn({ err }, 'publish-bundle:ai_scan_extract_failed');
-    return { aiMarker: null, storageUsed: false };
+    logger.warn({ err }, 'publish-bundle:zip_extract_failed');
+    // If we can't extract the zip, it's likely corrupt. We should not proceed.
+    throw new Error('Invalid or corrupt ZIP file.');
   }
   let storageUsed = false;
 
@@ -339,7 +340,21 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       }
     }
 
-    const analysis = await analyzeBundleZip(zipPath, tempDir, req.log);
+    let analysis: BundleAnalysis;
+    try {
+      analysis = await analyzeBundleZip(zipPath, tempDir, req.log);
+    } catch (err: any) {
+      await fs.rm(tempDir, { recursive: true, force: true });
+      if (err.message === 'Invalid or corrupt ZIP file.') {
+        return reply.code(400).send({
+          ok: false,
+          error: 'invalid_zip',
+          message: 'The uploaded ZIP file appears to be corrupt or incomplete. Please try uploading again.',
+        });
+      }
+      throw err;
+    }
+
     if (!llmApiKey && analysis.aiMarker) {
       await fs.rm(tempDir, { recursive: true, force: true });
       return reply.code(400).send({
