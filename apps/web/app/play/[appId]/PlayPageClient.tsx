@@ -201,6 +201,9 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const [roomsError, setRoomsError] = useState<string | null>(null)
   const [autoDemoRequested, setAutoDemoRequested] = useState(false)
 
+  const [minLoadTimePassed, setMinLoadTimePassed] = useState(false)
+  const [showFSPrompt, setShowFSPrompt] = useState(false)
+
   useEffect(() => {
     notifyPlay(app.slug || app.id)
   }, [app.slug, app.id])
@@ -382,6 +385,34 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     if (result && typeof (result as Promise<unknown>).catch === 'function') {
       ; (result as Promise<unknown>).catch(() => { })
     }
+  }, [])
+
+  const handleFSPromptConfirm = useCallback((remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('thesara_fullscreen_pref', 'always')
+    }
+    setShowFSPrompt(false)
+    toggleFullscreen()
+  }, [toggleFullscreen])
+
+  const handleFSPromptCancel = useCallback((remember: boolean) => {
+    if (remember) {
+      localStorage.setItem('thesara_fullscreen_pref', 'never')
+    }
+    setShowFSPrompt(false)
+  }, [])
+
+  useEffect(() => {
+    // Force a minimum splash screen time to mask initial flickers
+    const timer = setTimeout(() => setMinLoadTimePassed(true), 3500)
+
+    // Check fullscreen preference
+    const pref = localStorage.getItem('thesara_fullscreen_pref')
+    if (!pref) {
+      setShowFSPrompt(true)
+    }
+
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -797,36 +828,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     )
   }
 
-  const [minLoadTimePassed, setMinLoadTimePassed] = useState(false)
-  const [showFSPrompt, setShowFSPrompt] = useState(false)
 
-  useEffect(() => {
-    // Force a minimum splash screen time to mask initial flickers
-    const timer = setTimeout(() => setMinLoadTimePassed(true), 3500)
-
-    // Check fullscreen preference
-    const pref = localStorage.getItem('thesara_fullscreen_pref')
-    if (!pref) {
-      setShowFSPrompt(true)
-    }
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  const handleFSPromptConfirm = useCallback((remember: boolean) => {
-    if (remember) {
-      localStorage.setItem('thesara_fullscreen_pref', 'always')
-    }
-    setShowFSPrompt(false)
-    toggleFullscreen()
-  }, [toggleFullscreen])
-
-  const handleFSPromptCancel = useCallback((remember: boolean) => {
-    if (remember) {
-      localStorage.setItem('thesara_fullscreen_pref', 'never')
-    }
-    setShowFSPrompt(false)
-  }, [])
 
   const isReady = !loading && !!bootstrap && !error
   const showOverlay = !isReady || !minLoadTimePassed
