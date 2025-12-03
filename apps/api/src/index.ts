@@ -106,12 +106,12 @@ const transportTargets: Array<{
   level: string;
   options: Record<string, unknown>;
 }> = [
-  {
-    target: 'pino/file',
-    level: LOG_LEVEL,
-    options: { destination: LOG_FILE_PATH, mkdir: true },
-  },
-];
+    {
+      target: 'pino/file',
+      level: LOG_LEVEL,
+      options: { destination: LOG_FILE_PATH, mkdir: true },
+    },
+  ];
 if (enableStdoutLogging) {
   transportTargets.push({
     target: 'pino/file',
@@ -138,10 +138,10 @@ function tryReadManifest(manifestPath: string): BuildSecurityMetadata | null {
     const networkPolicy = typeof rawPolicy === 'string' ? rawPolicy : 'NO_NET';
     const networkDomains = Array.isArray(parsed.networkDomains)
       ? (parsed.networkDomains as unknown[])
-          .map((value: unknown) =>
-            typeof value === 'string' ? value : value != null ? String(value) : null,
-          )
-          .filter((value): value is string => !!value)
+        .map((value: unknown) =>
+          typeof value === 'string' ? value : value != null ? String(value) : null,
+        )
+        .filter((value): value is string => !!value)
       : [];
 
     const data: BuildSecurityMetadata = {
@@ -178,7 +178,7 @@ export async function createServer() {
             copied = true;
             break;
           }
-        } catch {}
+        } catch { }
       }
       if (!copied) {
         const stub = `import * as React from 'react';\nexport function Card(p:any){return React.createElement('div',{...p, className: (p.className||'')})}\nexport function CardHeader(p:any){return React.createElement('div',{...p, className: 'p-4 ' + (p.className||'')})}
@@ -194,12 +194,12 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       }
     }
 
-  } catch {}
+  } catch { }
   validateEnv();
   const config = getConfig();
   await ensureDbInitialized();
 
-  app = fastify({ 
+  app = fastify({
     logger: loggerOptions,
     bodyLimit: 5 * 1024 * 1024
   });
@@ -236,7 +236,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     try {
       const pub = new URL(config.PUBLIC_BASE);
       self.push(pub.origin);
-    } catch {}
+    } catch { }
     // Add explicit localhost/127.0.0.1 with current API port to allow same-origin module requests from iframes
     self.push(`http://127.0.0.1:${config.PORT}`);
     self.push(`http://localhost:${config.PORT}`);
@@ -337,7 +337,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       }
 
       // Trailing-slash normalizacija uklonjena ovdje; rješava se kroz fastify-static + allowedPath niže
-    } catch {}
+    } catch { }
     done();
   });
 
@@ -375,6 +375,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(multipart, {
     limits: {
       fileSize: 5 * 1024 * 1024,
+      fieldSize: 5 * 1024 * 1024, // Allow large JSON fields (e.g. customAssets)
     },
   });
   await app.register(rawBody, { field: 'rawBody', global: false, encoding: 'utf8' });
@@ -402,7 +403,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         index: false,
       });
     }
-  } catch {}
+  } catch { }
 
   app.get('/', async (_req, reply) => {
     return reply.type('text/html').send('OK');
@@ -425,7 +426,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         const origin = new URL(webBase).origin;
         if (origin) frameAncestors.add(origin);
       }
-    } catch {}
+    } catch { }
     if (process.env.NODE_ENV !== 'production') {
       frameAncestors.add('http://localhost:3000');
       frameAncestors.add('http://127.0.0.1:3000');
@@ -501,7 +502,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
         const origin = new URL(webBase).origin;
         if (origin && !fa.includes(origin)) fa.push(origin);
       }
-    } catch {}
+    } catch { }
     if (process.env.NODE_ENV !== 'production') {
       fa.push('http://localhost:3000', 'http://127.0.0.1:3000');
     }
@@ -636,7 +637,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
     const { buildId } = req.params as { buildId: string };
     return reply.redirect(appendQuery(`/builds/${encodeURIComponent(buildId)}/build`, req), 307);
   });
-  
+
   app.get('/builds/:buildId/build', {
     preHandler: bypassCors
   }, async (req, reply) => {
@@ -841,8 +842,8 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(billingRoutes);
   await app.register(billingRoutes, { prefix: '/api' });
   await app.register(meRoutes);
-    await app.register(adminRoutes);
-    await app.register(adminAccessRoutes);
+  await app.register(adminRoutes);
+  await app.register(adminAccessRoutes);
   await app.register(ambassadorRoutes);
   await app.register(versionRoutes);
   await app.register(oglasiRoutes);
@@ -882,15 +883,15 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       try {
         await fs.promises.access(path.join(baseDir, 'bundle', 'index.html'));
         return reply.redirect(`/review/builds/${encodeURIComponent(id)}/bundle/`, 307);
-      } catch {}
+      } catch { }
       try {
         await fs.promises.access(path.join(baseDir, 'build', 'index.html'));
         return reply.redirect(`/review/builds/${encodeURIComponent(id)}/build/`, 307);
-      } catch {}
+      } catch { }
       try {
         await fs.promises.access(path.join(PREVIEW_ROOT, id, 'index.html'));
         return reply.redirect(`/review/previews/${encodeURIComponent(id)}/`, 307);
-      } catch {}
+      } catch { }
       return reply.code(404).send({ error: 'not_found' });
     });
 
@@ -947,8 +948,8 @@ export async function start(): Promise<void> {
   const { app } = await createServer();
   const enableWorker = process.env.CREATEX_WORKER_ENABLED === 'true';
   const inlineLocalDevWorker = process.env.LOCAL_DEV_WORKER_INLINE === 'true';
-  const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => {} };
-  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => {} };
+  const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => { } };
+  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => { } };
   const localDevWorker = inlineLocalDevWorker ? startLocalDevWorker() : null;
 
   const shutdown = async (signal: string) => {
@@ -982,7 +983,7 @@ export async function start(): Promise<void> {
         const diagDir = path.join(process.cwd(), '.diag');
         fs.mkdirSync(diagDir, { recursive: true });
         fs.writeFileSync(path.join(diagDir, 'api-port.txt'), String(port));
-      } catch {}
+      } catch { }
       listened = true;
       break;
     } catch (err: any) {
@@ -1005,7 +1006,7 @@ export async function start(): Promise<void> {
     }
     try {
       await app.close();
-    } catch {}
+    } catch { }
     throw error;
   }
 
