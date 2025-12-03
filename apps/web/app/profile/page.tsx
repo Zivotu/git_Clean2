@@ -669,7 +669,7 @@ export default function ProfilePage() {
     try {
       let photoURL = publicProfile.photoURL;
       if (publicPhotoFile && storage) {
-        const storageRef = ref(storage, `public-avatars/${user.uid}`);
+        const storageRef = ref(storage, `avatars/${user.uid}`);
         await uploadBytes(storageRef, publicPhotoFile);
         photoURL = await getDownloadURL(storageRef);
         setPublicPhotoFile(null);
