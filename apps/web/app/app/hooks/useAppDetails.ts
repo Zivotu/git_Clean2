@@ -97,6 +97,7 @@ export const SCREENSHOT_URL_LIMIT = 1024;
 export const MIN_LONG_DESCRIPTION = 20;
 export const MAX_CUSTOM_ASSET_COUNT = 30;
 export const MAX_CUSTOM_ASSET_BYTES = 100 * 1024;
+export const MAX_LARGE_ASSET_BYTES = 1 * 1024 * 1024;
 export const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
 
 function timeSince(ts: number) {
@@ -938,6 +939,9 @@ export function useAppDetails() {
                     .map((asset) => asset.name?.trim().toLowerCase())
                     .filter((name): name is string => Boolean(name)),
             );
+
+            let largeAssetCount = customAssetDrafts.filter((a) => a.size > MAX_CUSTOM_ASSET_BYTES).length;
+
             const additions: CustomAssetDraft[] = [];
             for (const file of files) {
                 if (customAssetDrafts.length + additions.length >= MAX_CUSTOM_ASSET_COUNT) {
@@ -961,15 +965,29 @@ export function useAppDetails() {
                     );
                     continue;
                 }
-                if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+                if (file.size > MAX_LARGE_ASSET_BYTES) {
                     setCustomAssetError(
                         tApp(
                             'customAssets.sizeError',
-                            { size: maxCustomAssetKb },
-                            `Each file must be ${maxCustomAssetKb}KB or smaller.`,
+                            { size: Math.round(MAX_LARGE_ASSET_BYTES / 1024) },
+                            `File is too large. Max ${Math.round(MAX_LARGE_ASSET_BYTES / 1024)}KB.`,
                         ),
                     );
                     continue;
+                }
+
+                if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+                    if (largeAssetCount >= 1) {
+                        setCustomAssetError(
+                            tApp(
+                                'customAssets.largeLimitError',
+                                undefined,
+                                'You can only have one large asset (>100KB).',
+                            ),
+                        );
+                        continue;
+                    }
+                    largeAssetCount++;
                 }
                 const normalizedName = normalizeAssetName(file.name);
                 const lower = normalizedName.toLowerCase();
@@ -1005,7 +1023,7 @@ export function useAppDetails() {
                 setCustomAssetDrafts((prev) => [...prev, ...additions]);
             }
         },
-        [canEdit, customAssetDrafts, maxCustomAssetKb, tApp],
+        [canEdit, customAssetDrafts, tApp],
     );
 
     const handleCustomAssetRemove = useCallback((localId: string) => {
@@ -1037,15 +1055,32 @@ export function useAppDetails() {
                 );
                 return;
             }
-            if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+            if (file.size > MAX_LARGE_ASSET_BYTES) {
                 setCustomAssetError(
                     tApp(
                         'customAssets.sizeError',
-                        { size: maxCustomAssetKb },
-                        `Each file must be ${maxCustomAssetKb}KB or smaller.`,
+                        { size: Math.round(MAX_LARGE_ASSET_BYTES / 1024) },
+                        `File is too large. Max ${Math.round(MAX_LARGE_ASSET_BYTES / 1024)}KB.`,
                     ),
                 );
                 return;
+            }
+
+            const otherLargeCount = customAssetDrafts.filter(
+                (a) => a.localId !== localId && a.size > MAX_CUSTOM_ASSET_BYTES,
+            ).length;
+
+            if (file.size > MAX_CUSTOM_ASSET_BYTES) {
+                if (otherLargeCount >= 1) {
+                    setCustomAssetError(
+                        tApp(
+                            'customAssets.largeLimitError',
+                            undefined,
+                            'You can only have one large asset (>100KB).',
+                        ),
+                    );
+                    return;
+                }
             }
             try {
                 const dataUrl = await readFileAsDataUrl(file);
@@ -1081,7 +1116,7 @@ export function useAppDetails() {
                 );
             }
         },
-        [canEdit, maxCustomAssetKb, tApp],
+        [canEdit, customAssetDrafts, tApp],
     );
 
     const resetCustomAssets = useCallback(() => {
@@ -1128,6 +1163,55 @@ export function useAppDetails() {
             });
             const json = await res.json().catch(() => null);
             if (!res.ok || !json?.ok) {
+                const msg = json?.message || json?.error;
+                if (msg === 'too_many_large_assets') {
+                    setCustomAssetError(
+                        tApp(
+                            'customAssets.largeLimitError',
+                            undefined,
+                            'You can only have one large asset (>100KB).',
+                        ),
+                    );
+                    setCustomAssetSaving(false);
+                    return;
+                }
+                if (msg === 'custom_asset_too_large') {
+                    setCustomAssetError(
+                        tApp(
+                            'customAssets.sizeError',
+                            { size: Math.round(MAX_LARGE_ASSET_BYTES / 1024) },
+                            `File is too large. Max ${Math.round(MAX_LARGE_ASSET_BYTES / 1024)}KB.`,
+                        ),
+                    );
+                    setCustomAssetSaving(false);
+                    return;
+                }
+                if (msg === 'duplicate_custom_asset_name') {
+                    setCustomAssetError(
+                        tApp('customAssets.duplicateError', undefined, 'Use unique filenames.'),
+                    );
+                    setCustomAssetSaving(false);
+                    return;
+                }
+                if (msg === 'too_many_custom_assets') {
+                    setCustomAssetError(
+                        tApp(
+                            'customAssets.limitError',
+                            { limit: MAX_CUSTOM_ASSET_COUNT },
+                            `You can upload up to ${MAX_CUSTOM_ASSET_COUNT} graphics.`,
+                        ),
+                    );
+                    setCustomAssetSaving(false);
+                    return;
+                }
+                if (msg === 'invalid_custom_asset_type') {
+                    setCustomAssetError(
+                        tApp('customAssets.typeError', undefined, 'Only PNG, JPG or GIF files are allowed.'),
+                    );
+                    setCustomAssetSaving(false);
+                    return;
+                }
+
                 throw new Error(json?.error || `PATCH failed ${res.status}`);
             }
             hydrateCustomAssetState(Array.isArray(json.assets) ? json.assets : []);
