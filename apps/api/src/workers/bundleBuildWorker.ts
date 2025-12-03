@@ -969,24 +969,31 @@ async function fixCommonAiErrors(projectDir: string) {
 
         if (isScriptLike) {
           // Fix 1: Adjacent JSX elements in object property without Fragment
-          const adjacentJsxRegex =
-            /((?:['"][^'"]+['"]|[\w$]+)\s*:\s*)(\(?\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(\s*\)?)(,|})/g;
-          let next = content.replace(
-            adjacentJsxRegex,
-            (match, key, before, nodes, after, suffix) => {
-              const trimmedNodes = (nodes as string).trimStart();
-              if (trimmedNodes.startsWith('<>') || trimmedNodes.startsWith('<React.Fragment')) {
-                return match;
-              }
-              return `${key}${before}<>${nodes}</>${after}${suffix}`;
-            },
-          );
+          // Skip .ts files as they shouldn't contain JSX and might trigger false positives with generics
+          if (ext !== '.ts') {
+            const adjacentJsxRegex =
+              /((?:['"][^'"]+['"]|[\w$]+)\s*:\s*)(\(?\s*)((?:<[a-zA-Z0-9]+[^>]*\/>\s*){2,})(\s*\)?)(,|})/g;
+            let next = content.replace(
+              adjacentJsxRegex,
+              (match, key, before, nodes, after, suffix) => {
+                const trimmedNodes = (nodes as string).trimStart();
+                if (trimmedNodes.startsWith('<>') || trimmedNodes.startsWith('<React.Fragment')) {
+                  return match;
+                }
+                return `${key}${before}<>${nodes}</>${after}${suffix}`;
+              },
+            );
+            if (next !== content) {
+              content = next;
+              changed = true;
+            }
+          }
 
           // Fix 2: Remove leading slash from img.src assignments to support base href
           // Matches: img.src = `/${...}` or img.src = "/..."
           // We want to turn `/${def.filename}` into `${def.filename}` so it respects <base>
           const imgSrcRegex = /(img\.src\s*=\s*[`"'])(\/)([^`"'])/g;
-          next = next.replace(imgSrcRegex, '$1$3');
+          const next = content.replace(imgSrcRegex, '$1$3');
 
           if (next !== content) {
             content = next;
