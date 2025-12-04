@@ -467,16 +467,21 @@ export function useAppDetails() {
     }, [item?.slug]);
 
     const hydrateCustomAssetState = useCallback((incoming?: CustomAssetRecord[] | null) => {
+        console.log('[hydrateCustomAssetState] incoming:', incoming);
         const normalized = Array.isArray(incoming) ? incoming : [];
         setServerCustomAssets(normalized);
         setCustomAssetDrafts(
-            normalized.map((asset) => ({
-                ...asset,
-                localId: asset.id,
-                isNew: false,
-                hasLocalData: false,
-                dataUrl: resolvePreviewUrl(asset.dataUrl),
-            })),
+            normalized.map((asset) => {
+                const resolved = resolvePreviewUrl(asset.dataUrl);
+                console.log('[hydrateCustomAssetState] asset:', asset.name, 'dataUrl:', asset.dataUrl, 'resolved:', resolved);
+                return {
+                    ...asset,
+                    localId: asset.id,
+                    isNew: false,
+                    hasLocalData: false,
+                    dataUrl: resolved,
+                };
+            }),
         );
     }, []);
 
