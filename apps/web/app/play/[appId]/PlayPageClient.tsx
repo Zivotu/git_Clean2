@@ -203,7 +203,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   const [minLoadTimePassed, setMinLoadTimePassed] = useState(false)
   const [showFSPrompt, setShowFSPrompt] = useState(false)
-  const [overlayVisible, setOverlayVisible] = useState(false)
+  const [overlayVisible, setOverlayVisible] = useState(true)
 
   useEffect(() => {
     notifyPlay(app.slug || app.id)
@@ -872,7 +872,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
         }
       >
         {showOverlay && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white">
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/20 backdrop-blur-sm">
             <GameLoadingOverlay />
           </div>
         )}
