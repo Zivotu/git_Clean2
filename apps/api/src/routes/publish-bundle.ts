@@ -15,6 +15,7 @@ import { ensureTermsAccepted, TermsNotAcceptedError } from '../lib/terms.js';
 import {
   materializeCustomAssets,
   normalizeCustomAssetList,
+  saveCustomAssetToStorage,
 } from '../lib/customAssets.js';
 import type { CustomAsset } from '../types.js';
 import { detectPreferredLocale } from '../lib/locale.js';
@@ -477,10 +478,15 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
           pendingVersion: version,
           previewUrl: payloadPreviewUrl ?? existing.previewUrl,
           customAssets: storedCustomAssets.length
-            ? storedCustomAssets.map((a) => {
-              const { dataUrl, ...rest } = a;
-              return rest;
-            })
+            ? await Promise.all(
+              storedCustomAssets.map(async (a) => {
+                // Save asset to disk and get storagePath
+                const storagePath = await saveCustomAssetToStorage(a, String(listingId));
+                // Return asset with storagePath, without dataUrl
+                const { dataUrl, ...rest } = a;
+                return { ...rest, storagePath };
+              })
+            )
             : undefined,
         };
         const { next } = ensureListingPreview(base);
@@ -505,10 +511,15 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
           archivedVersions,
           previewUrl: payloadPreviewUrl,
           customAssets: storedCustomAssets.length
-            ? storedCustomAssets.map((a) => {
-              const { dataUrl, ...rest } = a;
-              return rest;
-            })
+            ? await Promise.all(
+              storedCustomAssets.map(async (a) => {
+                // Save asset to disk and get storagePath
+                const storagePath = await saveCustomAssetToStorage(a, String(listingId));
+                // Return asset with storagePath, without dataUrl
+                const { dataUrl, ...rest } = a;
+                return { ...rest, storagePath };
+              })
+            )
             : undefined,
         };
         const { next } = ensureListingPreview(base);
