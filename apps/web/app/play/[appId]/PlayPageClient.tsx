@@ -222,6 +222,8 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return () => clearTimeout(timer)
   }, [bootstrap])
 
+  const { id: appId, buildId, securityPolicy } = app
+
   const redirectToLogin = useCallback(() => {
     if (typeof window === 'undefined') return
     const nextUrl =
