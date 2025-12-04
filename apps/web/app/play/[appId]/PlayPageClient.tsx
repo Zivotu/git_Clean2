@@ -209,19 +209,19 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     notifyPlay(app.slug || app.id)
   }, [app.slug, app.id])
 
-  // Show overlay for 3s AFTER bootstrap is ready (iframe becomes available)
+  // Show overlay for 6s AFTER bootstrap is ready (iframe becomes available)
+  // This covers: iframe render + shim load + ready signal + init + data sync
   useEffect(() => {
     if (!bootstrap) return
 
     setOverlayVisible(true)
     const timer = setTimeout(() => {
       setOverlayVisible(false)
-    }, 3000)
+    }, 6000)
 
     return () => clearTimeout(timer)
   }, [bootstrap])
 
-  const { id: appId, buildId, securityPolicy } = app;
   const redirectToLogin = useCallback(() => {
     if (typeof window === 'undefined') return
     const nextUrl =
