@@ -214,7 +214,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   useEffect(() => {
     if (!bootstrap) return
 
-    setOverlayVisible(true)
+
     const timer = setTimeout(() => {
       setOverlayVisible(false)
     }, 6000)
