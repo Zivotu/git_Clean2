@@ -16,6 +16,7 @@ import AdSlot from '@/components/AdSlot';
 import { PUBLIC_API_URL } from '@/lib/config';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useTheme } from '@/components/ThemeProvider';
+import { resolvePreviewUrl } from '@/lib/preview';
 
 const cx = (...classes: Array<string | undefined | null | false>) =>
   classes.filter(Boolean).join(' ');
@@ -43,6 +44,7 @@ interface PublicListing {
   playsCount?: number;
   author?: AuthorInfo;
   previewUrl?: string | null;
+  customAssets?: { name: string; dataUrl: string; mimeType: string }[];
 }
 
 interface PublicAppViewProps {
@@ -587,6 +589,46 @@ function PublicAppViewComponent({
                   }`}>{galleryEmpty}</p>
               )}
             </section>
+
+            {item.customAssets && item.customAssets.length > 0 && (
+              <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
+                ? 'border-[#27272A] bg-[#18181B]/95'
+                : 'border-gray-100 bg-white/95'
+                }`}>
+                <div className="flex items-center justify-between gap-4">
+                  <h2 className={`text-xl font-semibold ${isDark ? 'text-zinc-50' : 'text-gray-900'
+                    }`}>{tApp('viewer.customAssets.title', undefined, 'Custom Graphics')}</h2>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
+                  {item.customAssets.map((asset, index) => (
+                    <div key={index} className={`rounded-xl border p-2 transition-colors duration-300 ${isDark
+                      ? 'border-[#27272A] bg-[#18181B]'
+                      : 'border-gray-100 bg-gray-50'
+                      }`}>
+                      <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-black/5 dark:bg-white/5">
+                        {asset.dataUrl ? (
+                          <Image
+                            src={resolvePreviewUrl(asset.dataUrl)}
+                            alt={asset.name}
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-gray-400">
+                            N/A
+                          </div>
+                        )}
+                      </div>
+                      <p className={`mt-2 truncate text-xs font-medium ${isDark ? 'text-zinc-400' : 'text-gray-600'
+                        }`} title={asset.name}>
+                        {asset.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             <section className={`rounded-3xl border p-6 shadow-sm transition-colors duration-300 ${isDark
               ? 'border-[#27272A] bg-[#18181B]/95'

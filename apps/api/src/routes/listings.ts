@@ -266,6 +266,16 @@ export default async function listingsRoutes(app: FastifyInstance) {
     }
 
     const result: any = { ...normalizedItem };
+
+    if (result.customAssets) {
+      result.customAssets = result.customAssets.map((a: any) => {
+        if (!a.dataUrl && a.storagePath) {
+          return { ...a, dataUrl: `/uploads/${a.storagePath}` };
+        }
+        return a;
+      });
+    }
+
     if (viewerUid) {
       try {
         result.likedByMe = await hasUserLikedApp(item.id, viewerUid);
