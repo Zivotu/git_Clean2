@@ -70,6 +70,20 @@ const baseConfig = {
       { source: '/app/:path*', destination: `${API_BASE}/app/:path*` },
       // Legacy shim path: proxy directly without /api prefix (API serves at /shims/*)
       { source: '/shims/:path*', destination: `${API_BASE}/shims/:path*` },
+
+      // Static player assets served by API (ensures frontend 3000 can open /builds/* URLs)
+      // Note: include both singular "/build" (for SSE and status endpoints) and plural "/builds" (for static assets)
+      { source: '/build/:path*', destination: `${API_BASE}/build/:path*` },
+      { source: '/builds/:path*', destination: `${API_BASE}/builds/:path*` },
+      { source: '/review/builds/:path*', destination: `${API_BASE}/review/builds/:path*` },
+      { source: '/public/builds/:path*', destination: `${API_BASE}/public/builds/:path*` },
+      { source: '/uploads/:path*', destination: `${API_BASE}/uploads/:path*` },
+      { source: '/play-wrapper.js', destination: `${API_BASE}/play-wrapper.js` },
+      { source: '/play.css', destination: `${API_BASE}/play.css` },
+      { source: '/api/health', destination: `${API_URL}/health` },
+      { source: '/api/listings', destination: `${API_URL}/listings` },
+      { source: '/api/listing/:path*', destination: `${API_URL}/listing/:path*` },
+      { source: '/api/oglasi', destination: `${API_URL}/oglasi` },
       { source: '/api/avatar/:path*', destination: `${API_URL}/avatar/:path*` },
       { source: '/api/review/:path*', destination: `${API_URL}/review/:path*` },
       { source: '/billing/:path*', destination: `${API_URL}/billing/:path*` },
