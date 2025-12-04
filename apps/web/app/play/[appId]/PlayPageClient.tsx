@@ -203,10 +203,23 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   const [minLoadTimePassed, setMinLoadTimePassed] = useState(false)
   const [showFSPrompt, setShowFSPrompt] = useState(false)
+  const [overlayVisible, setOverlayVisible] = useState(false)
 
   useEffect(() => {
     notifyPlay(app.slug || app.id)
   }, [app.slug, app.id])
+
+  // Show overlay for 3s AFTER bootstrap is ready (iframe becomes available)
+  useEffect(() => {
+    if (!bootstrap) return
+
+    setOverlayVisible(true)
+    const timer = setTimeout(() => {
+      setOverlayVisible(false)
+    }, 3000)
+
+    return () => clearTimeout(timer)
+  }, [bootstrap])
 
   const { id: appId, buildId, securityPolicy } = app;
   const redirectToLogin = useCallback(() => {
@@ -827,7 +840,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }
 
   const isReady = !loading && !!bootstrap && !error
-  const showOverlay = !minLoadTimePassed
+  const showOverlay = overlayVisible
 
   if (error) {
     return (
