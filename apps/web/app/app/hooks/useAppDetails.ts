@@ -475,6 +475,7 @@ export function useAppDetails() {
                 localId: asset.id,
                 isNew: false,
                 hasLocalData: false,
+                dataUrl: resolvePreviewUrl(asset.dataUrl),
             })),
         );
     }, []);
