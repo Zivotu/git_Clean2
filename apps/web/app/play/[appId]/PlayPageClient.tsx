@@ -404,7 +404,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
 
   useEffect(() => {
     // Force a minimum splash screen time to mask initial flickers
-    const timer = setTimeout(() => setMinLoadTimePassed(true), 3500)
+    const timer = setTimeout(() => setMinLoadTimePassed(true), 3000)
 
     // Check fullscreen preference
     const pref = localStorage.getItem('thesara_fullscreen_pref')
@@ -827,7 +827,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   }
 
   const isReady = !loading && !!bootstrap && !error
-  const showOverlay = false // Disabled overlay
+  const showOverlay = !minLoadTimePassed
 
   if (error) {
     return (
