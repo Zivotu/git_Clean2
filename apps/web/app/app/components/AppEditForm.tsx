@@ -312,8 +312,9 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                             <div className="mt-4 grid gap-4">
                                 {customAssetDrafts.map((asset) => (
                                     <div key={asset.localId} className={`rounded-xl border p-4 ${isDark ? 'border-zinc-700 bg-zinc-900' : 'border-gray-200 bg-white'}`}>
-                                        <div className="flex flex-wrap gap-4">
-                                            <div className={`h-16 w-16 overflow-hidden rounded-lg border ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
+                                        <div className="flex items-start gap-4">
+                                            {/* Larger Thumbnail - 128px */}
+                                            <div className={`h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg border ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-gray-50 border-gray-200'}`}>
                                                 {asset.dataUrl ? (
                                                     <Image
                                                         src={asset.dataUrl}
@@ -322,18 +323,20 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                                             { name: asset.name },
                                                             `Custom asset ${asset.name}`
                                                         )}
-                                                        width={64}
-                                                        height={64}
+                                                        width={128}
+                                                        height={128}
                                                         className="h-full w-full object-cover"
                                                         unoptimized
                                                     />
                                                 ) : (
-                                                    <div className="flex h-full items-center justify-center text-[11px] text-gray-400">
+                                                    <div className="flex h-full items-center justify-center text-xs text-gray-400">
                                                         N/A
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex-1 space-y-2">
+
+                                            {/* Compact Filename + Metadata */}
+                                            <div className="flex-1 min-w-0 space-y-2">
                                                 <label className={`text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
                                                     {tApp('customAssets.nameLabel', undefined, 'Filename')}
                                                 </label>
@@ -342,7 +345,7 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                                     onChange={(e) =>
                                                         handleCustomAssetNameChange(asset.localId, e.target.value)
                                                     }
-                                                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${isDark
+                                                    className={`w-full max-w-sm rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 ${isDark
                                                         ? 'bg-zinc-800 border-zinc-700 text-zinc-200 focus:border-emerald-500 focus:ring-emerald-500/20'
                                                         : 'bg-white border-gray-300 text-gray-900 focus:border-emerald-500 focus:ring-emerald-200'
                                                         }`}
@@ -357,24 +360,32 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                                     )}
                                                 </p>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleCustomAssetRemove(asset.localId)}
-                                                className="text-sm font-semibold text-rose-500 hover:text-rose-600"
-                                                disabled={customAssetSaving}
-                                            >
-                                                {tApp('customAssets.remove', undefined, 'Remove')}
-                                            </button>
-                                        </div>
-                                        <div className="mt-3 flex flex-wrap gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => assetFileInputRefs.current[asset.localId]?.click()}
-                                                className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
-                                                disabled={customAssetSaving}
-                                            >
-                                                {tApp('customAssets.replace', undefined, 'Replace')}
-                                            </button>
+
+                                            {/* Action Buttons - Right Side */}
+                                            <div className="flex flex-col gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => assetFileInputRefs.current[asset.localId]?.click()}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isDark
+                                                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                                        }`}
+                                                    disabled={customAssetSaving}
+                                                >
+                                                    {tApp('customAssets.replace', undefined, 'Replace')}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCustomAssetRemove(asset.localId)}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isDark
+                                                        ? 'border border-rose-500/50 text-rose-400 hover:bg-rose-500/10'
+                                                        : 'border border-rose-500 text-rose-600 hover:bg-rose-50'
+                                                        }`}
+                                                    disabled={customAssetSaving}
+                                                >
+                                                    {tApp('customAssets.remove', undefined, 'Remove')}
+                                                </button>
+                                            </div>
                                         </div>
                                         <input
                                             ref={(el) => {
@@ -823,6 +834,6 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
