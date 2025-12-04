@@ -1723,5 +1723,20 @@
         "phone": "Enter a valid mobile number."
       }
     }
+  },
+  "Play": {
+    "enterFullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "fullScreenPrompt": {
+      "title": "Fullscreen?",
+      "message": "Would you like to launch the game in fullscreen for a better experience?",
+      "yes": "Yes, enable",
+      "no": "No, thanks",
+      "remember": "Remember my choice"
+    },
+    "loadingOverlay": {
+      "title": "Loading game...",
+      "subtitle": "Preparing your adventure"
+    }
   }
 }

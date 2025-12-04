@@ -1622,6 +1622,10 @@
       "yes": "Da, uključi",
       "no": "Ne, hvala",
       "remember": "Zapamti moj odabir"
+    },
+    "loadingOverlay": {
+      "title": "Učitavanje igre...",
+      "subtitle": "Pripremamo tvoju avanturu"
     }
   }
 }

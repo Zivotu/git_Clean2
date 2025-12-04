@@ -1659,5 +1659,20 @@
         "submittingButton": "Wird gesendet..."
       }
     }
+  },
+  "Play": {
+    "enterFullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild beenden",
+    "fullScreenPrompt": {
+      "title": "Vollbild?",
+      "message": "Möchtest du das Spiel im Vollbildmodus starten für ein besseres Erlebnis?",
+      "yes": "Ja, aktivieren",
+      "no": "Nein, danke",
+      "remember": "Auswahl merken"
+    },
+    "loadingOverlay": {
+      "title": "Spiel wird geladen...",
+      "subtitle": "Wir bereiten dein Abenteuer vor"
+    }
   }
 }

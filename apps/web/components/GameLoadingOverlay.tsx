@@ -2,9 +2,11 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Gamepad2 } from 'lucide-react'
+import { useI18n } from '@/lib/i18n-provider'
 
 export default function GameLoadingOverlay() {
     const [progress, setProgress] = useState(0)
+    const { messages } = useI18n()
 
     useEffect(() => {
         // Animate progress to 90% over ~3 seconds to match the "reload" feel
@@ -38,8 +40,12 @@ export default function GameLoadingOverlay() {
                 </div>
 
                 <div className="flex flex-col items-center gap-2">
-                    <h2 className="text-xl font-semibold text-slate-900">Učitavanje igre...</h2>
-                    <p className="text-sm text-slate-500">Pripremamo tvoju avanturu</p>
+                    <h2 className="text-xl font-semibold text-slate-900">
+                        {messages['Play.loadingOverlay.title'] || 'Učitavanje igre...'}
+                    </h2>
+                    <p className="text-sm text-slate-500">
+                        {messages['Play.loadingOverlay.subtitle'] || 'Pripremamo tvoju avanturu'}
+                    </p>
                 </div>
 
                 <div className="h-2 w-64 overflow-hidden rounded-full bg-slate-100">
