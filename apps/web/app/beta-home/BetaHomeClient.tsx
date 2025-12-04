@@ -442,11 +442,6 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       setView((prev) => (prev === resolvedView ? prev : resolvedView));
     }
 
-    const filterParam = searchParams.get('filter');
-    const validFilter =
-      filterParam && filters.includes(filterParam) ? filterParam : FILTER_ALL;
-    setActiveFilter((prev) => (prev === validFilter ? prev : validFilter));
-
     const tagsFromParams = searchParams
       .getAll('tag')
       .map((tag) => tag.trim())
@@ -454,6 +449,19 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     const uniqueTags = Array.from(new Set(tagsFromParams));
     setSelectedTags((prev) => (arraysEqual(prev, uniqueTags) ? prev : uniqueTags));
 
+    if (!initialQuerySynced) {
+      setInitialQuerySynced(true);
+    }
+  }, [searchParams, initialQuerySynced]);
+
+  useEffect(() => {
+    const filterParam = searchParams.get('filter');
+    const validFilter =
+      filterParam && filters.includes(filterParam) ? filterParam : FILTER_ALL;
+    setActiveFilter((prev) => (prev === validFilter ? prev : validFilter));
+  }, [searchParams, filters]);
+
+  useEffect(() => {
     const storedColumns = !initialQuerySynced ? readStoredGridColumns() : null;
     const colsParam = searchParams.get('cols');
     let resolvedColumns: number | null = null;
@@ -468,11 +476,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     if (resolvedColumns !== null) {
       setCardsPerRow((prev) => (prev === resolvedColumns ? prev : resolvedColumns));
     }
-
-    if (!initialQuerySynced) {
-      setInitialQuerySynced(true);
-    }
-  }, [searchParams, filters, initialQuerySynced]);
+  }, [searchParams, initialQuerySynced]);
   useEffect(() => {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, view);
