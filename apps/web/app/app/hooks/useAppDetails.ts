@@ -940,26 +940,12 @@ export function useAppDetails() {
             event.target.value = '';
             if (!files.length) return;
             setCustomAssetError(null);
-            const existingNames = new Set(
-                customAssetDrafts
-                    .map((asset) => asset.name?.trim().toLowerCase())
-                    .filter((name): name is string => Boolean(name)),
-            );
-
             let largeAssetCount = customAssetDrafts.filter((a) => a.size > MAX_CUSTOM_ASSET_BYTES).length;
 
             const additions: CustomAssetDraft[] = [];
+            const replacements = new Map<string, CustomAssetDraft>();
+
             for (const file of files) {
-                if (customAssetDrafts.length + additions.length >= MAX_CUSTOM_ASSET_COUNT) {
-                    setCustomAssetError(
-                        tApp(
-                            'customAssets.limitError',
-                            { limit: MAX_CUSTOM_ASSET_COUNT },
-                            `You can upload up to ${MAX_CUSTOM_ASSET_COUNT} graphics.`,
-                        ),
-                    );
-                    break;
-                }
                 const mime = (file.type || '').toLowerCase();
                 if (!ALLOWED_CUSTOM_ASSET_TYPES.includes(mime)) {
                     setCustomAssetError(
@@ -995,29 +981,53 @@ export function useAppDetails() {
                     }
                     largeAssetCount++;
                 }
+
                 const normalizedName = normalizeAssetName(file.name);
                 const lower = normalizedName.toLowerCase();
-                if (existingNames.has(lower)) {
-                    setCustomAssetError(
-                        tApp('customAssets.duplicateError', undefined, 'Use unique filenames.'),
-                    );
-                    continue;
-                }
-                existingNames.add(lower);
+
+                // Check if this name already exists in current drafts
+                const existingAsset = customAssetDrafts.find(
+                    (a) => a.name?.trim().toLowerCase() === lower
+                );
+
                 try {
                     const dataUrl = await readFileAsDataUrl(file);
-                    const localId = createLocalId();
-                    additions.push({
-                        id: `local-${localId}`,
-                        localId,
-                        name: normalizedName,
-                        mimeType: mime,
-                        size: file.size,
-                        dataUrl,
-                        updatedAt: Date.now(),
-                        isNew: true,
-                        hasLocalData: true,
-                    });
+
+                    if (existingAsset) {
+                        // Replace existing asset with same name
+                        replacements.set(existingAsset.localId, {
+                            ...existingAsset,
+                            mimeType: mime,
+                            size: file.size,
+                            dataUrl,
+                            updatedAt: Date.now(),
+                            hasLocalData: true,
+                        });
+                    } else {
+                        // New asset
+                        if (customAssetDrafts.length + additions.length >= MAX_CUSTOM_ASSET_COUNT) {
+                            setCustomAssetError(
+                                tApp(
+                                    'customAssets.limitError',
+                                    { limit: MAX_CUSTOM_ASSET_COUNT },
+                                    `You can upload up to ${MAX_CUSTOM_ASSET_COUNT} graphics.`,
+                                ),
+                            );
+                            break;
+                        }
+                        const localId = createLocalId();
+                        additions.push({
+                            id: `local-${localId}`,
+                            localId,
+                            name: normalizedName,
+                            mimeType: mime,
+                            size: file.size,
+                            dataUrl,
+                            updatedAt: Date.now(),
+                            isNew: true,
+                            hasLocalData: true,
+                        });
+                    }
                 } catch {
                     setCustomAssetError(
                         tApp('customAssets.readError', undefined, 'Failed to read the selected files.'),
@@ -1025,8 +1035,15 @@ export function useAppDetails() {
                     break;
                 }
             }
-            if (additions.length) {
-                setCustomAssetDrafts((prev) => [...prev, ...additions]);
+
+            // Apply replacements and additions
+            if (replacements.size > 0 || additions.length > 0) {
+                setCustomAssetDrafts((prev) => {
+                    const updated = prev.map((asset) =>
+                        replacements.has(asset.localId) ? replacements.get(asset.localId)! : asset
+                    );
+                    return [...updated, ...additions];
+                });
             }
         },
         [canEdit, customAssetDrafts, tApp],
@@ -1134,6 +1151,7 @@ export function useAppDetails() {
         if (!item || !canEdit || customAssetSaving || !hasCustomAssetChanges) return;
         setCustomAssetSaving(true);
         setCustomAssetError(null);
+        setCustomAssetProgress(5); // Start progress immediately for instant feedback
         const payload: Array<{ id?: string; name: string; dataUrl?: string }> = [];
         const usedNames = new Set<string>();
         for (const asset of customAssetDrafts) {
@@ -1167,6 +1185,7 @@ export function useAppDetails() {
                 headers: await buildHeaders(true),
                 body: JSON.stringify({ assets: payload }),
             });
+            setCustomAssetProgress(40); // Update progress after request sent
             const json = await res.json().catch(() => null);
             if (!res.ok || !json?.ok) {
                 const msg = json?.message || json?.error;

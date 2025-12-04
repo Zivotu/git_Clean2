@@ -44,8 +44,7 @@ export function normalizeCustomAssetList(
     throw new Error('too_many_custom_assets');
   }
   const existingMap = new Map((existing || []).map((asset) => [asset.id, asset]));
-  const usedNames = new Set<string>();
-  const result: CustomAsset[] = [];
+  const resultMap = new Map<string, CustomAsset>(); // Use map to auto-replace duplicates
   let largeAssetCount = 0;
 
   for (const entry of input) {
@@ -55,10 +54,6 @@ export function normalizeCustomAssetList(
     const rawName = typeof (entry as any).name === 'string' ? (entry as any).name : '';
     const name = sanitizeAssetName(rawName);
     const lowerName = name.toLowerCase();
-    if (usedNames.has(lowerName)) {
-      throw new Error('duplicate_custom_asset_name');
-    }
-    usedNames.add(lowerName);
 
     const hasDataUrl =
       typeof (entry as any).dataUrl === 'string' &&
@@ -105,10 +100,11 @@ export function normalizeCustomAssetList(
     }
 
     if (assetToPush) {
-      result.push(assetToPush);
+      // If duplicate name exists, this will replace the previous one (last wins)
+      resultMap.set(lowerName, assetToPush);
     }
   }
-  return result;
+  return Array.from(resultMap.values());
 }
 
 export async function materializeCustomAssets(
