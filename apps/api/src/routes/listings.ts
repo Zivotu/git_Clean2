@@ -269,7 +269,8 @@ export default async function listingsRoutes(app: FastifyInstance) {
 
     if (result.customAssets) {
       result.customAssets = result.customAssets.map((a: any) => {
-        if (!a.dataUrl && a.storagePath) {
+        // Ensure dataUrl is always populated for frontend display
+        if (a.storagePath) {
           return { ...a, dataUrl: `/uploads/${a.storagePath}` };
         }
         return a;
@@ -408,7 +409,8 @@ export default async function listingsRoutes(app: FastifyInstance) {
       return reply.code(403).send({ ok: false, error: 'not_owner' });
     }
     const assets = (item.customAssets ?? []).map((a) => {
-      if (!a.dataUrl && a.storagePath) {
+      // Ensure dataUrl is always populated for frontend display
+      if (a.storagePath) {
         return { ...a, dataUrl: `/uploads/${a.storagePath}` };
       }
       return a;
@@ -479,7 +481,8 @@ export default async function listingsRoutes(app: FastifyInstance) {
     await writeApps(apps);
 
     const responseAssets = dbAssets.map((a) => {
-      if (!a.dataUrl && a.storagePath) {
+      // Ensure dataUrl is always populated for frontend display
+      if (a.storagePath) {
         return { ...a, dataUrl: `/uploads/${a.storagePath}` };
       }
       return a;

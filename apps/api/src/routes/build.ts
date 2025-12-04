@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { readBuild } from '../models/Build.js';
@@ -30,7 +30,9 @@ export default async function buildRoutes(app: FastifyInstance) {
       );
       const cfg = getConfig();
       const limit = gold ? cfg.GOLD_MAX_APPS_PER_USER : cfg.MAX_APPS_PER_USER;
-      if (owned.length >= limit) {
+      // Filter out deleted apps before counting - only count active apps
+      const activeOwned = owned.filter((a) => !a.deletedAt && !a.adminDeleteSnapshot);
+      if (activeOwned.length >= limit) {
         return reply
           .code(403)
           .send({
@@ -106,7 +108,7 @@ export default async function buildRoutes(app: FastifyInstance) {
       if (exists) {
         publicUrl = `/public/builds/${id}/index.html`;
       }
-    } catch {}
+    } catch { }
     const listing = await getListingByBuildId(id);
 
     const resp: any = { ok: true, state, progress, artifacts };

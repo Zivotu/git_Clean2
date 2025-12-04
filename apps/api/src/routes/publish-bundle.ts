@@ -296,7 +296,9 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
       const cfg = getConfig();
       const limit = gold ? cfg.GOLD_MAX_APPS_PER_USER : cfg.MAX_APPS_PER_USER;
-      if (owned.length >= limit) {
+      // Filter out deleted apps before counting - only count active apps
+      const activeOwned = owned.filter((a) => !a.deletedAt && !a.adminDeleteSnapshot);
+      if (activeOwned.length >= limit) {
         return reply
           .code(403)
           .send({

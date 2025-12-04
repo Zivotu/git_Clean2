@@ -209,9 +209,9 @@ export default async function publishRoutes(app: FastifyInstance) {
       const ents = await listEntitlements(uid);
       const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
       const limit = gold ? cfg.GOLD_MAX_APPS_PER_USER : cfg.MAX_APPS_PER_USER;
-      // For free users we enforce total owned apps (including drafts/inactive),
-      // to prevent storage usage from accumulating.
-      if (owned.length >= limit) {
+      // Filter out deleted apps before counting - only count active apps
+      const activeOwned = owned.filter((a) => !a.deletedAt && !a.adminDeleteSnapshot);
+      if (activeOwned.length >= limit) {
         return reply
           .code(403)
           .send({
