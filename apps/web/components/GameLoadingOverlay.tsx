@@ -24,7 +24,7 @@ export default function GameLoadingOverlay() {
     }, [])
 
     return (
-        <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white text-slate-900">
+        <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center text-slate-900">
             <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
