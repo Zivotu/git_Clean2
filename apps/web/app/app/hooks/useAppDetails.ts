@@ -952,7 +952,7 @@ export function useAppDetails() {
                         tApp(
                             'customAssets.typeError',
                             undefined,
-                            'Only PNG, JPG or GIF files are allowed.',
+                            'Allowed formats: PNG, JPG, GIF, WAV, MP3.',
                         ),
                     );
                     continue;
@@ -1074,7 +1074,7 @@ export function useAppDetails() {
             const mime = (file.type || '').toLowerCase();
             if (!ALLOWED_CUSTOM_ASSET_TYPES.includes(mime)) {
                 setCustomAssetError(
-                    tApp('customAssets.typeError', undefined, 'Only PNG, JPG or GIF files are allowed.'),
+                    tApp('customAssets.typeError', undefined, 'Allowed formats: PNG, JPG, GIF, WAV, MP3.'),
                 );
                 return;
             }
@@ -1231,7 +1231,7 @@ export function useAppDetails() {
                 }
                 if (msg === 'invalid_custom_asset_type') {
                     setCustomAssetError(
-                        tApp('customAssets.typeError', undefined, 'Only PNG, JPG or GIF files are allowed.'),
+                        tApp('customAssets.typeError', undefined, 'Allowed formats: PNG, JPG, GIF, WAV, MP3.'),
                     );
                     setCustomAssetSaving(false);
                     return;

@@ -299,7 +299,7 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                         <input
                             ref={customAssetInputRef}
                             type="file"
-                            accept="image/png,image/jpeg,image/jpg,image/gif"
+                            accept="image/png,image/jpeg,image/jpg,image/gif,audio/wav,audio/mpeg"
                             className="hidden"
                             multiple
                             onChange={handleCustomAssetInput}
@@ -393,7 +393,7 @@ export default function AppEditForm({ details }: AppEditFormProps) {
                                             }}
                                             type="file"
                                             className="hidden"
-                                            accept="image/png,image/jpeg,image/jpg,image/gif"
+                                            accept="image/png,image/jpeg,image/jpg,image/gif,audio/wav,audio/mpeg"
                                             onChange={(e) => handleCustomAssetReplace(asset.localId, e.target.files)}
                                         />
                                     </div>
