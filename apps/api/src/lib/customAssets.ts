@@ -8,12 +8,14 @@ import type { CustomAsset } from '../types.js';
 
 export const MAX_CUSTOM_ASSET_COUNT = 60;
 export const MAX_REGULAR_ASSET_BYTES = 100 * 1024;
-export const MAX_LARGE_ASSET_BYTES = 1 * 1024 * 1024;
+export const MAX_LARGE_ASSET_BYTES = 500 * 1024;
 export const ALLOWED_CUSTOM_ASSET_MIME_TYPES = new Set([
   'image/png',
   'image/jpeg',
   'image/jpg',
   'image/gif',
+  'audio/wav',
+  'audio/mpeg',
 ]);
 
 const sanitizeAssetName = (input: string): string => {

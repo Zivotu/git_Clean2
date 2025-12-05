@@ -97,8 +97,8 @@ export const SCREENSHOT_URL_LIMIT = 1024;
 export const MIN_LONG_DESCRIPTION = 20;
 export const MAX_CUSTOM_ASSET_COUNT = 60;
 export const MAX_CUSTOM_ASSET_BYTES = 100 * 1024;
-export const MAX_LARGE_ASSET_BYTES = 1 * 1024 * 1024;
-export const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+export const MAX_LARGE_ASSET_BYTES = 500 * 1024;
+export const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'audio/wav', 'audio/mpeg'];
 
 function timeSince(ts: number) {
     const s = Math.floor((Date.now() - ts) / 1000);

@@ -317,7 +317,7 @@ export default function CreateRedesign(props: any) {
                           >
                             Add Assets
                           </button>
-                          <input ref={customAssetInputRef} type="file" accept="image/png,image/jpeg,image/gif" multiple className="hidden" onChange={handleCustomAssetInput} />
+                          <input ref={customAssetInputRef} type="file" accept="image/png,image/jpeg,image/gif,audio/wav,audio/mpeg" multiple className="hidden" onChange={handleCustomAssetInput} />
                           <span className="text-xs text-gray-500 dark:text-gray-500">
                             {customAssets.length} / {MAX_CUSTOM_ASSET_COUNT} files
                           </span>

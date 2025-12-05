@@ -1300,8 +1300,9 @@
     "tag_business": "Posao",
     "tag_entertainment": "Zabava",
     "tag_other": "Ostalo",
-    "advancedAssetsSizeError": "Slika je veća od 1MB. Molimo odaberite manju sliku.",
-    "advancedAssetsLargeLimitError": "Samo jedna datoteka može biti veća od 100KB (do 1MB)."
+    "advancedAssetsSizeError": "Datoteka je veća od 500KB. Molimo odaberite manju datoteku.",
+    "advancedAssetsLargeLimitError": "Samo jedna datoteka može biti veća od 100KB (do 500KB).",
+    "advancedAssetsTypeError": "Dozvoljeni formati: PNG, JPG, GIF, WAV, MP3."
   },
   "GoldenBook": {
     "anonymousDonor": "Anonimni donator",

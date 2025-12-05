@@ -1041,8 +1041,9 @@
     "tag_business": "Geschäft",
     "tag_entertainment": "Unterhaltung",
     "tag_other": "Sonstiges",
-    "advancedAssetsSizeError": "Das Bild ist größer als 1MB. Bitte wählen Sie ein kleineres Bild.",
-    "advancedAssetsLargeLimitError": "Nur eine Datei darf größer als 100 KB sein (bis zu 1 MB)."
+    "advancedAssetsSizeError": "Die Datei ist größer als 500KB. Bitte wählen Sie eine kleinere Datei.",
+    "advancedAssetsLargeLimitError": "Nur eine Datei darf größer als 100KB sein (bis zu 500KB).",
+    "advancedAssetsTypeError": "Erlaubte Formate: PNG, JPG, GIF, WAV, MP3."
   },
   "App": {
     "notFound": "App nicht gefunden",

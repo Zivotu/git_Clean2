@@ -54,8 +54,8 @@ const MIN_LONG_DESCRIPTION = 20;
 const SCREENSHOT_FIELD_COUNT = 2;
 const MAX_CUSTOM_ASSET_COUNT = 60;
 const MAX_REGULAR_ASSET_BYTES = 100 * 1024;
-const MAX_LARGE_ASSET_BYTES = 1 * 1024 * 1024;
-const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+const MAX_LARGE_ASSET_BYTES = 500 * 1024;
+const ALLOWED_CUSTOM_ASSET_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'audio/wav', 'audio/mpeg'];
 
 interface CustomAsset {
   id: string;

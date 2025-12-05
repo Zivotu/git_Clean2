@@ -927,8 +927,9 @@
     "tag_business": "Business",
     "tag_entertainment": "Entertainment",
     "tag_other": "Other",
-    "advancedAssetsSizeError": "Image is larger than 1MB. Please select a smaller image.",
-    "advancedAssetsLargeLimitError": "Only one file can be larger than 100KB (up to 1MB)."
+    "advancedAssetsSizeError": "File is larger than 500KB. Please select a smaller file.",
+    "advancedAssetsLargeLimitError": "Only one file can be larger than 100KB (up to 500KB).",
+    "advancedAssetsTypeError": "Allowed formats: PNG, JPG, GIF, WAV, MP3."
   },
   "App": {
     "notFound": "App not found",
