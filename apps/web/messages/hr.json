@@ -642,10 +642,10 @@
   },
   "Home": {
     "headline": {
-      "one": "Objavi svoje AI aplikacije",
-      "two": "u tri klika"
+      "one": "Od ideje do aplikacije",
+      "two": "u 5 minuta"
     },
-    "tagline": "Kreiraj aplikaciju u Google AI Studiju, ChatGPT-u ili drugom LLM-u i objavi je na Thesari u tri klika – bez servera, bez konfiguracije, samo izradi i podijeli.",
+    "tagline": "Iskoristi snagu Google AI Studija ili ChatGPT-a. Opiši što želiš, kopiraj kod i objavi odmah. Bez servera, bez konfiguracije.",
     "trending": "Trenutno popularno",
     "appsCount": "{count} aplikacija",
     "search": {
@@ -711,6 +711,20 @@
     "fullDetails": "Detalji"
   },
   "BetaHome": {
+    "steps": {
+      "1": {
+        "title": "1. Opiši ideju",
+        "desc": "Opiši ideju u Google AI Studiju ili ChatGPT-u."
+      },
+      "2": {
+        "title": "2. Kopiraj kod",
+        "desc": "Preuzmi generirani kod ili ZIP paket."
+      },
+      "3": {
+        "title": "3. Objavi",
+        "desc": "Zalijepi (ili uploadaj) i objavi na Thesari."
+      }
+    },
     "tags": {
       "games": "Igre",
       "quiz": "Kvizovi",

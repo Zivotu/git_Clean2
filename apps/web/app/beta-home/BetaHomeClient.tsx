@@ -903,15 +903,42 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
               <p className={`mt-3 max-w-2xl text-base ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
                 {tHome('tagline') || 'Curirani marketplace s tisućama mini aplikacija, igara i utilsa.'}
               </p>
-              {/* Promotion Warning Banner */}
-              <div className={`mt-4 rounded-xl border px-4 py-3 ${isDark ? 'border-amber-900/50 bg-amber-900/20 text-amber-100' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-                <div className="flex items-start gap-3">
-                  <Bell className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm leading-relaxed">
-                    {tHome('promotionWarning') || 'To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration, otherwise you lose that right and we will give that spot to someone else.'}
-                  </p>
-                </div>
+              <div className="mt-8 flex flex-wrap gap-4">
+                <Link
+                  href="/create"
+                  className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 ${isDark ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-emerald-500 hover:bg-emerald-600'
+                    }`}
+                >
+                  <Rocket className="h-4 w-4" />
+                  <span>{tHome('publish') || 'Objavi Aplikaciju'}</span>
+                </Link>
+                <Link
+                  href="/tutorial"
+                  className={`inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-colors ${isDark
+                    ? 'border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                    }`}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span>{tNav('tutorials') || 'Vodiči'}</span>
+                </Link>
               </div>
+
+              {/* 3 Steps Visual */}
+              <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[
+                  { title: tBeta('steps.1.title', '1. Opiši ideju'), desc: tBeta('steps.1.desc', 'Opiši ideju u Google AI Studiju ili ChatGPT-u.'), icon: '💡' },
+                  { title: tBeta('steps.2.title', '2. Kopiraj kod'), desc: tBeta('steps.2.desc', 'Preuzmi generirani kod ili ZIP paket.'), icon: '📋' },
+                  { title: tBeta('steps.3.title', '3. Objavi'), desc: tBeta('steps.3.desc', 'Zalijepi (ili uploadaj) i objavi na Thesari.'), icon: '🚀' },
+                ].map((step, idx) => (
+                  <div key={idx} className={`rounded-xl border p-3 ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-slate-100 bg-slate-50/50'}`}>
+                    <div className="mb-1 text-lg">{step.icon}</div>
+                    <div className={`font-semibold ${isDark ? 'text-zinc-200' : 'text-slate-700'}`}>{step.title}</div>
+                    <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{step.desc}</div>
+                  </div>
+                ))}
+              </div>
+
               <div className="mt-5 h-1 w-16 rounded-full bg-emerald-500/60" />
             </div>
 
@@ -1003,6 +1030,17 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Compact Promotion Warning Banner */}
+              <div className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 text-sm leading-tight ${isDark ? 'border-amber-900/50 bg-amber-900/10 text-amber-200/80' : 'border-amber-200 bg-amber-50 text-amber-900/80'
+                }`}>
+                <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <p>
+                  {tHome('promotionWarning') || 'To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration.'}
+                </p>
               </div>
             </div>
           </div>
@@ -1261,7 +1299,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
 
         </div>
-      </main>
+      </main >
       {showEarlyAccessPopup && earlyAccessCampaign?.isActive && (
         <div
           className={`fixed bottom-6 right-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border p-5 shadow-2xl backdrop-blur ${isDark ? 'border-[#27272A] bg-[#0B0B10]/95 text-zinc-100' : 'border-slate-200 bg-white text-slate-900'
@@ -1304,7 +1342,8 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
             </button>
           </div>
         </div>
-      )}
+      )
+      }
 
       <BetaDetailsModal app={selectedApp} onClose={closeDetails} isDark={isDark} labels={listingLabels} />
       <PartnershipModal open={showPartnership} onClose={() => setShowPartnership(false)} />

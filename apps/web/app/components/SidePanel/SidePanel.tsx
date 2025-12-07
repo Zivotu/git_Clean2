@@ -13,6 +13,8 @@ import {
   Users,
   Sparkles,
   Wand2,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n-provider';
 
@@ -139,6 +141,7 @@ export default function SidePanel({
   const [roboHover, setRoboHover] = React.useState(false);
   const [roboText, setRoboText] = React.useState('');
   const [activeLight, setActiveLight] = React.useState(0);
+  const [ledActive, setLedActive] = React.useState(true);
   const roboMessage = tBeta(
     'sidebar.roboMessage',
     "TUTORIAL\nFrom\nIdea\nto a\nPublished\nApp\non\nThesara"
@@ -272,11 +275,12 @@ export default function SidePanel({
       </div>
 
       <nav className="space-y-1 text-base font-semibold">
-        <SidebarItem label={sidebarLabels.nav.discover} icon={LayoutDashboard} active isDark={isDark} href="/" />
+        <SidebarItem label={sidebarLabels.nav.discover} icon={LayoutDashboard} isDark={isDark} href="/" />
         <SidebarItem
           label={messages['BetaHome.sidebar.nav.feelingLucky'] || 'Feeling lucky'}
           icon={Gamepad2}
           isDark={isDark}
+          active
           onClick={async () => {
             try {
               const { getListings } = await import('@/lib/loaders');
@@ -301,68 +305,105 @@ export default function SidePanel({
         <SidebarItem label={sidebarLabels.nav.myCreators ?? 'Creators'} icon={Users} isDark={isDark} href="/my-creators" />
       </nav>
 
-      <div
-        className={`mt-4 -mx-6 rounded-2xl border px-6 py-4 text-sm transition-all duration-300 ${isDark
-          ? 'border-[#27272A] bg-gradient-to-br from-[#18181B] via-[#18181B] to-[#020617]'
-          : 'border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100'
-          }`}
-      >
-        <div className="flex flex-col gap-2">
-          <div className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#A855F7]/20 via-[#22C55E]/20 to-transparent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#A855F7]">
-            <Sparkles className="mr-1 h-3 w-3" />
-            <span>{sidebarLabels.creatorMode.badge}</span>
+      <div className="mt-4 -mx-6 relative">
+        {/* LED Border Effect */}
+        {ledActive && (
+          <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
+            <style dangerouslySetInnerHTML={{
+              __html: `
+              @keyframes fillBottomUp {
+                0% { height: 0%; opacity: 0.2; }
+                30% { height: 100%; opacity: 0.8; }
+                70% { height: 100%; opacity: 0.8; }
+                100% { height: 0%; opacity: 0.2; }
+              }
+            `}} />
+            <div
+              className={`absolute bottom-0 left-0 right-0 blur-lg ${isDark ? 'bg-[#A855F7]' : 'bg-[#22C55E]'
+                }`}
+              style={{
+                animation: 'fillBottomUp 10s ease-in-out infinite'
+              }}
+            />
           </div>
-          <div>
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-zinc-50' : 'text-slate-900'}`}>{sidebarLabels.creatorMode.title}</h2>
-            <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-              {sidebarLabels.creatorMode.description}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-1 text-[12px]">
-            {llmSources.map((provider) => (
-              <a
-                key={provider.href}
-                href={provider.href}
-                target="_blank"
-                rel="noreferrer"
-                className={`rounded-full border px-2 py-0.5 transition-colors ${(provider as any).highlight
-                  ? isDark
-                    ? 'bg-emerald-950 border-emerald-800 text-emerald-400 hover:bg-emerald-900 font-medium'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-medium'
-                  : isDark
-                    ? 'border-[#27272A] bg-black/40 text-zinc-300 hover:text-zinc-100'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
-                  }`}
+        )}
+
+        {/* Main Content Box */}
+        <div
+          className={`relative rounded-2xl px-6 py-4 text-sm transition-all duration-300 ${ledActive ? 'm-[1.5px]' : 'border'} ${isDark
+            ? `bg-gradient-to-br from-[#18181B] via-[#18181B] to-[#020617] ${ledActive ? 'border-transparent' : 'border-[#27272A]'}`
+            : `bg-gradient-to-br from-white via-slate-50 to-slate-100 ${ledActive ? 'border-transparent' : 'border-slate-200'}`
+            }`}
+        >
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#A855F7]/20 via-[#22C55E]/20 to-transparent px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#A855F7]">
+                <Sparkles className="mr-1 h-3 w-3" />
+                <span>{sidebarLabels.creatorMode.badge}</span>
+              </div>
+
+              {/* LED Toggle Switch */}
+              <button
+                onClick={() => setLedActive(!ledActive)}
+                className={`transition-colors ${isDark ? 'text-zinc-600 hover:text-zinc-400' : 'text-slate-400 hover:text-slate-600'}`}
+                title={ledActive ? "Disable effects" : "Enable effects"}
               >
-                {provider.label}
-              </a>
-            ))}
-          </div>
-          <ol className="space-y-2">
-            {creatorSteps.map((step, index) => (
-              <li className="flex gap-2" key={step.title}>
-                <span className={`mt-0.5 h-[18px] w-[18px] flex-shrink-0 rounded-full text-center text-[10px] font-bold ${creatorStepColors[index] ?? 'bg-[#A855F7] text-white'}`}>
-                  {index + 1}
-                </span>
-                <div>
-                  <p className="font-semibold">{step.title}</p>
-                  <p className={isDark ? 'text-zinc-400' : 'text-slate-500'}>{step.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-          <div className="rounded-xl border border-dashed px-3 py-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A855F7]">{sidebarLabels.creatorMode.memoryTitle}</p>
-            {sidebarLabels.creatorMode.memoryDetails.map((detail) => (
-              <p key={detail} className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                {detail}
+                {ledActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+              </button>
+            </div>
+
+            <div>
+              <h2 className={`text-lg font-semibold ${isDark ? 'text-zinc-50' : 'text-slate-900'}`}>{sidebarLabels.creatorMode.title}</h2>
+              <p className={`text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                {sidebarLabels.creatorMode.description}
               </p>
-            ))}
+            </div>
+            <div className="flex flex-wrap gap-1 text-[12px]">
+              {llmSources.map((provider) => (
+                <a
+                  key={provider.href}
+                  href={provider.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`rounded-full border px-2 py-0.5 transition-colors ${(provider as any).highlight
+                    ? isDark
+                      ? 'bg-emerald-950 border-emerald-800 text-emerald-400 hover:bg-emerald-900 font-medium'
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-medium'
+                    : isDark
+                      ? 'border-[#27272A] bg-black/40 text-zinc-300 hover:text-zinc-100'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
+                    }`}
+                >
+                  {provider.label}
+                </a>
+              ))}
+            </div>
+            <ol className="space-y-2">
+              {creatorSteps.map((step, index) => (
+                <li className="flex gap-2" key={step.title}>
+                  <span className={`mt-0.5 h-[18px] w-[18px] flex-shrink-0 rounded-full text-center text-[10px] font-bold ${creatorStepColors[index] ?? 'bg-[#A855F7] text-white'}`}>
+                    {index + 1}
+                  </span>
+                  <div>
+                    <p className="font-semibold">{step.title}</p>
+                    <p className={isDark ? 'text-zinc-400' : 'text-slate-500'}>{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            <div className="rounded-xl border border-dashed px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#A855F7]">{sidebarLabels.creatorMode.memoryTitle}</p>
+              {sidebarLabels.creatorMode.memoryDetails.map((detail) => (
+                <p key={detail} className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  {detail}
+                </p>
+              ))}
+            </div>
+            <Link href="/create" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#A855F7] via-[#A855F7] to-[#22C55E] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
+              <Wand2 className="h-5 w-5" />
+              <span>{sidebarLabels.creatorMode.cta}</span>
+            </Link>
           </div>
-          <Link href="/create" className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#A855F7] via-[#A855F7] to-[#22C55E] px-3 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-            <Wand2 className="h-5 w-5" />
-            <span>{sidebarLabels.creatorMode.cta}</span>
-          </Link>
         </div>
       </div>
 

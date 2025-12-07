@@ -650,10 +650,10 @@
   },
   "Home": {
     "headline": {
-      "one": "Publish your AI apps",
-      "two": "in three clicks"
+      "one": "From Idea to App",
+      "two": "in 5 minutes"
     },
-    "tagline": "Create an app in Google AI Studio, ChatGPT, or any other LLM and publish it on Thesara in three clicks â€“ no server, no configuration, just build and share.",
+    "tagline": "Use the power of Google AI Studio or ChatGPT. Describe what you want, copy the code, and publish instantly. No servers, no config.",
     "trending": "Trending now",
     "appsCount": "{count} apps",
     "search": {
@@ -720,6 +720,20 @@
   "BetaHome": {
     "sidebar": {
       "roboMessage": "TUTORIAL\nFrom\nIdea\nto a\nPublished\nApp\non\nThesara"
+    },
+    "steps": {
+      "1": {
+        "title": "1. Describe Idea",
+        "desc": "Describe your idea in Google AI Studio or ChatGPT."
+      },
+      "2": {
+        "title": "2. Copy Code",
+        "desc": "Download the generated code or ZIP bundle."
+      },
+      "3": {
+        "title": "3. Publish",
+        "desc": "Paste (or upload) and publish on Thesara."
+      }
     },
     "tags": {
       "games": "Games",

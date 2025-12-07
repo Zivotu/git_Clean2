@@ -322,7 +322,20 @@ export default function Header({
 
   const NavLinks = () => (
     <>
-      <HeaderChip icon={Video} label={shortVideoLabel} isDark={isDark} onClick={() => { setShowVideoPopup(true); setIsMobileMenuOpen(false); }} />
+      <Link
+        href="https://youtube.com/shorts/EdwGjcLEn1g"
+        target="_blank"
+        className="transition-opacity hover:opacity-80"
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <Image
+          src={isDark ? '/assets/VideoLink_Button_B.png' : '/assets/VideoLink_Button_W.png'}
+          alt={shortVideoLabel || "Short Video"}
+          width={120}
+          height={32}
+          className="h-8 w-auto object-contain"
+        />
+      </Link>
       {showProLink && (
         <HeaderChip icon={Crown} label={proLinkText} isDark={isDark} subtle href="/pro" onClick={() => setIsMobileMenuOpen(false)} />
       )}
