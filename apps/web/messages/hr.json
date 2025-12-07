@@ -8,6 +8,7 @@
     "browseApps": "Pregledaj aplikacije",
     "login": "Prijava",
     "logout": "Odjava",
+    "viewProfile": "Pogledaj profil",
     "doctor": "Doktor",
     "platform": "Platforma",
     "resources": "Resursi",
@@ -1631,5 +1632,16 @@
       "title": "Učitavanje igre...",
       "subtitle": "Pripremamo tvoju avanturu"
     }
+  },
+  "MyCreatorsPage": {
+    "title": "Moji Kreatori",
+    "loginPrompt": "Prijavite se kako biste vidjeli svoje favorite.",
+    "loginButton": "Prijava",
+    "loading": "Učitavanje…",
+    "noFavorites": "Još nemate favorita.",
+    "addFavoritesHint": "Posjetite profil kreatora i kliknite \"Dodaj u favorite\".",
+    "profileLink": "Profil",
+    "noPublicApps": "Nema javnih aplikacija.",
+    "noGraphic": "Bez grafike"
   }
 }

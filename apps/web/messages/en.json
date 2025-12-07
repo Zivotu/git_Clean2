@@ -10,6 +10,7 @@
     "browseApps": "Browse Apps",
     "login": "Sign In",
     "logout": "Sign Out",
+    "viewProfile": "View profile",
     "doctor": "Doctor",
     "platform": "Platform",
     "resources": "Resources",
@@ -1742,5 +1743,16 @@
       "title": "Loading game...",
       "subtitle": "Preparing your adventure"
     }
+  },
+  "MyCreatorsPage": {
+    "title": "My Creators",
+    "loginPrompt": "Log in to see your favorites.",
+    "loginButton": "Sign In",
+    "loading": "Loading...",
+    "noFavorites": "You don't have favorites yet.",
+    "addFavoritesHint": "Visit a creator's profile and click \"Add to favorites\".",
+    "profileLink": "Profile",
+    "noPublicApps": "No public apps.",
+    "noGraphic": "No graphic"
   }
 }

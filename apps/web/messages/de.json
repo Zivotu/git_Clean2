@@ -10,6 +10,7 @@
     "browseApps": "Apps durchsuchen",
     "login": "Anmelden",
     "logout": "Abmelden",
+    "viewProfile": "Profil ansehen",
     "doctor": "Doktor",
     "platform": "Plattform",
     "resources": "Ressourcen",
@@ -1676,5 +1677,16 @@
       "title": "Spiel wird geladen...",
       "subtitle": "Wir bereiten dein Abenteuer vor"
     }
+  },
+  "MyCreatorsPage": {
+    "title": "Meine Creators",
+    "loginPrompt": "Melden Sie sich an, um Ihre Favoriten zu sehen.",
+    "loginButton": "Anmelden",
+    "loading": "Laden...",
+    "noFavorites": "Sie haben noch keine Favoriten.",
+    "addFavoritesHint": "Besuchen Sie das Profil eines Creators und klicken Sie auf \"Zu Favoriten hinzufügen\".",
+    "profileLink": "Profil",
+    "noPublicApps": "Keine öffentlichen Apps.",
+    "noGraphic": "Keine Grafik"
   }
 }

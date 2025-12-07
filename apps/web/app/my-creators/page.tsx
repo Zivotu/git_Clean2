@@ -74,7 +74,8 @@ async function loadEntitledCreators(): Promise<FavoriteCreator[]> {
 export default function MyCreatorsPage() {
   const { user } = useAuth();
   const loginHref = useLoginHref();
-  const { locale } = useI18n();
+  const { locale, messages } = useI18n();
+  const t = (key: string) => messages[`MyCreatorsPage.${key}`] || key;
   const [loading, setLoading] = useState(true);
   const [creators, setCreators] = useState<FavoriteCreator[]>([]);
   const [appsByCreator, setAppsByCreator] = useState<Record<string, AppLite[]>>({});
@@ -149,19 +150,19 @@ export default function MyCreatorsPage() {
     if (!user) {
       return (
         <div className={`rounded-3xl border p-8 text-center ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white/70'}`}>
-          <p className={isDark ? 'text-zinc-400' : 'text-gray-600'}>Prijavite se kako biste vidjeli svoje favorite.</p>
-          <Link href={loginHref} className="mt-4 inline-block px-4 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-semibold transition">Prijava</Link>
+          <p className={isDark ? 'text-zinc-400' : 'text-gray-600'}>{t('loginPrompt')}</p>
+          <Link href={loginHref} className="mt-4 inline-block px-4 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 font-semibold transition">{t('loginButton')}</Link>
         </div>
       );
     }
     if (loading) {
-      return <p className={isDark ? 'text-zinc-500' : 'text-gray-500'}>Učitavanje…</p>;
+      return <p className={isDark ? 'text-zinc-500' : 'text-gray-500'}>{t('loading')}</p>;
     }
     if (creators.length === 0) {
       return (
         <div className={`text-center ${isDark ? 'text-zinc-400' : 'text-gray-600'}`}>
-          <p>Još nemate favorita.</p>
-          <p className="mt-2">Posjetite profil kreatora i kliknite &quot;Dodaj u favorite&quot;.</p>
+          <p>{t('noFavorites')}</p>
+          <p className="mt-2">{t('addFavoritesHint')}</p>
         </div>
       );
     }
@@ -180,11 +181,11 @@ export default function MyCreatorsPage() {
                     <div className={`text-sm group-hover:underline ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>@{c.handle}</div>
                   </div>
                 </Link>
-                <Link href={`/u/${c.handle}`} className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium">Profil</Link>
+                <Link href={`/u/${c.handle}`} className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline font-medium">{t('profileLink')}</Link>
               </header>
               <div className="px-4 pb-4">
                 {apps.length === 0 ? (
-                  <p className={`text-sm ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>Nema javnih aplikacija.</p>
+                  <p className={`text-sm ${isDark ? 'text-zinc-500' : 'text-gray-500'}`}>{t('noPublicApps')}</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {apps.slice(0, 6).map((a) => {
@@ -197,7 +198,7 @@ export default function MyCreatorsPage() {
                               <Image src={img} alt={a.title} fill className="object-cover group-hover:opacity-90" style={{ color: 'transparent' }} />
                             ) : (
                               <div className={`w-full h-full text-[11px] font-medium grid place-items-center ${isDark ? 'bg-[#09090B] text-zinc-600' : 'bg-slate-100 text-slate-500'}`}>
-                                Bez grafike
+                                {t('noGraphic')}
                               </div>
                             )}
                           </div>
@@ -218,7 +219,7 @@ export default function MyCreatorsPage() {
   return (
     <div className="w-full">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <h1 className={`text-3xl md:text-4xl font-black mb-6 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>Moji Kreatori</h1>
+        <h1 className={`text-3xl md:text-4xl font-black mb-6 ${isDark ? 'text-zinc-100' : 'text-gray-900'}`}>{t('title')}</h1>
         {content}
       </div>
     </div>

@@ -271,6 +271,13 @@ export default function Header({
   // Creator documents sometimes fall back to UID when created manually, so prefer auth name in that case.
   const resolvedProfileName = sanitizedCreatorName || fallbackProfileName || 'Guest';
   const resolvedProfilePhoto = creatorPhoto || ((user as any)?.photoURL ?? null);
+
+  const profileLabels = {
+    login: (messages && messages['Nav.login']) || 'Sign In',
+    logout: (messages && messages['Nav.logout']) || 'Sign Out',
+    viewProfile: (messages && messages['Nav.viewProfile']) || 'View profile',
+  };
+
   const defaultProfileSection = (
     <ProfileCard
       user={user}
@@ -278,6 +285,9 @@ export default function Header({
       photo={resolvedProfilePhoto}
       isDark={isDark}
       showCrown={showCrownInProfile}
+      loginLabel={profileLabels.login}
+      logoutLabel={profileLabels.logout}
+      viewProfileLabel={profileLabels.viewProfile}
       onLogout={() => {
         try {
           if (auth) void signOut(auth).catch(() => { });
@@ -294,6 +304,9 @@ export default function Header({
       isDark={isDark}
       showCrown={showCrownInProfile}
       compact={true}
+      loginLabel={profileLabels.login}
+      logoutLabel={profileLabels.logout}
+      viewProfileLabel={profileLabels.viewProfile}
       onLogout={() => {
         try {
           if (auth) void signOut(auth).catch(() => { });
