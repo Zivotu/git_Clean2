@@ -710,9 +710,6 @@
     "fullDetails": "Detalji"
   },
   "BetaHome": {
-    "sidebar": {
-      "roboMessage": "TUTORIJAL\nOd\nIdeje\ndo\nObjavljene\nAplikacije\nna\nThesari"
-    },
     "tags": {
       "games": "Igre",
       "quiz": "Kvizovi",
@@ -724,110 +721,128 @@
     },
     "tag": {
       "trending": "Popularno"
-    }
-  },
-  "hero": {
-    "badge": "Otkrijte nevjerojatne mini aplikacije i igre",
-    "random": {
-      "label": "Nasumični odabir",
-      "details": "Pogledaj detalje"
+    },
+    "listing": {
+      "badge": {
+        "free": "BESPLATNO",
+        "pending": "Čeka odobrenje"
+      },
+      "label": {
+        "creator": "Kreator"
+      },
+      "actions": {
+        "play": "Igraj",
+        "fullDetails": "Detalji",
+        "edit": "Uredi"
+      },
+      "tag": {
+        "trending": "Popularno"
+      }
+    },
+    "hero": {
+      "badge": "Otkrijte nevjerojatne mini aplikacije i igre",
+      "random": {
+        "label": "Nasumični odabir",
+        "details": "Pogledaj detalje"
+      },
+      "actions": {
+        "submit": "Objavi aplikaciju"
+      },
+      "badges": {
+        "curated": "Odabrano"
+      },
+      "card": {
+        "description": "Izradite kolekcije AI iskustava i podijelite ih putem linka.",
+        "stats": {
+          "apps": "{count}+ Mini aplikacija",
+          "favorites": "{count} favorita"
+        }
+      }
+    },
+    "promo": {
+      "featuredLabel": "Izdvojeno",
+      "learnMore": "Saznaj više"
+    },
+    "view": {
+      "gridLabel": "Mreža",
+      "decreaseGrid": "Prikaži manje kartica po redu",
+      "increaseGrid": "Prikaži više kartica po redu"
+    },
+    "sort": {
+      "newest": "Najnovije",
+      "popular": "Najpopularnije",
+      "alpha": "Abecedno",
+      "label": "Sortiraj po"
+    },
+    "metrics": {
+      "liveUsage": "Korištenje uživo",
+      "apps": "Objavljene aplikacije",
+      "members": "Članova zajednice",
+      "runs": "Ukupno pokretanja"
+    },
+    "empty": {
+      "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
+      "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
+      "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
+    },
+    "filters": {
+      "tagsHeading": "Popularne oznake",
+      "clear": "Poništi filtere"
     },
     "actions": {
-      "submit": "Objavi aplikaciju"
+      "refresh": "Osvježi",
+      "retry": "Pokušaj ponovo"
     },
-    "badges": {
-      "curated": "Odabrano"
+    "errors": {
+      "listings": "Ne mogu osvježiti feed. Pokušajte ponovo."
     },
-    "card": {
-      "description": "Izradite kolekcije AI iskustava i podijelite ih putem linka.",
-      "stats": {
-        "apps": "{count}+ Mini aplikacija",
-        "favorites": "{count} favorita"
+    "sections": {
+      "trending": {
+        "count": "{count} aplikacija"
       }
-    }
-  },
-  "promo": {
-    "featuredLabel": "Izdvojeno",
-    "learnMore": "Saznaj više"
-  },
-  "view": {
-    "gridLabel": "Mreža",
-    "decreaseGrid": "Prikaži manje kartica po redu",
-    "increaseGrid": "Prikaži više kartica po redu"
-  },
-  "sort": {
-    "newest": "Najnovije",
-    "popular": "Najpopularnije",
-    "alpha": "Abecedno",
-    "label": "Sortiraj po"
-  },
-  "metrics": {
-    "liveUsage": "Korištenje uživo",
-    "apps": "Objavljene aplikacije",
-    "members": "Članova zajednice",
-    "runs": "Ukupno pokretanja"
-  },
-  "empty": {
-    "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
-    "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
-    "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
-  },
-  "filters": {
-    "tagsHeading": "Popularne oznake",
-    "clear": "Poništi filtere"
-  },
-  "actions": {
-    "refresh": "Osvježi",
-    "retry": "Pokušaj ponovo"
-  },
-  "errors": {
-    "listings": "Ne mogu osvježiti feed. Pokušajte ponovo."
-  },
-  "sections": {
-    "trending": {
-      "count": "{count} aplikacija"
-    }
-  },
-  "search": {
-    "liveStats": "{apps} aktivnih aplikacija · {plays} igranja"
-  },
-  "sidebar": {
-    "title": "Thesara Space v2.0",
-    "subtitle": "Od AI razgovora do vaše mini aplikacije.",
-    "nav": {
-      "discover": "Otkrij",
-      "games": "Igre",
-      "productivity": "Produktivnost",
-      "myApps": "Moje aplikacije",
-      "paidApps": "Plaćene aplikacije",
-      "myProjects": "Projekti",
-      "myCreators": "Kreatori",
-      "feelingLucky": "Osjećam se sretno"
     },
-    "creatorMode": {
-      "badge": "Kreatorski način",
-      "title": "Od AI razgovora do vaše mini aplikacije",
-      "description": "Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.",
-      "steps": {
-        "0": {
-          "title": "Razgovaraj s AI-jem",
-          "text": "Zatraži asistenta da isporuči mini aplikaciju."
-        },
-        "1": {
-          "title": "Preuzmi kod",
-          "text": "Dobivaš bundle spreman za upload."
-        },
-        "2": {
-          "title": "Objavi na Thesari",
-          "text": "Upload, potvrdi i klikni Play."
-        }
+    "search": {
+      "liveStats": "{apps} aktivnih aplikacija · {plays} igranja"
+    },
+    "sidebar": {
+      "roboMessage": "TUTORIJAL\nOd\nIdeje\ndo\nObjavljene\nAplikacije\nna\nThesari",
+      "title": "Thesara Space v2.0",
+      "subtitle": "Od AI razgovora do vaše mini aplikacije.",
+      "nav": {
+        "discover": "Otkrij",
+        "games": "Igre",
+        "productivity": "Produktivnost",
+        "myApps": "Moje aplikacije",
+        "paidApps": "Plaćene aplikacije",
+        "myProjects": "Projekti",
+        "myCreators": "Kreatori",
+        "feelingLucky": "Osjećam se sretno"
       },
-      "memory": {
-        "title": "Memorija i sobe",
-        "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
-        "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
-      },
-      "cta": "Objavi svoju aplikaciju"
+      "creatorMode": {
+        "badge": "Kreatorski način",
+        "title": "Od AI razgovora do vaše mini aplikacije",
+        "description": "Stvori igru ili alat, upload-aj ga i dijeli s cijelom zajednicom.",
+        "steps": {
+          "0": {
+            "title": "Razgovaraj s AI-jem",
+            "text": "Zatraži asistenta da isporuči mini aplikaciju."
+          },
+          "1": {
+            "title": "Preuzmi kod",
+            "text": "Dobivaš bundle spreman za upload."
+          },
+          "2": {
+            "title": "Objavi na Thesari",
+            "text": "Upload, potvrdi i klikni Play."
+          }
+        },
+        "memory": {
+          "title": "Memorija i sobe",
+          "detail1": "Dodatna memorija koju LLM-ovi nemaju.",
+          "detail2": "Aktiviraj sobe kad želiš više korisnika s trajnim stanjima."
+        },
+        "cta": "Objavi svoju aplikaciju"
+      }
     }
   },
   "header": {
@@ -1135,10 +1150,10 @@
       "title": "Cijena repozitorija",
       "locked": "Postavljanje cijena je zaključano dok ne dovršiš Stripe onboarding.",
       "setupStripe": "Podesi isplate (Stripe)",
-      "allAccess": "All‑Access {price}/mj",
+      "allAccess": "All-Access {price}/mj",
       "lastUpdated": "Zadnja promjena: {date}",
       "edit": "Uredi",
-      "description": "Postavite mjesečnu cijenu za All‑Access (pristup svim vašim aplikacijama). Ako ostavite prazno ili 0, All‑Access je isključen.",
+      "description": "Postavite mjesečnu cijenu za All-Access (pristup svim vašim aplikacijama). Ako ostavite prazno ili 0, All-Access je isključen.",
       "priceLabel": "Cijena (USD)",
       "save": "Spremi",
       "saving": "Spremanje…",
@@ -1508,22 +1523,7 @@
       "title": "Korisnik nije pronađen",
       "description": "Nismo mogli pronaći profil za @{username}",
       "backHome": "Natrag na početnu"
-    },
-    "actions": {
-      "addToFavorites": "Dodaj u favorite",
-      "subscribe": "Pretplati se"
-    },
-    "apps": {
-      "title": "Aplikacije",
-      "noAppsTitle": "Još nema aplikacija",
-      "noAppsDescription": "Ovaj kreator nije objavio nijednu javnu aplikaciju."
     }
-  },
-  "ProgressModal": {
-    "uploading": "Učitavanje vaše mini aplikacije na Thesaru...",
-    "errorOccurred": "Došlo je do greške.",
-    "percentComplete": "{progress}% završeno",
-    "close": "Zatvori"
   },
   "TeamCreation": {
     "title": "TRAŽIM EKIPU ZA AI MARKETPLACE IZ GARAŽE",
@@ -1643,5 +1643,11 @@
     "profileLink": "Profil",
     "noPublicApps": "Nema javnih aplikacija.",
     "noGraphic": "Bez grafike"
+  },
+  "ProApps": {
+    "pageTitle": "Pro Aplikacije",
+    "subtitle": "Vaše pretplaćene aplikacije",
+    "emptyTitle": "Još nema pretplaćenih aplikacija",
+    "emptySubtitle": "Pretplatite se na neke aplikacije kako biste ih vidjeli ovdje."
   }
 }

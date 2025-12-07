@@ -15,7 +15,7 @@ import { handleFetchError } from '@/lib/handleFetchError';
 import { apiFetch, ApiError } from '@/lib/api';
 import AppCard, { type Listing } from '@/components/AppCard';
 import { useI18n } from '@/lib/i18n-provider';
-export {};
+export { };
 function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
@@ -24,11 +24,8 @@ export default function ProAppsPage() {
   const [handles, setHandles] = useState<Record<string, string>>({});
   const router = useRouter();
   const { messages, locale } = useI18n();
-  const tHome = (k: string, params?: Record<string, any>) => {
-    let s = messages[`Home.${k}`] || '';
-    if (params) for (const [pk, pv] of Object.entries(params)) s = s.replaceAll(`{${pk}}`, String(pv));
-    return s || k;
-  };
+  const tProApps = (k: string) => messages[`ProApps.${k}`] || k;
+
   const [items, setItems] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -72,7 +69,7 @@ export default function ProAppsPage() {
           const js = await res.json();
           const h = js?.handle || js?.creator?.handle;
           if (h && !cancelled) map[uid] = h;
-        } catch {}
+        } catch { }
       }
       if (!cancelled) setHandles(map);
     })();
@@ -83,9 +80,9 @@ export default function ProAppsPage() {
       <section className="max-w-7xl mx-auto px-4 pt-12 pb-6">
         <div className="flex flex-col items-center text-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
-            ProApps
+            {tProApps('pageTitle')}
           </h1>
-          <p className="mt-3 text-lg text-gray-500 max-w-2xl">Your subscribed applications</p>
+          <p className="mt-3 text-lg text-gray-500 max-w-2xl">{tProApps('subtitle')}</p>
         </div>
       </section>
       <main className="max-w-7xl mx-auto px-4 pb-16">
@@ -112,18 +109,18 @@ export default function ProAppsPage() {
                   isSubscribed: true,
                   author: { ...item.author, handle: handles[item.author?.uid || ''] || item.author?.handle },
                 }}
-                toggleLike={() => {}}
+                toggleLike={() => { }}
                 busy={{}}
                 viewMode="grid"
-                onDetails={() => {}}
+                onDetails={() => { }}
                 priority={i === 0}
               />
             ))}
           </div>
         ) : (
           <div className="text-center py-20">
-            <h3 className="text-2xl font-bold text-gray-900">No subscribed apps yet</h3>
-            <p className="mt-2 text-gray-500">Subscribe to some apps to see them here.</p>
+            <h3 className="text-2xl font-bold text-gray-900">{tProApps('emptyTitle')}</h3>
+            <p className="mt-2 text-gray-500">{tProApps('emptySubtitle')}</p>
           </div>
         )}
       </main>

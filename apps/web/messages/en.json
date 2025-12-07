@@ -1754,5 +1754,11 @@
     "profileLink": "Profile",
     "noPublicApps": "No public apps.",
     "noGraphic": "No graphic"
+  },
+  "ProApps": {
+    "pageTitle": "ProApps",
+    "subtitle": "Your subscribed applications",
+    "emptyTitle": "No subscribed apps yet",
+    "emptySubtitle": "Subscribe to some apps to see them here."
   }
 }
