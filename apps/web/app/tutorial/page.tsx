@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/components/ThemeProvider';
 import { useI18n } from '@/lib/i18n-provider';
@@ -135,6 +135,27 @@ export default function TutorialPage() {
 
     const selectedIdea = APP_IDEAS.find((app: any) => app.id === selectedApp);
 
+    const trackEvent = async (eventName: string, params?: Record<string, any>) => {
+        // Clarity
+        if (typeof window !== 'undefined' && (window as any).clarity) {
+            (window as any).clarity('event', eventName);
+        }
+
+        // Firebase
+        try {
+            const { getAnalytics, logEvent } = await import('firebase/analytics');
+            const { default: app } = await import('@/lib/firebase');
+            const analytics = getAnalytics(app);
+            logEvent(analytics, eventName, params);
+        } catch (e) {
+            // Analytics might fail if ad blockers are present or if not configured
+        }
+    };
+
+    useEffect(() => {
+        trackEvent('view_tutorial');
+    }, []);
+
     const tutorialSchema = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
@@ -267,6 +288,7 @@ export default function TutorialPage() {
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(selectedIdea.prompt);
+                                        trackEvent('copy_tutorial_prompt', { prompt: selectedIdea.title });
                                         alert(translations.copied);
                                     }}
                                     className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded transition-colors font-medium"
