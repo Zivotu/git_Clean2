@@ -744,6 +744,7 @@
       }
     },
     "sidebar": {
+      "roboMessage": "TUTORIAL\nVon\nder\nIdee\nzur\nApp\nauf\nThesara",
       "title": "Thesara Space v2.0",
       "subtitle": "Vom AI-Chat zu deiner Mini-App.",
       "nav": {

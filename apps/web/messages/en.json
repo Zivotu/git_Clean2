@@ -717,6 +717,9 @@
     "fullDetails": "Full Details"
   },
   "BetaHome": {
+    "sidebar": {
+      "roboMessage": "TUTORIAL\nFrom\nIdea\nto a\nPublished\nApp\non\nThesara"
+    },
     "tags": {
       "games": "Games",
       "quiz": "Quizzes",

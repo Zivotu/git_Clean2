@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Gamepad2,
@@ -124,8 +124,44 @@ export default function SidePanel({
 }: SidePanelProps) {
   const { messages } = useI18n();
   const router = useRouter();
+  const pathname = usePathname();
   const tBeta = (key: string, fallback = '', params?: Record<string, string | number>) =>
     formatMessage((messages[`BetaHome.${key}`] as string) ?? fallback, params);
+
+  const [roboHover, setRoboHover] = React.useState(false);
+  const [roboText, setRoboText] = React.useState('');
+  const [activeLight, setActiveLight] = React.useState(0);
+  const roboMessage = tBeta(
+    'sidebar.roboMessage',
+    "TUTORIAL\nFrom\nIdea\nto a\nPublished\nApp\non\nThesara"
+  );
+  const isTutorial = pathname === '/tutorial';
+
+  // Robo type effect
+  React.useEffect(() => {
+    if (roboHover) {
+      let i = 0;
+      setRoboText('');
+      const timer = setInterval(() => {
+        setRoboText(roboMessage.slice(0, i + 1));
+        i++;
+        if (i >= roboMessage.length) clearInterval(timer);
+      }, 50);
+      return () => clearInterval(timer);
+    } else {
+      setRoboText('');
+    }
+  }, [roboHover, roboMessage]);
+
+  // Lights effect
+  React.useEffect(() => {
+    if (isTutorial) {
+      const interval = setInterval(() => {
+        setActiveLight((prev) => (prev + 1) % 6);
+      }, 600);
+      return () => clearInterval(interval);
+    }
+  }, [isTutorial]);
 
   const sidebarLabels: SidebarLabelShape = {
     title: tBeta('sidebar.title', 'Thesara Space v2.0'),
@@ -174,8 +210,54 @@ export default function SidePanel({
 
   const creatorSteps = sidebarLabels.creatorMode.steps;
 
+  // Calculate split index based on the first newline in the full message
+  const splitIndex = roboMessage.indexOf('\n');
+  const safeSplitIndex = splitIndex === -1 ? roboMessage.length : splitIndex;
+
+  const coloredPart = roboText.slice(0, safeSplitIndex);
+  const whitePart = roboText.slice(safeSplitIndex);
+
   return (
-    <aside className={className}>
+    <aside className={`${className} relative`}>
+      <div
+        className="absolute right-[calc(100%-6px)] top-[200px] hidden xl:flex flex-col items-center pr-0"
+        onMouseEnter={() => setRoboHover(true)}
+        onMouseLeave={() => setRoboHover(false)}
+      >
+        {isTutorial ? (
+          <div className="flex flex-col-reverse gap-3 py-4 -translate-x-[12px]">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-500 ${activeLight > i
+                  ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] scale-110'
+                  : 'bg-emerald-900/20 scale-100'
+                  }`}
+              />
+            ))}
+          </div>
+        ) : (
+          <>
+            <Link
+              href="/tutorial"
+              className="transition-transform hover:scale-105 origin-right block"
+              title="Check out the tutorial"
+            >
+              <img
+                src={isDark ? "/Robo_1_black.png" : "/Robo_1_white.png"}
+                alt="Tutorial"
+                className="w-32 lg:w-40 xl:w-44 max-w-[15vw] drop-shadow-xl"
+              />
+            </Link>
+            <div className={`mt-2 font-sans text-2xl font-black tracking-tight text-center whitespace-pre-wrap leading-none transition-opacity duration-300 w-48 ${isDark ? 'text-white' : 'text-black'} ${roboHover ? 'opacity-100' : 'opacity-0'}`}>
+              <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>
+                {coloredPart}
+              </span>
+              {whitePart}
+            </div>
+          </>
+        )}
+      </div>
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-zinc-500">{sidebarLabels.title}</p>
         <p className="mt-1 text-sm text-zinc-400">{sidebarLabels.subtitle}</p>

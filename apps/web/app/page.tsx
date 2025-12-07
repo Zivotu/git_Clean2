@@ -13,6 +13,8 @@ function HomeFallback({ label }: { label?: string }) {
   );
 }
 
+import { resolvePreviewUrl } from '@/lib/preview';
+
 export default async function Page() {
   const locale = await getServerLocale(defaultLocale);
   const messages = ALL_MESSAGES[locale] || ALL_MESSAGES[defaultLocale];
@@ -28,7 +30,7 @@ export default async function Page() {
     }
   }
 
-  const jsonLd = {
+  const websiteSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Thesara',
@@ -40,11 +42,41 @@ export default async function Page() {
     }
   };
 
+  const appListSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: initialItems.slice(0, 12).map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'SoftwareApplication',
+        name: item.title,
+        description: item.description || 'Mini application on Thesara',
+        applicationCategory: item.tags?.[0] || 'GameApplication',
+        operatingSystem: 'Web',
+        offers: {
+          '@type': 'Offer',
+          price: typeof item.price === 'number' ? item.price : 0,
+          priceCurrency: 'EUR'
+        },
+        author: {
+          '@type': 'Person',
+          name: item.author?.name || item.author?.handle || 'Unknown'
+        },
+        image: item.previewUrl ? resolvePreviewUrl(item.previewUrl) : undefined
+      }
+    }))
+  };
+
   return (
     <Suspense fallback={<HomeFallback label={loadingLabel} />}>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(appListSchema) }}
       />
       <BetaHomeClient initialItems={initialItems} />
     </Suspense>

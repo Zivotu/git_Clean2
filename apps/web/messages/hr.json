@@ -709,6 +709,9 @@
     "fullDetails": "Detalji"
   },
   "BetaHome": {
+    "sidebar": {
+      "roboMessage": "TUTORIJAL\nOd\nIdeje\ndo\nObjavljene\nAplikacije\nna\nThesari"
+    },
     "tags": {
       "games": "Igre",
       "quiz": "Kvizovi",

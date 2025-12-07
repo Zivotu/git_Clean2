@@ -58,6 +58,7 @@ import { auth, db } from '@/lib/firebase';
 import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
 import { useTheme } from '@/components/ThemeProvider';
 import { getTagFallbackLabel, normalizeTags } from '@/lib/tags';
+import { useDebounce } from '@/hooks/useDebounce';
 
 
 
@@ -276,6 +277,12 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const [initialQuerySynced, setInitialQuerySynced] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
+  const debouncedSearch = useDebounce(search, 300);
+
+  // Infinite Scroll State
+  const [visibleCount, setVisibleCount] = useState(24);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
 
 
   const filters = useMemo(() => {
@@ -324,7 +331,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   }, [trendingSlides.length]);
 
   const filteredApps = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     let next = apps.filter((app) => {
       if (activeFilter === FILTER_TRENDING && app.tag !== 'trending') return false;
       if (activeFilter !== FILTER_ALL && activeFilter !== FILTER_TRENDING && app.category !== activeFilter)
@@ -350,7 +357,31 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
     return sorted;
-  }, [apps, activeFilter, search, selectedTags, sortBy]);
+  }, [apps, activeFilter, debouncedSearch, selectedTags, sortBy]);
+
+  // Reset pagination when filters/sorting change
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [filteredApps]);
+
+  const visibleApps = filteredApps.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredApps.length;
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setVisibleCount((prev) => prev + 24);
+        }
+      },
+      { rootMargin: '400px' }
+    );
+    const target = loadMoreRef.current;
+    if (target) observer.observe(target);
+    return () => {
+      if (target) observer.unobserve(target);
+    };
+  }, [hasMore, visibleApps.length]);
 
   const filterLabelMap: Record<string, string> = {
     [FILTER_ALL]: tBeta('filters.all', 'All'),
@@ -496,7 +527,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     if (!initialQuerySynced || !pathname) return;
     const nextParams = new URLSearchParams(searchParams.toString());
     SYNC_QUERY_KEYS.forEach((key) => nextParams.delete(key));
-    const trimmedSearch = search.trim();
+    const trimmedSearch = debouncedSearch.trim();
     if (trimmedSearch) {
       nextParams.set('q', trimmedSearch);
     }
@@ -521,7 +552,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   }, [
     initialQuerySynced,
     pathname,
-    search,
+    debouncedSearch,
     selectedTags,
     sortBy,
     view,
@@ -1162,7 +1193,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
           </section>
 
           <section className={gridSectionClass}>
-            {filteredApps.map((app) => (
+            {visibleApps.map((app) => (
               <BetaAppCard
                 key={app.id}
                 app={app}
@@ -1172,32 +1203,54 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                 onDetails={handleCardDetails}
               />
             ))}
+            {hasMore && (
+              <div ref={loadMoreRef} className="col-span-full flex h-20 w-full items-center justify-center opacity-50">
+                <span className={`h-2 w-2 rounded-full ${isDark ? 'bg-zinc-600' : 'bg-slate-300'} animate-bounce`} style={{ animationDelay: '0ms' }} />
+                <span className={`mx-1 h-2 w-2 rounded-full ${isDark ? 'bg-zinc-600' : 'bg-slate-300'} animate-bounce`} style={{ animationDelay: '150ms' }} />
+                <span className={`h-2 w-2 rounded-full ${isDark ? 'bg-zinc-600' : 'bg-slate-300'} animate-bounce`} style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
             {!filteredApps.length && (
               <div
-                className={`rounded-2xl border px-6 py-8 text-center text-sm ${isDark ? 'border-[#27272A] text-zinc-400' : 'border-slate-200 text-slate-600'
+                className={`col-span-full flex flex-col items-center justify-center rounded-2xl border bg-opacity-50 px-6 py-12 text-center text-sm ${isDark ? 'border-[#27272A] bg-[#09090B]' : 'border-slate-200 bg-white'
                   }`}
               >
-                <p className="font-semibold text-base">{noResultsText}</p>
-                <p className="mt-2 text-xs opacity-80">{noResultsSecondary}</p>
-                <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                  <Link
-                    prefetch={false}
-                    href={noResultsCtaHref}
-                    onClick={noResultsCtaHref === '/create' ? handleSubmitClick : undefined}
-                    className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition ${isDark ? 'bg-emerald-500 text-black hover:bg-emerald-400' : 'bg-emerald-500 text-white hover:bg-emerald-400'
-                      }`}
-                  >
-                    {noResultsCtaLabel}
-                  </Link>
+                <div className="relative mb-6 h-40 w-40 opacity-90">
+                  <Image
+                    src="/Robo_ups_t.png"
+                    alt="No results found"
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+                <h3 className={`text-lg font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>
+                  {noResultsText}
+                </h3>
+                <p className={`mt-2 max-w-sm text-sm ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  {noResultsSecondary}
+                </p>
+                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
                   {hasActiveFilters && (
                     <button
                       type="button"
                       onClick={clearFilters}
-                      className={`text-xs font-semibold ${isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
+                      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all hover:scale-105 ${isDark ? 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
                     >
+                      <X className="h-4 w-4" />
                       {clearFiltersLabel}
                     </button>
                   )}
+                  <Link
+                    prefetch={false}
+                    href={noResultsCtaHref}
+                    onClick={noResultsCtaHref === '/create' ? handleSubmitClick : undefined}
+                    className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-emerald-500/25 ${isDark ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : 'bg-gradient-to-r from-emerald-500 to-teal-500'
+                      }`}
+                  >
+                    <span>{noResultsCtaLabel}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </div>
               </div>
             )}
