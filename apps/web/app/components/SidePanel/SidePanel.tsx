@@ -82,8 +82,15 @@ function SidebarItem({
     </>
   );
   if (href) {
+    const isExternal = href.startsWith('http');
     return (
-      <Link href={href} className={className} prefetch={false}>
+      <Link
+        href={href}
+        className={className}
+        prefetch={false}
+        target={isExternal ? "_blank" : undefined}
+        rel={isExternal ? "noreferrer" : undefined}
+      >
         {content}
       </Link>
     );
@@ -96,6 +103,7 @@ function SidebarItem({
 }
 
 const llmSources = [
+  { label: 'Google AI Studio', href: 'https://aistudio.google.com/apps', highlight: true },
   { label: 'ChatGPT', href: 'https://chat.openai.com' },
   { label: 'Claude', href: 'https://claude.ai' },
   { label: 'Gemini', href: 'https://gemini.google.com' },
@@ -246,7 +254,7 @@ export default function SidePanel({
               <img
                 src={isDark ? "/Robo_1_black.png" : "/Robo_1_white.png"}
                 alt="Tutorial"
-                className="w-32 lg:w-40 xl:w-44 max-w-[15vw] drop-shadow-xl"
+                className="w-32 lg:w-40 xl:w-44 max-w-[15vw] drop-shadow-xl h-auto"
               />
             </Link>
             <div className={`mt-2 font-sans text-2xl font-black tracking-tight text-center whitespace-pre-wrap leading-none transition-opacity duration-300 w-48 ${isDark ? 'text-white' : 'text-black'} ${roboHover ? 'opacity-100' : 'opacity-0'}`}>
@@ -317,7 +325,13 @@ export default function SidePanel({
                 href={provider.href}
                 target="_blank"
                 rel="noreferrer"
-                className={`rounded-full border px-2 py-0.5 ${isDark ? 'border-[#27272A] bg-black/40 text-zinc-300' : 'border-slate-200 bg-slate-50 text-slate-600'
+                className={`rounded-full border px-2 py-0.5 transition-colors ${(provider as any).highlight
+                  ? isDark
+                    ? 'bg-emerald-950 border-emerald-800 text-emerald-400 hover:bg-emerald-900 font-medium'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 font-medium'
+                  : isDark
+                    ? 'border-[#27272A] bg-black/40 text-zinc-300 hover:text-zinc-100'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900'
                   }`}
               >
                 {provider.label}

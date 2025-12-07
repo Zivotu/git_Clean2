@@ -829,8 +829,8 @@
             "text": "Zatraži asistenta da isporuči mini aplikaciju."
           },
           "1": {
-            "title": "Preuzmi kod",
-            "text": "Dobivaš bundle spreman za upload."
+            "title": "Preuzmi kod ili paket",
+            "text": "Preuzmi ZIP ili samo kopiraj kod ako alat ne nudi download."
           },
           "2": {
             "title": "Objavi na Thesari",

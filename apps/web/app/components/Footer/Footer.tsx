@@ -28,6 +28,57 @@ export default function Footer({
             <div>
               <Logo isDark={isDark} className="mb-4 h-8 w-auto" />
               <p className={isDark ? 'text-zinc-300' : 'text-gray-600'}>{tFooter('slogan')}</p>
+
+              <div className="flex gap-4 mt-6">
+                <a
+                  href="https://www.tiktok.com/@thesara_repository?is_from_webapp=1&sender_device=pc"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <img
+                    src={isDark ? '/socials/tiktok_b.png' : '/socials/tiktok_w.png'}
+                    alt="TikTok"
+                    className="w-[47px] h-14 opacity-80 hover:opacity-100 transition-opacity"
+                  />
+                </a>
+                <a
+                  href="https://x.com/THESARA_SPACE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <img
+                    src={isDark ? '/socials/x_b.png' : '/socials/x_w.png'}
+                    alt="X"
+                    className="w-[47px] h-14 opacity-80 hover:opacity-100 transition-opacity"
+                  />
+                </a>
+                <a
+                  href="https://www.linkedin.com/company/thesara-repository/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <img
+                    src={isDark ? '/socials/linkedin_b.png' : '/socials/linkedin_w.png'}
+                    alt="LinkedIn"
+                    className="w-[47px] h-14 opacity-80 hover:opacity-100 transition-opacity"
+                  />
+                </a>
+                <a
+                  href="https://www.instagram.com/thesara.space/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:scale-110 transition-transform"
+                >
+                  <img
+                    src={isDark ? '/socials/insta_b.png' : '/socials/insta_w.png'}
+                    alt="Instagram"
+                    className="w-[47px] h-14 opacity-80 hover:opacity-100 transition-opacity"
+                  />
+                </a>
+              </div>
             </div>
             <div className="flex gap-12">
               <div>
