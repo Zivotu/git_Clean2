@@ -357,12 +357,12 @@ export default function Header({
     <>
       {showTopBanner && (
         <div
-          className={`w-full border-b text-xs md:text-sm transition-colors duration-300 ${isDark
+          className={`w-full border-b text-[10px] md:text-xs transition-colors duration-300 ${isDark
             ? 'border-[#27272A] bg-[#4C1D95] text-zinc-50'
             : 'border-violet-200 bg-gradient-to-r from-violet-100 via-violet-200 to-white text-violet-900'
             }`}
         >
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center justify-between gap-2 px-4 py-2 md:flex-row">
+          <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center justify-between gap-1 px-4 py-1 md:flex-row">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-semibold">{topBannerCtaLabelLocal}</span>
             </div>

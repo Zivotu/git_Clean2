@@ -28,6 +28,7 @@ import {
   DollarSign,
   Bell,
   LayoutGrid,
+  Clock,
   Rows,
   ChevronDown,
   Minus,
@@ -805,9 +806,9 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
     <>
       {/* MAIN CONTENT */}
-      <main className="flex-1 space-y-4 lg:min-w-0">
+      <main className="flex-1 space-y-2 lg:min-w-0">
         <div
-          className={`sticky top-24 z-10 mb-2 rounded-2xl border backdrop-blur-sm transition-colors duration-300 ${isDark ? 'border-[#27272A] bg-[#09090B]/80' : 'border-slate-200 bg-white/90 shadow-sm'
+          className={`sticky top-20 z-10 mb-1 rounded-2xl border backdrop-blur-sm transition-colors duration-300 ${isDark ? 'border-[#27272A] bg-[#09090B]/80' : 'border-slate-200 bg-white/90 shadow-sm'
             }`}
         >
           <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
@@ -888,9 +889,9 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
             : 'border-slate-200 bg-gradient-to-br from-slate-50 via-white to-violet-100'
             }`}
         >
-          <div className="flex flex-col gap-8 px-6 py-6 lg:flex-row lg:items-start lg:justify-between lg:py-8">
+          <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between lg:py-4">
             <div className="flex-1">
-              <div className={`mb-3 inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium backdrop-blur ${isDark ? 'bg-black/10 text-zinc-200' : 'bg-white/50 text-slate-700 shadow-sm border border-slate-200/50'}`}>
+              <div className={`mb-1 inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium backdrop-blur ${isDark ? 'bg-black/10 text-zinc-200' : 'bg-white/50 text-slate-700 shadow-sm border border-slate-200/50'}`}>
                 <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#A855F7]/80 text-[9px]">
                   <Rocket className="h-3 w-3" />
                 </span>
@@ -900,10 +901,10 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
                 {tHome('headline.one')}{' '}
                 <span className="text-emerald-400">{tHome('headline.two')}</span>
               </h1>
-              <p className={`mt-3 max-w-2xl text-base ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
+              <p className={`mt-1 max-w-2xl text-base ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
                 {tHome('tagline') || 'Curirani marketplace s tisućama mini aplikacija, igara i utilsa.'}
               </p>
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="mt-3 flex flex-wrap gap-3">
                 <Link
                   href="/create"
                   className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 ${isDark ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-emerald-500 hover:bg-emerald-600'
@@ -925,21 +926,47 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
               </div>
 
               {/* 3 Steps Visual */}
-              <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {[
-                  { title: tBeta('steps.1.title', '1. Opiši ideju'), desc: tBeta('steps.1.desc', 'Opiši ideju u Google AI Studiju ili ChatGPT-u.'), icon: '💡' },
-                  { title: tBeta('steps.2.title', '2. Kopiraj kod'), desc: tBeta('steps.2.desc', 'Preuzmi generirani kod ili ZIP paket.'), icon: '📋' },
-                  { title: tBeta('steps.3.title', '3. Objavi'), desc: tBeta('steps.3.desc', 'Zalijepi (ili uploadaj) i objavi na Thesari.'), icon: '🚀' },
+                  {
+                    title: tBeta('steps.1.title', '1. Opiši ideju'),
+                    desc: tBeta('steps.1.desc', 'Opiši ideju u Google AI Studiju ili ChatGPT-u.'),
+                    icon: (
+                      <div className="flex items-center gap-1.5 text-emerald-500">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-bold">5 min</span>
+                      </div>
+                    )
+                  },
+                  {
+                    title: tBeta('steps.2.title', '2. Kopiraj kod'),
+                    desc: tBeta('steps.2.desc', 'Preuzmi generirani kod ili ZIP paket.'),
+                    icon: (
+                      <div className="flex items-center gap-1.5 text-emerald-500">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-bold">1 min</span>
+                      </div>
+                    )
+                  },
+                  {
+                    title: tBeta('steps.3.title', '3. Objavi'),
+                    desc: tBeta('steps.3.desc', 'Zalijepi (ili uploadaj) i objavi na Thesari.'),
+                    icon: (
+                      <div className="flex items-center gap-1.5 text-emerald-500">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-bold">2 min</span>
+                      </div>
+                    )
+                  },
                 ].map((step, idx) => (
                   <div key={idx} className={`rounded-xl border p-3 ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-slate-100 bg-slate-50/50'}`}>
-                    <div className="mb-1 text-lg">{step.icon}</div>
+                    <div className="mb-2">{step.icon}</div>
                     <div className={`font-semibold ${isDark ? 'text-zinc-200' : 'text-slate-700'}`}>{step.title}</div>
                     <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{step.desc}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-5 h-1 w-16 rounded-full bg-emerald-500/60" />
             </div>
 
             <div className="flex flex-col gap-4 lg:ml-12 lg:w-[420px] lg:self-stretch">
@@ -1173,8 +1200,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
           </section>
 
           {visibleTags.length > 0 && (
-            <section className="flex flex-col gap-2 rounded-2xl border px-3 py-3 text-xs md:text-sm">
-              <div className={`font-semibold ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>{tagsHeading}</div>
+            <section className="flex flex-col gap-2 rounded-2xl border px-3 py-2 text-xs md:text-sm">
               <div className="flex flex-wrap gap-2">
                 {visibleTags.map(({ key, label }) => {
                   const isSelected = selectedTags.includes(key);
