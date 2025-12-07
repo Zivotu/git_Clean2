@@ -235,11 +235,14 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     () => (earlyAccessCampaign?.id ? `eaPopupSeen:${earlyAccessCampaign.id}` : null),
     [earlyAccessCampaign?.id],
   );
-  const tHome = (key: string) => messages[`Home.${key}`] || '';
-  const tNav = (key: string) => messages[`Nav.${key}`] || key;
-  const tFooter = (key: string) => messages[`Footer.${key}`] || key;
-  const tBeta = (key: string, fallback = '', params?: Record<string, string | number>) =>
-    formatMessage((messages[`BetaHome.${key}`] as string) ?? fallback, params);
+  const tHome = useCallback((key: string) => messages[`Home.${key}`] || '', [messages]);
+  const tNav = useCallback((key: string) => messages[`Nav.${key}`] || key, [messages]);
+  const tFooter = useCallback((key: string) => messages[`Footer.${key}`] || key, [messages]);
+  const tBeta = useCallback(
+    (key: string, fallback = '', params?: Record<string, string | number>) =>
+      formatMessage((messages[`BetaHome.${key}`] as string) ?? fallback, params),
+    [messages],
+  );
 
   const defaultDescription = tBeta(
     'listing.defaultDescription',
