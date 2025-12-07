@@ -890,7 +890,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
         >
           <div className="flex flex-col gap-8 px-6 py-6 lg:flex-row lg:items-start lg:justify-between lg:py-8">
             <div className="flex-1">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-black/10 px-2 py-1 text-xs font-medium text-zinc-200 backdrop-blur">
+              <div className={`mb-3 inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium backdrop-blur ${isDark ? 'bg-black/10 text-zinc-200' : 'bg-white/50 text-slate-700 shadow-sm border border-slate-200/50'}`}>
                 <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#A855F7]/80 text-[9px]">
                   <Rocket className="h-3 w-3" />
                 </span>
