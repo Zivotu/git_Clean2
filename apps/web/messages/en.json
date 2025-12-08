@@ -1,4 +1,4 @@
-﻿{
+{
   "Nav": {
     "publishApp": "Publish App",
     "shortVideo": "Thesara Short Video",
@@ -74,7 +74,7 @@
     "comingSoon": "We're writing a sweet story about us, our team and our visionâ€”check back soon."
   },
   "Search": {
-    "title": "Classifieds Search",
+    "title": "Explore Apps",
     "errorShort": "Failed to load search results",
     "errorLong": "Failed to load search results. Please check the API URL and server status.",
     "filters": {
@@ -677,7 +677,7 @@
     "earlyAccessPublish": "Publish now",
     "earlyAccessSignIn": "Sign in now",
     "earlyAccessDismiss": "Close",
-    "promotionWarning": "To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration, otherwise you lose that right and we will give that spot to someone else.",
+    "promotionWarning": "To secure your 3 free months of Gold + No Ads, simply publish your first app within 15 days of joining. Don't miss out!",
     "plays": "{count} plays",
     "leftPanel": {
       "title": "From AI chats to your mini app",
@@ -1423,231 +1423,54 @@
     "percentComplete": "{progress}% complete",
     "close": "Close"
   },
-  "App": {
-    "viewer": {
-      "play": {
-        "login": "Sign in to play",
-        "pay": "Unlock to play",
-        "default": "Play App"
-      },
-      "status": {
-        "inactive": "Paused",
-        "active": "Active"
-      },
-      "badges": {
-        "unlisted": "Unlisted",
-        "public": "Public",
-        "paused": "Paused",
-        "new": "New"
-      },
-      "stats": {
-        "likes": "Likes",
-        "plays": "Plays",
-        "status": "Status",
-        "price": "Price"
-      },
-      "actions": {
-        "copied": "Link copied",
-        "copy": "Copy link",
-        "liked": "Saved",
-        "like": "Like"
-      },
-      "byLine": "by {name}",
-      "author": {
-        "unknown": "Unknown author"
-      },
-      "added": "Added {time}",
-      "identity": {
-        "missing": "Guest user"
-      },
-      "gallery": {
-        "title": "Screenshots",
-        "empty": "Screenshots will appear when the creator adds them.",
-        "alt": "Screenshot {index}"
-      },
-      "description": {
-        "title": "What you get",
-        "empty": "The author will add a detailed description soon."
-      },
-      "preview": {
-        "title": "Live preview",
-        "fallback": "Preview will appear after the creator adds their own illustration."
-      },
-      "tagline": "Featured App",
-      "securityTitle": "Security Badges",
-      "report": {
-        "title": "Report Content",
-        "identityLabel": "Your profile",
-        "identityHint": "This data is filled automatically and serves for moderator feedback.",
-        "reasonLabel": "Reason for reporting",
-        "reasonPlaceholder": "Explain what is wrong...",
-        "reasonHint": "Minimum 10 characters. Messages go directly to the moderation team.",
-        "cancel": "Cancel",
-        "busy": "Sending...",
-        "submit": "Submit Report",
-        "link": "Report Content"
-      },
-      "ctaBanner": {
-        "alt": "Thesara promo banner"
-      },
-      "banner": {
-        "private": "This listing is not public yet. You see it because you have elevated rights.",
-        "pending": "The application is pending approval."
-      }
-    },
-    "reviews": {
-      "loginRequired": "Sign in to leave a review.",
-      "alreadyReviewed": "You already left a review for this app.",
-      "requirePurchase": "Reviews can only be left by users who have tried the app.",
-      "tooShort": "Message must be at least 10 characters long.",
-      "sent": "Thanks! Your review has been received.",
-      "error": "We cannot save the review. Please try again.",
-      "title": "Reviews",
-      "subtitle": "{count} reviews",
-      "averageLabel": "Average rating",
-      "breakdown": "Rating distribution",
-      "loading": "Loading reviews...",
-      "empty": "No reviews yet.",
-      "leaveReview": "Share your experience",
-      "ratingLabel": "Rating",
-      "commentLabel": "Comment",
-      "commentPlaceholder": "What did you like? What could we improve?",
-      "loginHint": "Sign in to leave a review.",
-      "requirePurchaseHint": "Reviews can only be left by users who have tried the app.",
-      "submitting": "Sending...",
-      "submit": "Submit review"
-    },
-    "AppDetails": {
-      "badges": {
-        "new": "NEW",
-        "hot": "HOT",
-        "unlisted": "UNLISTED",
-        "inactive": "INACTIVE",
-        "free": "FREE",
-        "perMonth": "/mo"
-      },
-      "header": {
-        "by": "by",
-        "anonymous": "Anonymous",
-        "plays": "Plays:",
-        "playNow": "Play Now"
-      },
-      "actions": {
-        "copied": "Copied!",
-        "copyLink": "Copy Link",
-        "updateVersion": "Update Version",
-        "deactivate": "Deactivate",
-        "activate": "Activate",
-        "reportIssue": "Report Issue"
-      },
-      "info": {
-        "about": "About App",
-        "noDescription": "No description.",
-        "detailedOverview": "Detailed Overview",
-        "price": "Price: €{price}",
-        "creator": "Creator",
-        "appDeveloper": "App Developer"
-      },
-      "gallery": {
-        "currentPreview": "Current Preview",
-        "appId": "App ID:",
-        "categories": "Categories",
-        "previewGraphic": "Preview Graphic",
-        "previewGraphicHint": "This will be displayed on the app card.",
-        "playInNewTab": "Play in new tab",
-        "previewTitleLabel": "Title on image",
-        "characters": "characters",
-        "previewTitlePlaceholder": "Enter title...",
-        "chooseCustomGraphic": "Choose custom graphic",
-        "removeCustomGraphic": "Remove custom graphic",
-        "customGraphicHint": "Max",
-        "savingGraphic": "Saving...",
-        "saveGraphic": "Save Graphic",
-        "previewUploadSuccess": "Successfully saved",
-        "previewUploading": "Uploading...",
-        "previewFileTooLarge": "File is too large. Maximum is",
-        "previewFileReadFailed": "Failed to read file.",
-        "previewSelectFileFirst": "Select a file first.",
-        "previewUploadFailed": "Upload failed."
-      },
-      "customAssets": {
-        "loadFailed": "Failed to load custom graphics. Please try again."
-      },
-      "modals": {
-        "softDelete": {
-          "title": "Remove from Marketplace?",
-          "message": "This will hide your app from the public marketplace. Users with the direct link can still play it.",
-          "confirm": "Remove"
-        },
-        "hardDelete": {
-          "title": "Delete Permanently?",
-          "message": "This action cannot be undone. This will permanently delete your app, all assets, and data.",
-          "confirm": "Delete Forever"
-        },
-        "reportIssue": {
-          "title": "Report an Issue",
-          "description": "Describe the technical issue you are facing with your app.",
-          "placeholder": "Describe the bug or issue..."
-        },
-        "reportContent": {
-          "title": "Report Content",
-          "description": "Why are you reporting this content?",
-          "placeholder": "Describe why this content is inappropriate..."
-        },
-        "retry": "Retry",
-        "loadError": "Failed to load app details",
-        "notFound": "App not found"
-      }
-    },
-    "ambassadorSection": {
-      "title": "Thesara Ambassador Program",
-      "description": "Become a Thesara ambassador and earn commission by sharing your unique code with your audience.",
-      "commissionRate": "80% commission on first payment",
-      "commissionText": "Earn as a partner: {rate} from users who use your code.",
-      "benefit1": "Advantage for your audience: {trial} of free Gold plan.",
-      "benefit2": "Payout: threshold {threshold}, payout {frequency} via PayPal.",
-      "benefit3": "Easy sharing: unique promo code and link.",
-      "benefit4": "Transparency: dashboard with insights into usage, conversions and earnings.",
-      "note": "💡 Note: commission is calculated on {period} of the user within 60 days of code activation.",
-      "applyButton": "🚀 Apply",
-      "statusApproved": "🎉 Congratulations! You've been approved as a Thesara ambassador.",
-      "statusPending": "⏳ Your application is being reviewed. We'll notify you by email as soon as we make a decision.",
-      "statusRejected": "Previous application was not approved, but you can apply again when you feel your community is ready.",
-      "yourCode": "Your code",
-      "copyCode": "📋 Copy code",
-      "openDashboard": "📊 Open dashboard",
-      "marketingKit": "🎨 Marketing kit",
-      "newApplication": "New application",
-      "applicationSuccess": "Request sent! We'll notify you as soon as we review it.",
-      "modal": {
-        "title": "Ambassador Program Application",
-        "confirmTerms": "📋 Before submitting, confirm you understand the terms:",
-        "term1": "80% commission on first payment",
-        "term2": "30 days Gold trial for your audience",
-        "term3": "Payout threshold €50",
-        "term4": "Monthly payout (net 30)",
-        "tiktokLabel": "TikTok profile",
-        "tiktokPlaceholder": "https://www.tiktok.com/@username",
-        "instagramLabel": "Instagram profile",
-        "instagramPlaceholder": "https://www.instagram.com/username",
-        "youtubeLabel": "YouTube channel",
-        "youtubePlaceholder": "https://www.youtube.com/@username",
-        "newsletterLabel": "Newsletter or blog",
-        "newsletterPlaceholder": "https://newsletter.example.com",
-        "otherLabel": "Other channels (link)",
-        "otherPlaceholder": "https://",
-        "primaryPlatformLabel": "Primary platform",
-        "primaryPlatformPlaceholder": "e.g. TikTok, YouTube, Instagram",
-        "audienceSizeLabel": "Audience size",
-        "audienceSizePlaceholder": "e.g. 12.5k followers",
-        "motivationLabel": "Why do you want to be an ambassador?",
-        "motivationPlaceholder": "I love Thesara because...",
-        "motivationRequired": "*",
-        "errorTitle": "❌ Error:",
-        "cancelButton": "Cancel",
-        "submitButton": "Submit application",
-        "submittingButton": "Sending..."
-      }
+  "ambassadorSection": {
+    "title": "Thesara Ambassador Program",
+    "description": "Become a Thesara ambassador and earn commission by sharing your unique code with your audience.",
+    "commissionRate": "80% commission on first payment",
+    "commissionText": "Earn as a partner: {rate} from users who use your code.",
+    "benefit1": "Advantage for your audience: {trial} of free Gold plan.",
+    "benefit2": "Payout: threshold {threshold}, payout {frequency} via PayPal.",
+    "benefit3": "Easy sharing: unique promo code and link.",
+    "benefit4": "Transparency: dashboard with insights into usage, conversions and earnings.",
+    "note": "💡 Note: commission is calculated on {period} of the user within 60 days of code activation.",
+    "applyButton": "🚀 Apply",
+    "statusApproved": "🎉 Congratulations! You've been approved as a Thesara ambassador.",
+    "statusPending": "⏳ Your application is being reviewed. We'll notify you by email as soon as we make a decision.",
+    "statusRejected": "Previous application was not approved, but you can apply again when you feel your community is ready.",
+    "yourCode": "Your code",
+    "copyCode": "📋 Copy code",
+    "openDashboard": "📊 Open dashboard",
+    "marketingKit": "🎨 Marketing kit",
+    "newApplication": "New application",
+    "applicationSuccess": "Request sent! We'll notify you as soon as we review it.",
+    "modal": {
+      "title": "Ambassador Program Application",
+      "confirmTerms": "📋 Before submitting, confirm you understand the terms:",
+      "term1": "80% commission on first payment",
+      "term2": "30 days Gold trial for your audience",
+      "term3": "Payout threshold €50",
+      "term4": "Monthly payout (net 30)",
+      "tiktokLabel": "TikTok profile",
+      "tiktokPlaceholder": "https://www.tiktok.com/@username",
+      "instagramLabel": "Instagram profile",
+      "instagramPlaceholder": "https://www.instagram.com/username",
+      "youtubeLabel": "YouTube channel",
+      "youtubePlaceholder": "https://www.youtube.com/@username",
+      "newsletterLabel": "Newsletter or blog",
+      "newsletterPlaceholder": "https://newsletter.example.com",
+      "otherLabel": "Other channels (link)",
+      "otherPlaceholder": "https://",
+      "primaryPlatformLabel": "Primary platform",
+      "primaryPlatformPlaceholder": "e.g. TikTok, YouTube, Instagram",
+      "audienceSizeLabel": "Audience size",
+      "audienceSizePlaceholder": "e.g. 12.5k followers",
+      "motivationLabel": "Why do you want to be an ambassador?",
+      "motivationPlaceholder": "I love Thesara because...",
+      "motivationRequired": "*",
+      "errorTitle": "❌ Error:",
+      "cancelButton": "Cancel",
+      "submitButton": "Submit application",
+      "submittingButton": "Sending..."
     }
   },
   "TeamCreation": {

@@ -1,209 +1,32 @@
 'use client';
 
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import {
-  Search,
-  SunMedium,
-  MoonStar,
-  Play,
-  ArrowRight,
-  Gamepad2,
-  LayoutDashboard,
-  User,
-  Rocket,
-  AppWindow,
-  Wand2,
-  Sparkles,
-  FolderKanban,
-  Users,
-  Video,
-  Upload,
-  Crown,
-  HelpCircle,
-  Heart,
-  Cat,
-  DollarSign,
-  Bell,
-  LayoutGrid,
-  Clock,
-  Rows,
-  ChevronDown,
-  Minus,
-  Plus,
-  RefreshCcw,
-  X,
-} from 'lucide-react';
 import type { Listing as ApiListing } from '@/lib/types';
-import { resolvePreviewUrl } from '@/lib/preview';
 import { sendToLogin } from '@/lib/loginRedirect';
-import { playHref, appDetailsHref } from '@/lib/urls';
-import LocaleSwitcher from '@/components/LocaleSwitcher';
-import Logo from '@/components/Logo';
 import { useI18n } from '@/lib/i18n-provider';
 import { useAuth } from '@/lib/auth';
 import { apiPost } from '@/lib/api';
 import { useEarlyAccessCampaign } from '@/hooks/useEarlyAccessCampaign';
-import { useEntitlements } from '@/hooks/useEntitlements';
 import { useSafeSearchParams } from '@/hooks/useSafeSearchParams';
-import { PUBLIC_API_URL, GOLDEN_BOOK, isGoldenBookCampaignActive, getGoldenBookCountdown } from '@/lib/config';
-import GoldenBookIcon from '../../../../assets/GoldenBook_Icon_1.png';
+import { PUBLIC_API_URL } from '@/lib/config';
 import { triggerConfetti } from '@/components/Confetti';
-import Avatar from '@/components/Avatar';
 import PartnershipModal from '@/components/PartnershipModal';
-import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { BetaAppCard, type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
+import { type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
 import { useTheme } from '@/components/ThemeProvider';
-import { getTagFallbackLabel, normalizeTags } from '@/lib/tags';
 import { useDebounce } from '@/hooks/useDebounce';
 
+import HomeStickyHeader from './components/HomeStickyHeader';
+import FeedbackBanner from './components/FeedbackBanner';
+import HomeHero from './components/HomeHero';
+import HomeFilterBar from './components/HomeFilterBar';
+import TrendingSection from './components/TrendingSection';
+import AppGrid from './components/AppGrid';
+import EarlyAccessPopup from './components/EarlyAccessPopup';
+import BetaDetailsModal from './components/BetaDetailsModal';
+import EmptyState from './components/EmptyState'; // Imported for types mainly, but used in AppGrid props logic
 
-
-const gradientPalette = [
-  'from-purple-700 via-fuchsia-600 to-indigo-700',
-  'from-pink-500 via-fuchsia-500 to-indigo-500',
-  'from-sky-500 via-cyan-500 to-emerald-500',
-  'from-amber-500 via-orange-500 to-rose-500',
-  'from-slate-800 via-slate-700 to-slate-900',
-  'from-emerald-500 via-teal-500 to-cyan-600',
-  'from-indigo-500 via-violet-500 to-purple-600',
-  'from-rose-500 via-pink-500 to-orange-500',
-  'from-blue-500 via-sky-500 to-cyan-400',
-  'from-lime-500 via-emerald-500 to-teal-500',
-];
-
-
-const shortVideoUrl = 'https://youtube.com/shorts/m_4RqaGClFI';
-const promoBanners = [
-  {
-    href: '/jednostavne-upute',
-    titleKey: 'promo.banners.0.title',
-    subtitleKey: 'promo.banners.0.subtitle',
-    titleFallback: 'Jednostavne upute',
-    subtitleFallback: 'Kako iz razgovora s AI-jem doći do objave na Thesari.',
-    image: '/assets/CTA_Part_1.jpg',
-  },
-  {
-    href: '/docs/thesara_terms.html',
-    titleKey: 'promo.banners.1.title',
-    subtitleKey: 'promo.banners.1.subtitle',
-    titleFallback: 'Pravila objave',
-    subtitleFallback: 'Sve o monetizaciji, licencama i uvjetima.',
-    image: '/assets/CTA_Part_2.jpg',
-  },
-] as const;
-
-const columnLayouts: Record<number, string> = {
-  2: 'grid grid-cols-1 gap-8 sm:grid-cols-2',
-  3: 'grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
-  5: 'grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5',
-  6: 'grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6',
-};
-const MIN_GRID_COLUMNS = 2;
-const MAX_GRID_COLUMNS = 6;
-const DEFAULT_GRID_COLUMNS = 3;
-const TRENDING_SLIDE_SIZE = 3;
-const FILTER_ALL = 'all';
-const FILTER_TRENDING = 'trending';
-const DAY_MS = 24 * 60 * 60 * 1000;
-const SYNC_QUERY_KEYS = ['q', 'sort', 'view', 'filter', 'tag', 'cols'] as const;
-const GRID_COLUMNS_STORAGE_KEY = 'betaHome.gridColumns';
-const VIEW_MODE_STORAGE_KEY = 'betaHome.viewMode';
-
-function formatMetric(count?: number | null, newLabel = 'New') {
-  if (!count || count <= 0) return newLabel;
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}m`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}k`;
-  return `${count}`;
-}
-
-function pickCategory(tags: string[] | null, translator: (key: string, fallback: string) => string, fallback: string) {
-  if (!tags?.length) return fallback;
-  const tag = tags[0];
-  const fallbackLabel = getTagFallbackLabel(tag);
-  return translator(`tags.${tag}`, fallbackLabel)
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, (match) => match.toUpperCase());
-}
-
-function formatMessage(template: string, params?: Record<string, string | number>) {
-  if (!params) return template;
-  return Object.entries(params).reduce(
-    (acc, [key, value]) => acc.split(`{${key}}`).join(String(value)),
-    template,
-  );
-}
-
-function makeInitials(name: string) {
-  if (!name) return '??';
-  return name
-    .split(' ')
-    .map((part) => part.trim()[0])
-    .filter(Boolean)
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-function mapListings(
-  items: ApiListing[],
-  options: {
-    defaultDescription: string;
-    fallbackCategory: string;
-    metricNewLabel: string;
-    unknownAuthor: string;
-    translator: (key: string, fallback: string) => string;
-  },
-): BetaApp[] {
-  const sortedByLikes = [...items].sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
-  const trendingIds = new Set(sortedByLikes.slice(0, 6).map((listing) => listing.id));
-
-  return items.map((item, index) => {
-    const authorName = item.author?.name || item.author?.handle || options.unknownAuthor;
-    const rawTags = Array.isArray(item.tags)
-      ? item.tags
-        .map((tag) => (typeof tag === 'string' ? tag.trim() : ''))
-        .filter((tag) => Boolean(tag))
-      : [];
-
-    // Normalize tags
-    const tags = normalizeTags(rawTags);
-    const createdAt =
-      typeof item.createdAt === 'number'
-        ? item.createdAt
-        : item.createdAt
-          ? new Date(item.createdAt).getTime()
-          : Date.now();
-    return {
-      id: item.id,
-      slug: item.slug,
-      name: item.title,
-      description: item.description || options.defaultDescription,
-      category: pickCategory(tags, options.translator, options.fallbackCategory),
-      authorName,
-      authorInitials: makeInitials(authorName),
-      authorPhoto: item.author?.photo || null,
-      authorId: item.author?.uid, // Pass authorId for fresh data fetching
-      authorHandle: item.author?.handle || undefined, // Added this line
-      playsCount: item.playsCount || 0,
-      likesCount: item.likesCount || 0,
-      usersLabel: formatMetric(item.playsCount, options.metricNewLabel),
-      likesLabel: formatMetric(item.likesCount, options.metricNewLabel),
-      price: typeof item.price === 'number' ? item.price : null,
-      tag: trendingIds.has(item.id) ? 'trending' : undefined,
-      previewUrl: resolvePreviewUrl(item.previewUrl),
-      gradientClass: gradientPalette[index % gradientPalette.length],
-      tags,
-      createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
-      likedByMe: (item as any).likedByMe,
-    };
-  });
-}
+import * as Utils from './utils';
 
 type BetaHomeClientProps = {
   initialItems?: ApiListing[];
@@ -216,10 +39,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const pathname = usePathname();
   const searchParams = useSafeSearchParams();
   const { data: earlyAccessCampaign } = useEarlyAccessCampaign();
-  const { data: entitlements } = useEntitlements();
 
-  const [subscribeStatus, setSubscribeStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [subscribeMessage, setSubscribeMessage] = useState<string | null>(null);
   const [randomIndex, setRandomIndex] = useState<number | null>(null);
   const [rawListings, setRawListings] = useState<ApiListing[]>(initialItems);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
@@ -234,15 +54,16 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   });
   const popupStorageKey = useMemo(
     () => (earlyAccessCampaign?.id ? `eaPopupSeen:${earlyAccessCampaign.id}` : null),
-    [earlyAccessCampaign?.id],
+    [earlyAccessCampaign?.id]
   );
-  const tHome = useCallback((key: string) => messages[`Home.${key}`] || '', [messages]);
-  const tNav = useCallback((key: string) => messages[`Nav.${key}`] || key, [messages]);
-  const tFooter = useCallback((key: string) => messages[`Footer.${key}`] || key, [messages]);
+
+  // Memoized translation helpers
+  const tHome = useCallback((key: string) => (messages[`Home.${key}`] as string) || '', [messages]);
+  const tNav = useCallback((key: string) => (messages[`Nav.${key}`] as string) || key, [messages]);
   const tBeta = useCallback(
     (key: string, fallback = '', params?: Record<string, string | number>) =>
-      formatMessage((messages[`BetaHome.${key}`] as string) ?? fallback, params),
-    [messages],
+      Utils.formatMessage((messages[`BetaHome.${key}`] as string) ?? fallback, params),
+    [messages]
   );
 
   const defaultDescription = tBeta(
@@ -260,9 +81,10 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       unknownAuthor,
       translator: (key: string, fallback: string) => tBeta(key, fallback),
     }),
-    [defaultDescription, fallbackCategory, metricNewLabel, unknownAuthor, tBeta],
+    [defaultDescription, fallbackCategory, metricNewLabel, unknownAuthor, tBeta]
   );
-  const apps = useMemo(() => mapListings(rawListings, mappingOptions), [rawListings, mappingOptions]);
+  const apps = useMemo(() => Utils.mapListings(rawListings, mappingOptions), [rawListings, mappingOptions]);
+
   useEffect(() => {
     setRawListings(initialItems);
     setCommunityStats((prev) => ({
@@ -270,12 +92,12 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       publishedApps: initialItems.length || prev.publishedApps,
     }));
   }, [initialItems]);
-  // Theme is driven globally by Header. Initialize from localStorage and listen for changes.
+
   const { isDark } = useTheme();
-  const [activeFilter, setActiveFilter] = useState<string>(FILTER_ALL);
+  const [activeFilter, setActiveFilter] = useState<string>(Utils.FILTER_ALL);
   const [view, setView] = useState<'grid' | 'list'>('grid');
   const [search, setSearch] = useState('');
-  const [cardsPerRow, setCardsPerRow] = useState(DEFAULT_GRID_COLUMNS);
+  const [cardsPerRow, setCardsPerRow] = useState(Utils.DEFAULT_GRID_COLUMNS);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'new' | 'popular' | 'title'>('new');
   const [initialQuerySynced, setInitialQuerySynced] = useState(false);
@@ -287,14 +109,12 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const [visibleCount, setVisibleCount] = useState(24);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-
-
   const filters = useMemo(() => {
     const categories = Array.from(new Set(apps.map((app) => app.category))).slice(0, 5);
-    return [FILTER_ALL, FILTER_TRENDING, ...categories];
+    return [Utils.FILTER_ALL, Utils.FILTER_TRENDING, ...categories];
   }, [apps]);
 
-  // Predefined tag keys (will be localized via i18n)
+  // Predefined tag keys
   const PREDEFINED_TAG_KEYS = [
     'tags.games',
     'tags.quiz',
@@ -309,10 +129,10 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const visibleTags = useMemo(() =>
     PREDEFINED_TAG_KEYS.map((key) => {
       const canonicalKey = key.split('.').pop() || key;
-      return { key: canonicalKey, label: tBeta(key, canonicalKey), count: 0 };
+      return { key: canonicalKey, label: tBeta(key, canonicalKey) };
     }),
-    // include locale/messages, tBeta and PREDEFINED_TAG_KEYS so labels recompute on locale change
-    [locale, messages, _predefinedTagKeysHash, tBeta, PREDEFINED_TAG_KEYS],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [locale, messages, _predefinedTagKeysHash, tBeta]
   );
   const hiddenTagCount = 0;
 
@@ -321,10 +141,12 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     if (tagged.length >= 4) return tagged;
     return [...tagged, ...apps.filter((app) => !app.tag)].slice(0, 4);
   }, [apps]);
+
   const trendingSlides = useMemo(() => {
     if (!trendingApps.length) return [];
-    return chunkArray(trendingApps, TRENDING_SLIDE_SIZE);
+    return Utils.chunkArray(trendingApps, Utils.TRENDING_SLIDE_SIZE);
   }, [trendingApps]);
+
   const [trendingIndex, setTrendingIndex] = useState(0);
   useEffect(() => {
     if (trendingSlides.length <= 1) return;
@@ -337,8 +159,8 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const filteredApps = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     let next = apps.filter((app) => {
-      if (activeFilter === FILTER_TRENDING && app.tag !== 'trending') return false;
-      if (activeFilter !== FILTER_ALL && activeFilter !== FILTER_TRENDING && app.category !== activeFilter)
+      if (activeFilter === Utils.FILTER_TRENDING && app.tag !== 'trending') return false;
+      if (activeFilter !== Utils.FILTER_ALL && activeFilter !== Utils.FILTER_TRENDING && app.category !== activeFilter)
         return false;
       if (selectedTags.length && !selectedTags.every((tag) => app.tags.includes(tag))) return false;
       return true;
@@ -346,7 +168,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
     if (q) {
       return next
-        .map((app) => ({ app, score: calculateSearchScore(app, q) }))
+        .map((app) => ({ app, score: Utils.calculateSearchScore(app, q) }))
         .filter(({ score }) => score > 0)
         .sort((a, b) => b.score - a.score)
         .map(({ app }) => app);
@@ -363,7 +185,6 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     return sorted;
   }, [apps, activeFilter, debouncedSearch, selectedTags, sortBy]);
 
-  // Reset pagination when filters/sorting change
   useEffect(() => {
     setVisibleCount(24);
   }, [filteredApps]);
@@ -388,9 +209,10 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   }, [hasMore, visibleApps.length]);
 
   const filterLabelMap: Record<string, string> = {
-    [FILTER_ALL]: tBeta('filters.all', 'All'),
-    [FILTER_TRENDING]: tBeta('filters.trending', 'Trending'),
+    [Utils.FILTER_ALL]: tBeta('filters.all', 'All'),
+    [Utils.FILTER_TRENDING]: tBeta('filters.trending', 'Trending'),
   };
+
   const listingLabels: ListingLabels = {
     free: tBeta('listing.badge.free', 'FREE'),
     creator: tBeta('listing.label.creator', 'Creator'),
@@ -399,20 +221,12 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     trending: tBeta('listing.tag.trending', 'Trending'),
   };
 
-  const searchPlaceholder = tBeta(
-    'search.placeholder',
-    'Search apps, creators, or prompts...',
-  );
-  const heroBadgeText = tBeta(
-    'hero.badge',
-    'Discover Amazing Mini-Apps & Games',
-  );
+  const searchPlaceholder = tBeta('search.placeholder', 'Search apps, creators, or prompts...');
+  const heroBadgeText = tBeta('hero.badge', 'Discover Amazing Mini-Apps & Games');
   const randomPickLabel = tBeta('hero.random.label', 'Random Pick');
   const randomPickDetailsLabel = tBeta('hero.random.details', 'View details');
   const heroSubmitLabel = tBeta('hero.actions.submit', 'Submit App');
   const curatedLabel = tBeta('hero.badges.curated', 'Curated');
-  const featuredLabel = tBeta('promo.featuredLabel', 'Featured');
-  const learnMoreLabel = tBeta('promo.learnMore', 'Learn more');
   const gridLabel = tBeta('view.gridLabel', 'Grid');
   const gridDecreaseAria = tBeta('view.decreaseGrid', 'Show fewer cards per row');
   const gridIncreaseAria = tBeta('view.increaseGrid', 'Show more cards per row');
@@ -423,11 +237,8 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   };
   const sortSelectLabel = tBeta('sort.label', 'Sort by');
   const liveUsageLabel = tBeta('metrics.liveUsage', 'Live usage');
-  const noResultsText = tBeta(
-    'empty.noResults',
-    'Nema rezultata za taj upit. Pokušaj promijeniti filtere.',
-  );
-  const hasActiveFilters = selectedTags.length > 0 || search.trim().length > 0 || activeFilter !== FILTER_ALL;
+  const noResultsText = tBeta('empty.noResults', 'Nema rezultata za taj upit. Pokušaj promijeniti filtere.');
+  const hasActiveFilters = selectedTags.length > 0 || search.trim().length > 0 || activeFilter !== Utils.FILTER_ALL;
   const noResultsSecondary = hasActiveFilters
     ? tHome('tryAdjust') || tBeta('empty.tryAdjust', 'Pokušaj promijeniti tagove ili pretragu.')
     : tHome('beFirst') || tBeta('empty.beFirst', 'Budi prvi koji će objaviti mini aplikaciju.');
@@ -435,29 +246,17 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     ? heroSubmitLabel
     : tNav('login') || tHome('signIn') || 'Prijavi se';
   const noResultsCtaHref = user ? '/create' : '/login';
-  const tagsHeading = tBeta('filters.tagsHeading', 'Popular tags');
   const clearFiltersLabel = tBeta('filters.clear', 'Reset filters');
   const refreshLabel = tBeta('actions.refresh', 'Refresh');
   const retryLabel = tBeta('actions.retry', 'Try again');
   const listingsErrorLabel = tBeta('errors.listings', 'Unable to refresh the feed. Please try again.');
-  const trendingCountLabel = tBeta('sections.trending.count', '{count} apps', {
-    count: trendingApps.length,
-  });
-  const donateLabel = tNav('donate');
-  const donateLink = GOLDEN_BOOK.paymentLink;
-  const donateEnabled = GOLDEN_BOOK.enabled && Boolean(donateLink);
-  const donateActive = donateEnabled && isGoldenBookCampaignActive();
-  const donateCountdown = getGoldenBookCountdown();
-  const donateCountdownLabel =
-    donateActive && donateCountdown && donateCountdown.daysRemaining > 0
-      ? (messages['Nav.donateCountdown'] || '{days} days left').replace(
-        '{days}',
-        String(donateCountdown.daysRemaining),
-      )
-      : null;
+  const trendingCountLabel = tBeta('sections.trending.count', '{count} apps', { count: trendingApps.length });
+
   const handleSubmitClick = useCallback(() => {
     triggerConfetti();
   }, []);
+
+  // URL Sync Effects
   useEffect(() => {
     const qParam = searchParams.get('q') ?? '';
     setSearch((prev) => (prev === qParam ? prev : qParam));
@@ -469,7 +268,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       setSortBy((prev) => (prev === 'new' ? prev : 'new'));
     }
 
-    const storedView = !initialQuerySynced ? readStoredViewMode() : null;
+    const storedView = !initialQuerySynced ? Utils.readStoredViewMode() : null;
     const viewParam = searchParams.get('view');
     const viewFromQuery = viewParam === 'list' ? 'list' : viewParam === 'grid' ? 'grid' : null;
     const resolvedView = viewFromQuery ?? (!initialQuerySynced ? storedView : null);
@@ -477,12 +276,9 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       setView((prev) => (prev === resolvedView ? prev : resolvedView));
     }
 
-    const tagsFromParams = searchParams
-      .getAll('tag')
-      .map((tag) => tag.trim())
-      .filter(Boolean);
+    const tagsFromParams = searchParams.getAll('tag').map((tag) => tag.trim()).filter(Boolean);
     const uniqueTags = Array.from(new Set(tagsFromParams));
-    setSelectedTags((prev) => (arraysEqual(prev, uniqueTags) ? prev : uniqueTags));
+    setSelectedTags((prev) => (Utils.arraysEqual(prev, uniqueTags) ? prev : uniqueTags));
 
     if (!initialQuerySynced) {
       setInitialQuerySynced(true);
@@ -491,35 +287,38 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
   useEffect(() => {
     const filterParam = searchParams.get('filter');
-    const validFilter =
-      filterParam && filters.includes(filterParam) ? filterParam : FILTER_ALL;
+    const validFilter = filterParam && filters.includes(filterParam) ? filterParam : Utils.FILTER_ALL;
     setActiveFilter((prev) => (prev === validFilter ? prev : validFilter));
   }, [searchParams, filters]);
 
   useEffect(() => {
-    const storedColumns = !initialQuerySynced ? readStoredGridColumns() : null;
+    const storedColumns = !initialQuerySynced ? Utils.readStoredGridColumns() : null;
     const colsParam = searchParams.get('cols');
     let resolvedColumns: number | null = null;
     if (colsParam) {
       const parsed = Number.parseInt(colsParam, 10);
       if (Number.isFinite(parsed)) {
-        resolvedColumns = clampGridColumns(parsed);
+        resolvedColumns = Utils.clampGridColumns(parsed);
       }
     } else if (!initialQuerySynced && storedColumns !== null) {
-      resolvedColumns = clampGridColumns(storedColumns);
+      resolvedColumns = Utils.clampGridColumns(storedColumns);
     }
     if (resolvedColumns !== null) {
       setCardsPerRow((prev) => (prev === resolvedColumns ? prev : resolvedColumns));
     }
   }, [searchParams, initialQuerySynced]);
+
+  // Local Storage Effects
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, view);
+    window.localStorage.setItem(Utils.VIEW_MODE_STORAGE_KEY, view);
   }, [view]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem(GRID_COLUMNS_STORAGE_KEY, String(cardsPerRow));
+    window.localStorage.setItem(Utils.GRID_COLUMNS_STORAGE_KEY, String(cardsPerRow));
   }, [cardsPerRow]);
+
   useEffect(() => {
     if (!apps.length) {
       setRandomIndex(null);
@@ -527,10 +326,11 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     }
     setRandomIndex(Math.floor(Math.random() * apps.length));
   }, [apps]);
+
   useEffect(() => {
     if (!initialQuerySynced || !pathname) return;
     const nextParams = new URLSearchParams(searchParams.toString());
-    SYNC_QUERY_KEYS.forEach((key) => nextParams.delete(key));
+    Utils.SYNC_QUERY_KEYS.forEach((key) => nextParams.delete(key));
     const trimmedSearch = debouncedSearch.trim();
     if (trimmedSearch) {
       nextParams.set('q', trimmedSearch);
@@ -542,17 +342,16 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     if (view !== 'grid') {
       nextParams.set('view', view);
     }
-    if (cardsPerRow !== DEFAULT_GRID_COLUMNS) {
+    if (cardsPerRow !== Utils.DEFAULT_GRID_COLUMNS) {
       nextParams.set('cols', String(cardsPerRow));
     }
-    if (activeFilter !== FILTER_ALL) {
+    if (activeFilter !== Utils.FILTER_ALL) {
       nextParams.set('filter', activeFilter);
     }
     const nextString = nextParams.toString();
     const currentString = searchParams.toString();
     if (nextString === currentString) return;
     router.replace(`${pathname}${nextString ? `?${nextString}` : ''}`, { scroll: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     initialQuerySynced,
     pathname,
@@ -562,58 +361,19 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     view,
     cardsPerRow,
     activeFilter,
-    // NOTE: searchParams intentionally excluded to prevent infinite loop
+    // NOTE: searchParams intentionally excluded
   ]);
+
   const randomApp = randomIndex !== null ? apps[randomIndex] : null;
-  const profileDisplayName =
-    user?.displayName || user?.email?.split('@')[0] || tNav('myProfile') || 'Guest';
-  const profilePhoto = (user as any)?.photoURL ?? null;
-  const loginLabel = tNav('login');
-  const logoutLabel = tNav('logout') || 'Log out';
-  const handleLogout = useCallback(() => {
-    if (auth) {
-      signOut(auth).catch(() => { });
-    }
-  }, []);
-  const profileSection = null; // Removed ProfileCard - not needed with GlobalShell
 
   const isGridView = view === 'grid';
-  const canDecreaseColumns = cardsPerRow > MIN_GRID_COLUMNS;
-  const canIncreaseColumns = cardsPerRow < MAX_GRID_COLUMNS;
-  const gridSectionClass = isGridView ? columnLayouts[cardsPerRow] ?? columnLayouts[4] : 'space-y-6';
-  const earlyAccessRemainingDays = useMemo(() => {
-    if (!earlyAccessCampaign?.isActive) return null;
-    const duration = earlyAccessCampaign.durationDays ?? earlyAccessCampaign.perUserDurationDays;
-    if (!duration || duration <= 0) return null;
-    const start =
-      typeof earlyAccessCampaign.startsAt === 'number' && earlyAccessCampaign.startsAt > 0
-        ? earlyAccessCampaign.startsAt
-        : Date.now();
-    const end = start + duration * DAY_MS;
-    const remaining = end - Date.now();
-    return remaining > 0 ? Math.max(0, Math.ceil(remaining / DAY_MS)) : 0;
-  }, [
-    earlyAccessCampaign?.durationDays,
-    earlyAccessCampaign?.perUserDurationDays,
-    earlyAccessCampaign?.isActive,
-    earlyAccessCampaign?.startsAt,
-  ]);
-  const showTopBanner = Boolean(earlyAccessCampaign?.isActive);
-  const topBannerCtaLabel = messages['Nav.subscribeEarlyAccess'] ?? 'Subscribe for early access';
-  const topBannerSubtitle = messages['Nav.earlyAccessSubtitle'] ?? 'Turn AI chats into mini apps.';
-  const earlyAccessRibbonLabel = messages['Nav.earlyAccessRibbon'] ?? 'EARLY ACCESS';
-  const earlyAccessBadgeText =
-    messages['Nav.earlyAccessBadge'] ?? '30 dana potpuno besplatnih usluga!';
-  const earlyAccessCountdownLabel = messages['Nav.earlyAccessCountdownLabel'] ?? 'Countdown';
-  const earlyAccessCountdownUnit = messages['Nav.earlyAccessCountdownUnit'] ?? 'days';
-  const earlyAccessSubscribedMessage =
-    messages['Nav.earlyAccessSubscribed'] ?? "You'll get 50% off the first month.";
-  const earlyAccessSubscribeError =
-    messages['Nav.earlyAccessSubscribeError'] ?? 'Subscription failed.';
+  const canDecreaseColumns = cardsPerRow > Utils.MIN_GRID_COLUMNS;
+  const canIncreaseColumns = cardsPerRow < Utils.MAX_GRID_COLUMNS;
+  const gridSectionClass = isGridView ? Utils.columnLayouts[cardsPerRow] ?? Utils.columnLayouts[4] : 'space-y-6';
+
+  // Early Access & Popup Labels
   const popupTitle = messages['Home.earlyAccessTitle'] ?? 'Early Access is live!';
-  const popupBody =
-    messages['Home.earlyAccessBody'] ??
-    'Gold + NoAds are active for you during the campaign. Publish an app to make the most of it.';
+  const popupBody = messages['Home.earlyAccessBody'] ?? 'Gold + NoAds are active for you during the campaign. Publish an app to make the most of it.';
   const popupPublishLabel = messages['Home.earlyAccessPublish'] ?? 'Publish an app';
   const popupSignInLabel = messages['Home.earlyAccessSignIn'] ?? 'Sign in now';
   const popupDismiss = messages['Home.earlyAccessDismiss'] ?? 'Close';
@@ -622,20 +382,23 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
   const changeGridColumns = (delta: number) => {
     setCardsPerRow((current) => {
-      const next = Math.max(MIN_GRID_COLUMNS, Math.min(MAX_GRID_COLUMNS, current + delta));
+      const next = Math.max(Utils.MIN_GRID_COLUMNS, Math.min(Utils.MAX_GRID_COLUMNS, current + delta));
       return next;
     });
   };
+
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-    setActiveFilter(FILTER_ALL);
+    setActiveFilter(Utils.FILTER_ALL);
   }, []);
+
   const clearFilters = useCallback(() => {
     setSelectedTags([]);
     setSearch('');
     setSortBy('new');
-    setActiveFilter(FILTER_ALL);
+    setActiveFilter(Utils.FILTER_ALL);
   }, []);
+
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === '/') {
@@ -649,6 +412,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [clearFilters, hasActiveFilters]);
+
   const reloadListings = useCallback(
     async ({ silent = false }: { silent?: boolean } = {}) => {
       if (!silent) {
@@ -672,37 +436,24 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
         }
       }
     },
-    [listingsErrorLabel, locale],
+    [listingsErrorLabel, locale]
   );
+
   const handleRefreshClick = useCallback(() => {
     if (isLoadingListings) return;
     reloadListings({});
   }, [isLoadingListings, reloadListings]);
+
   const handleCardDetails = useCallback((app: BetaApp) => {
     setSelectedApp(app);
   }, []);
+
   const closeDetails = useCallback(() => setSelectedApp(null), []);
-  const handleSubscribe = useCallback(async () => {
-    if (!user) {
-      sendToLogin(router);
-      return;
-    }
-    setSubscribeStatus('loading');
-    setSubscribeMessage(null);
-    try {
-      await apiPost('/me/early-access/subscribe');
-      setSubscribeStatus('success');
-      setSubscribeMessage(earlyAccessSubscribedMessage);
-    } catch (err) {
-      const message =
-        err instanceof Error && err.message ? err.message : earlyAccessSubscribeError;
-      setSubscribeStatus('error');
-      setSubscribeMessage(message);
-    }
-  }, [user, router, earlyAccessSubscribedMessage, earlyAccessSubscribeError]);
+
   useEffect(() => {
     reloadListings({ silent: true });
   }, [reloadListings]);
+
   useEffect(() => {
     if (typeof window === 'undefined' || !PUBLIC_API_URL) return;
     let cancelled = false;
@@ -720,10 +471,8 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
         const data = await response.json();
         if (cancelled) return;
         setCommunityStats((prev) => ({
-          publishedApps:
-            typeof data?.publishedApps === 'number' ? data.publishedApps : prev.publishedApps,
-          membersCount:
-            typeof data?.membersCount === 'number' ? data.membersCount : prev.membersCount,
+          publishedApps: typeof data?.publishedApps === 'number' ? data.publishedApps : prev.publishedApps,
+          membersCount: typeof data?.membersCount === 'number' ? data.membersCount : prev.membersCount,
         }));
       } catch (err: any) {
         if (err?.name === 'AbortError') return;
@@ -738,6 +487,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
       window.clearInterval(interval);
     };
   }, []);
+
   const dismissEarlyAccessPopup = useCallback(() => {
     if (typeof window !== 'undefined' && popupStorageKey) {
       try {
@@ -772,20 +522,21 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   const activeCreatorsCount = useMemo(() => new Set(apps.map((app) => app.authorName)).size, [apps]);
   const liveAppsCount = communityStats.publishedApps || apps.length || 0;
   const communityMembersCount = communityStats.membersCount || activeCreatorsCount || 0;
+
   const heroMetrics = [
     {
       id: 'apps',
-      value: formatMetric(liveAppsCount, metricNewLabel),
+      value: Utils.formatMetric(liveAppsCount, metricNewLabel),
       label: tBeta('metrics.apps', 'Objavljene aplikacije'),
     },
     {
       id: 'members',
-      value: formatMetric(communityMembersCount, metricNewLabel),
+      value: Utils.formatMetric(communityMembersCount, metricNewLabel),
       label: tBeta('metrics.members', 'Članova zajednice'),
     },
     {
       id: 'runs',
-      value: formatMetric(totalPlays, metricNewLabel),
+      value: Utils.formatMetric(totalPlays, metricNewLabel),
       label: tBeta('metrics.runs', 'Ukupno pokretanja'),
     },
   ];
@@ -795,853 +546,136 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
   );
   const heroCardAppsStat = tBeta('hero.card.stats.apps', '{count}+ Mini-Apps', { count: liveAppsCount });
   const heroCardFavoritesStat = tBeta('hero.card.stats.favorites', '{count} favorites', {
-    count: formatMetric(totalLikes, metricNewLabel),
+    count: Utils.formatMetric(totalLikes, metricNewLabel),
   });
   const searchStatsText = tBeta('search.liveStats', '{apps} live apps · {plays} plays', {
     apps: liveAppsCount,
-    plays: formatMetric(totalPlays, metricNewLabel),
+    plays: Utils.formatMetric(totalPlays, metricNewLabel),
   });
 
   return (
-
     <>
-      {/* MAIN CONTENT */}
       <main className="flex-1 space-y-2 lg:min-w-0">
-        <div
-          className={`sticky top-20 z-10 mb-1 rounded-2xl border backdrop-blur-sm transition-colors duration-300 ${isDark ? 'border-[#27272A] bg-[#09090B]/80' : 'border-slate-200 bg-white/90 shadow-sm'
-            }`}
-        >
-          <div className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-1 items-center gap-3">
-              <div
-                className={`flex flex-1 items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${isDark
-                  ? 'border-[#27272A] bg-[#18181B] text-zinc-400 focus-within:border-[#A855F7] focus-within:text-zinc-200'
-                  : 'border-slate-200 bg-slate-50 text-slate-500 focus-within:border-slate-400 focus-within:bg-white'
-                  }`}
-              >
-                <Search className="h-4 w-4 flex-shrink-0" />
-                <input
-                  ref={searchInputRef}
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className={`h-6 w-full bg-transparent text-xs outline-none ${isDark ? 'placeholder:text-zinc-500' : 'placeholder:text-slate-400'
-                    }`}
-                  placeholder={searchPlaceholder}
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-medium ${isDark
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-600/40'
-                  : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                  }`}
-              >
-                <span className="text-[10px]">🟢</span>
-                <span>{searchStatsText}</span>
-              </span>
-              <button
-                type="button"
-                onClick={handleRefreshClick}
-                disabled={isLoadingListings}
-                className={`hidden md:inline-flex items-center gap-1 rounded-full border px-2 py-1 font-semibold transition ${isDark ? 'border-[#27272A] text-zinc-300 hover:bg-black/20' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                  } ${isLoadingListings ? 'cursor-not-allowed opacity-60' : ''}`}
-              >
-                <RefreshCcw className={`h-3 w-3 ${isLoadingListings ? 'animate-spin' : ''}`} />
-                <span>{refreshLabel}</span>
-              </button>
-              <div className="inline-flex items-center gap-2 md:hidden">
-                <LocaleSwitcher />
-              </div>
-            </div>
-          </div>
-        </div>
+        <HomeStickyHeader
+          isDark={isDark}
+          search={search}
+          setSearch={setSearch}
+          searchInputRef={searchInputRef}
+          searchPlaceholder={searchPlaceholder}
+          searchStatsText={searchStatsText}
+          handleRefreshClick={handleRefreshClick}
+          isLoadingListings={isLoadingListings}
+          refreshLabel={refreshLabel}
+        />
 
-        {loadError && (
-          <div
-            className={`rounded-2xl border px-4 py-3 text-sm ${isDark ? 'border-red-900/50 bg-red-900/20 text-rose-100' : 'border-red-200 bg-red-50 text-red-900'
-              }`}
-          >
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="font-semibold">{loadError}</p>
-                {loadErrorDetails && (
-                  <p className="text-xs opacity-80">{loadErrorDetails}</p>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={handleRefreshClick}
-                disabled={isLoadingListings}
-                className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition ${isDark ? 'border-zinc-500 text-zinc-100 hover:bg-white/5' : 'border-red-300 text-red-900 hover:bg-white'
-                  } ${isLoadingListings ? 'cursor-not-allowed opacity-60' : ''}`}
-              >
-                <RefreshCcw className={`h-3 w-3 ${isLoadingListings ? 'animate-spin' : ''}`} />
-                <span>{retryLabel}</span>
-              </button>
-            </div>
-          </div>
-        )}
+        <FeedbackBanner
+          isDark={isDark}
+          loadError={loadError}
+          loadErrorDetails={loadErrorDetails}
+          handleRefreshClick={handleRefreshClick}
+          isLoadingListings={isLoadingListings}
+          retryLabel={retryLabel}
+        />
 
-        <section
-          className={`overflow-hidden rounded-3xl border transition-colors duration-300 ${isDark
-            ? 'border-[#27272A] bg-gradient-to-br from-[#020617] via-[#18181B] to-[#4C1D95]'
-            : 'border-slate-200 bg-gradient-to-br from-slate-50 via-white to-violet-100'
-            }`}
-        >
-          <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between lg:py-4">
-            <div className="flex-1">
-              <div className={`mb-1 inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium backdrop-blur ${isDark ? 'bg-black/10 text-zinc-200' : 'bg-white/50 text-slate-700 shadow-sm border border-slate-200/50'}`}>
-                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#A855F7]/80 text-[9px]">
-                  <Rocket className="h-3 w-3" />
-                </span>
-                <span className="uppercase tracking-wide">{heroBadgeText}</span>
-              </div>
-              <h1 className={`text-3xl font-semibold leading-tight md:text-4xl ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {tHome('headline.one')}{' '}
-                <span className="text-emerald-400">{tHome('headline.two')}</span>
-              </h1>
-              <p className={`mt-1 max-w-2xl text-base ${isDark ? 'text-zinc-300' : 'text-slate-600'}`}>
-                {tHome('tagline') || 'Curirani marketplace s tisućama mini aplikacija, igara i utilsa.'}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-3">
-                <Link
-                  href="/create"
-                  className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 ${isDark ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-emerald-500 hover:bg-emerald-600'
-                    }`}
-                >
-                  <Rocket className="h-4 w-4" />
-                  <span>{tHome('publish') || 'Objavi Aplikaciju'}</span>
-                </Link>
-                <Link
-                  href="/tutorial"
-                  className={`inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-colors ${isDark
-                    ? 'border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  <span>{tNav('tutorials') || 'Vodiči'}</span>
-                </Link>
-              </div>
+        <HomeHero
+          isDark={isDark}
+          heroBadgeText={heroBadgeText}
+          tHome={tHome}
+          tBeta={tBeta}
+          tNav={tNav}
+          randomApp={randomApp}
+          randomPickLabel={randomPickLabel}
+          curatedLabel={curatedLabel}
+          listingLabels={listingLabels}
+          randomPickDetailsLabel={randomPickDetailsLabel}
+          heroAppsLine={heroAppsLine}
+          heroCardDescription={heroCardDescription}
+          heroCardAppsStat={heroCardAppsStat}
+          heroCardFavoritesStat={heroCardFavoritesStat}
+        />
 
-              {/* 3 Steps Visual */}
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                {[
-                  {
-                    title: tBeta('steps.1.title', '1. Opiši ideju'),
-                    desc: tBeta('steps.1.desc', 'Opiši ideju u Google AI Studiju ili ChatGPT-u.'),
-                    icon: (
-                      <div className="flex items-center gap-1.5 text-emerald-500">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-bold">5 min</span>
-                      </div>
-                    )
-                  },
-                  {
-                    title: tBeta('steps.2.title', '2. Kopiraj kod'),
-                    desc: tBeta('steps.2.desc', 'Preuzmi generirani kod ili ZIP paket.'),
-                    icon: (
-                      <div className="flex items-center gap-1.5 text-emerald-500">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-bold">1 min</span>
-                      </div>
-                    )
-                  },
-                  {
-                    title: tBeta('steps.3.title', '3. Objavi'),
-                    desc: tBeta('steps.3.desc', 'Zalijepi (ili uploadaj) i objavi na Thesari.'),
-                    icon: (
-                      <div className="flex items-center gap-1.5 text-emerald-500">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-bold">2 min</span>
-                      </div>
-                    )
-                  },
-                ].map((step, idx) => (
-                  <div key={idx} className={`rounded-xl border p-3 ${isDark ? 'border-zinc-800 bg-zinc-900/50' : 'border-slate-100 bg-slate-50/50'}`}>
-                    <div className="mb-2">{step.icon}</div>
-                    <div className={`font-semibold ${isDark ? 'text-zinc-200' : 'text-slate-700'}`}>{step.title}</div>
-                    <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{step.desc}</div>
-                  </div>
-                ))}
-              </div>
+        <HomeFilterBar
+          isDark={isDark}
+          filters={filters}
+          activeFilter={activeFilter}
+          setActiveFilter={setActiveFilter}
+          filterLabelMap={filterLabelMap}
+          heroMetrics={heroMetrics}
+          liveUsageLabel={liveUsageLabel}
+          gridLabel={gridLabel}
+          changeGridColumns={changeGridColumns}
+          canDecreaseColumns={canDecreaseColumns}
+          canIncreaseColumns={canIncreaseColumns}
+          isGridView={isGridView}
+          cardsPerRow={cardsPerRow}
+          view={view}
+          setView={setView}
+          gridDecreaseAria={gridDecreaseAria}
+          gridIncreaseAria={gridIncreaseAria}
+          sortSelectLabel={sortSelectLabel}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortLabels={sortLabels}
+          hasActiveFilters={hasActiveFilters}
+          clearFilters={clearFilters}
+          clearFiltersLabel={clearFiltersLabel}
+          visibleTags={visibleTags}
+          selectedTags={selectedTags}
+          toggleTag={toggleTag}
+          hiddenTagCount={hiddenTagCount}
+          search={search}
+          setSearch={setSearch}
+        />
 
-            </div>
+        <TrendingSection
+          isDark={isDark}
+          trendingCountLabel={trendingCountLabel}
+          trendingSlides={trendingSlides}
+          trendingIndex={trendingIndex}
+          listingLabels={listingLabels}
+          tHome={tHome}
+          tBeta={tBeta}
+        />
 
-            <div className="flex flex-col gap-4 lg:ml-12 lg:w-[420px] lg:self-stretch">
-              <div className="relative h-48 w-full">
-                <div className="absolute inset-0 rounded-[1.75rem] bg-gradient-to-br from-[#A855F7]/40 via-[#22C55E]/30 to-transparent blur-2xl" aria-hidden="true" />
-                <div
-                  className={`relative flex h-full flex-col justify-between overflow-hidden rounded-3xl border p-3 text-sm shadow-lg transition-colors duration-300 ${isDark ? 'border-[#27272A] bg-[#020617]/90' : 'border-slate-200 bg-white'
-                    }`}
-                >
-                  {randomApp ? (
-                    <div className="flex h-full gap-3">
-                      <div className="flex flex-1 flex-col justify-between gap-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex flex-col">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-500">{randomPickLabel}</p>
-                            <span className="text-xs text-slate-500 dark:text-zinc-500">{randomApp.category}</span>
-                          </div>
-                          <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{curatedLabel}</span>
-                        </div>
-                        <div>
-                          <h3 className={`text-base font-semibold ${isDark ? 'text-zinc-50' : 'text-slate-900'}`}>{randomApp.name}</h3>
-                          <p className={`mt-1 line-clamp-2 text-xs ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{randomApp.description}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <Link
-                            prefetch={false}
-                            href={playHref(randomApp.id, { run: 1 })}
-                            className="inline-flex items-center gap-1 rounded-full bg-emerald-500 px-3 py-1 font-semibold text-black shadow-sm"
-                          >
-                            <Play className="h-3 w-3" />
-                            <span>{listingLabels.play}</span>
-                          </Link>
-                          <Link
-                            prefetch={false}
-                            href={appDetailsHref(randomApp.slug)}
-                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 font-semibold ${isDark ? 'border-[#27272A] text-zinc-100' : 'border-slate-200 text-slate-700'
-                              }`}
-                          >
-                            {randomPickDetailsLabel}
-                            <ArrowRight className="h-3 w-3" />
-                          </Link>
-                        </div>
-                      </div>
-                      <div className="relative h-full w-32 overflow-hidden rounded-2xl">
-                        {randomApp.previewUrl ? (
-                          <Image
-                            src={randomApp.previewUrl}
-                            alt={randomApp.name}
-                            fill
-                            className="object-cover"
-                            sizes="128px"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className={`h-full w-full bg-gradient-to-br ${randomApp.gradientClass}`} />
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-1 flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#A855F7] to-[#22C55E] text-[11px] font-bold text-white">
-                            ✦
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold">{tHome('trending') || 'Trending now'}</p>
-                            <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{heroAppsLine}</p>
-                          </div>
-                        </div>
-                        <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{curatedLabel}</span>
-                      </div>
-                      <div className="space-y-2 text-xs">
-                        <p className={isDark ? 'text-zinc-300' : 'text-slate-600'}>
-                          {heroCardDescription}
-                        </p>
-                        <div className="flex items-center gap-2 text-[11px]">
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${isDark ? 'bg-[#18181B] text-zinc-300' : 'bg-slate-100 text-slate-700'}`}>
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                            {heroCardAppsStat}
-                          </span>
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 ${isDark ? 'bg-[#18181B] text-zinc-300' : 'bg-slate-100 text-slate-700'}`}>
-                            <User className="h-3 w-3" />
-                            {heroCardFavoritesStat}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <AppGrid
+          gridSectionClass={gridSectionClass}
+          visibleApps={visibleApps}
+          hasMore={hasMore}
+          loadMoreRef={loadMoreRef}
+          view={view}
+          isDark={isDark}
+          listingLabels={listingLabels}
+          handleCardDetails={handleCardDetails}
+          filteredAppsLength={filteredApps.length}
+          emptyStateProps={{
+            isDark,
+            noResultsText,
+            noResultsSecondary,
+            hasActiveFilters,
+            clearFiltersLabel,
+            clearFilters,
+            noResultsCtaHref,
+            handleSubmitClick,
+            noResultsCtaLabel,
+          }}
+        />
+      </main>
 
-              {/* Compact Promotion Warning Banner */}
-              <div className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 text-sm leading-tight ${isDark ? 'border-amber-900/50 bg-amber-900/10 text-amber-200/80' : 'border-amber-200 bg-amber-50 text-amber-900/80'
-                }`}>
-                <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <p>
-                  {tHome('promotionWarning') || 'To qualify for the three months if you are among the first 100 users, you must publish one application within 15 days of registration.'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-
-
-        <div className="space-y-4">
-          <section className="mt-2 flex items-center justify-between gap-3">
-            <div className="flex flex-1 items-center gap-1 overflow-x-auto pb-1 text-sm">
-              {filters.map((filter) => {
-                const isActive = activeFilter === filter;
-                return (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    className={`whitespace-nowrap rounded-full border px-3 py-1.5 transition-all duration-300 ${isActive
-                      ? isDark
-                        ? 'border-[#A855F7] bg-[#A855F7]/20 text-zinc-50 shadow-sm'
-                        : 'border-[#A855F7] bg-[#A855F7]/10 text-slate-900 shadow-sm'
-                      : isDark
-                        ? 'border-[#27272A] bg-[#18181B] text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
-                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
-                      }`}
-                  >
-                    {filterLabelMap[filter] ?? filter}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="hidden items-center gap-2 text-sm md:flex">
-              <div className="flex items-center gap-1">
-                {heroMetrics.map((metric) => (
-                  <span
-                    key={metric.id}
-                    title={metric.label}
-                    aria-label={metric.label}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold transition ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-200' : 'border-slate-200 bg-white text-slate-700'
-                      }`}
-                  >
-                    <Cat className="h-3 w-3 text-emerald-400" />
-                    <span>{metric.value}</span>
-                  </span>
-                ))}
-              </div>
-              <span
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-400' : 'border-slate-200 bg-white text-slate-500'
-                  }`}
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                <span>{liveUsageLabel}</span>
-              </span>
-              <div
-                className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold transition ${isDark ? 'border-[#27272A] bg-[#18181B] text-zinc-300' : 'border-slate-200 bg-white text-slate-600'
-                  } ${!isGridView ? 'opacity-60' : ''}`}
-              >
-                <span className="text-[10px] uppercase tracking-wide">{gridLabel}</span>
-                <button
-                  type="button"
-                  onClick={() => changeGridColumns(-1)}
-                  disabled={!canDecreaseColumns || !isGridView}
-                  className="rounded-full border border-transparent p-1 transition hover:border-emerald-500 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={gridDecreaseAria}
-                >
-                  <Minus className="h-3 w-3" />
-                </button>
-                <span>x{cardsPerRow}</span>
-                <button
-                  type="button"
-                  onClick={() => changeGridColumns(1)}
-                  disabled={!canIncreaseColumns || !isGridView}
-                  className="rounded-full border border-transparent p-1 transition hover:border-emerald-500 hover:text-emerald-500 disabled:cursor-not-allowed disabled:opacity-40"
-                  aria-label={gridIncreaseAria}
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
-              </div>
-              <div
-                className={`inline-flex items-center rounded-full border px-1 py-0.5 ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white'
-                  }`}
-              >
-                <button
-                  onClick={() => setView('grid')}
-                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs transition-all duration-300 ${view === 'grid'
-                    ? isDark
-                      ? 'bg-zinc-100 text-black'
-                      : 'bg-slate-900 text-white'
-                    : 'opacity-70'
-                    }`}
-                >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setView('list')}
-                  className={`flex h-6 w-6 items-center justify-center rounded-full text-xs transition-all duration-300 ${view === 'list'
-                    ? isDark
-                      ? 'bg-zinc-100 text-black'
-                      : 'bg-slate-900 text-white'
-                    : 'opacity-70'
-                    }`}
-                >
-                  <Rows className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="flex items-center gap-2 text-xs md:text-sm">
-                <label htmlFor="beta-sort-select" className="sr-only">
-                  {sortSelectLabel}
-                </label>
-                <select
-                  id="beta-sort-select"
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value as 'new' | 'popular' | 'title')}
-                  className={`rounded-full border px-2 py-1 font-semibold focus:outline-none ${isDark ? 'border-[#27272A] bg-zinc-800/70 text-zinc-200 shadow-sm' : 'border-slate-200 bg-white text-slate-600'}`}
-                >
-                  <option value="new">{sortLabels.new}</option>
-                  <option value="popular">{sortLabels.popular}</option>
-                  <option value="title">{sortLabels.title}</option>
-                </select>
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className={`text-xs font-semibold ${isDark ? 'text-rose-200 hover:text-white' : 'text-rose-600 hover:text-rose-700'}`}
-                  >
-                    {clearFiltersLabel}
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {visibleTags.length > 0 && (
-            <section className="flex flex-col gap-2 rounded-2xl border px-3 py-2 text-xs md:text-sm">
-              <div className="flex flex-wrap gap-2">
-                {visibleTags.map(({ key, label }) => {
-                  const isSelected = selectedTags.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleTag(key)}
-                      aria-pressed={isSelected}
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${isSelected
-                        ? isDark
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-200'
-                          : 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                        : isDark
-                          ? 'border-[#27272A] bg-[#18181B] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
-                          : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
-                        }`}
-                    >
-                      #{label}
-                    </button>
-                  );
-                })}
-                {hiddenTagCount > 0 && (
-                  <span className={`rounded-full border border-dashed px-3 py-1 text-xs ${isDark ? 'border-zinc-700 text-zinc-500' : 'border-slate-200 text-slate-400'}`}>
-                    +{hiddenTagCount}
-                  </span>
-                )}
-              </div>
-            </section>
-          )}
-
-          <section
-            className={`rounded-3xl border px-4 py-4 transition-colors ${isDark ? 'border-[#27272A] bg-[#111114]' : 'border-slate-200 bg-white'
-              }`}
-          >
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold">{tHome('trending') || 'Trending now'}</span>
-              <span className={isDark ? 'text-zinc-500' : 'text-slate-500'}>{trendingCountLabel}</span>
-            </div>
-            <div className="relative mt-3 min-h-[220px] overflow-hidden rounded-2xl">
-              {trendingSlides.map((slide, slideIdx) => (
-                <div
-                  key={slideIdx}
-                  className={`absolute inset-0 transition-opacity duration-700 ${slideIdx === trendingIndex ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                >
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {slide.map((app) => (
-                      <TrendingCard key={app.id} app={app} isDark={isDark} labels={listingLabels} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {!trendingSlides.length && (
-                <div className="text-sm text-center text-zinc-500">{tBeta('trending.empty', 'No trending apps yet.')}</div>
-              )}
-            </div>
-          </section>
-
-          <section className={gridSectionClass}>
-            {visibleApps.map((app) => (
-              <BetaAppCard
-                key={app.id}
-                app={app}
-                view={view}
-                isDark={isDark}
-                labels={listingLabels}
-                onDetails={handleCardDetails}
-              />
-            ))}
-            {hasMore && (
-              <div ref={loadMoreRef} className="col-span-full flex h-20 w-full items-center justify-center opacity-50">
-                <span className={`h-2 w-2 rounded-full ${isDark ? 'bg-zinc-600' : 'bg-slate-300'} animate-bounce`} style={{ animationDelay: '0ms' }} />
-                <span className={`mx-1 h-2 w-2 rounded-full ${isDark ? 'bg-zinc-600' : 'bg-slate-300'} animate-bounce`} style={{ animationDelay: '150ms' }} />
-                <span className={`h-2 w-2 rounded-full ${isDark ? 'bg-zinc-600' : 'bg-slate-300'} animate-bounce`} style={{ animationDelay: '300ms' }} />
-              </div>
-            )}
-            {!filteredApps.length && (
-              <div
-                className={`col-span-full flex flex-col items-center justify-center rounded-2xl border bg-opacity-50 px-6 py-12 text-center text-sm ${isDark ? 'border-[#27272A] bg-[#09090B]' : 'border-slate-200 bg-white'
-                  }`}
-              >
-                <div className="relative mb-6 h-40 w-40 opacity-90">
-                  <Image
-                    src="/Robo_ups_t.png"
-                    alt="No results found"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
-                </div>
-                <h3 className={`text-lg font-bold ${isDark ? 'text-zinc-100' : 'text-slate-800'}`}>
-                  {noResultsText}
-                </h3>
-                <p className={`mt-2 max-w-sm text-sm ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                  {noResultsSecondary}
-                </p>
-                <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-                  {hasActiveFilters && (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all hover:scale-105 ${isDark ? 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-                    >
-                      <X className="h-4 w-4" />
-                      {clearFiltersLabel}
-                    </button>
-                  )}
-                  <Link
-                    prefetch={false}
-                    href={noResultsCtaHref}
-                    onClick={noResultsCtaHref === '/create' ? handleSubmitClick : undefined}
-                    className={`inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-all hover:scale-105 hover:shadow-emerald-500/25 ${isDark ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : 'bg-gradient-to-r from-emerald-500 to-teal-500'
-                      }`}
-                  >
-                    <span>{noResultsCtaLabel}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </div>
-              </div>
-            )}
-          </section>
-
-
-        </div>
-      </main >
       {showEarlyAccessPopup && earlyAccessCampaign?.isActive && (
-        <div
-          className={`fixed bottom-6 right-4 z-50 w-[calc(100%-2rem)] max-w-sm rounded-2xl border p-5 shadow-2xl backdrop-blur ${isDark ? 'border-[#27272A] bg-[#0B0B10]/95 text-zinc-100' : 'border-slate-200 bg-white text-slate-900'
-            }`}
-        >
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <p className="text-base font-semibold">{popupTitle}</p>
-              <p className={`mt-2 text-sm ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>{popupBody}</p>
-              <div className="mt-4 flex items-center gap-3">
-                <Link
-                  prefetch={false}
-                  href={popupPrimaryHref}
-                  onClick={(event) => {
-                    if (popupPrimaryHref === '/create') {
-                      handleSubmitClick();
-                    }
-                    dismissEarlyAccessPopup();
-                  }}
-                  className="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-                >
-                  {popupPrimaryLabel}
-                </Link>
-                <button
-                  type="button"
-                  onClick={dismissEarlyAccessPopup}
-                  className={`text-sm ${isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
-                >
-                  {popupDismiss}
-                </button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={dismissEarlyAccessPopup}
-              className={`text-lg ${isDark ? 'text-zinc-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}
-              aria-label={popupDismiss}
-            >
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-        </div>
-      )
-      }
+        <EarlyAccessPopup
+          isDark={isDark}
+          popupTitle={popupTitle}
+          popupBody={popupBody}
+          popupPrimaryHref={popupPrimaryHref}
+          popupPrimaryLabel={popupPrimaryLabel}
+          popupDismiss={popupDismiss}
+          handleSubmitClick={handleSubmitClick}
+          dismissEarlyAccessPopup={dismissEarlyAccessPopup}
+        />
+      )}
 
       <BetaDetailsModal app={selectedApp} onClose={closeDetails} isDark={isDark} labels={listingLabels} />
       <PartnershipModal open={showPartnership} onClose={() => setShowPartnership(false)} />
     </>
   );
-}
-
-
-
-function TrendingCard({ app, isDark, labels }: { app: BetaApp; isDark: boolean; labels: ListingLabels }) {
-  const [authorProfile, setAuthorProfile] = useState<{ name: string; handle?: string; photo?: string } | null>(null);
-
-  useEffect(() => {
-    if (app.authorId) {
-      const fetchProfile = async () => {
-        try {
-          const creatorRef = doc(db, 'creators', app.authorId!);
-          const creatorSnap = await getDoc(creatorRef);
-          if (creatorSnap.exists()) {
-            const data = creatorSnap.data();
-            setAuthorProfile({
-              name: data.displayName || data.handle || app.authorName,
-              handle: data.customRepositoryName || data.handle,
-              photo: data.photoURL || data.photo || app.authorPhoto
-            });
-          }
-        } catch (e) {
-          // Ignore errors
-        }
-      };
-      fetchProfile();
-    }
-  }, [app.authorId, app.authorName, app.authorPhoto]);
-
-  const displayAuthorName = authorProfile?.name || app.authorName;
-  const displayAuthorPhoto = authorProfile?.photo || app.authorPhoto;
-
-  return (
-    <div
-      className={`flex min-w-[220px] flex-col overflow-hidden rounded-2xl border text-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md ${isDark ? 'border-[#27272A] bg-[#18181B]' : 'border-slate-200 bg-white'
-        }`}
-    >
-      <div className="relative h-28 w-full overflow-hidden rounded-b-none">
-        {app.previewUrl ? (
-          <Image
-            src={app.previewUrl}
-            alt={app.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 320px"
-            loading="lazy"
-            unoptimized
-          />
-        ) : (
-          <div className={`h-full w-full bg-gradient-to-br ${app.gradientClass}`} />
-        )}
-        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white">
-          <span className="rounded-full bg-black/40 px-1 text-[9px] font-semibold">{labels.free}</span>
-          <span>{app.name}</span>
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col gap-1 px-3 py-3">
-        <p className={`line-clamp-2 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>{app.description}</p>
-        <div className="mt-2 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            {displayAuthorPhoto ? (
-              <Image
-                src={displayAuthorPhoto}
-                alt={displayAuthorName}
-                width={24}
-                height={24}
-                className="h-6 w-6 rounded-full object-cover"
-                loading="lazy"
-                sizes="24px"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#A855F7] to-[#22C55E] text-[10px] font-bold text-white">
-                {app.authorInitials}
-              </div>
-            )}
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold">{displayAuthorName}</span>
-              <span className={isDark ? 'text-zinc-500' : 'text-slate-500'}>{labels.creator}</span>
-            </div>
-          </div>
-          <Link
-            prefetch={false}
-            href={playHref(app.id, { run: 1 })}
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[10px] font-semibold text-black shadow-sm"
-          >
-            <Play className="h-3 w-3" />
-            <span>{labels.play}</span>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-
-function BetaDetailsModal({
-  app,
-  onClose,
-  isDark,
-  labels,
-}: {
-  app: BetaApp | null;
-  onClose: () => void;
-  isDark: boolean;
-  labels: ListingLabels;
-}) {
-  const { messages } = useI18n();
-  useEffect(() => {
-    if (!app) return;
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => {
-      window.removeEventListener('keydown', handleKey);
-    };
-  }, [app, onClose]);
-
-  if (!app) return null;
-
-  return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4 py-10 backdrop-blur"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        className={`relative w-full max-w-3xl rounded-[32px] border px-6 py-6 shadow-2xl ${isDark ? 'border-[#27272A] bg-[#09090B]' : 'border-slate-200 bg-white'
-          }`}
-      >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={messages['BetaHome.modal.close'] ?? 'Close details'}
-          className={`absolute right-4 top-4 rounded-full border p-2 transition ${isDark ? 'border-[#27272A] text-zinc-400 hover:text-white' : 'border-slate-200 text-slate-500 hover:text-slate-900'
-            }`}
-        >
-          <X className="h-4 w-4" />
-        </button>
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="relative h-56 overflow-hidden rounded-[28px]">
-            {app.previewUrl ? (
-              <Image
-                src={app.previewUrl}
-                alt={app.name}
-                fill
-                loading="lazy"
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 320px"
-                unoptimized
-              />
-            ) : (
-              <div className={`absolute inset-0 bg-gradient-to-br ${app.gradientClass}`} />
-            )}
-          </div>
-          <div className="flex flex-col gap-4">
-            <div>
-              <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
-                {app.category}
-              </p>
-              <h3 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{app.name}</h3>
-              <p className={`mt-2 text-sm leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>{app.description}</p>
-            </div>
-            <div className={`rounded-2xl border px-4 py-3 text-sm ${isDark ? 'border-[#27272A] text-zinc-200' : 'border-slate-200 text-slate-700'}`}>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <Heart className="h-4 w-4 text-rose-400" />
-                  <span>{app.likesLabel}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Play className="h-4 w-4 text-emerald-400" />
-                  <span>{app.usersLabel}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                prefetch={false}
-                href={playHref(app.id, { run: 1 })}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600"
-              >
-                <Play className="h-4 w-4" />
-                <span>{labels.play}</span>
-              </Link>
-              {/* Use programmatic navigation from inside modal to avoid relative-resolution bugs */}
-              <DetailsButton app={app} onClose={onClose} isDark={isDark} labels={labels} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailsButton({ app, onClose, isDark, labels }: { app: BetaApp; onClose: () => void; isDark: boolean; labels: ListingLabels }) {
-  const router = useRouter();
-  const { user } = useAuth();
-  const { messages } = useI18n();
-
-  // Always show the details label here so the button reliably opens the details
-  // view. Falling back to the localized "full details" label keeps behaviour
-  // consistent and avoids routing creators to an edit URL that may 404.
-  const actionLabel = labels.details;
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        try {
-          const href = appDetailsHref(app.slug);
-          onClose();
-          router.push(href);
-        } catch {
-          // navigation failed — swallow error in UI
-        }
-      }}
-      className={`inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDark ? 'border-[#27272A] text-zinc-100 hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
-    >
-      {actionLabel}
-      <ArrowRight className="h-4 w-4" />
-    </button>
-  );
-}
-
-function calculateSearchScore(app: BetaApp, needle: string): number {
-  const normalizedNeedle = needle.toLowerCase();
-  const nameScore = app.name.toLowerCase().includes(normalizedNeedle) ? 3 : 0;
-  const descriptionScore = app.description.toLowerCase().includes(normalizedNeedle) ? 2 : 0;
-  const tagScore = app.tags.some((tag) => tag.toLowerCase().includes(normalizedNeedle)) ? 1 : 0;
-  return nameScore + descriptionScore + tagScore;
-}
-
-function arraysEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) return false;
-  return a.every((value, index) => value === b[index]);
-}
-
-function clampGridColumns(value: number): number {
-  return Math.max(MIN_GRID_COLUMNS, Math.min(MAX_GRID_COLUMNS, value));
-}
-
-function readStoredGridColumns(): number | null {
-  if (typeof window === 'undefined') return null;
-  const stored = window.localStorage.getItem(GRID_COLUMNS_STORAGE_KEY);
-  if (!stored) return null;
-  const parsed = Number.parseInt(stored, 10);
-  return Number.isFinite(parsed) ? clampGridColumns(parsed) : null;
-}
-
-function readStoredViewMode(): 'grid' | 'list' | null {
-  if (typeof window === 'undefined') return null;
-  const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-  return stored === 'list' || stored === 'grid' ? stored : null;
-}
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  if (size <= 0) return [arr];
-  const chunks: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
-  }
-  return chunks;
 }

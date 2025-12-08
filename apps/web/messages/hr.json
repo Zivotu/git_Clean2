@@ -1,4 +1,4 @@
-﻿{
+{
   "Nav": {
     "publishApp": "Objavi aplikaciju",
     "shortVideo": "Thesara kratki video",
@@ -72,7 +72,7 @@
     "comingSoon": "Pišemo lijepu priču o nama, našem timu i našoj viziji — provjerite uskoro."
   },
   "Search": {
-    "title": "Pretraga oglasa",
+    "title": "Istraži aplikacije",
     "errorShort": "Učitavanje rezultata pretrage nije uspjelo",
     "errorLong": "Učitavanje rezultata pretrage nije uspjelo. Provjerite URL API-ja i status poslužitelja.",
     "filters": {
@@ -669,7 +669,7 @@
     "earlyAccessPublish": "Objavi sada",
     "earlyAccessSignIn": "Prijavi se sada",
     "earlyAccessDismiss": "Zatvori",
-    "promotionWarning": "Kako biste se kvalificirali za tri mjeseca ako ste među prvih 100 korisnika, morate objaviti jednu aplikaciju u roku od 15 dana od registracije, u suprotnom gubite to pravo i mjesto ćemo dodijeliti nekome drugom.",
+    "promotionWarning": "Osiguraj svoja 3 besplatna mjeseca Gold + Bez reklama tako da objaviš svoju prvu aplikaciju unutar 15 dana od registracije. Ne propusti priliku!",
     "plays": "{count} igranja",
     "leftPanel": {
       "title": "Od AI razgovora do vaše mini aplikacije",
