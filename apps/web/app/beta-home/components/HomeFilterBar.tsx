@@ -76,12 +76,12 @@ export default function HomeFilterBar({
                                 key={filter}
                                 onClick={() => setActiveFilter(filter)}
                                 className={`whitespace-nowrap rounded-full border px-3 py-1.5 transition-all duration-300 ${isActive
-                                        ? isDark
-                                            ? 'border-[#A855F7] bg-[#A855F7]/20 text-zinc-50 shadow-sm'
-                                            : 'border-[#A855F7] bg-[#A855F7]/10 text-slate-900 shadow-sm'
-                                        : isDark
-                                            ? 'border-[#27272A] bg-[#18181B] text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
-                                            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
+                                    ? isDark
+                                        ? 'border-[#A855F7] bg-[#A855F7]/20 text-zinc-50 shadow-sm'
+                                        : 'border-[#A855F7] bg-[#A855F7]/10 text-slate-900 shadow-sm'
+                                    : isDark
+                                        ? 'border-[#27272A] bg-[#18181B] text-zinc-400 hover:border-zinc-500 hover:text-zinc-100'
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
                                     }`}
                             >
                                 {filterLabelMap[filter] ?? filter}
@@ -97,8 +97,8 @@ export default function HomeFilterBar({
                                 title={metric.label}
                                 aria-label={metric.label}
                                 className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-semibold transition ${isDark
-                                        ? 'border-[#27272A] bg-[#18181B] text-zinc-200'
-                                        : 'border-slate-200 bg-white text-slate-700'
+                                    ? 'border-[#27272A] bg-[#18181B] text-zinc-200'
+                                    : 'border-slate-200 bg-white text-slate-700'
                                     }`}
                             >
                                 <Cat className="h-3 w-3 text-emerald-400" />
@@ -187,11 +187,11 @@ export default function HomeFilterBar({
                         <button
                             onClick={() => setSearch('')}
                             className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition ${isDark
-                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-red-500/50 hover:text-red-300'
-                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-red-200 hover:text-red-600'
+                                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:border-red-500/50 hover:text-red-300'
+                                : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-red-200 hover:text-red-600'
                                 }`}
                         >
-                            <span>Search: "{search}"</span>
+                            <span>Search: &quot;{search}&quot;</span>
                             <X className="h-3 w-3 opacity-60" />
                         </button>
                     )}
@@ -200,8 +200,8 @@ export default function HomeFilterBar({
                         <button
                             onClick={() => setActiveFilter('all')}
                             className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition ${isDark
-                                    ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:border-red-500/50 hover:text-red-300'
-                                    : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-red-200 hover:text-red-600'
+                                ? 'border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:border-red-500/50 hover:text-red-300'
+                                : 'border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-red-200 hover:text-red-600'
                                 }`}
                         >
                             <span>Category: {filterLabelMap[activeFilter] ?? activeFilter}</span>
@@ -216,8 +216,8 @@ export default function HomeFilterBar({
                                 key={tag}
                                 onClick={() => toggleTag(tag)}
                                 className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition ${isDark
-                                        ? 'border-violet-500/30 bg-violet-500/10 text-violet-300 hover:border-red-500/50 hover:text-red-300'
-                                        : 'border-violet-200 bg-violet-50 text-violet-700 hover:border-red-200 hover:text-red-600'
+                                    ? 'border-violet-500/30 bg-violet-500/10 text-violet-300 hover:border-red-500/50 hover:text-red-300'
+                                    : 'border-violet-200 bg-violet-50 text-violet-700 hover:border-red-200 hover:text-red-600'
                                     }`}
                             >
                                 <span>#{tagLabel}</span>
@@ -249,12 +249,12 @@ export default function HomeFilterBar({
                                     onClick={() => toggleTag(key)}
                                     aria-pressed={isSelected}
                                     className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${isSelected
-                                            ? isDark
-                                                ? 'border-violet-500 bg-violet-500/20 text-violet-200'
-                                                : 'border-violet-300 bg-violet-100 text-violet-800'
-                                            : isDark
-                                                ? 'border-[#27272A] bg-[#18181B] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
-                                                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
+                                        ? isDark
+                                            ? 'border-violet-500 bg-violet-500/20 text-violet-200'
+                                            : 'border-violet-300 bg-violet-100 text-violet-800'
+                                        : isDark
+                                            ? 'border-[#27272A] bg-[#18181B] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+                                            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-400 hover:text-slate-800'
                                         }`}
                                 >
                                     #{label}
