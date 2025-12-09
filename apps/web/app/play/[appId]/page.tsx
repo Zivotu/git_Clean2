@@ -43,6 +43,7 @@ export async function generateMetadata({ params }: { params: Promise<{ appId: st
       description: description,
       images: images,
     },
+    manifest: `/play/${appId}/manifest.webmanifest`,
   };
 }
 
