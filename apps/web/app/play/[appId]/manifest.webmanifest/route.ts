@@ -65,5 +65,9 @@ export async function GET(
         ]
     };
 
-    return NextResponse.json(manifest);
+    return NextResponse.json(manifest, {
+        headers: {
+            'Content-Type': 'application/manifest+json',
+        },
+    });
 }

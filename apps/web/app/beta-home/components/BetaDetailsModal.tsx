@@ -24,6 +24,21 @@ export default function BetaDetailsModal({
     const { messages } = useI18n();
     useEffect(() => {
         if (!app) return;
+
+        // Analytics
+        if (typeof window !== 'undefined') {
+            const w = window as any
+            if (w.gtag) {
+                w.gtag('event', 'view_item', {
+                    event_category: 'App',
+                    event_label: app.name,
+                    app_id: app.id,
+                    app_name: app.name,
+                    items: [{ item_id: app.id, item_name: app.name }]
+                })
+            }
+        }
+
         const handleKey = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 onClose();
@@ -55,8 +70,8 @@ export default function BetaDetailsModal({
                     onClick={onClose}
                     aria-label={(messages['BetaHome.modal.close'] as string) ?? 'Close details'}
                     className={`absolute right-4 top-4 rounded-full border p-2 transition ${isDark
-                            ? 'border-[#27272A] text-zinc-400 hover:text-white'
-                            : 'border-slate-200 text-slate-500 hover:text-slate-900'
+                        ? 'border-[#27272A] text-zinc-400 hover:text-white'
+                        : 'border-slate-200 text-slate-500 hover:text-slate-900'
                         }`}
                 >
                     <X className="h-4 w-4" />
@@ -160,8 +175,8 @@ function DetailsButton({
                 }
             }}
             className={`inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold ${isDark
-                    ? 'border-[#27272A] text-zinc-100 hover:bg-white/5'
-                    : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'border-[#27272A] text-zinc-100 hover:bg-white/5'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
         >
             {actionLabel}

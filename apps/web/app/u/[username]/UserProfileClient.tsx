@@ -55,6 +55,23 @@ function ProfileContent({ username }: { username: string }) {
   const shareMenuRef = useRef<HTMLDivElement | null>(null);
   const [shareUrl, setShareUrl] = useState<string>(() => `/u/${encodeURIComponent(username)}`);
 
+  // Analytics: Track profile view
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const w = window as any
+      if (w.gtag) {
+        w.gtag('event', 'view_profile', {
+          event_category: 'Profile',
+          event_label: username,
+          profile_name: username
+        })
+      }
+      if (w.clarity) {
+        w.clarity("set", "profile_view", username)
+      }
+    }
+  }, [username]);
+
   useEffect(() => {
     const fetchUserAndApps = async () => {
       try {
@@ -313,197 +330,197 @@ function ProfileContent({ username }: { username: string }) {
 
     return (
       <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950/50">
-      {/* Header Banner */}
-      <div className="h-48 md:h-64 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-900 dark:to-teal-900 relative">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
-      </div>
+        {/* Header Banner */}
+        <div className="h-48 md:h-64 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-900 dark:to-teal-900 relative">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+        </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative pb-12">
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row gap-6 md:items-start">
-            {/* Avatar */}
-            <div className="shrink-0 flex justify-center md:justify-start">
-              <div className="relative h-32 w-32 rounded-full ring-4 ring-white dark:ring-zinc-900 bg-slate-100 dark:bg-zinc-800 overflow-hidden shadow-lg">
-                {user.photoURL ? (
-                  <Image
-                    src={user.photoURL}
-                    alt={user.displayName || username}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-4xl font-bold text-slate-300 dark:text-zinc-600">
-                    {(user.displayName || username).charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 text-center md:text-left space-y-4">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-                  {user.displayName || username}
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 font-medium">@{user.handle || username}</p>
-              </div>
-
-              {user.bio && (
-                <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto md:mx-0 leading-relaxed">
-                  {user.bio}
-                </p>
-              )}
-
-              <div className="mt-8 grid grid-cols-3 gap-4 border-t border-slate-100 dark:border-zinc-800 pt-6">
-                <div className="text-center md:text-left">
-                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatStat(stats.apps)}</div>
-                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.apps')}</div>
-                </div>
-                <div className="text-center md:text-left">
-                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatStat(stats.likes)}</div>
-                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.likes')}</div>
-                </div>
-                <div className="text-center md:text-left">
-                  <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatStat(stats.plays)}</div>
-                  <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.plays')}</div>
-                </div>
-              </div>
-
-              <div className="flex gap-3 w-full md:w-auto">
-                {isOwnProfile ? (
-                  <Link
-                    href="/profile"
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                    {t('editProfile')}
-                  </Link>
-                ) : currentUser ? (
-                  <button
-                    onClick={handleFollow}
-                    disabled={followBusy}
-                    className={`flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isFollowing
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200'
-                      }`}
-                  >
-                    {isFollowing ? t('following') : t('follow')}
-                  </button>
-                ) : (
-                  <Link
-                    href={`/login?next=${encodeURIComponent(`/u/${user.handle || username}`)}`}
-                    className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
-                  >
-                    {t('follow')}
-                  </Link>
-                )}
-                <div className="relative">
-                  <button
-                    ref={shareButtonRef}
-                    onClick={() => setShareMenuOpen((prev) => !prev)}
-                    className="p-2 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors text-slate-600 dark:text-slate-400"
-                    title={t('share.label')}
-                    aria-label={t('share.label')}
-                    type="button"
-                    aria-haspopup="menu"
-                    aria-expanded={shareMenuOpen}
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </button>
-                  {shareMenuOpen && (
-                    <div
-                      ref={shareMenuRef}
-                      className="absolute right-0 mt-2 w-60 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl p-3 text-sm space-y-2 z-20"
-                    >
-                      <button
-                        type="button"
-                        onClick={handleNativeShare}
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
-                      >
-                        <SendHorizontal className="h-4 w-4 text-emerald-500" />
-                        <span>{t('share.native')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleCopyLink}
-                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
-                      >
-                        <Link2 className="h-4 w-4 text-emerald-500" />
-                        <span>
-                          {copyState === 'copied'
-                            ? t('share.copied')
-                            : copyState === 'error'
-                              ? t('share.error')
-                              : t('share.copy')}
-                        </span>
-                      </button>
-                      <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
-                        <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
-                          {t('share.networks')}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {shareTargets.map(({ id, label, href, Icon }) => (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => handleTargetShare(href)}
-                              className="flex items-center gap-2 rounded-xl border border-slate-100 dark:border-zinc-800 px-2.5 py-2 text-left hover:border-emerald-200 dark:hover:border-emerald-600 transition"
-                            >
-                              <Icon className="h-4 w-4 text-emerald-500" />
-                              <span className="text-sm">{label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 relative pb-12">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 p-6 md:p-8">
+            <div className="flex flex-col md:flex-row gap-6 md:items-start">
+              {/* Avatar */}
+              <div className="shrink-0 flex justify-center md:justify-start">
+                <div className="relative h-32 w-32 rounded-full ring-4 ring-white dark:ring-zinc-900 bg-slate-100 dark:bg-zinc-800 overflow-hidden shadow-lg">
+                  {user.photoURL ? (
+                    <Image
+                      src={user.photoURL}
+                      alt={user.displayName || username}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-4xl font-bold text-slate-300 dark:text-zinc-600">
+                      {(user.displayName || username).charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Apps Grid */}
-        <div className="mt-12 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-              <LayoutGrid className="h-5 w-5 text-emerald-500" />
-              {t('projects')}
-              <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
-                {userApps.length}
-              </span>
-            </h2>
-          </div>
+              {/* Info */}
+              <div className="flex-1 text-center md:text-left space-y-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+                    {user.displayName || username}
+                  </h1>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium">@{user.handle || username}</p>
+                </div>
 
-          {loadingApps ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-64 bg-slate-100 dark:bg-zinc-900 rounded-xl animate-pulse" />
-              ))}
-            </div>
-          ) : userApps.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userApps.map((app) => (
-                <AppCard
-                  key={app.id}
-                  item={app}
-                  viewMode="grid"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 border-dashed">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 mb-4">
-                <LayoutGrid className="h-6 w-6 text-slate-400" />
+                {user.bio && (
+                  <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto md:mx-0 leading-relaxed">
+                    {user.bio}
+                  </p>
+                )}
+
+                <div className="mt-8 grid grid-cols-3 gap-4 border-t border-slate-100 dark:border-zinc-800 pt-6">
+                  <div className="text-center md:text-left">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatStat(stats.apps)}</div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.apps')}</div>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatStat(stats.likes)}</div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.likes')}</div>
+                  </div>
+                  <div className="text-center md:text-left">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatStat(stats.plays)}</div>
+                    <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{t('stats.plays')}</div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 w-full md:w-auto">
+                  {isOwnProfile ? (
+                    <Link
+                      href="/profile"
+                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                      {t('editProfile')}
+                    </Link>
+                  ) : currentUser ? (
+                    <button
+                      onClick={handleFollow}
+                      disabled={followBusy}
+                      className={`flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isFollowing
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200'
+                        }`}
+                    >
+                      {isFollowing ? t('following') : t('follow')}
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/login?next=${encodeURIComponent(`/u/${user.handle || username}`)}`}
+                      className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-lg font-medium hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                    >
+                      {t('follow')}
+                    </Link>
+                  )}
+                  <div className="relative">
+                    <button
+                      ref={shareButtonRef}
+                      onClick={() => setShareMenuOpen((prev) => !prev)}
+                      className="p-2 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors text-slate-600 dark:text-slate-400"
+                      title={t('share.label')}
+                      aria-label={t('share.label')}
+                      type="button"
+                      aria-haspopup="menu"
+                      aria-expanded={shareMenuOpen}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </button>
+                    {shareMenuOpen && (
+                      <div
+                        ref={shareMenuRef}
+                        className="absolute right-0 mt-2 w-60 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-xl p-3 text-sm space-y-2 z-20"
+                      >
+                        <button
+                          type="button"
+                          onClick={handleNativeShare}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
+                        >
+                          <SendHorizontal className="h-4 w-4 text-emerald-500" />
+                          <span>{t('share.native')}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCopyLink}
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-zinc-800 transition"
+                        >
+                          <Link2 className="h-4 w-4 text-emerald-500" />
+                          <span>
+                            {copyState === 'copied'
+                              ? t('share.copied')
+                              : copyState === 'error'
+                                ? t('share.error')
+                                : t('share.copy')}
+                          </span>
+                        </button>
+                        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
+                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2">
+                            {t('share.networks')}
+                          </p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {shareTargets.map(({ id, label, href, Icon }) => (
+                              <button
+                                key={id}
+                                type="button"
+                                onClick={() => handleTargetShare(href)}
+                                className="flex items-center gap-2 rounded-xl border border-slate-100 dark:border-zinc-800 px-2.5 py-2 text-left hover:border-emerald-200 dark:hover:border-emerald-600 transition"
+                              >
+                                <Icon className="h-4 w-4 text-emerald-500" />
+                                <span className="text-sm">{label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">{t('noProjects.title')}</h3>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">{t('noProjects.message')}</p>
             </div>
-          )}
+          </div>
+
+          {/* Apps Grid */}
+          <div className="mt-12 space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <LayoutGrid className="h-5 w-5 text-emerald-500" />
+                {t('projects')}
+                <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-2 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+                  {userApps.length}
+                </span>
+              </h2>
+            </div>
+
+            {loadingApps ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-64 bg-slate-100 dark:bg-zinc-900 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : userApps.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userApps.map((app) => (
+                  <AppCard
+                    key={app.id}
+                    item={app}
+                    viewMode="grid"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 border-dashed">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 dark:bg-zinc-800 mb-4">
+                  <LayoutGrid className="h-6 w-6 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">{t('noProjects.title')}</h3>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">{t('noProjects.message')}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
   };
 
   return renderContent();

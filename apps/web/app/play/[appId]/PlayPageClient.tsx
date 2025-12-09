@@ -209,6 +209,31 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     notifyPlay(app.slug || app.id)
   }, [app.slug, app.id])
 
+  // Analytics: Track app play event in GA4 & Clarity
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // GA4
+      const w = window as any
+      if (w.gtag) {
+        w.gtag('event', 'app_play', {
+          event_category: 'App',
+          event_label: app.title || app.name,
+          app_id: app.id, // Explicit ID for filtering
+          app_name: app.title || app.name, // Readable name
+          value: 1
+        })
+      }
+      // Clarity
+      if (w.clarity) {
+        // Tag the session with specific app info so recordings can be filtered
+        w.clarity("set", "app_id", app.id)
+        w.clarity("set", "app_name", app.title || app.name)
+        // Also fire a custom upgrade event if needed, but tags are usually best for filtering
+        // w.clarity("upgrade", "app_play") 
+      }
+    }
+  }, [app.id, app.title, app.name])
+
   // Show overlay for 6s AFTER bootstrap is ready (iframe becomes available)
   // This covers: iframe render + shim load + ready signal + init + data sync
   useEffect(() => {
