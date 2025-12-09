@@ -46,6 +46,28 @@
     ]
   },
   {
+    "id": "troubleshooting",
+    "title": "Troubleshooting & Tips",
+    "items": [
+      {
+        "q": "Code vs. Bundle - which to choose?",
+        "a": "Use **Code** for single HTML/React files (e.g. from ChatGPT). Use **Bundle (.zip)** for multi-file projects. Important: When creating a zip, select the *files* and compress them, do not compress the parent folder."
+      },
+      {
+        "q": "What are the file size limits?",
+        "a": "Preview images and screenshots: max **1MB**. Custom assets: max **100KB** (one file up to **500KB** allowed). Use tools like TinyPNG if your images are too large."
+      },
+      {
+        "q": "How do Rooms (PIN) work?",
+        "a": "Rooms enable private or multiplayer sessions. You can set a PIN requirement. Use PIN **1111** to test this feature on demo apps."
+      },
+      {
+        "q": "My AI app doesn't work",
+        "a": "If your app calls an AI API (like Gemini or OpenAI), don't forget to enter your **API Key** in the specific field during the publishing process."
+      }
+    ]
+  },
+  {
     "id": "usage",
     "title": "Using apps",
     "items": [

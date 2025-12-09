@@ -46,6 +46,28 @@
     ]
   },
   {
+    "id": "rjesavanje-problema",
+    "title": "Rješavanje problema i savjeti",
+    "items": [
+      {
+        "q": "Kod ili Bundle - što odabrati?",
+        "a": "Koristi **Kod** za pojedinačne HTML/React datoteke (npr. iz ChatGPT-a). Koristi **Bundle (.zip)** za projekte s više datoteka. Važno: Kod zipanja, označi same *datoteke* i sažmi ih, nemoj zipati cijelu mapu."
+      },
+      {
+        "q": "Koja su ograničenja veličine datoteka?",
+        "a": "Preview slike i screenshotovi: max **1MB**. Custom assets: max **100KB** (jedna datoteka može biti do **500KB**). Koristi alate poput TinyPNG ako su ti slike prevelike."
+      },
+      {
+        "q": "Kako rade Sobe (Rooms)?",
+        "a": "Sobe omogućuju privatne ili multiplayer sesije. Možeš postaviti PIN za pristup. Za testiranje možeš koristiti PIN **1111**."
+      },
+      {
+        "q": "Moja AI aplikacija ne radi",
+        "a": "Ako tvoja aplikacija koristi AI API (poput Geminija ili OpenAI-a), ne zaboravi unijeti svoj **API Key** u za to predviđeno polje prilikom objave."
+      }
+    ]
+  },
+  {
     "id": "korištenje",
     "title": "Korištenje aplikacija",
     "items": [

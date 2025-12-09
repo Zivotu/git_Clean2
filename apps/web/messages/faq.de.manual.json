@@ -46,6 +46,28 @@
     ]
   },
   {
+    "id": "fehlerbehebung",
+    "title": "Fehlerbehebung & Tipps",
+    "items": [
+      {
+        "q": "Code oder Bundle – was soll ich wählen?",
+        "a": "Nutze **Code** für einzelne HTML/React-Dateien (z. B. von ChatGPT). Nutze **Bundle (.zip)** für Projekte mit mehreren Dateien. Wichtig: Beim Zippen die *Dateien* auswählen und komprimieren, nicht den Ordner selbst."
+      },
+      {
+        "q": "Welche Dateigrößenbeschränkungen gibt es?",
+        "a": "Vorschaubilder und Screenshots: max. **1MB**. Benutzerdefinierte Assets: max. **100KB** (eine Datei bis zu **500KB** erlaubt). Nutze Tools wie TinyPNG, falls deine Bilder zu groß sind."
+      },
+      {
+        "q": "Wie funktionieren Räume (PIN)?",
+        "a": "Räume ermöglichen private oder Multiplayer-Sitzungen. Du kannst einen PIN-Code festlegen. Teste die Funktion mit dem PIN **1111**."
+      },
+      {
+        "q": "Meine AI-App funktioniert nicht",
+        "a": "Wenn deine App eine AI-API (wie Gemini oder OpenAI) nutzt, vergiss nicht, deinen **API Key** im dafür vorgesehenen Feld während der Veröffentlichung einzugeben."
+      }
+    ]
+  },
+  {
     "id": "nutzung",
     "title": "Nutzung von Apps",
     "items": [
