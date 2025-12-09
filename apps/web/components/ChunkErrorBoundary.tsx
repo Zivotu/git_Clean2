@@ -12,7 +12,10 @@ class ChunkErrorBoundary extends React.Component<{ children: React.ReactNode }, 
 
   componentDidCatch(error: unknown) {
     if (typeof window !== 'undefined' && error instanceof Error) {
-      if (/ChunkLoadError/i.test(error.name)) {
+      if (
+        /ChunkLoadError/i.test(error.name) ||
+        /Loading chunk [\d]+ failed/i.test(error.message)
+      ) {
         window.location.reload();
         return;
       }

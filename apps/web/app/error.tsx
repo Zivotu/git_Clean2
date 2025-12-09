@@ -12,11 +12,15 @@ export default function Error({
   useEffect(() => {
     // eslint-disable-next-line no-console
     console.error(error);
-    // Optionally report error to an external service
-    // void fetch('/api/error', {
-    //   method: 'POST',
-    //   body: JSON.stringify({ message: error.message, digest: error.digest }),
-    // });
+
+    // Auto-reload on chunk load errors (often happens after new deployments)
+    if (
+      error.name === 'ChunkLoadError' ||
+      /Loading chunk [\d]+ failed/.test(error.message) ||
+      /undefined is not a function/.test(error.message)
+    ) {
+      window.location.reload();
+    }
   }, [error]);
 
   return (
