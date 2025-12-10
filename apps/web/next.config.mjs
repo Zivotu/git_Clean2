@@ -128,6 +128,8 @@ const baseConfig = {
               const adScriptHosts = [
                 'https://pagead2.googlesyndication.com',
                 'https://www.googletagservices.com',
+                'https://www.googletagmanager.com',
+                'https://www.google-analytics.com',
               ];
               const adFrameHosts = [
                 'https://googleads.g.doubleclick.net',
@@ -137,6 +139,9 @@ const baseConfig = {
                 'https://pagead2.googlesyndication.com',
                 'https://tpc.googlesyndication.com',
                 'https://googleads.g.doubleclick.net',
+                'https://www.google-analytics.com',
+                'https://www.googletagmanager.com',
+                'https://region1.google-analytics.com',
               ];
 
               const scriptSrc = ["'self'", "'unsafe-inline'", ...adScriptHosts];
@@ -147,6 +152,10 @@ const baseConfig = {
 
               const connectSrc = new Set(["'self'", apiOrigin, ...devApiOrigins, ...firebaseOrigins]);
               adScriptHosts.forEach((origin) => connectSrc.add(origin));
+              // Allow GA/GTM connect
+              connectSrc.add('https://www.google-analytics.com');
+              connectSrc.add('https://region1.google-analytics.com');
+              connectSrc.add('https://www.googletagmanager.com');
               const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins, 'blob:', ...adFrameHosts]);
               adFrameHosts.forEach((origin) => connectSrc.add(origin));
               const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', ...adImgHosts]);

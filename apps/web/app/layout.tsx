@@ -114,6 +114,35 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "u61xrk1m1g");`}
         </Script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                // Check if the error is related to script loading (ChunkLoadError)
+                if (e.message && (/ChunkLoadError/.test(e.message) || /Loading chunk/.test(e.message))) {
+                   console.warn('Chunk load error detected, reloading...');
+                   // Avoid infinite reload loops if server is truly broken:
+                   // check if we just reloaded < 10 seconds ago?
+                   // For now, simple reload is better than broken app.
+                   window.location.reload();
+                }
+                // Also check for network 400/404 on script tags (resource error)
+                if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                   // e.target.src might contain '_next/static/chunks'
+                   if (e.target.src && e.target.src.indexOf('_next/static') !== -1) {
+                      console.warn('Next.js resource failed to load:', e.target.src);
+                      // Give it a moment, if multiple fail, we reload.
+                      // Use a debounced reload or sessionStorage to preventing looping?
+                      if (!sessionStorage.getItem('chunk_reload_' + e.target.src)) {
+                         sessionStorage.setItem('chunk_reload_' + e.target.src, Date.now());
+                         window.location.reload();
+                      }
+                   }
+                }
+              }, true); // true = capture phase to catch resource loading errors
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen bg-white text-gray-900">
         <ThemeProvider>
