@@ -18,20 +18,19 @@ else
     echo "✅ SWAP activated"
 fi
 
-# 2. Ubij sve zombi procese na portovima
-echo ""
-echo "🧹 Cleaning zombie processes..."
-sudo fuser -k 3000/tcp 2>/dev/null || echo "  Port 3000 is clean"
-sudo fuser -k 8788/tcp 2>/dev/null || echo "  Port 8788 is clean"
-
-# 3. Provjeri PM2 status
+# 2. Provjeri PM2 status prvo (PRIJE čišćenja zombija)
 echo ""
 echo "📦 Checking PM2 processes..."
 if pm2 list | grep -q "online"; then
     echo "✅ PM2 processes are running"
     pm2 status
 else
-    echo "⚠️  PM2 processes not running, starting..."
+    echo "⚠️  PM2 processes not running"
+    echo "   Cleaning zombie processes first..."
+    sudo fuser -k -9 3000/tcp 2>/dev/null || true
+    sudo fuser -k -9 8788/tcp 2>/dev/null || true
+    sleep 2
+    echo "   Starting PM2..."
     cd /srv/thesara/app
     pm2 start ecosystem.config.cjs
     sleep 5
@@ -39,19 +38,17 @@ else
     echo "✅ PM2 processes started"
 fi
 
-# 4. Provjeri je li web dostupan
+# 3. Provjeri je li web dostupan
 echo ""
 echo "🌐 Testing web server..."
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 | grep -q "200"; then
-    echo "✅ Web server is responding"
+if netstat -tuln | grep -q ":3000 "; then
+    echo "✅ Web server is listening on port 3000"
 else
-    echo "⚠️  Web server not responding"
-    echo "   Attempting restart..."
-    pm2 restart thesara-web
-    sleep 5
+    echo "⚠️  Web server not listening on port 3000"
+    echo "   Check PM2 logs with: pm2 logs thesara-web --lines 30"
 fi
 
-# 5. Finalni status
+# 4. Finalni status
 echo ""
 echo "=================================="
 echo "✨ Recovery complete!"
