@@ -117,29 +117,76 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.addEventListener('error', function(e) {
-                // Check if the error is related to script loading (ChunkLoadError)
-                if (e.message && (/ChunkLoadError/.test(e.message) || /Loading chunk/.test(e.message))) {
-                   console.warn('Chunk load error detected, reloading...');
-                   // Avoid infinite reload loops if server is truly broken:
-                   // check if we just reloaded < 10 seconds ago?
-                   // For now, simple reload is better than broken app.
-                   window.location.reload();
+              (function() {
+                var reloadAttempts = 0;
+                var MAX_RELOAD_ATTEMPTS = 3;
+                var RELOAD_COOLDOWN = 5000; // 5 seconds
+                
+                window.addEventListener('error', function(e) {
+                  // For runtime errors (thrown exceptions)
+                  if (e.message && (/ChunkLoadError/i.test(e.message) || /Loading chunk/i.test(e.message))) {
+                     console.warn('[Thesara] Chunk load error detected in runtime, reloading...');
+                     performSafeReload('runtime_chunk_error');
+                     return;
+                  }
+                  
+                  // For resource loading errors (script/css tags)
+                  if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                     var src = e.target.src || e.target.href || '';
+                     
+                     // Check if this is a Next.js static resource
+                     if (src.indexOf('_next/static') !== -1) {
+                        console.warn('[Thesara] Next.js resource failed to load:', src);
+                        performSafeReload('resource_' + src);
+                        return;
+                     }
+                  }
+                }, true); // capture phase to catch resource errors
+                
+                function performSafeReload(errorKey) {
+                  try {
+                    // Check if we've attempted reload recently for this error
+                    var lastReloadKey = 'chunk_reload_' + errorKey;
+                    var lastReloadTime = sessionStorage.getItem(lastReloadKey);
+                    var now = Date.now();
+                    
+                    // Allow reload if:
+                    // 1. Never reloaded for this error, OR
+                    // 2. Last reload was more than RELOAD_COOLDOWN ago
+                    if (!lastReloadTime || (now - parseInt(lastReloadTime)) > RELOAD_COOLDOWN) {
+                       // Check global reload attempts to prevent infinite loops
+                       var globalReloads = parseInt(sessionStorage.getItem('global_reload_count') || '0');
+                       
+                       if (globalReloads >= MAX_RELOAD_ATTEMPTS) {
+                          console.error('[Thesara] Max reload attempts reached. Please manually refresh (Ctrl+Shift+R)');
+                          return;
+                       }
+                       
+                       // Update counters
+                       sessionStorage.setItem(lastReloadKey, now.toString());
+                       sessionStorage.setItem('global_reload_count', (globalReloads + 1).toString());
+                       
+                       console.log('[Thesara] Reloading page to recover from error...');
+                       
+                       // Use location.replace to avoid adding to history
+                       window.location.replace(window.location.href);
+                    } else {
+                       console.warn('[Thesara] Reload cooldown active for', errorKey);
+                    }
+                  } catch (err) {
+                     // If sessionStorage is blocked (private mode), just reload once
+                     console.warn('[Thesara] Storage error, performing simple reload');
+                     window.location.reload();
+                  }
                 }
-                // Also check for network 400/404 on script tags (resource error)
-                if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-                   // e.target.src might contain '_next/static/chunks'
-                   if (e.target.src && e.target.src.indexOf('_next/static') !== -1) {
-                      console.warn('Next.js resource failed to load:', e.target.src);
-                      // Give it a moment, if multiple fail, we reload.
-                      // Use a debounced reload or sessionStorage to preventing looping?
-                      if (!sessionStorage.getItem('chunk_reload_' + e.target.src)) {
-                         sessionStorage.setItem('chunk_reload_' + e.target.src, Date.now());
-                         window.location.reload();
-                      }
-                   }
-                }
-              }, true); // true = capture phase to catch resource loading errors
+                
+                // Reset global reload counter after 30 seconds of successful operation
+                setTimeout(function() {
+                   try {
+                      sessionStorage.removeItem('global_reload_count');
+                   } catch(e) {}
+                }, 30000);
+              })();
             `,
           }}
         />
