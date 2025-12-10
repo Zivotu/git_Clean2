@@ -31,7 +31,7 @@ module.exports = {
     {
       name: 'thesara-web',
       cwd: path.join(rootDir, 'apps/web'),
-      script: 'pnpm',
+      script: 'npm',
       args: 'start',
       env: {
         NODE_ENV: 'production',
@@ -44,6 +44,10 @@ module.exports = {
       },
       max_memory_restart: '512M',
       restart_delay: 5000,
+      kill_timeout: 5000,  // Wait 5s for graceful shutdown before SIGKILL
+      listen_timeout: 10000,  // Wait 10s for app to bind to port
+      max_restarts: 5,  // Don't restart infinitely if it keeps failing
+      min_uptime: 10000,  // Must run 10s to be considered "started"
     },
   ],
 };
