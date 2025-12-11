@@ -7,11 +7,19 @@ import { onAuthStateChanged, type User, setPersistence, inMemoryPersistence } fr
 import { doc, onSnapshot } from 'firebase/firestore';
 import { ensureUserDoc } from './ensureUserDoc';
 
-type AuthCtx = { user: User | null; loading: boolean };
+type ExtendedUser = User & {
+  ambassador?: {
+    status: 'pending' | 'approved' | 'rejected' | string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+};
+
+type AuthCtx = { user: ExtendedUser | null; loading: boolean };
 const Ctx = createContext<AuthCtx>({ user: null, loading: true });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Set initial user from Firebase Auth
-      setUser(u);
+      setUser(u as ExtendedUser);
       setLoading(false);
 
       if (u) {
@@ -85,20 +93,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (snapshot.exists()) {
                   const data = snapshot.data();
                   // Create an enhanced user object with Firestore data
-                  const enhancedUser = Object.create(u) as User;
-                  // Override displayName and photoURL with Firestore data if available
-                  Object.defineProperty(enhancedUser, 'displayName', {
-                    value: data.displayName || u.displayName,
-                    writable: false,
-                    enumerable: true,
-                    configurable: true,
-                  });
-                  Object.defineProperty(enhancedUser, 'photoURL', {
-                    value: data.photoURL || data.photo || u.photoURL,
-                    writable: false,
-                    enumerable: true,
-                    configurable: true,
-                  });
+                  const enhancedUser = Object.create(u) as ExtendedUser;
+
+                  // Copy all data from Firestore to the enhanced user object
+                  Object.assign(enhancedUser, data);
+
+                  // Override displayName and photoURL specifically if needed (though Object.assign handles new props)
+                  // We use defineProperty for existing readonly properties of User if we want to override them
+                  if (data.displayName) {
+                    Object.defineProperty(enhancedUser, 'displayName', {
+                      value: data.displayName,
+                      writable: false,
+                      enumerable: true,
+                      configurable: true,
+                    });
+                  }
+                  if (data.photoURL || data.photo) {
+                    Object.defineProperty(enhancedUser, 'photoURL', {
+                      value: data.photoURL || data.photo,
+                      writable: false,
+                      enumerable: true,
+                      configurable: true,
+                    });
+                  }
+
                   setUser(enhancedUser);
                 }
               },

@@ -98,9 +98,9 @@
         "funFact": {
             "title": "💡 Znaš li da...",
             "chatgpt": "ChatGPT koristi 700 milijuna ljudi tjedno",
-            "thesara": "prva platforma",
-            "description": "— a Thesara je {platform} koja omogućava kreiranje vlastitih AI aplikacija bez kodiranja!",
-            "market": "To znači da tržište AI alata {explodes} — i ti možeš biti dio te revolucije kao ambassador! 🎯",
+            "thesara": "jedino mjesto",
+            "description": "— a Thesara je {platform} gdje bilo tko može u 3 klika objaviti svoje AI kreacije (iz bilo kojeg LLM-a), podijeliti ih sa svijetom i odmah monetizirati!",
+            "market": "Zahvaljujući našoj \"čarobnoj memoriji\", te aplikacije pamte rezultate i spajaju igrače — nešto što običan AI ne može. Potencijal {explodes}, budi prvi koji će to unovčiti! 🎯",
             "explodes": "eksplodira"
         },
         "turbo": {

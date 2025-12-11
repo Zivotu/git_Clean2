@@ -97,10 +97,10 @@
         "subtitle": "Schnelle Schätzung der monatlichen Einnahmen",
         "funFact": {
             "title": "💡 Wussten Sie...",
-            "chatgpt": "ChatGPT wird von 700 Millionen Menschen wöchentlich genutzt",
-            "thesara": "erste Plattform",
-            "description": "— und Thesara ist die {platform}, die es ermöglicht, eigene KI-Anwendungen ohne Programmierung zu erstellen!",
-            "market": "Das bedeutet, dass der Markt für KI-Tools {explodes} — und Sie können als Ambassador Teil dieser Revolution sein! 🎯",
+            "chatgpt": "ChatGPT wird wöchentlich von 700 Millionen Menschen genutzt",
+            "thesara": "der einzige Ort",
+            "description": "— und Thesara ist {platform}, wo jeder seine KI-Kreationen (aus jedem LLM) mit nur 3 Klicks veröffentlichen, mit der Welt teilen und sofort monetarisieren kann!",
+            "market": "Dank unseres \"magischen Speichers\" merken sich diese Apps Spielstände und verbinden Spieler — etwas, das einfache KI nicht kann. Das Potenzial {explodes}, sei der Erste, der davon profitiert! 🎯",
             "explodes": "explodiert"
         },
         "turbo": {

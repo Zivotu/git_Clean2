@@ -98,9 +98,9 @@
         "funFact": {
             "title": "💡 Did you know...",
             "chatgpt": "ChatGPT is used by 700 million people weekly",
-            "thesara": "first platform",
-            "description": "— and Thesara is the {platform} that enables creating your own AI applications without coding!",
-            "market": "This means the AI tools market is {explodes} — and you can be part of this revolution as an ambassador! 🎯",
+            "thesara": "the only place",
+            "description": "— and Thesara is {platform} where anyone can publish their AI creations (from any LLM) in just 3 clicks, share them with the world, and monetize instantly!",
+            "market": "Thanks to our \"magic storage,\" these apps remember scores and connect players — something basic AI can't do. The potential is {explodes}, be the first to cash in! 🎯",
             "explodes": "exploding"
         },
         "turbo": {
