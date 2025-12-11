@@ -1,7 +1,7 @@
 #!/bin/bash
 # Deployment script za thesara.space
 # Koristi se za deployment nakon git push
-# Updated: 2025-12-11 - Added cache busting and proper restart sequence
+# Updated: 2025-12-11 - Added nginx config, cache busting, and proper restart sequence
 
 set -e  # Zaustavi script ako bilo koja komanda faila
 
@@ -30,6 +30,14 @@ git reset --hard origin/main
 echo "✅ Latest commits:"
 git log -3 --oneline
 
+# VAŽNO: Update nginx config ako postoji nova verzija
+if [ -f "nginx-thesara.conf" ]; then
+    echo "🔧 Updating nginx configuration..."
+    sudo cp nginx-thesara.conf /etc/nginx/sites-available/thesara
+    sudo nginx -t && sudo systemctl reload nginx
+    echo "✅ Nginx updated and reloaded"
+fi
+
 # Build and restart API
 echo "🔧 Building API..."
 cd apps/api
@@ -37,14 +45,13 @@ pnpm install --frozen-lockfile
 pnpm build
 
 echo "🔄 Restarting API..."
-pm2 stop thesara-api || true  # Don't fail if not running
-pm2 start dist/server.cjs --name thesara-api --update-env || pm2 restart thesara-api --update-env
+pm2 restart thesara-api --update-env || pm2 start dist/server.cjs --name thesara-api --update-env
 
 # Build and restart Web
 echo "🌐 Building Web..."
 cd ../web
 
-# Clean old build to prevent chunk conflicts
+# KRITIČNO: Clean old build to prevent chunk conflicts!
 echo "🧹 Cleaning old Next.js build..."
 rm -rf .next
 
@@ -77,7 +84,6 @@ echo ""
 echo "💡 If you're still seeing chunk errors in browser:"
 echo "   1. Hard refresh: Ctrl+Shift+R (Chrome) or Ctrl+F5"
 echo "   2. Clear browser cache completely"
-echo "   3. Check nginx config: sudo nginx -t && sudo systemctl reload nginx"
 echo ""
 echo "📝 Recent logs:"
 echo "   pm2 logs thesara-web --lines 20"
