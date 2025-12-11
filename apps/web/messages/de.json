@@ -1611,10 +1611,71 @@
         "emailInvalid": "Gib eine gültige E-Mail-Adresse ein.",
         "phone": "Gib eine gültige Handynummer ein."
       }
-    },
-    "ambassadorSection": {
-      "title": "Thesara Ambassador-Programm",
-      "description": "Werde Thesara-Botschafter und verdiene Provision, indem du deinen einzigartigen Code mit deinem Publikum teilst.",
+    }
+  },
+  "Feedback": {
+    "title": "Ihr Feedback",
+    "subtitle": "Senden Sie einen Verbesserungsvorschlag für Thesara — wir leiten ihn an unser Team weiter.",
+    "close": "Schließen",
+    "form": {
+      "namePlaceholder": "Ihr Name (Optional)",
+      "emailPlaceholder": "E-Mail (Optional)",
+      "subjectPlaceholder": "Betreff",
+      "messagePlaceholder": "Schreiben Sie hier Ihren Vorschlag...",
+      "errorMinLength": "Bitte schreiben Sie eine kurze Beschreibung (mindestens 5 Zeichen)",
+      "errorGeneric": "Fehler beim Senden. Bitte versuchen Sie es später erneut.",
+      "success": "Danke! Vorschlag gesendet.",
+      "cancel": "Abbrechen",
+      "sending": "Wird gesendet...",
+      "submit": "Senden"
+    }
+  },
+  "ambassadorSection": {
+    "title": "Thesara Ambassador-Programm",
+    "description": "Werde Thesara-Botschafter und verdiene Provision, indem du deinen einzigartigen Code mit deinem Publikum teilst.",
+    "commissionRate": "80% Provision auf erste Zahlung",
+    "commissionText": "Verdiene als Partner: {rate} von Nutzern, die deinen Code verwenden.",
+    "benefit1": "Vorteil für dein Publikum: {trial} kostenloser Gold-Plan.",
+    "benefit2": "Auszahlung: Schwelle {threshold}, Auszahlung {frequency} über PayPal.",
+    "benefit3": "Einfaches Teilen: einzigartiger Promo-Code und Link.",
+    "benefit4": "Transparenz: Dashboard mit Einblicken in Nutzung, Conversions und Einnahmen.",
+    "note": "💡 Hinweis: Provision wird auf {period} des Nutzers innerhalb von 60 Tagen nach Code-Aktivierung berechnet.",
+    "applyButton": "🚀 Bewerben",
+    "statusApproved": "🎉 Glückwunsch! Du wurdest als Thesara-Botschafter genehmigt.",
+    "statusPending": "⏳ Deine Bewerbung wird geprüft. Wir benachrichtigen dich per E-Mail, sobald wir eine Entscheidung getroffen haben.",
+    "statusRejected": "Vorherige Bewerbung wurde nicht genehmigt, aber du kannst dich erneut bewerben, wenn du das Gefühl hast, dass deine Community bereit ist.",
+    "yourCode": "Dein Code",
+    "copyCode": "📋 Code kopieren",
+    "openDashboard": "📊 Dashboard öffnen",
+    "marketingKit": "🎨 Marketing-Kit",
+    "newApplication": "Neue Bewerbung",
+    "applicationSuccess": "Anfrage gesendet! Wir benachrichtigen dich, sobald wir sie geprüft haben.",
+    "modal": {
+      "title": "Bewerbung für Ambassador-Programm",
+      "confirmTerms": "📋 Bestätige vor dem Absenden, dass du die Bedingungen verstehst:",
+      "term1": "80% Provision auf erste Zahlung",
+      "term2": "30 Tage Gold-Testphase für dein Publikum",
+      "term3": "Auszahlungsschwelle 50 €",
+      "term4": "Monatliche Auszahlung (net 30)",
+      "tiktokLabel": "TikTok-Profil",
+      "tiktokPlaceholder": "https://www.tiktok.com/@username",
+      "instagramLabel": "Instagram-Profil",
+      "instagramPlaceholder": "https://www.instagram.com/username",
+      "youtubeLabel": "YouTube-Kanal",
+      "youtubePlaceholder": "https://www.youtube.com/@username",
+      "newsletterLabel": "Newsletter oder Blog",
+      "newsletterPlaceholder": "https://newsletter.example.com",
+      "otherLabel": "Andere Kanäle (Link)",
+      "otherPlaceholder": "https://",
+      "primaryPlatformLabel": "Hauptplattform",
+      "primaryPlatformPlaceholder": "z.B. TikTok, YouTube, Instagram",
+      "audienceSizeLabel": "Publikumsgröße",
+      "audienceSizePlaceholder": "z.B. 12.5k Follower",
+      "motivationLabel": "Warum möchtest du Botschafter werden?",
+      "motivationPlaceholder": "Ich liebe Thesara, weil...",
+      "motivationRequired": "*",
+      "errorTitle": "❌ Fehler:",
+      "cancelButton": "Abbrechen",
       "commissionRate": "80% Provision auf erste Zahlung",
       "commissionText": "Verdiene als Partner: {rate} von Nutzern, die deinen Code verwenden.",
       "benefit1": "Vorteil für dein Publikum: {trial} kostenloser Gold-Plan.",
@@ -1658,182 +1719,138 @@
         "motivationRequired": "*",
         "errorTitle": "❌ Fehler:",
         "cancelButton": "Abbrechen",
-        "commissionRate": "80% Provision auf erste Zahlung",
-        "commissionText": "Verdiene als Partner: {rate} von Nutzern, die deinen Code verwenden.",
-        "benefit1": "Vorteil für dein Publikum: {trial} kostenloser Gold-Plan.",
-        "benefit2": "Auszahlung: Schwelle {threshold}, Auszahlung {frequency} über PayPal.",
-        "benefit3": "Einfaches Teilen: einzigartiger Promo-Code und Link.",
-        "benefit4": "Transparenz: Dashboard mit Einblicken in Nutzung, Conversions und Einnahmen.",
-        "note": "💡 Hinweis: Provision wird auf {period} des Nutzers innerhalb von 60 Tagen nach Code-Aktivierung berechnet.",
-        "applyButton": "🚀 Bewerben",
-        "statusApproved": "🎉 Glückwunsch! Du wurdest als Thesara-Botschafter genehmigt.",
-        "statusPending": "⏳ Deine Bewerbung wird geprüft. Wir benachrichtigen dich per E-Mail, sobald wir eine Entscheidung getroffen haben.",
-        "statusRejected": "Vorherige Bewerbung wurde nicht genehmigt, aber du kannst dich erneut bewerben, wenn du das Gefühl hast, dass deine Community bereit ist.",
-        "yourCode": "Dein Code",
-        "copyCode": "📋 Code kopieren",
-        "openDashboard": "📊 Dashboard öffnen",
-        "marketingKit": "🎨 Marketing-Kit",
-        "newApplication": "Neue Bewerbung",
-        "applicationSuccess": "Anfrage gesendet! Wir benachrichtigen dich, sobald wir sie geprüft haben.",
-        "modal": {
-          "title": "Bewerbung für Ambassador-Programm",
-          "confirmTerms": "📋 Bestätige vor dem Absenden, dass du die Bedingungen verstehst:",
-          "term1": "80% Provision auf erste Zahlung",
-          "term2": "30 Tage Gold-Testphase für dein Publikum",
-          "term3": "Auszahlungsschwelle 50 €",
-          "term4": "Monatliche Auszahlung (net 30)",
-          "tiktokLabel": "TikTok-Profil",
-          "tiktokPlaceholder": "https://www.tiktok.com/@username",
-          "instagramLabel": "Instagram-Profil",
-          "instagramPlaceholder": "https://www.instagram.com/username",
-          "youtubeLabel": "YouTube-Kanal",
-          "youtubePlaceholder": "https://www.youtube.com/@username",
-          "newsletterLabel": "Newsletter oder Blog",
-          "newsletterPlaceholder": "https://newsletter.example.com",
-          "otherLabel": "Andere Kanäle (Link)",
-          "otherPlaceholder": "https://",
-          "primaryPlatformLabel": "Hauptplattform",
-          "primaryPlatformPlaceholder": "z.B. TikTok, YouTube, Instagram",
-          "audienceSizeLabel": "Publikumsgröße",
-          "audienceSizePlaceholder": "z.B. 12.5k Follower",
-          "motivationLabel": "Warum möchtest du Botschafter werden?",
-          "motivationPlaceholder": "Ich liebe Thesara, weil...",
-          "motivationRequired": "*",
-          "errorTitle": "❌ Fehler:",
-          "cancelButton": "Abbrechen",
-          "submitButton": "Bewerbung absenden",
-          "submittingButton": "Wird gesendet..."
-        }
-      },
-      "Play": {
-        "enterFullscreen": "Vollbild",
-        "exitFullscreen": "Vollbild beenden",
-        "fullScreenPrompt": {
-          "title": "Vollbild?",
-          "message": "Möchtest du das Spiel im Vollbildmodus starten für ein besseres Erlebnis?",
-          "yes": "Ja, aktivieren",
-          "no": "Nein, danke",
-          "remember": "Auswahl merken"
-        },
-        "loadingOverlay": {
-          "title": "Spiel wird geladen...",
-          "subtitle": "Wir bereiten dein Abenteuer vor"
-        }
-      },
-      "MyCreatorsPage": {
-        "title": "Meine Creators",
-        "loginPrompt": "Melden Sie sich an, um Ihre Favoriten zu sehen.",
-        "loginButton": "Anmelden",
-        "loading": "Laden...",
-        "noFavorites": "Sie haben noch keine Favoriten.",
-        "addFavoritesHint": "Besuchen Sie das Profil eines Creators und klicken Sie auf \"Zu Favoriten hinzufügen\".",
-        "profileLink": "Profil",
-        "noPublicApps": "Keine öffentlichen Apps.",
-        "noGraphic": "Keine Grafik"
-      },
-      "ProApps": {
-        "pageTitle": "ProApps",
-        "subtitle": "Ihre abonnierten Anwendungen",
-        "emptyTitle": "Noch keine abonnierten Apps",
-        "emptySubtitle": "Abonnieren Sie Apps, um sie hier zu sehen."
-      },
-      "tiers": {
-        "title": "Bonus-Belohnungsprogramm",
-        "subtitle": "Je mehr Konversionen Sie erzielen, desto bessere Belohnungen schalten Sie frei!",
-        "levels": {
-          "bronze": {
-            "title": "Bronze-Ambassador",
-            "conversions": "5+ Konversionen",
-            "reward": "Kostenloser Gold-Plan für Sie selbst"
-          },
-          "silver": {
-            "title": "Silver-Ambassador",
-            "conversions": "15+ Konversionen",
-            "reward": "3 Monate Gold-Plan"
-          },
-          "gold": {
-            "title": "Gold-Ambassador",
-            "conversions": "30+ Konversionen",
-            "reward": "6 Monate Gold-Plan"
-          }
-        },
-        "note": "Belohnungen sind kumulativ! Alle Ambassadors verdienen weiterhin 80% Provision unabhängig von der Stufe."
-      },
-      "calculator": {
-        "title": "💡 Wie viel kann ich verdienen?",
-        "subtitle": "Schnelle Schätzung der monatlichen Einnahmen",
-        "perMonth": "Konversionen pro Monat",
-        "followers": "Follower, die bezahlen",
-        "commission": "Provision pro Konversion",
-        "of": "von €10",
-        "result": "Ihre monatlichen Einnahmen",
-        "calculation": "5 Konversionen × €8 = €40/Monat",
-        "examples": "💡 Mit 10 Konversionen monatlich = ~€80 | Mit 20 Konversionen = ~€160"
-      },
-      "customPlan": {
-        "title": "Benötigen Sie einen individuellen Plan?",
-        "subtitle": "Wir bieten auch maßgeschneiderte Partnerschaftspläne",
-        "description": "Interessiert an einer niedrigeren Provision, aber wiederkehrenden monatlichen Einnahmen aus jedem Abonnement? Oder haben Sie einen einzigartigen Kollaborationsvorschlag?",
-        "contact": "Kontaktieren Sie uns direkt unter {email}",
-        "email": "welcome@thesara.space",
-        "cta": "Kontaktieren Sie uns"
-      },
-      "finalCta": {
-        "title": "Bereit anzufangen?",
-        "subtitle": "Treten Sie Ambassadors bei, die bereits durch die Werbung für Thesara verdienen. Die Bewerbung dauert weniger als 2 Minuten!",
-        "button": "Jetzt Ambassador werden",
-        "questions": "💡 Haben Sie Fragen? Kontaktieren Sie uns unter support@thesara.space"
-      },
-      "footer": {
-        "ambassadorProgram": "Ambassador-Programm"
-      },
-      "faq": {
-        "title": "Häufig gestellte Fragen",
-        "items": {
-          "influencer": {
-            "q": "Wer kann Thesara-Ambassador werden?",
-            "a": "Jeder mit einem aktiven Publikum - Influencer, Content-Ersteller, Blogger, Newsletter-Schreiber, YouTuber, TikToker. Wenn Sie Menschen haben, die Ihnen folgen und zuhören, können Sie Ambassador werden!"
-          },
-          "where": {
-            "q": "Wo kann ich meine Einnahmen und Konversionen verfolgen?",
-            "a": "Wenn Sie Ambassador werden, erhalten Sie Zugang zum Ambassador-Portal in Ihrem Profil, wo Sie die Anzahl der Konversionen, Gesamteinnahmen, Tier-Level und Auszahlungsstatus in Echtzeit verfolgen können."
-          },
-          "timing": {
-            "q": "Wie lange dauert das Attributionsfenster?",
-            "a": "Cookies halten {days} Tage. Das bedeutet, wenn jemand auf Ihren Link klickt, sich aber innerhalb von {days} Tagen registriert und bezahlt, erhalten Sie trotzdem die Provision!"
-          },
-          "privacy": {
-            "q": "Wird mein Publikum wissen, dass ich einen Affiliate-Link verwende?",
-            "a": "Ihr Promo-Code ist transparent - Benutzer sehen, dass sie 40% Rabatt im 1. Monat und 50% Rabatt im 2. Monat auf den Gold-Plan über Ihren Code erhalten. Wir empfehlen, offen mit Ihrem Publikum über das Verdienen von Provisionen zu sein - das schafft Vertrauen!"
-          },
-          "multiple": {
-            "q": "Kann ich denselben Code auf mehreren Plattformen verwenden?",
-            "a": "Ja! Sie können Ihren eindeutigen Code auf allen Ihren Plattformen teilen - TikTok, Instagram, YouTube, Newsletter, Blog, Twitter. Alle Konversionen werden Ihnen zugeschrieben, unabhängig davon, woher sie kommen."
-          },
-          "rules": {
-            "q": "Gibt es Regeln oder Einschränkungen?",
-            "a": "Grundanforderungen: Verwenden Sie keinen Spam, keine falschen Informationen oder irreführende Marketingmethoden. Seien Sie transparent mit Ihrem Publikum. Respektieren Sie unsere Community-Richtlinien. Alles andere - es gibt keine Grenze, wie viel Sie verdienen können!"
-          },
-          "modelDifference": {
-            "q": "Was ist der Unterschied zwischen Turbo- und Partner-Modellen?",
-            "a": "TURBO ist für schnelles Geld - Sie erhalten 55% im ersten Monat und 15% im zweiten, insgesamt 70%! Perfekt, wenn Sie schnelles Geld wollen. PARTNER ist für langfristiges Einkommen - Sie erhalten 10% auf ALLE Transaktionen (für immer!) + 10% auf App-Verkäufe. Perfekt, wenn Sie passives Einkommen wollen."
-          },
-          "modelSwitch": {
-            "q": "Kann ich mein Modell nach der Bewerbung ändern?",
-            "a": "Das Modell wird einmal bei der Bewerbung ausgewählt und kann später nicht mehr geändert werden. Überlegen Sie sich also sorgfältig, welches Modell besser zu Ihnen passt, bevor Sie sich bewerben!"
-          },
-          "partnerBenefit": {
-            "q": "Was bedeutet '10% auf App-Verkäufe' für das Partner-Modell?",
-            "a": "Wenn ein von Ihnen empfohlener Benutzer eine App auf dem Thesara-Marktplatz erstellt und verkauft (6-Monats-Lizenz), erhalten Sie als Partner 10% dieses Verkaufs! Es ist zusätzliches Einkommen zusätzlich zu 10% wiederkehrender Provision auf Abonnements."
-          }
-        }
-      },
-      "checkout": {
-        "promoQuestion": "Haben Sie einen Ambassador-Promo-Code?",
-        "promoDescription": "Aktivieren Sie vor Zahlung und erhalten Sie 40% Rabatt im 1. Monat und 50% Rabatt im 2. Monat auf den Gold-Plan!",
-        "promoLinkText": "Hier eingeben →",
-        "promoNote": "Promo-Code wird auf der /redeem-Seite vor der Zahlung aktiviert"
+        "submitButton": "Bewerbung absenden",
+        "submittingButton": "Wird gesendet..."
       }
+    },
+    "Play": {
+      "enterFullscreen": "Vollbild",
+      "exitFullscreen": "Vollbild beenden",
+      "fullScreenPrompt": {
+        "title": "Vollbild?",
+        "message": "Möchtest du das Spiel im Vollbildmodus starten für ein besseres Erlebnis?",
+        "yes": "Ja, aktivieren",
+        "no": "Nein, danke",
+        "remember": "Auswahl merken"
+      },
+      "loadingOverlay": {
+        "title": "Spiel wird geladen...",
+        "subtitle": "Wir bereiten dein Abenteuer vor"
+      }
+    },
+    "MyCreatorsPage": {
+      "title": "Meine Creators",
+      "loginPrompt": "Melden Sie sich an, um Ihre Favoriten zu sehen.",
+      "loginButton": "Anmelden",
+      "loading": "Laden...",
+      "noFavorites": "Sie haben noch keine Favoriten.",
+      "addFavoritesHint": "Besuchen Sie das Profil eines Creators und klicken Sie auf \"Zu Favoriten hinzufügen\".",
+      "profileLink": "Profil",
+      "noPublicApps": "Keine öffentlichen Apps.",
+      "noGraphic": "Keine Grafik"
+    },
+    "ProApps": {
+      "pageTitle": "ProApps",
+      "subtitle": "Ihre abonnierten Anwendungen",
+      "emptyTitle": "Noch keine abonnierten Apps",
+      "emptySubtitle": "Abonnieren Sie Apps, um sie hier zu sehen."
+    },
+    "tiers": {
+      "title": "Bonus-Belohnungsprogramm",
+      "subtitle": "Je mehr Konversionen Sie erzielen, desto bessere Belohnungen schalten Sie frei!",
+      "levels": {
+        "bronze": {
+          "title": "Bronze-Ambassador",
+          "conversions": "5+ Konversionen",
+          "reward": "Kostenloser Gold-Plan für Sie selbst"
+        },
+        "silver": {
+          "title": "Silver-Ambassador",
+          "conversions": "15+ Konversionen",
+          "reward": "3 Monate Gold-Plan"
+        },
+        "gold": {
+          "title": "Gold-Ambassador",
+          "conversions": "30+ Konversionen",
+          "reward": "6 Monate Gold-Plan"
+        }
+      },
+      "note": "Belohnungen sind kumulativ! Alle Ambassadors verdienen weiterhin 80% Provision unabhängig von der Stufe."
+    },
+    "calculator": {
+      "title": "💡 Wie viel kann ich verdienen?",
+      "subtitle": "Schnelle Schätzung der monatlichen Einnahmen",
+      "perMonth": "Konversionen pro Monat",
+      "followers": "Follower, die bezahlen",
+      "commission": "Provision pro Konversion",
+      "of": "von €10",
+      "result": "Ihre monatlichen Einnahmen",
+      "calculation": "5 Konversionen × €8 = €40/Monat",
+      "examples": "💡 Mit 10 Konversionen monatlich = ~€80 | Mit 20 Konversionen = ~€160"
+    },
+    "customPlan": {
+      "title": "Benötigen Sie einen individuellen Plan?",
+      "subtitle": "Wir bieten auch maßgeschneiderte Partnerschaftspläne",
+      "description": "Interessiert an einer niedrigeren Provision, aber wiederkehrenden monatlichen Einnahmen aus jedem Abonnement? Oder haben Sie einen einzigartigen Kollaborationsvorschlag?",
+      "contact": "Kontaktieren Sie uns direkt unter {email}",
+      "email": "welcome@thesara.space",
+      "cta": "Kontaktieren Sie uns"
+    },
+    "finalCta": {
+      "title": "Bereit anzufangen?",
+      "subtitle": "Treten Sie Ambassadors bei, die bereits durch die Werbung für Thesara verdienen. Die Bewerbung dauert weniger als 2 Minuten!",
+      "button": "Jetzt Ambassador werden",
+      "questions": "💡 Haben Sie Fragen? Kontaktieren Sie uns unter support@thesara.space"
+    },
+    "footer": {
+      "ambassadorProgram": "Ambassador-Programm"
+    },
+    "faq": {
+      "title": "Häufig gestellte Fragen",
+      "items": {
+        "influencer": {
+          "q": "Wer kann Thesara-Ambassador werden?",
+          "a": "Jeder mit einem aktiven Publikum - Influencer, Content-Ersteller, Blogger, Newsletter-Schreiber, YouTuber, TikToker. Wenn Sie Menschen haben, die Ihnen folgen und zuhören, können Sie Ambassador werden!"
+        },
+        "where": {
+          "q": "Wo kann ich meine Einnahmen und Konversionen verfolgen?",
+          "a": "Wenn Sie Ambassador werden, erhalten Sie Zugang zum Ambassador-Portal in Ihrem Profil, wo Sie die Anzahl der Konversionen, Gesamteinnahmen, Tier-Level und Auszahlungsstatus in Echtzeit verfolgen können."
+        },
+        "timing": {
+          "q": "Wie lange dauert das Attributionsfenster?",
+          "a": "Cookies halten {days} Tage. Das bedeutet, wenn jemand auf Ihren Link klickt, sich aber innerhalb von {days} Tagen registriert und bezahlt, erhalten Sie trotzdem die Provision!"
+        },
+        "privacy": {
+          "q": "Wird mein Publikum wissen, dass ich einen Affiliate-Link verwende?",
+          "a": "Ihr Promo-Code ist transparent - Benutzer sehen, dass sie 40% Rabatt im 1. Monat und 50% Rabatt im 2. Monat auf den Gold-Plan über Ihren Code erhalten. Wir empfehlen, offen mit Ihrem Publikum über das Verdienen von Provisionen zu sein - das schafft Vertrauen!"
+        },
+        "multiple": {
+          "q": "Kann ich denselben Code auf mehreren Plattformen verwenden?",
+          "a": "Ja! Sie können Ihren eindeutigen Code auf allen Ihren Plattformen teilen - TikTok, Instagram, YouTube, Newsletter, Blog, Twitter. Alle Konversionen werden Ihnen zugeschrieben, unabhängig davon, woher sie kommen."
+        },
+        "rules": {
+          "q": "Gibt es Regeln oder Einschränkungen?",
+          "a": "Grundanforderungen: Verwenden Sie keinen Spam, keine falschen Informationen oder irreführende Marketingmethoden. Seien Sie transparent mit Ihrem Publikum. Respektieren Sie unsere Community-Richtlinien. Alles andere - es gibt keine Grenze, wie viel Sie verdienen können!"
+        },
+        "modelDifference": {
+          "q": "Was ist der Unterschied zwischen Turbo- und Partner-Modellen?",
+          "a": "TURBO ist für schnelles Geld - Sie erhalten 55% im ersten Monat und 15% im zweiten, insgesamt 70%! Perfekt, wenn Sie schnelles Geld wollen. PARTNER ist für langfristiges Einkommen - Sie erhalten 10% auf ALLE Transaktionen (für immer!) + 10% auf App-Verkäufe. Perfekt, wenn Sie passives Einkommen wollen."
+        },
+        "modelSwitch": {
+          "q": "Kann ich mein Modell nach der Bewerbung ändern?",
+          "a": "Das Modell wird einmal bei der Bewerbung ausgewählt und kann später nicht mehr geändert werden. Überlegen Sie sich also sorgfältig, welches Modell besser zu Ihnen passt, bevor Sie sich bewerben!"
+        },
+        "partnerBenefit": {
+          "q": "Was bedeutet '10% auf App-Verkäufe' für das Partner-Modell?",
+          "a": "Wenn ein von Ihnen empfohlener Benutzer eine App auf dem Thesara-Marktplatz erstellt und verkauft (6-Monats-Lizenz), erhalten Sie als Partner 10% dieses Verkaufs! Es ist zusätzliches Einkommen zusätzlich zu 10% wiederkehrender Provision auf Abonnements."
+        }
+      }
+    },
+    "checkout": {
+      "promoQuestion": "Haben Sie einen Ambassador-Promo-Code?",
+      "promoDescription": "Aktivieren Sie vor Zahlung und erhalten Sie 40% Rabatt im 1. Monat und 50% Rabatt im 2. Monat auf den Gold-Plan!",
+      "promoLinkText": "Hier eingeben →",
+      "promoNote": "Promo-Code wird auf der /redeem-Seite vor der Zahlung aktiviert"
     }
   }
 }
