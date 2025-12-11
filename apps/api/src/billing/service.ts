@@ -40,6 +40,7 @@ import {
   FieldValue,
   recordDonationPayment,
 } from '../db.js';
+import type { CommissionModel } from '../types.js';
 import { enforceAppLimit } from '../lib/appLimit.js';
 import { ForbiddenError } from '../lib/errors.js';
 import { hasPurchaseAccess } from '../purchaseAccess.js';
@@ -168,6 +169,42 @@ function roundCurrency(amount: number): number {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
+/**
+ * Calculate ambassador commission based on their chosen model.
+ * TURBO: 55% (month 1) + 15% (month 2)
+ * PARTNER: 10% lifetime (on ALL payments)
+ */
+function calculateAmbassadorCommission(params: {
+  model: CommissionModel | undefined;
+  amountEur: number;
+  redeemedAt: number;
+  isRecurring?: boolean;
+}): number {
+  const { model, amountEur, redeemedAt, isRecurring = false } = params;
+  const FULL_PRICE = 10; // Gold plan full price (€10/month)
+
+  // Calculate which payment period this is (0 = first month, 1 = second month, etc.)
+  const monthsSinceRedemption = Math.floor(
+    (Date.now() - redeemedAt) / (30 * 24 * 60 * 60 * 1000)
+  );
+
+  if (model === 'turbo') {
+    // TURBO: High upfront, then nothing
+    if (monthsSinceRedemption === 0) {
+      return roundCurrency(FULL_PRICE * 0.55); // 55% on first month = €5.50
+    } else if (monthsSinceRedemption === 1) {
+      return roundCurrency(FULL_PRICE * 0.15); // 15% on second month = €1.50
+    }
+    return 0; // No commission after month 2
+  } else if (model === 'partner') {
+    // PARTNER: 10% lifetime on ALL transactions
+    return roundCurrency(amountEur * 0.10);
+  }
+
+  // Fallback to legacy behavior for old ambassadors without a model
+  return roundCurrency(amountEur * AMBASSADOR_COMMISSION_RATE);
+}
+
 export function buildCheckoutPayload(
   body: Record<string, any>,
   mode: 'payment' | 'subscription',
@@ -175,30 +212,30 @@ export function buildCheckoutPayload(
   const allowed =
     mode === 'subscription'
       ? [
-          'line_items',
-          'customer',
-          'customer_email',
-          'automatic_tax',
-          'allow_promotion_codes',
-          'success_url',
-          'cancel_url',
-          'custom_text',
-          'subscription_data',
-        ]
+        'line_items',
+        'customer',
+        'customer_email',
+        'automatic_tax',
+        'allow_promotion_codes',
+        'success_url',
+        'cancel_url',
+        'custom_text',
+        'subscription_data',
+      ]
       : [
-          'line_items',
-          'customer',
-          'customer_email',
-          'customer_creation',
-          'customer_update',
-          'automatic_tax',
-          'allow_promotion_codes',
-          'success_url',
-          'cancel_url',
-          'custom_text',
-          'payment_intent_data',
-          'metadata',
-        ];
+        'line_items',
+        'customer',
+        'customer_email',
+        'customer_creation',
+        'customer_update',
+        'automatic_tax',
+        'allow_promotion_codes',
+        'success_url',
+        'cancel_url',
+        'custom_text',
+        'payment_intent_data',
+        'metadata',
+      ];
   const payload: Record<string, any> = { mode };
   for (const key of allowed) {
     if (body[key] !== undefined) {
@@ -447,9 +484,57 @@ async function createFixedSubscription(
       const ownerUid = (app as any)?.author?.uid || (app as any)?.ownerUid;
       if (ownerUid) destinationAccount = await dbAccess.getStripeAccountId(ownerUid);
     }
-  } catch {}
+  } catch { }
   if (hasOwnerMeta && !destinationAccount) {
     throw new Error('creator_not_onboarded');
+  }
+
+  // Check for ambassador discount and apply coupon
+  let discountCoupons: string[] | undefined;
+  try {
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data() as any;
+      const ambassadorDiscount = userData?.ambassadorDiscount;
+
+      if (ambassadorDiscount && ambassadorDiscount.discount1stMonth) {
+        // Calculate which billing period this is
+        const redeemedAt = userData?.referredBy?.redeemedAt;
+        const monthsSinceRedemption = redeemedAt
+          ? Math.floor((Date.now() - redeemedAt) / (30 * 24 * 60 * 60 * 1000))
+          : 0;
+
+        let discountPercent = 0;
+
+        if (monthsSinceRedemption === 0) {
+          // First month: 40% off
+          discountPercent = Math.round(ambassadorDiscount.discount1stMonth * 100);
+        } else if (monthsSinceRedemption === 1) {
+          // Second month: 50% off
+          discountPercent = Math.round(ambassadorDiscount.discount2ndMonth * 100);
+        }
+
+        if (discountPercent > 0) {
+          // Create or find a coupon for this discount
+          const couponId = `AMB_${discountPercent}PCT`;
+          try {
+            await stripe.coupons.retrieve(couponId);
+          } catch {
+            // Create coupon if doesn't exist
+            await stripe.coupons.create({
+              id: couponId,
+              percent_off: discountPercent,
+              duration: 'once',
+              name: `Ambassador ${discountPercent}% Discount`,
+            });
+          }
+          discountCoupons = [couponId];
+          console.log(`[Ambassador] Applied ${discountPercent}% discount for user ${userId} (month ${monthsSinceRedemption})`);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Discount] Failed to apply ambassador discount', err);
   }
 
   // Build subscription_data with optional Connect transfer and platform fee percent
@@ -468,6 +553,7 @@ async function createFixedSubscription(
       success_url: `${STRIPE_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: STRIPE_CANCEL_URL,
       subscription_data: subscriptionData,
+      discounts: discountCoupons ? discountCoupons.map(c => ({ coupon: c })) : undefined,
     },
     'subscription',
   );
@@ -477,7 +563,7 @@ async function createFixedSubscription(
   logger.debug({ payloadKeys: Object.keys(payload) }, 'stripe_create_payload_keys');
   const session = await stripe.checkout.sessions.create(payload, { idempotencyKey });
   logger.info(
-    { appId: ctx?.appId, userId, hasActive: ctx?.hasActive ?? false, sessionId: session.id },
+    { appId: ctx?.appId, userId, hasActive: ctx?.hasActive ?? false, sessionId: session.id, appliedDiscount: !!discountCoupons },
     'billing_session_created',
   );
   return { id: session.id, url: session.url };
@@ -824,10 +910,10 @@ export async function getCreatorSubscriptionMetrics(creatorId: string) {
     try {
       const price = await stripe.prices.retrieve(creatorPriceId);
       allAccessUnit = price.unit_amount ?? undefined;
-    } catch {}
+    } catch { }
     try {
       allAccessActive = await countActiveSubscriptionsForPrice(creatorPriceId);
-    } catch {}
+    } catch { }
   }
   // App prices for all apps belonging to creator
   const apps = await dbAccess.readApps();
@@ -844,10 +930,10 @@ export async function getCreatorSubscriptionMetrics(creatorId: string) {
       try {
         const price = await stripe.prices.retrieve(priceId);
         unit = price.unit_amount ?? undefined;
-      } catch {}
+      } catch { }
       try {
         active = await countActiveSubscriptionsForPrice(priceId);
-      } catch {}
+      } catch { }
     }
     appMetrics.push({ appId, priceId, unitAmount: unit, active });
   }
@@ -1120,29 +1206,47 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
           }
         }
       }
-      // Ambassador commission awarding (first payment within attribution window)
+      // Ambassador commission awarding (dual model: Turbo vs Partner)
       try {
-        if (userId && amountTotal && AMBASSADOR_COMMISSION_RATE > 0) {
+        if (userId && amountTotal) {
           const userRef = db.collection('users').doc(userId);
           await db.runTransaction(async (t) => {
             const userDoc = await t.get(userRef);
             if (!userDoc.exists) return;
             const userData = userDoc.data() as any;
             const referredBy = userData?.referredBy as
-              | { ambassadorUid: string; promoCode: string; redeemedAt: number; commissionAwarded?: boolean }
+              | { ambassadorUid: string; promoCode: string; redeemedAt: number; monthlyCommissions?: number[] }
               | undefined;
-            if (!referredBy || !referredBy.redeemedAt || referredBy.commissionAwarded === true) {
+            if (!referredBy || !referredBy.redeemedAt) {
               return;
             }
+
+            // Fetch ambassador data to check commission model
+            const ambassadorRef = db.collection('users').doc(referredBy.ambassadorUid);
+            const ambassadorDoc = await t.get(ambassadorRef);
+            if (!ambassadorDoc.exists) return;
+
+            const ambassadorData = ambassadorDoc.data() as any;
+            const ambassadorModel = ambassadorData?.ambassador?.commissionModel as CommissionModel | undefined;
+
+            // Check if within attribution window (only for non-Partner models)
             const withinAttribution = Date.now() - referredBy.redeemedAt < AMBASSADOR_ATTRIBUTION_WINDOW_MS;
-            if (!withinAttribution) return;
+            if (ambassadorModel !== 'partner' && !withinAttribution) return;
 
             const amountEur = (amountTotal || 0) / 100;
             if (amountEur <= 0) return;
-            const commissionEur = roundCurrency(amountEur * AMBASSADOR_COMMISSION_RATE);
+
+            // Calculate commission based on model
+            const commissionEur = calculateAmbassadorCommission({
+              model: ambassadorModel,
+              amountEur,
+              redeemedAt: referredBy.redeemedAt,
+              isRecurring: mode === 'subscription',
+            });
+
             if (commissionEur <= 0) return;
 
-            const ambassadorRef = db.collection('users').doc(referredBy.ambassadorUid);
+            // Award commission
             const promoRef = db.collection('promoCodes').doc(referredBy.promoCode);
 
             t.update(ambassadorRef, {
@@ -1153,15 +1257,22 @@ export async function handleWebhook(event: Stripe.Event): Promise<WebhookResult>
               paidConversionsCount: FieldValue.increment(1),
               totalRevenueGenerated: FieldValue.increment(amountEur),
             });
+
+            // Track monthly commissions (for analytics)
+            const monthsSinceRedemption = Math.floor(
+              (Date.now() - referredBy.redeemedAt) / (30 * 24 * 60 * 60 * 1000)
+            );
+            const monthlyCommissions = referredBy.monthlyCommissions || [];
+            monthlyCommissions[monthsSinceRedemption] = (monthlyCommissions[monthsSinceRedemption] || 0) + commissionEur;
+
             t.update(userRef, {
-              'referredBy.commissionAwarded': true,
-              'referredBy.commissionAwardedAt': Date.now(),
+              'referredBy.monthlyCommissions': monthlyCommissions,
             });
           });
           await dbAccess.logBillingEvent({
             userId,
             eventType: 'ambassador.commission_awarded',
-            amount: Math.round(((amountTotal || 0) / 100) * AMBASSADOR_COMMISSION_RATE * 100) / 100,
+            amount: roundCurrency((amountTotal || 0) / 100),
             ts: Date.now(),
             details: cleanUndefined({ promoCode: undefined }),
           });

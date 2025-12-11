@@ -128,7 +128,7 @@ export default function OglasDetaljiClient({ id }: { id: string }) {
     {
       id: 1,
       alt: 'UI pregled recenzija',
-      src: 'https://images.unsplash.com/photo-1522199794611-8e3563d8a6c4?auto=format&fit=crop&w=900&q=60',
+      src: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=900&q=60',
     },
     {
       id: 2,

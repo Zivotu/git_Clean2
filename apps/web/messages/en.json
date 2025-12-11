@@ -186,7 +186,7 @@
       "previewAlt": "Uploaded preview"
     }
   },
-  "Promo": {
+  "PromoCode": {
     "title": "Redeem promo code",
     "mustBeSignedIn": "You must be signed in to redeem a promo code.",
     "label": "Promo code",

@@ -10,6 +10,9 @@ export function isLocale(v?: string | null): v is Locale {
 import enRaw from '../messages/en.json';
 import hrRaw from '../messages/hr.json';
 import deRaw from '../messages/de.json';
+import ambassadorEnRaw from '../messages/ambassador.en.json';
+import ambassadorHrRaw from '../messages/ambassador.hr.json';
+import ambassadorDeRaw from '../messages/ambassador.de.json';
 
 function flatten(obj: any, prefix = ''): Record<string, string> {
   const out: Record<string, string> = {};
@@ -25,7 +28,7 @@ function flatten(obj: any, prefix = ''): Record<string, string> {
 }
 
 export const messages: Record<Locale, Record<string, string>> = {
-  en: flatten(enRaw),
-  hr: flatten(hrRaw),
-  de: flatten(deRaw),
+  en: flatten({ ...enRaw, Ambassador: ambassadorEnRaw }),
+  hr: flatten({ ...hrRaw, Ambassador: ambassadorHrRaw }),
+  de: flatten({ ...deRaw, Ambassador: ambassadorDeRaw }),
 };

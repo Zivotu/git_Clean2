@@ -1,0 +1,199 @@
+{
+    "title": "Ambassador-Programm - Flexible Einnahmen | Thesara",
+    "description": "Werden Sie Thesara Ambassador und wählen Sie Ihr Modell: TURBO (bis zu 70% in den ersten 2 Monaten) oder PARTNER (10% für immer). Geben Sie Followern vergünstigten Gold-Plan!",
+    "hero": {
+        "badge": "Bewerbungen geöffnet",
+        "title": "Wählen Sie Ihr Verdienstmodell",
+        "subtitle": "durch Thesara-Werbung",
+        "description": "TURBO: Verdienen Sie bis zu 70% in den ersten 2 Monaten (55% + 15%) oder PARTNER: 10% für immer auf alle Transaktionen + App-Verkäufe!",
+        "ctaPrimary": "Ambassador werden",
+        "ctaSecondary": "Wie funktioniert es?"
+    },
+    "stats": {
+        "commission": "Provision (Turbo/Partner)",
+        "discount": "Rabatt (40% + 50%)",
+        "threshold": "Mindest-Auszahlungsschwelle"
+    },
+    "discount": {
+        "title": "Doppelter Vorteil für Ihr Publikum!",
+        "subtitle": "Durch die Nutzung Ihres Codes erhält Ihr Publikum:",
+        "amount": "40% RABATT",
+        "detail": "SOFORT im ersten Monat",
+        "calculation": "Sie zahlen nur €6 statt €10 sofort!",
+        "benefit": "Plus: Im zweiten Monat erhalten sie 50% Rabatt (nur €5).",
+        "hook": "Gesamtersparnis in 2 Monaten: €9! 🚀"
+    },
+    "howItWorks": {
+        "title": "Wie funktioniert es?",
+        "subtitle": "Drei einfache Schritte zu Ihren ersten Einnahmen",
+        "steps": {
+            "apply": {
+                "title": "Bewerben",
+                "description": "Füllen Sie ein kurzes Formular in Ihrem Profil aus. Erhalten Sie einen einzigartigen Promo-Code und Zugang zum Dashboard."
+            },
+            "share": {
+                "title": "Code teilen",
+                "description": "Erstellen Sie Inhalte (TikTok, Instagram, YouTube, Newsletter) und teilen Sie Ihren Code mit Ihrem Publikum."
+            },
+            "earn": {
+                "title": "Verdienen",
+                "description": "Wenn ein Follower Ihren Code verwendet und für den Gold-Plan bezahlt, verdienen Sie Provision nach Ihrem gewählten Modell!"
+            }
+        }
+    },
+    "benefits": {
+        "title": "Warum Ambassador werden?",
+        "items": {
+            "commission": {
+                "title": "Flexible Provision",
+                "description": "Wählen Sie TURBO (bis zu 70% in den ersten 2 Monaten) oder PARTNER (10% für immer). Sie entscheiden, was für Sie passt!"
+            },
+            "offer": {
+                "title": "Wertvolles Angebot für Publikum",
+                "description": "Ihre Follower erhalten 40% Rabatt im 1. Monat und 50% Rabatt im 2. Monat auf den Gold-Plan!"
+            },
+            "dashboard": {
+                "title": "Transparentes Dashboard",
+                "description": "Verfolgen Sie Code-Nutzung, Konversionen, Konversionsrate und Einnahmen in Echtzeit."
+            },
+            "window": {
+                "title": "{days} Tage Attributionsfenster",
+                "description": "Sie haben volle zwei Monate, um einen interessierten Nutzer in einen Zahler zu verwandeln!"
+            },
+            "payout": {
+                "title": "Einfache Auszahlungen",
+                "description": "Erreichen Sie €{threshold} und fordern Sie Auszahlung auf PayPal an. Auszahlungen werden monatlich verarbeitet (net 30)."
+            },
+            "kit": {
+                "title": "Marketing-Kit",
+                "description": "Erhalten Sie Zugang zu Grafikmaterialien, Vorlagen und Tipps zur Werbung."
+            }
+        }
+    },
+    "tiers": {
+        "title": "Bonus-Belohnungsprogramm",
+        "subtitle": "Je mehr Konversionen Sie erreichen, desto bessere Belohnungen schalten Sie frei!",
+        "levels": {
+            "bronze": {
+                "title": "Bronze Ambassador",
+                "conversions": "{count}+ Konversionen",
+                "reward": "Kostenloser Gold-Plan für Sie"
+            },
+            "silver": {
+                "title": "Silver Ambassador",
+                "conversions": "{count}+ Konversionen",
+                "reward": "3 Monate Gold-Plan"
+            },
+            "gold": {
+                "title": "Gold Ambassador",
+                "conversions": "{count}+ Konversionen",
+                "reward": "6 Monate Gold-Plan"
+            }
+        },
+        "note": "Belohnungen sind kumulativ! Alle Ambassadors verdienen weiterhin Provision nach ihrem gewählten Modell unabhängig vom Rang."
+    },
+    "calculator": {
+        "title": "💡 Wie viel kann ich verdienen?",
+        "subtitle": "Schnelle Schätzung der monatlichen Einnahmen",
+        "funFact": {
+            "title": "💡 Wussten Sie...",
+            "chatgpt": "ChatGPT wird von 700 Millionen Menschen wöchentlich genutzt",
+            "thesara": "erste Plattform",
+            "description": "— und Thesara ist die {platform}, die es ermöglicht, eigene KI-Anwendungen ohne Programmierung zu erstellen!",
+            "market": "Das bedeutet, dass der Markt für KI-Tools {explodes} — und Sie können als Ambassador Teil dieser Revolution sein! 🎯",
+            "explodes": "explodiert"
+        },
+        "turbo": {
+            "title": "TURBO Modell",
+            "subtitle": "Schnelle Einnahmen in den ersten 2 Monaten",
+            "with": "Mit {count} Konversionen:",
+            "month1": "1. Monat (55%)",
+            "month2": "2. Monat (15%)",
+            "total": "Gesamt in 2 Monaten",
+            "examples": "💡 {count1} Konversionen = €{amount1} | {count2} Konversionen = €{amount2}"
+        },
+        "partner": {
+            "title": "PARTNER Modell",
+            "subtitle": "Passives Einkommen für immer",
+            "with": "Mit {count} Konversionen:",
+            "month1": "1. Monat (10%)",
+            "month2": "2. Monat (10%)",
+            "month3plus": "3+ Monate (10%)",
+            "recurring": "Monatlich (wiederkehrend)",
+            "fromGold": "von Gold-Abonnements",
+            "appSales": {
+                "title": "💰 BONUS: App-Verkäufe!",
+                "description": "Wenn 10% von ihnen (10 Benutzer) erfolgreiche Anwendungen erstellen...",
+                "userExample": "Benutzer A: App mit 100 Abonnenten × €5",
+                "yourEarning": "→ Ihr Verdienst (10%):",
+                "creators": "10 erfolgreiche Ersteller:",
+                "passive": "🚀 Zusätzliches passives Einkommen, während Ihre Benutzer aufbauen!"
+            },
+            "examples": "💡 {count1} Konversionen = €{amount1}/Mo | {count2} Konversionen = €{amount2}/Mo"
+        },
+        "note": "💡 Beispiel basiert auf Gold Plan (€10/Monat) mit Ambassador-Rabatten (40% + 50%). Wählen Sie das Modell, das zu Ihrer Strategie passt!"
+    },
+    "faq": {
+        "title": "Häufig gestellte Fragen",
+        "items": {
+            "influencer": {
+                "q": "Muss ich ein Influencer mit vielen Followern sein?",
+                "a": "Nein! Das Programm ist für alle offen - von Mikro-Influencern (1.000+ Follower) bis zu etablierten Content-Erstellern. Die Qualität des Publikums zählt, nicht nur die Zahlen."
+            },
+            "where": {
+                "q": "Wo kann ich meinen Code teilen?",
+                "a": "Überall! TikTok, Instagram Stories/Reels, YouTube-Videos, Newsletter, Blog, Discord-Communitys, Twitter/X, LinkedIn... Sie erhalten auch einen einzigartigen Link zum Teilen."
+            },
+            "timing": {
+                "q": "Was ist, wenn der Nutzer nicht sofort zahlt?",
+                "a": "Sie haben ein {days}-tägiges Attributionsfenster! Das bedeutet, wenn ein Nutzer heute Ihren Code aktiviert und in einem Monat zahlt, erhalten Sie trotzdem die Provision."
+            },
+            "privacy": {
+                "q": "Kann ich sehen, wer meinen Code verwendet hat?",
+                "a": "Sie können die Gesamtnutzung, Konversionen und Einnahmen auf dem Dashboard sehen, aber Sie können keine persönlichen Daten der Nutzer sehen (wegen DSGVO)."
+            },
+            "multiple": {
+                "q": "Was ist, wenn ich mehrere Promo-Codes habe?",
+                "a": "Derzeit weisen wir jedem Ambassador einen einzigartigen Code zu. Dies erleichtert Tracking und Auszahlungen."
+            },
+            "rules": {
+                "q": "Gibt es irgendwelche Regeln oder Einschränkungen?",
+                "a": "Ja - es ist verboten, Ihren eigenen Code zu verwenden, Spam, irreführende Werbung oder Verstoß gegen Plattformregeln. Alle Werbeinhalte müssen klar gekennzeichnet sein (#ad, #partner). Details in den Nutzungsbedingungen."
+            }
+        }
+    },
+    "customPlan": {
+        "title": "Benötigen Sie einen individuellen Plan?",
+        "subtitle": "Wir bieten auch maßgeschneiderte Partnerschaftspläne an",
+        "description": "Interessieren Sie sich für eine niedrigere Provision, aber wiederkehrende monatliche Zahlungen aus jedem Abonnement? Oder haben Sie einen einzigartigen Kooperationsvorschlag?",
+        "contact": "Kontaktieren Sie uns direkt unter {email}",
+        "email": "welcome@thesara.space",
+        "cta": "Kontaktieren Sie uns"
+    },
+    "models": {
+        "title": "Wählen Sie Ihr Verdienstmodell",
+        "subtitle": "Passen Sie Ihre Partnerschaft an Ihre Bedürfnisse an",
+        "turbo": {
+            "title": "🚀 TURBO Modell",
+            "badge": "Am beliebtesten",
+            "description": "Perfekt für Influencer und bezahlte Werbung.",
+            "payout1": "55% von der ersten Zahlung",
+            "payout2": "15% von der zweiten Zahlung",
+            "sales": "0% von App-Verkäufen"
+        },
+        "partner": {
+            "title": "💎 PARTNER Modell",
+            "badge": "Langfristig",
+            "description": "Für Pädagogen und Communitys.",
+            "payout1": "10% von ALLEN Abonnements",
+            "payout2": "Wiederkehrende Einnahmen (Lebenslang)",
+            "sales": "10% von App-VERKÄUFEN"
+        }
+    },
+    "finalCta": {
+        "title": "Bereit zu beginnen?",
+        "subtitle": "Schließen Sie sich Ambassadors an, die bereits durch Thesara-Werbung verdienen. Die Bewerbung dauert weniger als 2 Minuten!",
+        "button": "Jetzt Ambassador werden",
+        "questions": "💡 Haben Sie Fragen? Kontaktieren Sie uns unter {email}"
+    }
+}

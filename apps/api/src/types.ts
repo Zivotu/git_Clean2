@@ -116,9 +116,12 @@ export type PayoutStatus = 'pending' | 'processing' | 'paid' | 'rejected';
 /**
  * Represents the 'ambassador' object nested within a user document.
  */
+export type CommissionModel = 'turbo' | 'partner';
+
 export interface AmbassadorInfo {
   status: AmbassadorApplicationStatus;
   promoCode?: string;
+  commissionModel?: CommissionModel; // 'turbo' (55%+15%) or 'partner' (10% lifetime)
   socialLinks?: Record<string, string>;
   motivation?: string;
   primaryPlatform?: string;
@@ -165,10 +168,9 @@ export interface User {
 export interface PromoCode {
   code: string;
   ambassadorUid: string;
-  benefit: {
-    type: 'free_gold_trial';
-    durationDays: number;
-  };
+  benefit:
+  | { type: 'free_gold_trial'; durationDays: number } // Legacy
+  | { type: 'discount'; discount1stMonth: number; discount2ndMonth: number }; // New: 40% + 50%
   isActive: boolean;
   usageCount: number;
   paidConversionsCount: number;

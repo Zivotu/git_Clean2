@@ -1,0 +1,40 @@
+
+================================================================================
+🔍 PROVERA LINKOVA NA THESARA STRANICI
+================================================================================
+
+Ukupno linkova za proveru: 17
+
+
+✅ ISPRAVNI LINKOVI (14):
+────────────────────────────────────────────────────────────────────────────────
+  [1] 200 - https://www.tiktok.com/@thesara_repository?is_from_webapp=1&sender_device=pc
+  [3] 200 - https://www.linkedin.com/company/thesara-repository/
+  [4] 200 - https://www.instagram.com/thesara.space/
+  [5] 302 - https://aistudio.google.com/
+  [6] 301 - https://youtube.com/shorts/esSpiQr63WE?feature=share
+  [7] 200 - https://www.googletagmanager.com/gtag/js?id=G-Q5LEE6M2QB
+  [9] 200 - https://js.stripe.com/v3
+  [10] 200 - https://api.thesara.space
+  [11] 200 - https://apps.thesara.space
+  [13] 200 - https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=900&q=60
+  [14] 302 - https://www.infozagreb.hr
+  [15] 200 - https://www.google.com
+  [16] 302 - https://aistudio.google.com/apps
+  [17] 200 - https://schema.org
+
+
+❌ NEISPRAVNI LINKOVI (3):
+────────────────────────────────────────────────────────────────────────────────
+  [2] 403 - https://x.com/THESARA_SPACE
+  [8] 405 - https://www.clarity.ms/tag/
+  [12] 404 - https://images.unsplash.com/photo-1522199794611-8e3563d8a6c4?auto=format&fit=crop&w=900&q=60
+
+
+================================================================================
+📊 REZIME:
+================================================================================
+Ukupno linkova:    17
+✅ Ispravni:       14 (82%)
+❌ Neispravni:     3 (18%)
+================================================================================

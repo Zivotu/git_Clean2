@@ -1,0 +1,199 @@
+{
+    "title": "Ambassador Program - Fleksibilna Zarada | Thesara",
+    "description": "Postani Thesara Ambassador i odaberi svoj model: TURBO (do 70% u prva 2 mjeseca) ili PARTNER (10% zauvijek). Daj pratiteljima Gold plan s popustom!",
+    "hero": {
+        "badge": "Otvorene prijave",
+        "title": "Odaberi Svoj Model Zarade",
+        "subtitle": "Promovirajući Thesaru",
+        "description": "TURBO: Zarađuj do 70% u prva 2 mjeseca (55% + 15%) ili PARTNER: 10% zauvijek na sve transakcije + prodaju aplikacija!",
+        "ctaPrimary": "Postani Ambassador",
+        "ctaSecondary": "Kako funkcionira?"
+    },
+    "stats": {
+        "commission": "Provizija (Turbo/Partner)",
+        "discount": "Popust (40% + 50%)",
+        "threshold": "Minimalni prag isplate"
+    },
+    "discount": {
+        "title": "Dvostruka Korist za Tvoju Publiku!",
+        "subtitle": "Korištenjem tvog koda, tvoji pratitelji dobivaju:",
+        "amount": "40% POPUSTA",
+        "detail": "ODMAH na prvi mjesec",
+        "calculation": "Plaćaju samo 6€ umjesto 10€ odmah!",
+        "benefit": "Dodatno: Drugi mjesec dobivaju 50% popusta (samo 5€).",
+        "hook": "Ukupna ušteda u 2 mjeseca: 9€! 🚀"
+    },
+    "howItWorks": {
+        "title": "Kako Funkcionira?",
+        "subtitle": "Tri jednostavna koraka do tvoje prve zarade",
+        "steps": {
+            "apply": {
+                "title": "Prijavi se",
+                "description": "Ispuni kratku formu u svom profilu. Dobij jedinstven promo kod i pristup dashboardu."
+            },
+            "share": {
+                "title": "Podijeli kod",
+                "description": "Kreiraj sadržaj (TikTok, Instagram, YouTube, newsletter) i podijeli svoj kod sa publikom."
+            },
+            "earn": {
+                "title": "Zaradi",
+                "description": "Kad pratitelj iskoristi tvoj kod i plati Gold plan, zarađuješ proviziju prema odabranom modelu!"
+            }
+        }
+    },
+    "benefits": {
+        "title": "Zašto Postati Ambassador?",
+        "items": {
+            "commission": {
+                "title": "Fleksibilna Provizija",
+                "description": "Odaberi TURBO (do 70% u prva 2 mjeseca) ili PARTNER (10% zauvijek). Ti biraš što ti odgovara!"
+            },
+            "offer": {
+                "title": "Vrijedna Ponuda za Publiku",
+                "description": "Tvoji pratitelji dobijaju 40% popusta na 1. mjesec i 50% popusta na 2. mjesec Gold plana!"
+            },
+            "dashboard": {
+                "title": "Transparentan Dashboard",
+                "description": "Prati broj iskorištenja koda, konverzije, stopu konverzije i zaradu u realnom vremenu."
+            },
+            "window": {
+                "title": "{days} Dana Atribucijskog Prozora",
+                "description": "Imaš cijela dva mjeseca da pretvoris zainteresiranog korisnika u platitelja!"
+            },
+            "payout": {
+                "title": "Jednostavne Isplate",
+                "description": "Dosegni €{threshold} i zatraži isplatu na PayPal. Isplate se obrađuju mjesečno (net 30)."
+            },
+            "kit": {
+                "title": "Marketing Kit",
+                "description": "Dobij pristup grafičkim materijalima, predlošcima i savjetima za promoviranje."
+            }
+        }
+    },
+    "tiers": {
+        "title": "Program Bonus Nagrada",
+        "subtitle": "Što više konverzija ostvariš, to bolje nagrade otključavaš!",
+        "levels": {
+            "bronze": {
+                "title": "Bronze Ambassador",
+                "conversions": "{count}+ konverzija",
+                "reward": "Besplatni Gold plan za tebe"
+            },
+            "silver": {
+                "title": "Silver Ambassador",
+                "conversions": "{count}+ konverzija",
+                "reward": "3 mjeseca Gold plana"
+            },
+            "gold": {
+                "title": "Gold Ambassador",
+                "conversions": "{count}+ konverzija",
+                "reward": "6 mjeseci Gold plana"
+            }
+        },
+        "note": "Nagrade su kumulativne! Svi ambasadori nastavljaju zarađivati proviziju prema odabranom modelu bez obzira na razinu."
+    },
+    "calculator": {
+        "title": "💡 Koliko Mogu Zaraditi?",
+        "subtitle": "Brza procjena mjesečne zarade",
+        "funFact": {
+            "title": "💡 Znaš li da...",
+            "chatgpt": "ChatGPT koristi 700 milijuna ljudi tjedno",
+            "thesara": "prva platforma",
+            "description": "— a Thesara je {platform} koja omogućava kreiranje vlastitih AI aplikacija bez kodiranja!",
+            "market": "To znači da tržište AI alata {explodes} — i ti možeš biti dio te revolucije kao ambassador! 🎯",
+            "explodes": "eksplodira"
+        },
+        "turbo": {
+            "title": "TURBO Model",
+            "subtitle": "Brza zarada u prva 2 mjeseca",
+            "with": "Sa {count} konverzija:",
+            "month1": "1. mjesec (55%)",
+            "month2": "2. mjesec (15%)",
+            "total": "Ukupno u 2 mjeseca",
+            "examples": "💡 {count1} konverzija = €{amount1} | {count2} konverzija = €{amount2}"
+        },
+        "partner": {
+            "title": "PARTNER Model",
+            "subtitle": "Pasivni prihod zauvijek",
+            "with": "Sa {count} konverzija:",
+            "month1": "1. mjesec (10%)",
+            "month2": "2. mjesec (10%)",
+            "month3plus": "3+ mjeseci (10%)",
+            "recurring": "Mjesečno (recurring)",
+            "fromGold": "od Gold pretplata",
+            "appSales": {
+                "title": "💰 BONUS: App Sales!",
+                "description": "Ako 10% njih (10 korisnika) kreira uspješne aplikacije...",
+                "userExample": "Korisnik A: app sa 100 pretplatnika × €5",
+                "yourEarning": "→ Tvoja zarada (10%):",
+                "creators": "10 uspješnih kreatora:",
+                "passive": "🚀 Dodatni pasivni prihod dok tvoji korisnici grade!"
+            },
+            "examples": "💡 {count1} konverzija = €{amount1}/mj | {count2} konverzija = €{amount2}/mj"
+        },
+        "note": "💡 Primjer baziran na Gold Plan (€10/mjesec) s ambasador popustima (40% + 50%). Odaberi model koji odgovara tvojoj strategiji!"
+    },
+    "faq": {
+        "title": "Često Postavljena Pitanja",
+        "items": {
+            "influencer": {
+                "q": "Moram li biti influencer sa mnogo pratitelja?",
+                "a": "Ne! Program je otvoren za sve - od mikro-influencera (1.000+ pratitelja) do etabliranih kreatora sadržaja. Bitna je kvaliteta publike, ne samo broj."
+            },
+            "where": {
+                "q": "Gdje mogu dijeliti svoj kod?",
+                "a": "Bilo gdje! TikTok, Instagram Stories/Reels, YouTube videi, newsletter, blog, Discord zajednice, Twitter/X, LinkedIn... Dobijaš i jedinstveni link koji možeš dijeliti."
+            },
+            "timing": {
+                "q": "Što ako korisnik ne plati odmah?",
+                "a": "Imaš {days} dana atribucijskog prozora! To znači da ako korisnik aktivira tvoj kod danas, a plati za mjesec dana, ti i dalje dobivaš proviziju."
+            },
+            "privacy": {
+                "q": "Mogu li vidjeti tko je iskoristio moj kod?",
+                "a": "Možeš vidjeti ukupan broj iskorištenja, konverzija i zaradu na dashboardu, ali ne možeš vidjeti osobne podatke korisnika (zbog GDPR-a)."
+            },
+            "multiple": {
+                "q": "Što ako imam više promo kodova?",
+                "a": "Trenutno svakom ambasadoru dodjeljujemo jedan jedinstveni kod. To olakšava praćenje i isplatu."
+            },
+            "rules": {
+                "q": "Postoje li neka pravila ili zabrane?",
+                "a": "Da - zabranjeno je koristiti vlastiti kod, spam, obmanjujuće oglašavanje ili kršenje pravila platformi. Sav promotivni sadržaj mora biti jasno označen (#ad, #partner). Detaljno u Uvjetima korištenja."
+            }
+        }
+    },
+    "customPlan": {
+        "title": "Trebaš Prilagođeni Plan?",
+        "subtitle": "Nudimo i posebne partnerske planove po mjeri",
+        "description": "Zanima te manja provizija ali ponavljajuća mjesečna zarada od svake pretplate? Ili imaš jedinstveni prijedlog za suradnju?",
+        "contact": "Javi nam se direktno na {email}",
+        "email": "welcome@thesara.space",
+        "cta": "Kontaktiraj Nas"
+    },
+    "models": {
+        "title": "Odaberi Svoj Model Zarade",
+        "subtitle": "Prilagodi partnerstvo svojim potrebama",
+        "turbo": {
+            "title": "🚀 TURBO Model",
+            "badge": "Najpopularnije",
+            "description": "Savršeno za influencere i paid ads.",
+            "payout1": "55% od prve uplate",
+            "payout2": "15% od druge uplate",
+            "sales": "0% od prodaje aplikacija"
+        },
+        "partner": {
+            "title": "💎 PARTNER Model",
+            "badge": "Dugoročno",
+            "description": "Za edukatore i zajednice.",
+            "payout1": "10% od SVIH pretplata",
+            "payout2": "Trajni prihod (Recurring)",
+            "sales": "10% od PRODAJE aplikacija"
+        }
+    },
+    "finalCta": {
+        "title": "Spreman/na Započeti?",
+        "subtitle": "Pridruži se ambasadorima koji već zarađuju promovišući Thesaru. Prijava traje manje od 2 minute!",
+        "button": "Postani Ambassador Sada",
+        "questions": "💡 Imaš pitanja? Kontaktiraj nas na {email}"
+    }
+}

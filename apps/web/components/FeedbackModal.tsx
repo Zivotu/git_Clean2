@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n-provider";
 
 type Props = {
   open: boolean;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export default function FeedbackModal({ open, onClose }: Props) {
+  const { messages } = useI18n();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -36,7 +38,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
     setError("");
     setSuccess(false);
     if (!message || message.trim().length < 5) {
-      setError("Molimo napišite kratak opis prijedloga (najmanje 5 znakova)");
+      setError(messages['Feedback.form.errorMinLength'] || "Molimo napišite kratak opis prijedloga (najmanje 5 znakova)");
       return;
     }
 
@@ -53,7 +55,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError((j && j.error) || 'Greška pri slanju. Pokušajte kasnije.');
+        setError((j && j.error) || messages['Feedback.form.errorGeneric'] || 'Greška pri slanju. Pokušajte kasnije.');
         setLoading(false);
         return;
       }
@@ -64,7 +66,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
         onClose();
       }, 900);
     } catch (err) {
-      setError('Greška pri slanju. Pokušajte kasnije.');
+      setError(messages['Feedback.form.errorGeneric'] || 'Greška pri slanju. Pokušajte kasnije.');
       setLoading(false);
     }
   }
@@ -78,68 +80,72 @@ export default function FeedbackModal({ open, onClose }: Props) {
 
       <form
         onSubmit={onSubmit}
-        className="relative bg-white w-full max-w-lg mx-4 rounded-lg shadow-lg p-6 ring-1 ring-gray-200"
+        className="relative bg-white dark:bg-zinc-900 w-full max-w-lg mx-4 rounded-lg shadow-lg p-6 ring-1 ring-gray-200 dark:ring-zinc-800"
         aria-modal
         role="dialog"
       >
         <button
           type="button"
-          className="absolute right-3 top-3 text-gray-500 hover:text-gray-800"
+          className="absolute right-3 top-3 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
           onClick={onClose}
-          aria-label="Zatvori"
+          aria-label={messages['Feedback.close'] || "Zatvori"}
         >
           ✕
         </button>
 
         <div className="flex items-center gap-3 mb-4">
           <div>
-            <h3 className="text-lg font-semibold">Vaši prijedlozi</h3>
-            <p className="text-sm text-gray-600">Pošaljite prijedlog za poboljšanje Thesare — poslat ćemo ga našem timu.</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {messages['Feedback.title'] || "Vaši prijedlozi"}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {messages['Feedback.subtitle'] || "Pošaljite prijedlog za poboljšanje Thesare — poslat ćemo ga našem timu."}
+            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-3">
           <input
-            placeholder="Vaše ime (opcionalno)"
+            placeholder={messages['Feedback.form.namePlaceholder'] || "Vaše ime (opcionalno)"}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600"
           />
 
           <input
-            placeholder="Email (opcionalno)"
+            placeholder={messages['Feedback.form.emailPlaceholder'] || "Email (opcionalno)"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             type="email"
-            className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600"
           />
 
           <input
-            placeholder="Kratki naslov prijedloga"
+            placeholder={messages['Feedback.form.subjectPlaceholder'] || "Kratki naslov prijedloga"}
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600"
           />
 
           <textarea
-            placeholder="Napišite vaš prijedlog ovdje..."
+            placeholder={messages['Feedback.form.messagePlaceholder'] || "Napišite vaš prijedlog ovdje..."}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={6}
-            className="w-full rounded-md border border-gray-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-md border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200 dark:focus:ring-indigo-600"
           />
 
-          {error ? <div className="text-sm text-red-600">{error}</div> : null}
-          {success ? <div className="text-sm text-green-600">Hvala! Prijedlog je poslan.</div> : null}
+          {error ? <div className="text-sm text-red-600 dark:text-red-400">{error}</div> : null}
+          {success ? <div className="text-sm text-green-600 dark:text-green-400">{messages['Feedback.form.success'] || "Hvala! Prijedlog je poslan."}</div> : null}
 
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-2 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+              className="px-3 py-2 rounded-md bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
               disabled={loading}
             >
-              Odustani
+              {messages['Feedback.form.cancel'] || "Odustani"}
             </button>
 
             <button
@@ -147,7 +153,7 @@ export default function FeedbackModal({ open, onClose }: Props) {
               className="px-4 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
               disabled={loading}
             >
-              {loading ? 'Slanje...' : 'Pošalji'}
+              {loading ? (messages['Feedback.form.sending'] || 'Slanje...') : (messages['Feedback.form.submit'] || 'Pošalji')}
             </button>
           </div>
         </div>

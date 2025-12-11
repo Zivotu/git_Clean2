@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { useT } from '@/lib/i18n-provider';
 import type { BillingPackage } from '@/types/billing';
 
 export type CheckoutItem = {
@@ -42,6 +43,7 @@ export default function CheckoutReview({
   loading = false,
   error,
 }: Props) {
+  const t = useT();
   const [customerEmail, setCustomerEmail] = useState(email || '');
   const [customerAddress, setCustomerAddress] = useState(addressInfo?.address || '');
   const [customerCity, setCustomerCity] = useState(addressInfo?.city || '');
@@ -70,9 +72,9 @@ export default function CheckoutReview({
   const fmt =
     item.currency != null
       ? new Intl.NumberFormat(undefined, {
-          style: 'currency',
-          currency: item.currency,
-        })
+        style: 'currency',
+        currency: item.currency,
+      })
       : null;
 
   const basePrice = fmt ? fmt.format(item.price / 100) : null;
@@ -97,88 +99,112 @@ export default function CheckoutReview({
       <h1 className="text-2xl font-bold text-center">Pregled narudžbe</h1>
 
       <Card className="p-4 space-y-2">
+        <div className="flex justify-between">
+          <span className="font-semibold">Pretplata</span>
+          <span>{item.name}</span>
+        </div>
+        {basePrice && (
           <div className="flex justify-between">
-            <span className="font-semibold">Pretplata</span>
-            <span>{item.name}</span>
+            <span className="font-semibold">Cijena</span>
+            <span>{basePrice}</span>
           </div>
-          {basePrice && (
-            <div className="flex justify-between">
-              <span className="font-semibold">Cijena</span>
-              <span>{basePrice}</span>
-            </div>
-          )}
-          {tax > 0 && taxAmount && (
-            <div className="flex justify-between">
-              <span className="font-semibold">Porez</span>
-              <span>{taxAmount}</span>
-            </div>
-          )}
-          {discount > 0 && discountAmount && (
-            <div className="flex justify-between">
-              <span className="font-semibold">Popust</span>
-              <span>-{discountAmount}</span>
-            </div>
-          )}
-          {totalAmount && (
-            <div className="flex justify-between border-t pt-2 mt-2">
-              <span className="font-semibold">Ukupno</span>
-              <span>{totalAmount}</span>
-            </div>
-          )}
-        </Card>
+        )}
+        {tax > 0 && taxAmount && (
+          <div className="flex justify-between">
+            <span className="font-semibold">Porez</span>
+            <span>{taxAmount}</span>
+          </div>
+        )}
+        {discount > 0 && discountAmount && (
+          <div className="flex justify-between">
+            <span className="font-semibold">Popust</span>
+            <span>-{discountAmount}</span>
+          </div>
+        )}
+        {totalAmount && (
+          <div className="flex justify-between border-t pt-2 mt-2">
+            <span className="font-semibold">Ukupno</span>
+            <span>{totalAmount}</span>
+          </div>
+        )}
+      </Card>
 
       <Card className="p-4 space-y-2">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email za račun
-          </label>
-          <Input
-            id="email"
-            type="email"
-            value={customerEmail}
-            onChange={(e) => setCustomerEmail(e.target.value)}
-          />
-        </Card>
+        <label htmlFor="email" className="text-sm font-medium">
+          Email za račun
+        </label>
+        <Input
+          id="email"
+          type="email"
+          value={customerEmail}
+          onChange={(e) => setCustomerEmail(e.target.value)}
+        />
+      </Card>
+
+      {/* Promo Code Section */}
+      <Card className="p-4 space-y-3 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-900/30">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">💎</span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+              {t('Ambassador.checkout.promoQuestion')}
+            </p>
+            <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+              {t('Ambassador.checkout.promoDescription')}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white dark:bg-zinc-800/50 rounded-lg p-3 border border-emerald-300 dark:border-emerald-700">
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+            Već imate kod? <a href="/redeem" className="text-emerald-600 dark:text-emerald-400 underline font-semibold hover:text-emerald-700" target="_blank">{t('Ambassador.checkout.promoLinkText')}</a>
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500">
+            ℹ️ {t('Ambassador.checkout.promoNote')}
+          </p>
+        </div>
+      </Card>
+
 
       <Card className="p-4 space-y-2">
-          <label htmlFor="address" className="text-sm font-medium">
-            Adresa
-          </label>
+        <label htmlFor="address" className="text-sm font-medium">
+          Adresa
+        </label>
+        <Input
+          id="address"
+          type="text"
+          value={customerAddress}
+          onChange={(e) => setCustomerAddress(e.target.value)}
+        />
+        <div className="flex gap-2">
           <Input
-            id="address"
+            id="city"
             type="text"
-            value={customerAddress}
-            onChange={(e) => setCustomerAddress(e.target.value)}
-          />
-          <div className="flex gap-2">
-            <Input
-              id="city"
-              type="text"
-              value={customerCity}
-              onChange={(e) => setCustomerCity(e.target.value)}
-              placeholder="Grad"
-            />
-            <Input
-              id="postalCode"
-              type="text"
-              value={customerPostalCode}
-              onChange={(e) => setCustomerPostalCode(e.target.value)}
-              placeholder="Poštanski broj"
-            />
-          </div>
-          <Input
-            id="country"
-            type="text"
-            value={customerCountry}
-            onChange={(e) => setCustomerCountry(e.target.value)}
-            placeholder="Država"
+            value={customerCity}
+            onChange={(e) => setCustomerCity(e.target.value)}
+            placeholder="Grad"
           />
           <Input
-            id="vatId"
+            id="postalCode"
             type="text"
-            value={customerVatId}
-            onChange={(e) => setCustomerVatId(e.target.value)}
-            placeholder="OIB/VAT ID"
+            value={customerPostalCode}
+            onChange={(e) => setCustomerPostalCode(e.target.value)}
+            placeholder="Poštanski broj"
           />
+        </div>
+        <Input
+          id="country"
+          type="text"
+          value={customerCountry}
+          onChange={(e) => setCustomerCountry(e.target.value)}
+          placeholder="Država"
+        />
+        <Input
+          id="vatId"
+          type="text"
+          value={customerVatId}
+          onChange={(e) => setCustomerVatId(e.target.value)}
+          placeholder="OIB/VAT ID"
+        />
       </Card>
 
       <Button onClick={handle} disabled={loading} className="w-full">

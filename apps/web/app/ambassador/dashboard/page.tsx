@@ -153,7 +153,7 @@ export default function AmbassadorDashboardPage() {
         <p className="text-sm text-red-600">{error}</p>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4 space-y-2">
           <p className="text-sm text-gray-500">Tvoj kod</p>
           <p className="text-2xl font-semibold">
@@ -163,7 +163,7 @@ export default function AmbassadorDashboardPage() {
             variant="secondary"
             onClick={() => {
               if (data?.ambassador.promoCode) {
-                navigator.clipboard.writeText(data.ambassador.promoCode).catch(() => {});
+                navigator.clipboard.writeText(data.ambassador.promoCode).catch(() => { });
               }
             }}
             disabled={!data?.ambassador.promoCode}
@@ -198,6 +198,33 @@ export default function AmbassadorDashboardPage() {
           <p className="text-sm text-gray-500">Ukupno generirani prihod</p>
           <p className="text-2xl font-semibold">
             ${promoStats?.totalRevenueGenerated?.toFixed?.(2) ?? '0.00'}
+          </p>
+        </Card>
+
+        {/* Commission Model Display */}
+        <Card className="p-4 space-y-2">
+          <p className="text-sm text-gray-500">Tvoj model</p>
+          <div className="flex items-center gap-2">
+            {data?.ambassador.commissionModel === 'turbo' ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                <span className="text-xl">🚀</span>
+                <span className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">TURBO</span>
+              </div>
+            ) : data?.ambassador.commissionModel === 'partner' ? (
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <span className="text-xl">💎</span>
+                <span className="text-sm font-semibold text-blue-800 dark:text-blue-300">PARTNER</span>
+              </div>
+            ) : (
+              <span className="text-sm text-gray-400">—</span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">
+            {data?.ambassador.commissionModel === 'turbo'
+              ? '55% + 15% (prvi 2 mjeseca)'
+              : data?.ambassador.commissionModel === 'partner'
+                ? '10% lifetime (sve transakcije)'
+                : 'Model nije odabran'}
           </p>
         </Card>
       </div>

@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { applyToAmbassadorProgram } from '@/lib/ambassador';
-import { useTranslations } from 'next-intl';
+import { useT } from '@/lib/i18n-provider';
 
 // A simple modal component
 const Modal = ({ isOpen, onClose, title, children }: any) => {
@@ -53,7 +53,7 @@ type ProfileAmbassadorInfo = {
 };
 
 export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
-  const t = useTranslations('Profile.ambassadorSection');
+  const t = useT('ambassadorSection');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [socialLinks, setSocialLinks] = useState({
     tiktok: '',
@@ -69,6 +69,44 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [localUserInfo, setLocalUserInfo] = useState(userInfo);
+
+  // Use ref to track if we've already checked the query param
+  const hasCheckedQueryParam = useRef(false);
+
+  // Auto-open modal if openAmbassador query param is present
+  useEffect(() => {
+    // Only check once on mount
+    if (hasCheckedQueryParam.current) {
+      console.log('⏭️ Skipping - already checked query param');
+      return;
+    }
+
+    hasCheckedQueryParam.current = true;
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const shouldOpen = params.get('openAmbassador') === 'true';
+
+      console.log('🔍 AmbassadorSection useEffect (FIRST TIME):', {
+        search: window.location.search,
+        shouldOpen,
+        currentModalState: isModalOpen
+      });
+
+      if (shouldOpen) {
+        // Open modal immediately
+        console.log('✅ Opening ambassador modal NOW...');
+        setIsModalOpen(true);
+
+        // Clean up the URL (remove query param) after a brief delay
+        setTimeout(() => {
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+          console.log('🧹 Cleaned URL to:', newUrl);
+        }, 300);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     setLocalUserInfo(userInfo);
@@ -230,7 +268,7 @@ export default function AmbassadorSection({ userInfo }: { userInfo: any }) {
               <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>Prednost za tvoju publiku: <span className="font-medium">30 dana besplatnog Gold plana</span>.</span>
+              <span>Prednost za tvoju publiku: <span className="font-medium">40% + 50% popusta</span> na Gold plan.</span>
             </li>
             <li className="flex items-start gap-2">
               <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

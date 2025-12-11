@@ -184,7 +184,7 @@
       "previewAlt": "Učitani pregled"
     }
   },
-  "Promo": {
+  "PromoCode": {
     "title": "Iskoristi promo kod",
     "mustBeSignedIn": "Morate biti prijavljeni da biste iskoristili promo kod.",
     "label": "Promo kod",
@@ -774,7 +774,7 @@
         }
       }
     },
-    "promo": {
+    "PromoCode": {
       "featuredLabel": "Izdvojeno",
       "learnMore": "Saznaj više"
     },
@@ -1245,7 +1245,7 @@
     "backHome": "Natrag na početnu",
     "redirecting": "Preusmjeravam vas na Zlatnu knjigu…"
   },
-  "promo": {
+  "PromoCode": {
     "banners": {
       "0": {
         "title": "Jednostavne upute",
@@ -1448,56 +1448,56 @@
       "title": "Povijest naplate",
       "viewAll": "Vidi sve",
       "noHistory": "Nema povijesti naplate"
-    },
-    "ambassadorSection": {
-      "title": "Thesara Ambassador Program",
-      "description": "Postani Thesara ambasador i zaradi proviziju dijeleći svoj jedinstveni kod s publikom.",
-      "commissionRate": "80% provizije od prve uplate",
-      "commissionText": "Zaradi kao partner: {rate} korisnika koji iskoristi tvoj kod.",
-      "benefit1": "Prednost za tvoju publiku: {trial} besplatnog Gold plana.",
-      "benefit2": "Isplata: prag {threshold}, isplata {frequency} preko PayPala.",
-      "benefit3": "Jednostavno dijeljenje: jedinstveni promo kod i link.",
-      "benefit4": "Transparentnost: dashboard s uvidom u iskorištenja, konverzije i zaradu.",
-      "note": "💡 Napomena: provizija se obračunava na {period} korisnika unutar 60 dana od aktivacije koda.",
-      "applyButton": "🚀 Prijavi se",
-      "statusApproved": "🎉 Čestitamo! Odobren si kao Thesara ambasador.",
-      "statusPending": "⏳ Tvoja prijava je u obradi. Javit ćemo ti se e-mailom čim donesemo odluku.",
-      "statusRejected": "Prethodna prijava nije odobrena, ali možeš se ponovno prijaviti kad osjetiš da je tvoja zajednica spremna.",
-      "yourCode": "Tvoj kod",
-      "copyCode": "📋 Kopiraj kod",
-      "openDashboard": "📊 Otvori dashboard",
-      "marketingKit": "🎨 Marketing kit",
-      "newApplication": "Nova prijava",
-      "applicationSuccess": "Zahtjev je poslan! Obavijestit ćemo te čim ga pregledamo.",
-      "modal": {
-        "title": "Prijava za Ambassador program",
-        "confirmTerms": "📋 Prije slanja, potvrdi da razumiješ uvjete:",
-        "term1": "80% provizije na prvu uplatu",
-        "term2": "30 dana Gold trial tvojoj publici",
-        "term3": "Prag isplate 50 €",
-        "term4": "Isplata mjesečno (net 30)",
-        "tiktokLabel": "TikTok profil",
-        "tiktokPlaceholder": "https://www.tiktok.com/@username",
-        "instagramLabel": "Instagram profil",
-        "instagramPlaceholder": "https://www.instagram.com/username",
-        "youtubeLabel": "YouTube kanal",
-        "youtubePlaceholder": "https://www.youtube.com/@username",
-        "newsletterLabel": "Newsletter ili blog",
-        "newsletterPlaceholder": "https://newsletter.example.com",
-        "otherLabel": "Ostali kanali (link)",
-        "otherPlaceholder": "https://",
-        "primaryPlatformLabel": "Primarna platforma",
-        "primaryPlatformPlaceholder": "npr. TikTok, YouTube, Instagram",
-        "audienceSizeLabel": "Veličina publike",
-        "audienceSizePlaceholder": "npr. 12.5k pratitelja",
-        "motivationLabel": "Zašto želiš biti ambasador?",
-        "motivationPlaceholder": "Volim Thesara jer...",
-        "motivationRequired": "*",
-        "errorTitle": "❌ Greška:",
-        "cancelButton": "Odustani",
-        "submitButton": "Pošalji prijavu",
-        "submittingButton": "Slanje..."
-      }
+    }
+  },
+  "ambassadorSection": {
+    "title": "Thesara Ambassador Program",
+    "description": "Postani Thesara ambasador i zaradi proviziju dijeleći svoj jedinstveni kod s publikom.",
+    "commissionRate": "80% provizije od prve uplate",
+    "commissionText": "Zaradi kao partner: {rate} korisnika koji iskoristi tvoj kod.",
+    "benefit1": "Prednost za tvoju publiku: {trial} besplatnog Gold plana.",
+    "benefit2": "Isplata: prag {threshold}, isplata {frequency} preko PayPala.",
+    "benefit3": "Jednostavno dijeljenje: jedinstveni promo kod i link.",
+    "benefit4": "Transparentnost: dashboard s uvidom u iskorištenja, konverzije i zaradu.",
+    "note": "💡 Napomena: provizija se obračunava na {period} korisnika unutar 60 dana od aktivacije koda.",
+    "applyButton": "🚀 Prijavi se",
+    "statusApproved": "🎉 Čestitamo! Odobren si kao Thesara ambasador.",
+    "statusPending": "⏳ Tvoja prijava je u obradi. Javit ćemo ti se e-mailom čim donesemo odluku.",
+    "statusRejected": "Prethodna prijava nije odobrena, ali možeš se ponovno prijaviti kad osjetiš da je tvoja zajednica spremna.",
+    "yourCode": "Tvoj kod",
+    "copyCode": "📋 Kopiraj kod",
+    "openDashboard": "📊 Otvori dashboard",
+    "marketingKit": "🎨 Marketing kit",
+    "newApplication": "Nova prijava",
+    "applicationSuccess": "Zahtjev je poslan! Obavijestit ćemo te čim ga pregledamo.",
+    "modal": {
+      "title": "Prijava za Ambassador program",
+      "confirmTerms": "📋 Prije slanja, potvrdi da razumiješ uvjete:",
+      "term1": "80% provizije na prvu uplatu",
+      "term2": " 30 dana Gold trial tvojoj publici",
+      "term3": "Prag isplate 50 €",
+      "term4": "Isplata mjesečno (net 30)",
+      "tiktokLabel": "TikTok profil",
+      "tiktokPlaceholder": "https://www.tiktok.com/@username",
+      "instagramLabel": "Instagram profil",
+      "instagramPlaceholder": "https://www.instagram.com/username",
+      "youtubeLabel": "YouTube kanal",
+      "youtubePlaceholder": "https://www.youtube.com/@username",
+      "newsletterLabel": "Newsletter ili blog",
+      "newsletterPlaceholder": "https://newsletter.example.com",
+      "otherLabel": "Ostali kanali (link)",
+      "otherPlaceholder": "https://",
+      "primaryPlatformLabel": "Primarna platforma",
+      "primaryPlatformPlaceholder": "npr. TikTok, YouTube, Instagram",
+      "audienceSizeLabel": "Veličina publike",
+      "audienceSizePlaceholder": "npr. 12.5k pratitelja",
+      "motivationLabel": "Zašto želiš biti ambasador?",
+      "motivationPlaceholder": "Volim Thesara jer...",
+      "motivationRequired": "*",
+      "errorTitle": "❌ Greška:",
+      "cancelButton": "Odustani",
+      "submitButton": "Pošalji prijavu",
+      "submittingButton": "Slanje..."
     }
   },
   "Finances": {

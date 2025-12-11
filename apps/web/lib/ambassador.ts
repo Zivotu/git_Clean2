@@ -8,6 +8,7 @@ export type AmbassadorEarnings = {
 export type AmbassadorInfo = {
   status: 'pending' | 'approved' | 'rejected';
   promoCode: string | null;
+  commissionModel?: 'turbo' | 'partner';
   socialLinks: Record<string, string>;
   motivation: string;
   earnings: AmbassadorEarnings;
@@ -84,6 +85,7 @@ export type AmbassadorApplicationPayload = {
   motivation: string;
   audienceSize?: string;
   primaryPlatform?: string;
+  commissionModel?: 'turbo' | 'partner';
 };
 
 export type AmbassadorApplicationItem = {
@@ -91,6 +93,7 @@ export type AmbassadorApplicationItem = {
   email: string | null;
   displayName: string | null;
   handle: string | null;
+  photoURL?: string | null;
   ambassador: AmbassadorInfo;
 };
 

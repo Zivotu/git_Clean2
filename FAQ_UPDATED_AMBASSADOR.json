@@ -1,0 +1,138 @@
+[
+    {
+        "id": "osnovno",
+        "title": "Osnovno",
+        "items": [
+            {
+                "q": "Što je Thesara?",
+                "a": "Thesara je platforma za brzo i jednostavno objavljivanje aplikacija u par klikova. Fokus je na dostupnosti tvoje aplikacije korisnicima iz cijelog svijeta i tvojoj kreativnosti koja napokon ima mjesto gdje se može parkirati."
+            },
+            {
+                "q": "Koje sve aplikacije i kakve aplikacije mogu objaviti?",
+                "a": "Sve koje ulaze u onaj pristojni okvir gdje ne vrijeđaš drugoga, ne varaš, ne kradeš i ne lažeš — ali tehnički gledano, sve aplikacije koje ti se vrte u LLM-ovima (kao što su ChatGPT i slični sustavi) će raditi i kod nas."
+            }
+        ]
+    },
+    {
+        "id": "objava",
+        "title": "Objavljivanje",
+        "items": [
+            {
+                "q": "Kako objaviti aplikaciju?",
+                "a": "Klikneš na zeleni gumb 'Objavi Aplikaciju', zalijepiš gotovi kod koji si kopirao iz ChatGPT-a ili nekog drugog LLM sustava, ili jednostavno uploadaš bundle koji si tamo skinuo. Dodaš naslov, opis, odabereš sliku i objaviš. Zatim samo pričekaš da pregledamo i odobrimo aplikaciju i to je to!"
+            },
+            {
+                "q": "Koliko traje objava?",
+                "a": "Objava traje od par minuta do par sati, ali brzo ćemo mi to — nadamo se! :) Još smo mladi pa tek razvijamo svoju tehnologiju, ali kako vrijeme prolazi, sve će ići brže i bolje!"
+            },
+            {
+                "q": "Što napraviti ako objava zakaže?",
+                "a": "Objava aplikacije može zakazati samo ako ti odbijemo aplikaciju — u tom slučaju dobit ćeš obavijest. Aplikacija može biti i objavljena, ali ne raditi kako si zamislio. Ako si već pokušao objaviti novu, ispravljenu verziju i siguran si da je problem na našoj strani, imaš gumb u detaljima aplikacije 'Prijavi Problem'. Tamo nam opiši što se događa i posvetit ćemo se tom problemu posebno."
+            }
+        ]
+    },
+    {
+        "id": "pohrana",
+        "title": "Pohrana i upload",
+        "items": [
+            {
+                "q": "Gdje su pohranjeni moji buildovi i uploadi?",
+                "a": "Buildovi su pohranjeni u Thesara sustavu, ali svakako čuvaj svoje originale jer mi ne odgovaramo za backup i trajno čuvanje tvojih aplikacija."
+            },
+            {
+                "q": "Što učiniti ako upload ne prođe?",
+                "a": "Onda smo i mi u problemu jer smo dosta uvjereni da bi upload trebao uvijek proći. Ako se to ipak dogodi, pošalji nam email na reports@thesara.space i provjerit ćemo što se dogodilo."
+            }
+        ]
+    },
+    {
+        "id": "rjesavanje-problema",
+        "title": "Rješavanje problema i savjeti",
+        "items": [
+            {
+                "q": "Kod ili Bundle - što odabrati?",
+                "a": "Koristi **Kod** za pojedinačne HTML/React datoteke (npr. iz ChatGPT-a). Koristi **Bundle (.zip)** za projekte s više datoteka. Važno: Kod zipanja, označi same *datoteke* i sažmi ih, nemoj zipati cijelu mapu."
+            },
+            {
+                "q": "Koja su ograničenja veličine datoteka?",
+                "a": "Preview slike i screenshotovi: max **1MB**. Custom assets: max **100KB** (jedna datoteka može biti do **500KB**). Koristi alate poput TinyPNG ako su ti slike prevelike."
+            },
+            {
+                "q": "Kako rade Sobe (Rooms)?",
+                "a": "Sobe omogućuju privatne ili multiplayer sesije. Možeš postaviti PIN za pristup. Za testiranje možeš koristiti PIN **1111**."
+            },
+            {
+                "q": "Moja AI aplikacija ne radi",
+                "a": "Ako tvoja aplikacija koristi AI API (poput Geminija ili OpenAI-a), ne zaboravi unijeti svoj **API Key** u za to predviđeno polje prilikom objave."
+            }
+        ]
+    },
+    {
+        "id": "korištenje",
+        "title": "Korištenje aplikacija",
+        "items": [
+            {
+                "q": "Kako mogu koristiti svoju aplikaciju?",
+                "a": "Aplikaciju možeš koristiti privatno ili ju možeš staviti na korištenje svim korisnicima. Možeš ju ponuditi besplatno ili odrediti mjesečnu cijenu — kako za pojedine aplikacije, tako i za cijeli tvoj repozitorij. To drugim korisnicima omogućava da za jednu cijenu koriste sve aplikacije koje si objavio. Mi uzimamo 30% provizije, ali sve detalje možeš pročitati u Termsima na dnu stranice (footer link)."
+            },
+            {
+                "q": "Kada mogu isplatiti zarađena sredstva?",
+                "a": "Kada sakupiš minimalno 50 USD na računu, odmah možeš zatražiti isplatu. Naravno, postoji transakcijska naknada koja ovisi o servisu koji odabereš za isplatu — ali sve će ti biti jasno prikazano tijekom procesa isplate, kao i kod drugih servisa."
+            }
+        ]
+    },
+    {
+        "id": "podrska",
+        "title": "Prijedlozi i podrška",
+        "items": [
+            {
+                "q": "Kako vam mogu poslati prijedlog?",
+                "a": "Na naslovnici se nalazi link 'Vaši prijedlozi' — klikni i pošalji nam što ti padne na pamet. Volimo ideje, pogotovo one koje pomognu da Thesara postane još bolja!"
+            },
+            {
+                "q": "Gdje mogu pronaći dodatne upute?",
+                "a": "Dodatne informacije možeš pronaći ovdje u FAQ-u ili nas kontaktirati direktno putem support@thesara.space."
+            }
+        ]
+    },
+    {
+        "id": "ambasador",
+        "title": "Ambassador program",
+        "items": [
+            {
+                "q": "Što je Ambassador program i koliko mogu zaraditi?",
+                "a": "Ambassador program omogućava da zaradiš **80% provizije** od svake prve uplate korisnika koji iskoristi tvoj jedinstveni promo kod. Na primjer, ako korisnik plati Gold plan (12€/mjesec), ti dobivaš ~9.60€! Tvoja publika dobiva 30 dana besplatnog Gold plana."
+            },
+            {
+                "q": "Kako funkcionira Ambassador program?",
+                "a": "1) Prijaviš se u profilu → 2) Dobiješ jedinstveni promo kod → 3) Podijeliš kod sa svojom publikom (TikTok, Instagram, YouTube, newsletter) → 4) Kad korisnik iskoristi tvoj kod i plati Gold plan unutar 60 dana, ti dobivaš 80% provizije → 5) Kada skupiš 50€, možeš zatražiti isplatu na PayPal (mjesečno, net 30)."
+            },
+            {
+                "q": "Koja je prednost za moju publiku?",
+                "a": "Tvoji pratitelji dobijaju **30 dana besplatnog Gold plana** (vrijednost 12€!). To znači da mogu isprobati sve premium funkcije bez obveze plaćanja. Ako im se svidi, mogu nastaviti s plaćanjem nakon trial perioda."
+            },
+            {
+                "q": "Kako se pračunavaju provizije?",
+                "a": "Dobijaš proviziju **samo na prvu uplatu korisnika**. Ako korisnik plati unutar **60 dana** nakon aktivacije tvog koda, tvoj račun se automatski poveća za 80% iznosa njegove uplate. Možeš pratiti zaradu u realnom vremenu na Ambassador dashboardu."
+            },
+            {
+                "q": "Kada i kako dobivam isplatu?",
+                "a": "Možeš zatražiti isplatu kada dosegneš **50€** na računu. Isplate se obrađuju **mjesečno (net 30)** preko **PayPala**. To znači da nakon što zatraživaš isplatu, novac stiže u roku od 30 dana."
+            },
+            {
+                "q": "Gdje mogu pratiti svoj napredak?",
+                "a": "Nakon što postaneš Ambassador, dobijaš pristup **Ambassador dashboardu** (/ambassador/dashboard) gdje možeš vidjeti: broj iskorištenja tvog koda, broj plaćenih konverzija, stopu konverzije, trenutnu zaradu, povijest isplata i još mnogo toga!"
+            }
+        ]
+    },
+    {
+        "id": "promocija",
+        "title": "Promocija 'Prvih 100 korisnika'",
+        "items": [
+            {
+                "q": "Pravilo za prvih 100 korisnika",
+                "a": "Da bi ostvarili pravo na tri mjeseca ako su među prvih 100 korisnika moraju objaviti jednu aplikaciju unutar 15 dana od registracije ili gube to pravo pa ćemo nekome drugome pokloniti to mjesto."
+            }
+        ]
+    }
+]

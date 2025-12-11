@@ -54,6 +54,8 @@ export default function AmbassadorProgram() {
   const [posts, setPosts] = useState<AmbassadorPost[]>([]);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState('');
+  // Application details modal
+  const [selectedApplication, setSelectedApplication] = useState<AmbassadorApplicationItem | null>(null);
 
   // Simple KPIs
   const [kpiApproved, setKpiApproved] = useState(0);
@@ -113,7 +115,7 @@ export default function AmbassadorProgram() {
     if (!loading && user) {
       void loadApplications(selectedStatus);
       void refreshKpis();
-      void loadPosts();
+      // void loadPosts(); // Disabled: Post verification not used
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user, selectedStatus]);
@@ -397,8 +399,8 @@ export default function AmbassadorProgram() {
                 key={tab.id}
                 onClick={() => setSelectedStatus(tab.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab.id === selectedStatus
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                   }`}
               >
                 {tab.label}
@@ -426,6 +428,7 @@ export default function AmbassadorProgram() {
                   <tr>
                     <th className="px-4 py-3 font-medium">{tAdmin('ambassador.applications.table.user')}</th>
                     <th className="px-4 py-3 font-medium">{tAdmin('ambassador.applications.table.email')}</th>
+                    <th className="px-4 py-3 font-medium">Model</th>
                     <th className="px-4 py-3 font-medium">{tAdmin('ambassador.applications.table.status')}</th>
                     <th className="px-4 py-3 font-medium">{tAdmin('ambassador.applications.table.details')}</th>
                     <th className="px-4 py-3 font-medium">{tAdmin('ambassador.applications.table.balance')}</th>
@@ -444,6 +447,19 @@ export default function AmbassadorProgram() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{item.email || tAdmin('ambassador.emptyValue')}</td>
+                      <td className="px-4 py-3">
+                        {item.ambassador.commissionModel === 'turbo' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded text-xs font-medium">
+                            🚀 TURBO
+                          </span>
+                        ) : item.ambassador.commissionModel === 'partner' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs font-medium">
+                            💎 PARTNER
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
                           ${item.ambassador.status === 'approved' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
@@ -477,6 +493,13 @@ export default function AmbassadorProgram() {
                         {tAdmin('ambassador.applications.balanceValue', { amount: (item.ambassador.earnings.currentBalance || 0).toFixed(2) })}
                       </td>
                       <td className="px-4 py-3 text-right space-x-2">
+                        <button
+                          onClick={() => setSelectedApplication(item)}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs font-medium hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                        >
+                          <FileText className="h-3 w-3" />
+                          Detalji
+                        </button>
                         {selectedStatus === 'pending' ? (
                           <>
                             <button
@@ -518,8 +541,8 @@ export default function AmbassadorProgram() {
                 key={tab.id}
                 onClick={() => setSelectedPayoutStatus(tab.id)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${tab.id === selectedPayoutStatus
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-zinc-700'
                   }`}
               >
                 {tab.label}
@@ -609,6 +632,68 @@ export default function AmbassadorProgram() {
           )}
         </div>
       </section>
+
+      {/* Application Details Modal */}
+      {selectedApplication && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4" onClick={() => setSelectedApplication(null)}>
+          <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-start">
+                <h2 className="text-lg font-semibold">Detalji Prijave</h2>
+                <button onClick={() => setSelectedApplication(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {selectedApplication.photoURL ? (
+                  <img src={selectedApplication.photoURL} alt="" className="w-12 h-12 rounded-full" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div>
+                  <div className="font-semibold">{selectedApplication.displayName || selectedApplication.handle}</div>
+                  <div className="text-sm text-gray-600">{selectedApplication.email}</div>
+                </div>
+              </div>
+
+              {selectedApplication.ambassador?.commissionModel && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-1">Model:</div>
+                  <div className="inline-block px-2 py-1 bg-slate-100 rounded text-sm">
+                    {selectedApplication.ambassador.commissionModel === 'turbo' ? '🚀 TURBO' : '💎 PARTNER'}
+                  </div>
+                </div>
+              )}
+
+              {selectedApplication.ambassador?.socialLinks && Object.keys(selectedApplication.ambassador.socialLinks).length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-1">Social:</div>
+                  {Object.entries(selectedApplication.ambassador.socialLinks).map(([platform, url]) => (
+                    <div key={platform} className="text-sm">
+                      <span className="text-gray-500">{platform}:</span>{' '}
+                      <a href={url as string} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{url as string}</a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedApplication.ambassador?.motivation && (
+                <div>
+                  <div className="text-sm font-medium text-gray-700 mb-1">Motivacija:</div>
+                  <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded whitespace-pre-line">
+                    {selectedApplication.ambassador.motivation}
+                  </div>
+                </div>
+              )}
+
+              <button onClick={() => setSelectedApplication(null)} className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded font-medium">
+                Zatvori
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

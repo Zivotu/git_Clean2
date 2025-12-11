@@ -62,7 +62,7 @@ function monthKeyFrom(ts: number): string {
 export default async function ambassadorRoutes(app: FastifyInstance) {
   // Apply for the Ambassador Program
   app.post(
-    '/ambassador/apply',
+    '/api/ambassador/apply',
     { preHandler: [requireRole(['user'])], config: { rateLimit: { max: 3, timeWindow: '1 day' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { uid } = req.authUser!;
@@ -71,6 +71,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
         motivation: z.string().min(10).max(1000),
         primaryPlatform: z.string().max(120).optional(),
         audienceSize: z.string().max(120).optional(),
+        commissionModel: z.enum(['turbo', 'partner']).optional().default('turbo'),
       });
 
       const parsed = schema.safeParse(req.body);
@@ -78,7 +79,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
         return reply.code(400).send({ error: 'invalid_input', details: parsed.error.issues });
       }
 
-      const { socialLinks, motivation, primaryPlatform, audienceSize } = parsed.data;
+      const { socialLinks, motivation, primaryPlatform, audienceSize, commissionModel } = parsed.data;
       const userRef = db.collection('users').doc(uid);
 
       try {
@@ -95,6 +96,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
         const application: AmbassadorInfo = {
           status: 'pending',
           appliedAt: Date.now(),
+          commissionModel,
           socialLinks: socialLinks || {},
           motivation: motivation || '',
           primaryPlatform,
@@ -102,47 +104,47 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           earnings: { currentBalance: 0, totalEarned: 0 },
         };
 
-      await userRef.set({ ambassador: application }, { merge: true });
+        await userRef.set({ ambassador: application }, { merge: true });
 
-      try {
-        await Promise.all([
-          notifyUser(
-            uid,
-            'Thesara Ambasador program · prijava zaprimljena',
-            [
-              'Hvala ti na interesu za Thesara Ambasador program!',
-              '',
-              'Tvoj zahtjev je uspješno zaprimljen i naš tim će ga pregledati u narednih nekoliko dana.',
-              'Javit ćemo ti se čim donesemo odluku.',
-              '',
-              'Srdačno,',
-              'Thesara tim',
-            ].join('\n')
-          ),
-          notifyAdmins(
-            'Nova ambasador prijava',
-            [
-              `UID: ${uid}`,
-              `Email: ${userData.email ?? 'n/a'}`,
-              `Ime: ${userData.displayName ?? 'n/a'}`,
-              `Linkovi: ${JSON.stringify(socialLinks || {})}`,
-            ].join('\n')
-          ),
-        ]);
-      } catch (notifyErr) {
-        req.log.warn({ notifyErr }, 'ambassador_application_notifications_failed');
+        try {
+          await Promise.all([
+            notifyUser(
+              uid,
+              'Thesara Ambasador program · prijava zaprimljena',
+              [
+                'Hvala ti na interesu za Thesara Ambasador program!',
+                '',
+                'Tvoj zahtjev je uspješno zaprimljen i naš tim će ga pregledati u narednih nekoliko dana.',
+                'Javit ćemo ti se čim donesemo odluku.',
+                '',
+                'Srdačno,',
+                'Thesara tim',
+              ].join('\n')
+            ),
+            notifyAdmins(
+              'Nova ambasador prijava',
+              [
+                `UID: ${uid}`,
+                `Email: ${userData.email ?? 'n/a'}`,
+                `Ime: ${userData.displayName ?? 'n/a'}`,
+                `Linkovi: ${JSON.stringify(socialLinks || {})}`,
+              ].join('\n')
+            ),
+          ]);
+        } catch (notifyErr) {
+          req.log.warn({ notifyErr }, 'ambassador_application_notifications_failed');
+        }
+        return reply.code(201).send({ status: 'application_received' });
+      } catch (error) {
+        req.log.error(error, 'Failed to apply for ambassador program');
+        return reply.code(500).send({ error: 'internal_server_error' });
       }
-      return reply.code(201).send({ status: 'application_received' });
-    } catch (error) {
-      req.log.error(error, 'Failed to apply for ambassador program');
-      return reply.code(500).send({ error: 'internal_server_error' });
-    }
     }
   );
 
   // Ambassador dashboard data
   app.get(
-    '/ambassador/dashboard',
+    '/api/ambassador/dashboard',
     { preHandler: [requireAmbassador()] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const uid = req.authUser!.uid;
@@ -221,7 +223,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // Ambassador payout request
   app.post(
-    '/ambassador/payout-request',
+    '/api/ambassador/payout-request',
     { preHandler: [requireAmbassador()], config: { rateLimit: { max: 3, timeWindow: '1 hour' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const uid = req.authUser!.uid;
@@ -303,7 +305,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
             ts: Date.now(),
             details: { payoutId },
           });
-        } catch {}
+        } catch { }
 
         try {
           await Promise.all([
@@ -351,7 +353,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // Ambassador submits social proof (content link)
   app.post(
-    '/ambassador/content-submit',
+    '/api/ambassador/content-submit',
     { preHandler: [requireAmbassador()], config: { rateLimit: { max: 10, timeWindow: '1 day' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const uid = req.authUser!.uid;
@@ -390,7 +392,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // Admin: list submitted posts
   app.get(
-    '/admin/ambassador/posts',
+    '/api/admin/ambassador/posts',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({
@@ -422,7 +424,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // Admin: verify/reject a post
   app.post(
-    '/admin/ambassador/posts/verify',
+    '/api/admin/ambassador/posts/verify',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({
@@ -450,7 +452,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // (Admin) Approve an ambassador application
   app.post(
-    '/admin/ambassadors/approve',
+    '/api/admin/ambassadors/approve',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({ uid: z.string() });
@@ -490,7 +492,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           const promoCodeDoc: PromoCode = {
             code: newPromoCode,
             ambassadorUid: uid,
-            benefit: { type: 'free_gold_trial', durationDays: 30 },
+            benefit: { type: 'discount', discount1stMonth: 0.40, discount2ndMonth: 0.50 }, // 40% + 50%
             isActive: true,
             usageCount: 0,
             paidConversionsCount: 0,
@@ -545,7 +547,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // (Admin) Reject an ambassador application
   app.post(
-    '/admin/ambassadors/reject',
+    '/api/admin/ambassadors/reject',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({
@@ -627,7 +629,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // (Admin) List ambassador applications
   app.get(
-    '/admin/ambassadors/applications',
+    '/api/admin/ambassadors/applications',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({
@@ -671,6 +673,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
             email: user.email ?? null,
             displayName: user.displayName ?? null,
             handle: (user as any).handle ?? null,
+            photoURL: user.photoURL ?? null,
             ambassador: user.ambassador,
           })),
         });
@@ -683,7 +686,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // (Admin) List payout requests
   app.get(
-    '/admin/payouts',
+    '/api/admin/payouts',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({
@@ -724,7 +727,7 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
 
   // (Admin) Process payout status updates
   app.post(
-    '/admin/payouts/process',
+    '/api/admin/payouts/process',
     { preHandler: [requireRole(['admin'])] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const schema = z.object({
@@ -839,6 +842,9 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
       const userRef = db.collection('users').doc(uid);
       const promoCodeRef = db.collection('promoCodes').doc(code);
 
+      let trialDaysOut: number | undefined;
+      let expiresAtOut: number | undefined;
+
       try {
         await db.runTransaction(async (t) => {
           const userDoc = await t.get(userRef);
@@ -865,18 +871,31 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
           // 2. Increment promo code usage count
           t.update(promoCodeRef, { usageCount: (promoCodeData.usageCount || 0) + 1 });
 
-          // 3. Grant 'isGold' entitlement for 30 days
-          const trialDays = promoCodeData.benefit.durationDays || 30;
-          const expiresAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
-          trialDaysOut = trialDays;
-          expiresAtOut = expiresAt;
-          await upsertEntitlement({
-            id: `ambassador-trial-${uid}`,
-            userId: uid,
-            feature: 'isGold',
-            active: true,
-            data: { expiresAt, redeemedFrom: code },
-          });
+          // 3. Grant benefit based on type
+          if (promoCodeData.benefit.type === 'free_gold_trial') {
+            // Legacy: Grant 'isGold' entitlement for N days
+            const trialDays = promoCodeData.benefit.durationDays || 30;
+            const expiresAt = Date.now() + trialDays * 24 * 60 * 60 * 1000;
+            trialDaysOut = trialDays;
+            expiresAtOut = expiresAt;
+            await upsertEntitlement({
+              id: `ambassador-trial-${uid}`,
+              userId: uid,
+              feature: 'isGold',
+              active: true,
+              data: { expiresAt, redeemedFrom: code },
+            });
+          } else if (promoCodeData.benefit.type === 'discount') {
+            // New discount model: Store discount info in user metadata
+            // The billing logic will read this when processing the payment
+            const discountData = {
+              discount1stMonth: promoCodeData.benefit.discount1stMonth,
+              discount2ndMonth: promoCodeData.benefit.discount2ndMonth,
+              appliedAt: Date.now(),
+              promoCode: code,
+            };
+            t.set(userRef, { ambassadorDiscount: discountData }, { merge: true });
+          }
         });
 
         // Audit log for promo redeem
@@ -887,9 +906,14 @@ export default async function ambassadorRoutes(app: FastifyInstance) {
             ts: Date.now(),
             details: { code, expiresAt: expiresAtOut, trialDays: trialDaysOut },
           });
-        } catch {}
+        } catch { }
 
-        return reply.send({ status: 'redeemed', message: 'Gold trial activated!', expiresAt: expiresAtOut, trialDays: trialDaysOut });
+        return reply.send({
+          status: 'redeemed',
+          message: trialDaysOut ? 'Gold trial activated!' : 'Discount applied!',
+          expiresAt: expiresAtOut,
+          trialDays: trialDaysOut
+        });
 
       } catch (error: any) {
         req.log.error(error, `Failed to redeem code ${code} for user ${uid}`);

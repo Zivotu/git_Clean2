@@ -1,0 +1,199 @@
+{
+    "title": "Ambassador Program - Flexible Earnings | Thesara",
+    "description": "Become a Thesara Ambassador and choose your model: TURBO (up to 70% in first 2 months) or PARTNER (10% forever). Give followers discounted Gold plan!",
+    "hero": {
+        "badge": "Open applications",
+        "title": "Choose Your Earning Model",
+        "subtitle": "Promoting Thesara",
+        "description": "TURBO: Earn up to 70% in first 2 months (55% + 15%) or PARTNER: 10% forever on all transactions + app sales!",
+        "ctaPrimary": "Become Ambassador",
+        "ctaSecondary": "How it works?"
+    },
+    "stats": {
+        "commission": "Commission (Turbo/Partner)",
+        "discount": "Discount (40% + 50%)",
+        "threshold": "Minimum payout threshold"
+    },
+    "discount": {
+        "title": "Double Benefit for Your Audience!",
+        "subtitle": "By using your code, your followers get:",
+        "amount": "40% OFF",
+        "detail": "IMMEDIATELY on the first month",
+        "calculation": "They pay only €6 instead of €10 upfront!",
+        "benefit": "Plus: They get 50% OFF the second month (only €5).",
+        "hook": "Total savings in 2 months: €9! 🚀"
+    },
+    "howItWorks": {
+        "title": "How It Works?",
+        "subtitle": "Three simple steps to your first earnings",
+        "steps": {
+            "apply": {
+                "title": "Apply",
+                "description": "Fill out a short form in your profile. Get a unique promo code and access to the dashboard."
+            },
+            "share": {
+                "title": "Share Code",
+                "description": "Create content (TikTok, Instagram, YouTube, newsletter) and share your code with your audience."
+            },
+            "earn": {
+                "title": "Earn",
+                "description": "When a follower uses your code and pays for Gold plan, you earn commission based on your chosen model!"
+            }
+        }
+    },
+    "benefits": {
+        "title": "Why Become an Ambassador?",
+        "items": {
+            "commission": {
+                "title": "Flexible Commission",
+                "description": "Choose TURBO (up to 70% in first 2 months) or PARTNER (10% forever). You decide what works for you!"
+            },
+            "offer": {
+                "title": "Valuable Offer for Audience",
+                "description": "Your followers get 40% discount on 1st month and 50% discount on 2nd month of Gold plan!"
+            },
+            "dashboard": {
+                "title": "Transparent Dashboard",
+                "description": "Track code usage, conversions, conversion rate, and earnings in real-time."
+            },
+            "window": {
+                "title": "{days} Day Attribution Window",
+                "description": "You have a full two months to convert an interested user into a payer!"
+            },
+            "payout": {
+                "title": "Simple Payouts",
+                "description": "Reach €{threshold} and request payout to PayPal. Payouts are processed monthly (net 30)."
+            },
+            "kit": {
+                "title": "Marketing Kit",
+                "description": "Get access to graphic materials, templates, and tips for promoting."
+            }
+        }
+    },
+    "tiers": {
+        "title": "Bonus Rewards Program",
+        "subtitle": "The more conversions you achieve, the better rewards you unlock!",
+        "levels": {
+            "bronze": {
+                "title": "Bronze Ambassador",
+                "conversions": "{count}+ conversions",
+                "reward": "Free Gold plan for yourself"
+            },
+            "silver": {
+                "title": "Silver Ambassador",
+                "conversions": "{count}+ conversions",
+                "reward": "3 months of Gold plan"
+            },
+            "gold": {
+                "title": "Gold Ambassador",
+                "conversions": "{count}+ conversions",
+                "reward": "6 months of Gold plan"
+            }
+        },
+        "note": "Rewards are cumulative! All ambassadors continue earning commission based on their chosen model regardless of tier."
+    },
+    "calculator": {
+        "title": "💡 How Much Can I Earn?",
+        "subtitle": "Quick estimate of monthly earnings",
+        "funFact": {
+            "title": "💡 Did you know...",
+            "chatgpt": "ChatGPT is used by 700 million people weekly",
+            "thesara": "first platform",
+            "description": "— and Thesara is the {platform} that enables creating your own AI applications without coding!",
+            "market": "This means the AI tools market is {explodes} — and you can be part of this revolution as an ambassador! 🎯",
+            "explodes": "exploding"
+        },
+        "turbo": {
+            "title": "TURBO Model",
+            "subtitle": "Quick earnings in first 2 months",
+            "with": "With {count} conversions:",
+            "month1": "1st month (55%)",
+            "month2": "2nd month (15%)",
+            "total": "Total in 2 months",
+            "examples": "💡 {count1} conversions = €{amount1} | {count2} conversions = €{amount2}"
+        },
+        "partner": {
+            "title": "PARTNER Model",
+            "subtitle": "Passive income forever",
+            "with": "With {count} conversions:",
+            "month1": "1st month (10%)",
+            "month2": "2nd month (10%)",
+            "month3plus": "3+ months (10%)",
+            "recurring": "Monthly (recurring)",
+            "fromGold": "from Gold subscriptions",
+            "appSales": {
+                "title": "💰 BONUS: App Sales!",
+                "description": "If 10% of them (10 users) create successful applications...",
+                "userExample": "User A: app with 100 subscribers × €5",
+                "yourEarning": "→ Your earnings (10%):",
+                "creators": "10 successful creators:",
+                "passive": "🚀 Additional passive income while your users build!"
+            },
+            "examples": "💡 {count1} conversions = €{amount1}/mo | {count2} conversions = €{amount2}/mo"
+        },
+        "note": "💡 Example based on Gold Plan (€10/month) with ambassador discounts (40% + 50%). Choose the model that fits your strategy!"
+    },
+    "faq": {
+        "title": "Frequently Asked Questions",
+        "items": {
+            "influencer": {
+                "q": "Do I need to be an influencer with many followers?",
+                "a": "No! The program is open to everyone - from micro-influencers (1,000+ followers) to established content creators. Quality of audience matters, not just numbers."
+            },
+            "where": {
+                "q": "Where can I share my code?",
+                "a": "Anywhere! TikTok, Instagram Stories/Reels, YouTube videos, newsletter, blog, Discord communities, Twitter/X, LinkedIn... You also get a unique link you can share."
+            },
+            "timing": {
+                "q": "What if the user doesn't pay immediately?",
+                "a": "You have a {days}-day attribution window! This means if a user activates your code today and pays in a month, you still get the commission."
+            },
+            "privacy": {
+                "q": "Can I see who used my code?",
+                "a": "You can see total usage, conversions, and earnings on the dashboard, but you cannot see users' personal data (due to GDPR)."
+            },
+            "multiple": {
+                "q": "What if I have multiple promo codes?",
+                "a": "Currently, we assign one unique code to each ambassador. This makes tracking and payouts easier."
+            },
+            "rules": {
+                "q": "Are there any rules or restrictions?",
+                "a": "Yes - it's forbidden to use your own code, spam, misleading advertising, or violate platform rules. All promotional content must be clearly marked (#ad, #partner). Details in Terms of Service."
+            }
+        }
+    },
+    "customPlan": {
+        "title": "Need a Custom Plan?",
+        "subtitle": "We also offer tailored partnership plans",
+        "description": "Are you interested in a lower commission but recurring monthly payments from every subscription? Or do you have a unique proposal for cooperation?",
+        "contact": "Contact us directly at {email}",
+        "email": "welcome@thesara.space",
+        "cta": "Contact Us"
+    },
+    "models": {
+        "title": "Choose Your Earning Model",
+        "subtitle": "Customize your partnership to your needs",
+        "turbo": {
+            "title": "🚀 TURBO Model",
+            "badge": "Most Popular",
+            "description": "Perfect for influencers and paid ads.",
+            "payout1": "55% from first payment",
+            "payout2": "15% from second payment",
+            "sales": "0% from app sales"
+        },
+        "partner": {
+            "title": "💎 PARTNER Model",
+            "badge": "Long-term",
+            "description": "For educators and communities.",
+            "payout1": "10% from ALL subscriptions",
+            "payout2": "Recurring income (Lifetime)",
+            "sales": "10% from app SALES"
+        }
+    },
+    "finalCta": {
+        "title": "Ready to Start?",
+        "subtitle": "Join ambassadors already earning by promoting Thesara. Application takes less than 2 minutes!",
+        "button": "Become Ambassador Now",
+        "questions": "💡 Have questions? Contact us at {email}"
+    }
+}

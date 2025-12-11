@@ -15,7 +15,7 @@ export default function RedeemPage() {
   const [err, setErr] = useState<string | null>(null);
   const t = useCallback(
     (key: string, params?: Record<string, string | number>) => {
-      let value = messages[`Promo.${key}`] || key;
+      let value = messages[`PromoCode.${key}`] || key;
       if (params) {
         for (const [k, v] of Object.entries(params)) {
           value = value.replaceAll(`{${k}}`, String(v));

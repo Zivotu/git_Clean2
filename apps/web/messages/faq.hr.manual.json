@@ -100,8 +100,28 @@
     "title": "Ambassador program",
     "items": [
       {
-        "q": "Što je Ambassador program?",
-        "a": "Kratak program za entuzijaste koji žele promovirati Thesaru. Prijavi se putem obrasca u sučelju i postani dio tima koji gradi budućnost kreativnosti!"
+        "q": "Što je Ambassador program i koliko mogu zaraditi?",
+        "a": "Ambassador program omogućava da zaradiš **80% provizije** od svake prve uplate korisnika koji iskoristi tvoj jedinstveni promo kod. Na primjer, ako korisnik plati Gold plan (10€/mjesec), ti dobivaš ~8€! Tvoja publika dobiva 30 dana besplatnog Gold plana."
+      },
+      {
+        "q": "Kako funkcionira Ambassador program?",
+        "a": "1) Prijaviš se u profilu → 2) Dobiješ jedinstveni promo kod → 3) Podijeliš kod sa svojom publikom (TikTok, Instagram, YouTube, newsletter) →  4) Kada korisnik iskoristi tvoj kod i plati Gold plan unutar 60 dana, ti dobivaš 80% provizije → 5) Kada skupiš 50€, možeš zatražiti isplatu na PayPal (mjesečno, net 30)."
+      },
+      {
+        "q": "Koja je prednost za moju publiku?",
+        "a": "Tvoji pratitelji dobivaju **30 dana besplatnog Gold plana** (vrijednost 10€!). To znači da mogu isprobati sve premium funkcije bez obveze plaćanja. Ako im se svidi, mogu nastaviti s plaćanjem nakon probnog perioda."
+      },
+      {
+        "q": "Kako se pračunavaju provizije?",
+        "a": "Dobijaš proviziju **samo na prvu uplatu korisnika**. Ako korisnik plati unutar **60 dana** nakon aktivacije tvog koda, tvoj račun se automatski poveća za 80% iznosa njegove uplate. Možeš pratiti zaradu u realnom vremenu na Ambassador dashboardu."
+      },
+      {
+        "q": "Kada i kako dobivam isplatu?",
+        "a": "Možeš zatražiti isplatu kada dosegneš **50€** na računu. Isplate se obrađuju **mjesečno (net 30)** preko **PayPala**. To znači da nakon što zatraživaš isplatu, novac stiže u roku od 30 dana."
+      },
+      {
+        "q": "Gdje mogu pratiti svoj napredak?",
+        "a": "Nakon što postaneš Ambassador, dobijaš pristup **Ambassador dashboardu** (/ambassador/dashboard) gdje možeš vidjeti: broj iskorištenja tvog koda, broj plaćenih konverzija, stopu konverzije, trenutnu zaradu, povijest isplata i još mnogo toga!"
       }
     ]
   },

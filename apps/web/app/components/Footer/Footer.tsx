@@ -114,6 +114,12 @@ export default function Footer({
                       Thesara Media Bundle
                     </a>
                   </li>
+                  <li>
+                    <Link href="/ambassador" className="hover:text-emerald-600 transition flex items-center gap-1.5">
+                      <span>💰</span>
+                      <span>{messages['Ambassador.footer.ambassadorProgram'] || 'Ambassador Program'}</span>
+                    </Link>
+                  </li>
                 </ul>
               </div>
               <div>
