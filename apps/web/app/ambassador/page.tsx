@@ -452,7 +452,7 @@ export default function AmbassadorPage() {
                                     </div>
                                     <div className="flex justify-between items-center bg-white/10 rounded-lg p-3">
                                         <span className="text-sm">{t('calculator.partner.month3plus')}</span>
-                                        <span className="font-bold text-lg">€{(100 * GOLD_PRICE * 0.10).toFixed(0)}/mj</span>
+                                        <span className="font-bold text-lg">€{(100 * GOLD_PRICE * 0.10).toFixed(0)}{t('calculator.partner.perMonth')}</span>
                                     </div>
                                 </div>
 
@@ -477,16 +477,16 @@ export default function AmbassadorPage() {
                                             <div className="bg-white/10 rounded p-2">
                                                 <div className="flex justify-between mb-1">
                                                     <span>{t('calculator.partner.appSales.userExample')}</span>
-                                                    <span className="font-bold">€500/mj</span>
+                                                    <span className="font-bold">€500{t('calculator.partner.perMonth')}</span>
                                                 </div>
                                                 <div className="flex justify-between text-yellow-200">
                                                     <span className="ml-2">{t('calculator.partner.appSales.yourEarning')}</span>
-                                                    <span className="font-bold">€50/mj</span>
+                                                    <span className="font-bold">€50{t('calculator.partner.perMonth')}</span>
                                                 </div>
                                             </div>
                                             <div className="flex justify-between bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded p-2 border border-yellow-400/40">
                                                 <span className="font-bold">{t('calculator.partner.appSales.creators')}</span>
-                                                <span className="font-bold text-yellow-200 text-lg">~€500/mj</span>
+                                                <span className="font-bold text-yellow-200 text-lg">~€500{t('calculator.partner.perMonth')}</span>
                                             </div>
                                         </div>
                                         <div className="text-center mt-3 text-xs text-yellow-100">

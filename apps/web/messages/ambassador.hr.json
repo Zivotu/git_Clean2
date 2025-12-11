@@ -129,7 +129,8 @@
                 "creators": "10 uspješnih kreatora:",
                 "passive": "🚀 Dodatni pasivni prihod dok tvoji korisnici grade!"
             },
-            "examples": "💡 {count1} konverzija = €{amount1}/mj | {count2} konverzija = €{amount2}/mj"
+            "examples": "💡 {count1} konverzija = €{amount1}/mj | {count2} konverzija = €{amount2}/mj",
+            "perMonth": "/mj"
         },
         "note": "💡 Primjer baziran na Gold Plan (€10/mjesec) s ambasador popustima (40% + 50%). Odaberi model koji odgovara tvojoj strategiji!"
     },

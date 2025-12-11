@@ -129,7 +129,8 @@
                 "creators": "10 successful creators:",
                 "passive": "🚀 Additional passive income while your users build!"
             },
-            "examples": "💡 {count1} conversions = €{amount1}/mo | {count2} conversions = €{amount2}/mo"
+            "examples": "💡 {count1} conversions = €{amount1}/mo | {count2} conversions = €{amount2}/mo",
+            "perMonth": "/mo"
         },
         "note": "💡 Example based on Gold Plan (€10/month) with ambassador discounts (40% + 50%). Choose the model that fits your strategy!"
     },
