@@ -72,6 +72,50 @@ journalctl -u ssh -n 50
 
 ---
 
+## 📧 EMAIL & MONITORING
+
+### Check Security Report Emails:
+```bash
+# Check mail log
+tail -30 /var/log/mail.log
+
+# Check if email was sent today
+grep "$(date +%Y-%m-%d)" /var/log/mail.log | grep "reports@thesara.space"
+
+# Check mail queue
+mailq
+```
+
+### Send Test Email:
+```bash
+echo "Test from $(hostname) at $(date)" | mail -s "Manual Test" reports@thesara.space
+```
+
+### Check SPF Record:
+```bash
+# Check DNS SPF record
+dig TXT thesara.space +short
+
+# Should show: "v=spf1 ip4:178.218.160.180 ~all"
+```
+
+### Run Security Report Manually:
+```bash
+/root/daily-security-report.sh
+```
+
+### Check Cron Jobs:
+```bash
+crontab -l
+
+# Should show:
+# 0 2 * * 0 pkill -9 -f 'node.*8789' 2>/dev/null
+# 0 4 * * * /root/daily-security-report.sh
+# 5 4 * * 0 /usr/bin/pm2 reload all
+```
+
+---
+
 ## 🔧 TROUBLESHOOTING
 
 ### Website ne radi:

@@ -152,6 +152,87 @@ bash <(curl -Ss https://my-netdata.io/kickstart.sh)
 # VAŽNO: Zaštiti sa nginx reverse proxy + basic auth!
 ```
 
+### 8. **Automated Daily Security Reports (✅ IMPLEMENTIRANO)**
+
+Server automatski šalje dnevne security reportove na `reports@thesara.space`.
+
+#### **Email Setup:**
+
+```bash
+# Instaliran Postfix za slanje emailova
+apt install mailutils postfix -y
+
+# Konfiguracija:
+# - System mail name: thesara.space
+# - myhostname: thesara.space
+# - mydestination: localhost, vps-thesaraspace-plusvps-com
+```
+
+#### **DNS Setup (SPF Record - OBAVEZNO):**
+
+Dodaj TXT record u DNS:
+```
+Type: TXT
+Name: thesara.space
+Value: v=spf1 ip4:178.218.160.180 ~all
+TTL: 14400
+```
+
+Opciono - DMARC record:
+```
+Type: TXT
+Name: _dmarc
+Value: v=DMARC1; p=none; rua=mailto:reports@thesara.space
+TTL: 14400
+```
+
+#### **Security Report Script:**
+
+```bash
+# Lokacija: /root/daily-security-report.sh
+# Provjerava:
+# - Malware procese
+# - Process count (PM2, API, Web)
+# - Orphan procese (port 8789)
+# - Service health (API/Web)
+# - Firewall status
+# - Fail2ban status
+# - Docker containers
+# - System stats (load, memory, failed logins)
+```
+
+#### **Cron Schedule:**
+
+```bash
+# Nedeljom 2 AM - Kill orphan process
+0 2 * * 0 pkill -9 -f 'node.*8789' 2>/dev/null
+
+# Svaki dan 4 AM - Security report
+0 4 * * * /root/daily-security-report.sh
+
+# Nedeljom 4:05 AM - PM2 graceful reload
+5 4 * * 0 /usr/bin/pm2 reload all
+```
+
+#### **Troubleshooting Emailova:**
+
+```bash
+# Check da li su emailovi poslani
+tail -20 /var/log/mail.log
+
+# Provjeri mail queue
+mailq
+
+# Test email
+echo "Test" | mail -s "Test Subject" reports@thesara.space
+
+# Check Postfix status
+systemctl status postfix
+
+# Check SPF record (nakon DNS propagacije)
+dig TXT thesara.space +short
+```
+
 ---
 
 ## 📅 REDOVITI SIGURNOSNI TASKOVI
@@ -286,3 +367,5 @@ ufw status | head -3
 **Zadnje updateano: 2025-12-11**
 **Server: vps-thesaraspace.plusvps.com**
 **Status: 🟢 SECURE**
+**Email Monitoring: ✅ ACTIVE**
+**Daily Reports: reports@thesara.space**
