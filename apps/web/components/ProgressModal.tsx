@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Box, Package, AlertCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n-provider';
+import ErrorBackground from './ErrorBackground';
 
 export type BuildState = 'queued' | 'running' | 'success' | 'error';
 
@@ -67,7 +68,8 @@ export default function ProgressModal({
   const errorLines = errorMessage.split('\n').filter(line => line.trim());
 
   return (
-    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-gradient-to-b from-white to-sky-50 text-slate-700 p-6">
+    <div className={`fixed inset-0 z-[2000] flex flex-col items-center justify-center text-slate-700 p-6 ${state !== 'error' ? 'bg-gradient-to-b from-white to-sky-50' : ''}`}>
+      {state === 'error' && <ErrorBackground />}
       {state === 'error' ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
