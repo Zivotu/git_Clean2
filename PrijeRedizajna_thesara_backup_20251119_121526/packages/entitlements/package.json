@@ -1,8 +1,0 @@
-{
-  "name": "@loopyway/entitlements",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "types": "./index.d.ts",
-  "main": "./index.js"
-}
