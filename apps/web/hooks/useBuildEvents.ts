@@ -9,6 +9,9 @@ export interface BuildState {
   reason: string | null;
   listingId: string | null;
   progress?: number;
+  errorAnalysis?: string;
+  errorFixPrompt?: string;
+  errorCategory?: 'syntax' | 'dependency' | 'build-config' | 'runtime' | 'unknown';
 }
 
 export function useBuildEvents(buildId: string | null) {
@@ -39,6 +42,9 @@ export function useBuildEvents(buildId: string | null) {
             reason: data.reason ?? null,
             listingId: data.listingId,
             progress: 100,
+            errorAnalysis: data.errorAnalysis,
+            errorFixPrompt: data.errorFixPrompt,
+            errorCategory: data.errorCategory,
           });
           sse.close();
         }

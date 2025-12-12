@@ -16,10 +16,14 @@ const targets: Record<BuildState, number> = {
 export default function ProgressModal({
   state,
   error,
+  errorAnalysis,
+  errorFixPrompt,
   onClose,
 }: {
   state: BuildState | null;
   error?: string;
+  errorAnalysis?: string;
+  errorFixPrompt?: string;
   onClose?: () => void;
   previewUrl?: string;
   step?: string;
@@ -58,7 +62,8 @@ export default function ProgressModal({
     return () => clearInterval(id);
   }, [state]);
 
-  const errorMessage = error?.trim() || t('errorOccurred');
+  // Use AI-generated analysis if available, otherwise use generic error
+  const errorMessage = errorAnalysis || error?.trim() || t('errorOccurred');
   const errorLines = errorMessage.split('\n').filter(line => line.trim());
 
   return (
@@ -121,9 +126,43 @@ export default function ProgressModal({
               <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
                 <Mail className="text-blue-600 mt-0.5 flex-shrink-0" size={20} />
                 <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Check your email</span> for detailed information about this issue.
+                  <span className="font-semibold">{t('checkEmail')}</span> {t('checkEmailDetail')}
                 </p>
               </div>
+
+              {/* Fix Prompt for ChatGPT/Gemini */}
+              {errorFixPrompt && (
+                <div className="mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="bg-emerald-500 p-2 rounded-lg">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-emerald-900 mb-1">💡 Quick Fix with AI</h4>
+                      <p className="text-sm text-emerald-700 mb-2">
+                        Copy this prompt and paste it into ChatGPT or Gemini to get help fixing your app:
+                      </p>
+                      <div className="bg-white border border-emerald-200 rounded-lg p-3 text-sm text-gray-800 font-mono max-h-32 overflow-y-auto">
+                        {errorFixPrompt}
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(errorFixPrompt);
+                          // TODO: Add toast notification
+                        }}
+                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold rounded-lg transition"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy Fix Prompt
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

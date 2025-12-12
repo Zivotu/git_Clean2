@@ -413,7 +413,7 @@ export default function CreatePage() {
   const [storageWarningMessage, setStorageWarningMessage] = useState('');
 
 
-  const { status: buildStatus, reason: buildError, listingId } = useBuildEvents(currentBuildId);
+  const { status: buildStatus, reason: buildError, listingId, errorAnalysis, errorFixPrompt } = useBuildEvents(currentBuildId);
 
   const progressModalState = useMemo((): ProgressModalState | null => {
     if (!buildStatus) return null;
@@ -1114,6 +1114,8 @@ export default function CreatePage() {
           <ProgressModal
             state={modalState}
             error={buildError || publishError || undefined}
+            errorAnalysis={errorAnalysis}
+            errorFixPrompt={errorFixPrompt}
             onClose={() => setShowProgress(false)}
           />
         )}
