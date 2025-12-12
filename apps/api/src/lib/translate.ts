@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getConfig } from '../config.js';
 
 export type ListingTranslations = {
-  [locale: string]: { title: string; description: string };
+  [locale: string]: { description: string; longDescription?: string };
 };
 
 type ApiConfig = ReturnType<typeof getConfig>;
@@ -30,19 +30,23 @@ function pickBaseUrl(cfg: ApiConfig): string {
   return (LLM_API_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
 }
 
-function toPrompt(item: { title: string; description: string }, locales: string[]) {
+function toPrompt(item: { title: string; description: string; longDescription?: string }, locales: string[]) {
   const langs = locales.map((l) => l.toLowerCase()).join(', ');
+  const hasLongDesc = item.longDescription && item.longDescription.trim().length > 0;
   return (
     'You are a professional translator. Translate the following app description into the requested languages.' +
+    ' DO NOT translate the title - return it unchanged in all languages.' +
     ' Keep the tone natural and concise for an app marketplace. Return only valid JSON.' +
-    '\nSchema: {"translations": {"<locale>": {"description": string}}}\n' +
+    `\nSchema: {"translations": {"<locale>": {"description": string${hasLongDesc ? ', "longDescription": string' : ''}}}}\n` +
     `Locales: [${langs}]` +
-    `\nTitle: ${item.title}\nDescription: ${item.description || ''}`
+    `\nTitle (DO NOT TRANSLATE): ${item.title}` +
+    `\nShort Description: ${item.description || ''}` +
+    (hasLongDesc ? `\nLong Description: ${item.longDescription}` : '')
   );
 }
 
 export async function translateListing(
-  item: Pick<AppRecord, 'id' | 'title' | 'description'>,
+  item: Pick<AppRecord, 'id' | 'title' | 'description' | 'longDescription'>,
   locales: string[],
   cfg: ApiConfig = getConfig(),
 ): Promise<ListingTranslations> {
@@ -103,23 +107,23 @@ export async function translateListing(
   }
   const tr = (parsed?.translations || {}) as Record<
     string,
-    { title?: string; description?: string }
+    { description?: string; longDescription?: string }
   >;
   const out: ListingTranslations = {};
   for (const l of locales) {
     const it = tr[l] || tr[l.toLowerCase()];
     if (it) {
-      const normalizedTitle =
-        typeof it.title === 'string' && it.title.trim().length > 0
-          ? it.title.trim()
-          : item.title;
       const normalizedDescription =
         typeof it.description === 'string' && it.description.trim().length > 0
           ? it.description.trim()
           : item.description || '';
+      const normalizedLongDescription =
+        typeof it.longDescription === 'string' && it.longDescription.trim().length > 0
+          ? it.longDescription.trim()
+          : item.longDescription || undefined;
       out[l] = {
-        title: normalizedTitle,
         description: normalizedDescription,
+        ...(normalizedLongDescription ? { longDescription: normalizedLongDescription } : {}),
       };
     }
   }

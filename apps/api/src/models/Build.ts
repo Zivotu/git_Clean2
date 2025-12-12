@@ -183,6 +183,9 @@ export interface BuildRecord {
   createdAt: number;
   error?: string;
   publicMessage?: string;
+  errorAnalysis?: string; // AI-generated user-friendly error explanation
+  errorFixPrompt?: string; // AI-generated prompt to fix the error
+  errorCategory?: 'syntax' | 'dependency' | 'build-config' | 'runtime' | 'unknown';
   creatorLanguage?: string;
   reasons?: string[];
   llmAttempts?: number;
@@ -265,10 +268,13 @@ export async function updateBuild(
     Pick<
       BuildRecord,
       |
-        'state'
+      'state'
       | 'progress'
       | 'error'
       | 'publicMessage'
+      | 'errorAnalysis'
+      | 'errorFixPrompt'
+      | 'errorCategory'
       | 'reasons'
       | 'creatorLanguage'
       | 'llmReportPath'
@@ -595,8 +601,8 @@ export async function publishBundle(id: string): Promise<string> {
     }
     const networkDomains = Array.isArray(metadata.networkDomains)
       ? metadata.networkDomains
-          .map((domain) => (domain == null ? undefined : String(domain)))
-          .filter((domain): domain is string => Boolean(domain))
+        .map((domain) => (domain == null ? undefined : String(domain)))
+        .filter((domain): domain is string => Boolean(domain))
       : [];
 
     const manifestPayload = {
@@ -659,13 +665,13 @@ export async function publishBundle(id: string): Promise<string> {
         const ext = path.extname(abs).toLowerCase();
         const contentType =
           ext === '.html' ? 'text/html; charset=utf-8'
-          : ext === '.js' ? 'application/javascript; charset=utf-8'
-          : ext === '.css' ? 'text/css; charset=utf-8'
-          : ext === '.json' ? 'application/json; charset=utf-8'
-          : ext === '.png' ? 'image/png'
-          : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
-          : ext === '.svg' ? 'image/svg+xml'
-          : undefined;
+            : ext === '.js' ? 'application/javascript; charset=utf-8'
+              : ext === '.css' ? 'text/css; charset=utf-8'
+                : ext === '.json' ? 'application/json; charset=utf-8'
+                  : ext === '.png' ? 'image/png'
+                    : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
+                      : ext === '.svg' ? 'image/svg+xml'
+                        : undefined;
         const metadata: any = {};
         if (contentType) metadata.contentType = contentType;
         metadata.cacheControl = 'public, max-age=600';

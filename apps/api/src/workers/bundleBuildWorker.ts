@@ -11,6 +11,7 @@ import { sseEmitter } from '../sse.js';
 import { updateBuild, getBuildData, type BuildInfoMetadata } from '../models/Build.js';
 import { notifyAdmins } from '../notifier.js';
 import { normalizeSupportedLocale } from '../lib/locale.js';
+import { analyzeBuildError } from '../services/errorAnalysis.js';
 
 async function dirExists(p: string): Promise<boolean> {
   try {
@@ -1381,11 +1382,37 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
           const reason = err?.message || 'Unknown error';
           const meta = await getBuildData(buildId);
           const friendly = getFriendlyFailureMessage(meta?.creatorLanguage);
+
+          // Analyze error with AI to provide user-friendly explanation and fix prompt
+          let errorAnalysis: string | undefined;
+          let errorFixPrompt: string | undefined;
+          let errorCategory: 'syntax' | 'dependency' | 'build-config' | 'runtime' | 'unknown' | undefined;
+
+          try {
+            const analysis = await analyzeBuildError(reason, {
+              appTitle: meta?.appTitle,
+              slug: meta?.slug,
+              creatorLanguage: meta?.creatorLanguage,
+            });
+
+            if (analysis) {
+              errorAnalysis = analysis.userFriendlyExplanation;
+              errorFixPrompt = analysis.fixPrompt;
+              errorCategory = analysis.errorCategory;
+              console.log(`[bundle-worker] AI error analysis completed for ${buildId}: ${errorCategory}`);
+            }
+          } catch (analysisErr: any) {
+            console.warn(`[bundle-worker] Failed to analyze error for ${buildId}:`, analysisErr.message);
+          }
+
           await updateBuild(buildId, {
             state: 'failed',
             progress: 100,
             error: reason,
             publicMessage: friendly,
+            errorAnalysis,
+            errorFixPrompt,
+            errorCategory,
           });
           await notifyBuildFailureAdmins({
             buildId,
@@ -1399,6 +1426,9 @@ export function startBundleBuildWorker(): BundleBuildWorkerHandle {
             status: 'failed',
             reason: friendly,
             detailReason: reason,
+            errorAnalysis,
+            errorFixPrompt,
+            errorCategory,
             buildId,
             listingId: meta?.listingId,
           });

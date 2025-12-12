@@ -63,8 +63,8 @@ export interface AppRecord {
   likesCount?: number;
   playsCount?: number;
   customAssets?: CustomAsset[];
-  // Localized fields stored per locale: { [locale]: { title, description } }
-  translations?: Record<string, { title?: string; description?: string }>;
+  // Localized fields stored per locale: { [locale]: { description, longDescription? } }
+  translations?: Record<string, { description?: string; longDescription?: string }>;
   status?: 'draft' | 'published' | 'pending-review' | 'rejected';
   state?: 'draft' | 'active' | 'inactive' | 'quarantined';
   moderation?: { by?: string; reasons?: string[]; status?: string; at?: number; notes?: string };
