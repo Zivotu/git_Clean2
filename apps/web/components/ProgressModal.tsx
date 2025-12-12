@@ -77,14 +77,24 @@ export default function ProgressModal({
           {/* Error Card */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-red-100 overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6 text-white">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
-                  <AlertCircle size={32} className="text-white" />
+            <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6 text-white relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                    <AlertCircle size={32} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Build Failed</h2>
+                    <p className="text-red-100 text-sm">An unexpected issue occurred</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-2xl font-bold">Build Failed</h2>
-                  <p className="text-red-100 text-sm">An unexpected issue occurred</p>
+                {/* Robot Error Graphic */}
+                <div className="relative w-20 h-20 flex-shrink-0">
+                  <img
+                    src="/Robo_error_1.png"
+                    alt="Error Robot"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
               </div>
             </div>
