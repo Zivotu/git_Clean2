@@ -74,7 +74,7 @@ export default function ProgressModal({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-xl w-full"
+          className="max-w-xl w-full relative z-10"
         >
           {/* Error Card */}
           <div className="bg-white rounded-2xl shadow-xl border-2 border-red-100 overflow-hidden">
