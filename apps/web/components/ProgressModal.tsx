@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Box, Package, AlertCircle, Mail } from 'lucide-react';
+import { Box, Package, AlertCircle } from 'lucide-react';
 import { useT } from '@/lib/i18n-provider';
 
 export type BuildState = 'queued' | 'running' | 'success' | 'error';
@@ -122,17 +122,9 @@ export default function ProgressModal({
                 );
               })}
 
-              {/* Email notification hint */}
-              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
-                <Mail className="text-blue-600 mt-0.5 flex-shrink-0" size={20} />
-                <p className="text-sm text-blue-800">
-                  <span className="font-semibold">{t('checkEmail')}</span> {t('checkEmailDetail')}
-                </p>
-              </div>
-
-              {/* Fix Prompt for ChatGPT/Gemini */}
+              {/* Suggested Fix Prompt */}
               {errorFixPrompt && (
-                <div className="mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-4">
+                <div className="mt-6 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-xl p-4">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="bg-emerald-500 p-2 rounded-lg">
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,9 +132,9 @@ export default function ProgressModal({
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-emerald-900 mb-1">💡 Quick Fix with AI</h4>
+                      <h4 className="font-bold text-emerald-900 mb-1">💡 Suggested Quick Fix</h4>
                       <p className="text-sm text-emerald-700 mb-2">
-                        Copy this prompt and paste it into ChatGPT or Gemini to get help fixing your app:
+                        Copy this prompt and paste it back into the AI tool where you created your app:
                       </p>
                       <div className="bg-white border border-emerald-200 rounded-lg p-3 text-sm text-gray-800 font-mono max-h-32 overflow-y-auto">
                         {errorFixPrompt}
