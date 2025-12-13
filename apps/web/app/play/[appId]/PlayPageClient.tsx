@@ -930,20 +930,20 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
             : messages['Play.enterFullscreen'] ?? 'Full screen'}
         </button>
 
-        {/* Only render iframe when we have bootstrap data, but it might be hidden behind overlay */
-          /* Render iframe immediately to start loading assets in parallel with bootstrap */
-        }
-        <iframe
-          ref={iframeRef}
-          src={baseIframeSrc}
-          title="Thesara App"
-          name={iframeBootstrapName}
-          referrerPolicy="no-referrer"
-          allow="geolocation"
-          sandbox={sandboxFlags}
-          className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
-          style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
-        />
+        {/* Render iframe only once bootstrap + signed URL are ready so shim gets tokenized src */}
+        {!!bootstrap && iframeUrl && (
+          <iframe
+            ref={iframeRef}
+            src={iframeUrl}
+            title="Thesara App"
+            name={iframeBootstrapName}
+            referrerPolicy="no-referrer"
+            allow="geolocation"
+            sandbox={sandboxFlags}
+            className={`h-full w-full flex-1 bg-white ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
+            style={{ border: 'none', display: 'block', minHeight: baseViewportMinHeight }}
+          />
+        )}
       </div>
       {!isFullscreen && showBottomAd && (
         <AdSlot

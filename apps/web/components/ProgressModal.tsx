@@ -81,7 +81,17 @@ export default function ProgressModal({
             {/* Header */}
             <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6 text-white relative overflow-hidden">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                {/* Thesara Logo - Left */}
+                <div className="w-12 h-12 flex-shrink-0">
+                  <img
+                    src="/Thesara_Logo.png"
+                    alt="Thesara Logo"
+                    className="w-full h-full object-contain opacity-90"
+                  />
+                </div>
+
+                {/* Center - Alert Icon + Text */}
+                <div className="flex items-center gap-3 flex-1 mx-4">
                   <div className="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
                     <AlertCircle size={32} className="text-white" />
                   </div>
@@ -90,8 +100,9 @@ export default function ProgressModal({
                     <p className="text-red-100 text-sm">An unexpected issue occurred</p>
                   </div>
                 </div>
-                {/* Robot Error Graphic */}
-                <div className="relative w-20 h-20 flex-shrink-0">
+
+                {/* Robot Error Graphic - Right (bigger, fills header) */}
+                <div className="relative h-24 w-24 flex-shrink-0">
                   <img
                     src="/Robo_error_1.png"
                     alt="Error Robot"

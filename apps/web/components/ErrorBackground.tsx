@@ -51,7 +51,7 @@ export default function ErrorBackground() {
 
           // Reset drop to top when it goes off screen
           if (y > H && Math.random() > 0.988) drops[i] = 0;
-          drops[i] = y + (fontPx * (0.55 + Math.random() * 0.55));
+          drops[i] = y + (fontPx * (1.2 + Math.random() * 0.8));  // Faster fall speed
         }
         lastFrame = ts;
       }
