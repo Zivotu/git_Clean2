@@ -254,7 +254,7 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return `${base}/builds/${encodedId}/build/`;
   }, [appId, buildId])
   // Delay setting iframe URL until we have token/snapshot to avoid first-load race
-  // const [iframeUrl, setIframeUrl] = useState<string>('')
+  const [iframeUrl, setIframeUrl] = useState<string>('')
   const [frameHeight, setFrameHeight] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
@@ -266,7 +266,6 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     return flags.join(' ');
   }, [securityPolicy]);
 
-  /*
   const updateIframeSrc = useCallback(
     (token: string | null, namespace: string, roomToken?: string | null) => {
       const params: Record<string, string> = { ns: namespace };
@@ -277,7 +276,6 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
     },
     [baseIframeSrc],
   );
-  */
 
   const ensureJwt = useCallback(async () => {
     if (jwtRef.current) return jwtRef.current
@@ -536,13 +534,13 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
           token = searchParams.get('token')
           if (token) {
             jwtRef.current = token
-            // updateIframeSrc(token, activeNamespace, roomTokenRef.current)
+            updateIframeSrc(token, activeNamespace, roomTokenRef.current)
           }
         }
 
         const jwt = token ?? (await ensureJwt())
         if (!token) {
-          // updateIframeSrc(jwt, activeNamespace, roomTokenRef.current)
+          updateIframeSrc(jwt, activeNamespace, roomTokenRef.current)
         }
         const { snapshot, version } = await fetchSnapshot(
           jwt,
