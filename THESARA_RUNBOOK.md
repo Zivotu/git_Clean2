@@ -126,6 +126,33 @@ Sigurnost/CSP:
 - `manifest_v1.json` moÅ¾e zadati `networkPolicy` i `networkDomains` â†’ `buildCsp()` gradi CSP zaglavlje.
 - `setStaticHeaders()` postavlja `Content-Security-Policy`, `Cross-Origin-Resource-Policy: cross-origin`, `X-Storage-Backend` i CORS refleksiju za `Origin`.
 
+### 5.1) NOVO (2025-12-13) — Play mora ići kroz Next.js
+
+- Nakon što je Play UI prebačen u `apps/web/app/play/[appId]`, **/play više ne smije biti proxiran na API (8788)**. Ako Nginx šalje `/play/` na Fastify (`proxy_pass http://127.0.0.1:8788/play/`), API će odmah vratiti 307 na `/builds/<buildId>/bundle/` i iframe će se otvoriti bez Thesara okvira (poruka “Otvorite aplikaciju kroz Thesara Play”).
+- Produkcijski config (`/etc/nginx/sites-available/thesara.space`) mora sadržavati:
+  ```nginx
+  location ^~ /play/ {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+  }
+  ```
+- Nakon izmjene uvijek pokrenuti `nginx -t` pa `systemctl reload nginx`, zatim provjeriti:
+  ```
+  curl -I https://thesara.space/play/<id>?run=1
+  ```
+  → mora vratiti `HTTP/2 200` bez `Location` headera. Ako se i dalje vidi `307 Location: /builds/...`, aktivan je stari config (npr. `/etc/nginx/sites-enabled/thesara`) i treba osvježiti symlink.
+- Brzi fix koji smo koristili 2025-12-13:
+  ```
+  rm /etc/nginx/sites-enabled/thesara
+  ln -s /etc/nginx/sites-available/thesara.space /etc/nginx/sites-enabled/thesara.space
+  nginx -t && systemctl reload nginx
+  ```
+- Tek kada `/play/` ide kroz Next.js, `PlayPageClient.tsx` generira `iframeUrl` s `token`, `ns` i `roomToken`, pa shim prestaje prijavljivati `missing_token`.
+
 
 ### Admin pristup (PIN + role)
 
