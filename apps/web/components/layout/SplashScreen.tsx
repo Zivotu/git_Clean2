@@ -14,21 +14,7 @@ const SplashScreen = () => {
       return;
     }
     setVisible(true);
-
-    const mediaQuery = window.matchMedia('(orientation: portrait)');
-
-    const updateImage = () => {
-      if (mediaQuery.matches) {
-        setImageSrc('/assets/ThesaraSplash_Web_vert_1a.jpg');
-      } else {
-        setImageSrc('/assets/ThesaraSplash_Web_1.jpg');
-      }
-    };
-
-    updateImage();
-
-    mediaQuery.addEventListener('change', updateImage);
-    return () => mediaQuery.removeEventListener('change', updateImage);
+    setImageSrc('/assets/Thesara_ChristmasPresent_1.jpg');
   }, []);
 
   const handleClick = () => {
