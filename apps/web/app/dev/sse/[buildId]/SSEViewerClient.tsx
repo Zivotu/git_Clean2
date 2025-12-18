@@ -211,7 +211,7 @@ export default function SSEViewerClient({ buildId }: { buildId: string }) {
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '1.5rem' }}>
         <h1>SSE Viewer</h1>
         <p style={{ color: '#b91c1c' }}>
-          Nije postavljen NEXT_PUBLIC_API_BASE_URL. Postavi varijablu okruzenja (npr. http://127.0.0.1:8788) i ponovno ucitaj stranicu.
+          Nije postavljen NEXT_PUBLIC_API_BASE_URL. Postavi varijablu okruzenja (npr. http://dev-api-host:8788) i ponovno ucitaj stranicu.
         </p>
       </div>
     );
