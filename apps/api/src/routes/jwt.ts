@@ -1,14 +1,17 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import jwt from 'jsonwebtoken';
 
-const DEV_ONLY =
-  process.env.NODE_ENV !== 'production' || process.env.DEV_ENABLE_LOCAL_JWT === '1';
+const DEV_ONLY = process.env.DEV_ENABLE_LOCAL_JWT === '1';
 
 /**
  * Security: Check if request originates from localhost.
  * Prevents accidental JWT token leakage if DEV_ENABLE_LOCAL_JWT is set in production.
  */
 function isLocalRequest(request: FastifyRequest): boolean {
+  // Hardening: if request was proxied (nginx adds X-Forwarded-For), this is NOT a local-only request.
+  if (request.headers['x-forwarded-for'] || request.headers['x-real-ip'] || request.headers['forwarded']) {
+    return false;
+  }
   const hostname = request.hostname;
   const ip = request.ip;
 

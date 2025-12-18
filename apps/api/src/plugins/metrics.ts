@@ -87,8 +87,15 @@ const plugin: FastifyPluginAsync = fp(async (app) => {
     help: 'Total number of storage patch retries observed',
     registers: [registry],
   });
+  // prevent double-registration (idempotent plugin)
+  if (app.hasDecorator('_metricsInstalled')) return;
+  app.decorate('_metricsInstalled', true);
 
+if (!app.hasDecorator('metricsRegistry')) {
   app.decorate('metricsRegistry', registry);
+}
+
+if (!app.hasDecorator('metrics')) {
   app.decorate('metrics', {
     httpRequestDuration,
     httpRequestsTotal,
@@ -100,6 +107,7 @@ const plugin: FastifyPluginAsync = fp(async (app) => {
     storage_patch_rate_limited_total,
     storage_patch_retry_total,
   });
+}
 
   app.addHook('onResponse', async (request, reply) => {
     const route = request.routeOptions?.url || request.url || 'unknown';

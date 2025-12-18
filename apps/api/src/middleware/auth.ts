@@ -32,6 +32,10 @@ function maskAuthorizationHeader(header: string | undefined | null) {
  * Used to restrict dev-only backdoors to local development environments.
  */
 function isLocalRequest(req: FastifyRequest): boolean {
+  // Hardening: if request was proxied (nginx adds X-Forwarded-For), this is NOT a local-only request.
+  if (request.headers['x-forwarded-for'] || request.headers['x-real-ip'] || request.headers['forwarded']) {
+    return false;
+  }
   const hostname = req.hostname;
   const ip = req.ip;
 

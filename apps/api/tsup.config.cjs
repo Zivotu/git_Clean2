@@ -1,7 +1,7 @@
 const { defineConfig } = require('tsup');
 
 module.exports = defineConfig({
-  entry: ['src/index.ts', 'src/lib/dependencies.ts'],
+  entry: ['src/index.ts', 'src/server.ts', 'src/lib/dependencies.ts'],
   outDir: 'dist',
   format: ['cjs'],
   target: 'node20',

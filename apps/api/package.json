@@ -7,9 +7,9 @@
   "scripts": {
     "dev": "cross-env CREATEX_WORKER_ENABLED=true NODE_OPTIONS=\"--openssl-legacy-provider --require ts-node/register/transpile-only --require ./src/preload.ts\" tsx watch src/index.ts",
     "dev:worker": "cross-env NODE_OPTIONS=\"--openssl-legacy-provider --require ts-node/register/transpile-only --require ./src/preload.ts\" tsx watch src/localdev/worker.run.ts",
-  "build": "tsup && cpx \"src/**/!(*.ts)\" dist && node -e \"const fs=require('fs'); fs.copyFileSync('dist/index.js','dist/server.cjs')\"",
-  "verify:dist": "node ./scripts/verify-dist-no-update.js",
-  "postbuild": "pnpm run verify:dist",
+    "build": "tsup && cpx \"src/**/!(*.ts)\" dist",
+    "verify:dist": "node ./scripts/verify-dist-no-update.js",
+    "postbuild": "pnpm run verify:dist",
     "build:tsc": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.f2.json",
     "start": "node --openssl-legacy-provider dist/index.js",
@@ -76,8 +76,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-  "@types/react": "19.1.9",
-  "@types/react-dom": "19.1.7",
+    "@types/react": "19.1.9",
+    "@types/react-dom": "19.1.7",
     "@fastify/multipart": "^9.0.3",
     "@types/archiver": "^5.3.4",
     "@types/bcryptjs": "^3.0.0",
@@ -85,7 +85,6 @@
     "@types/jsonwebtoken": "^9.0.0",
     "@types/node": "24.2.1",
     "@types/nodemailer": "^7.0.0",
-    
     "cross-env": "^7.0.3",
     "dotenv-cli": "^10.0.0",
     "extract-zip": "^2.0.1",

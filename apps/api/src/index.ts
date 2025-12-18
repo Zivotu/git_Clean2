@@ -948,8 +948,8 @@ export async function start(): Promise<void> {
   const { app } = await createServer();
   const enableWorker = process.env.CREATEX_WORKER_ENABLED === 'true';
   const inlineLocalDevWorker = process.env.LOCAL_DEV_WORKER_INLINE === 'true';
-  const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => { } };
-  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => { } };
+  const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => {} };
+  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => {} };
   const localDevWorker = inlineLocalDevWorker ? startLocalDevWorker() : null;
 
   const shutdown = async (signal: string) => {
@@ -971,50 +971,68 @@ export async function start(): Promise<void> {
 
   const basePort = Number(process.env.PORT) || 8788;
   const maxAttempts = Number(process.env.PORT_FALLBACK_ATTEMPTS || '10');
+
+  const host =
+    process.env.HOST && process.env.HOST.trim()
+      ? process.env.HOST.trim()
+      : '127.0.0.1';
+
   let listened = false;
   let lastError: any;
 
   for (let i = 0; i < maxAttempts; i++) {
     const port = basePort + i;
     try {
-      await app.listen({ port, host: '0.0.0.0' });
-      app.log.info(`listening on ${port}`);
+      await app.listen({ port, host });
+
+      app.log.info({ host, port }, `listening on ${port}`);
+
       try {
         const diagDir = path.join(process.cwd(), '.diag');
         fs.mkdirSync(diagDir, { recursive: true });
         fs.writeFileSync(path.join(diagDir, 'api-port.txt'), String(port));
-      } catch { }
+      } catch {}
+
       listened = true;
       break;
     } catch (err: any) {
       lastError = err;
+
       if (err && err.code === 'EADDRINUSE') {
-        app.log.warn({ port }, 'port in use, trying next');
+        app.log.warn({ host, port }, 'port in use, trying next');
         continue;
       }
-      app.log.error({ err, port }, 'failed to listen');
+
+      app.log.error({ err, host, port }, 'failed to listen');
       break;
     }
   }
 
   if (!listened) {
     const error = lastError ?? new Error('failed to bind any port');
-    app.log.error({ basePort, attempts: maxAttempts, error }, 'listen_failed');
+    app.log.error({ host, basePort, attempts: maxAttempts, error }, 'listen_failed');
+
     await buildWorker.close();
+    await bundleWorker.close();
     if (localDevWorker) {
       await localDevWorker.close();
     }
+
     try {
       await app.close();
-    } catch { }
+    } catch {}
+
     throw error;
   }
-
 }
 
+// Auto-start unless running under tests (AND only when this file is the entrypoint)
+const _isMain =
+  typeof require !== 'undefined' &&
+  typeof module !== 'undefined' &&
+  require.main === module;
 
-// Auto-start unless running under tests
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && _isMain) {
   void start().catch((err) => {
     console.error(err);
     process.exit(1);
