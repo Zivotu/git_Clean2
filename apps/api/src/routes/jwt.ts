@@ -4,7 +4,40 @@ import jwt from 'jsonwebtoken';
 const DEV_ONLY =
   process.env.NODE_ENV !== 'production' || process.env.DEV_ENABLE_LOCAL_JWT === '1';
 
+/**
+ * Security: Check if request originates from localhost.
+ * Prevents accidental JWT token leakage if DEV_ENABLE_LOCAL_JWT is set in production.
+ */
+function isLocalRequest(request: FastifyRequest): boolean {
+  const hostname = request.hostname;
+  const ip = request.ip;
+
+  // Check hostname
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+    return true;
+  }
+
+  // Check IP address (including IPv6 mapped IPv4)
+  if (ip === '127.0.0.1' || ip === '::1' || ip?.startsWith('::ffff:127.')) {
+    return true;
+  }
+
+  return false;
+}
+
 const sendToken = async (request: FastifyRequest, reply: FastifyReply) => {
+  // Security: Only allow localhost requests to prevent token leakage
+  if (!isLocalRequest(request)) {
+    request.log.warn(
+      { ip: request.ip, hostname: request.hostname },
+      'jwt_dev_endpoint: blocked non-localhost request'
+    );
+    return reply.code(403).send({
+      error: 'forbidden',
+      message: 'JWT dev endpoint only accessible from localhost'
+    });
+  }
+
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     request.log.warn('JWT_SECRET is not set. Using a default, insecure secret.');
@@ -30,6 +63,7 @@ const sendToken = async (request: FastifyRequest, reply: FastifyReply) => {
     signOpts,
   );
 
+  request.log.info({ ip: request.ip }, 'jwt_dev_endpoint: token issued to localhost');
   return reply.code(200).send({ token });
 };
 

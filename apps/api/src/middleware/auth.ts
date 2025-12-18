@@ -27,6 +27,27 @@ function maskAuthorizationHeader(header: string | undefined | null) {
   }
 }
 
+/**
+ * Security: Check if request originates from localhost.
+ * Used to restrict dev-only backdoors to local development environments.
+ */
+function isLocalRequest(req: FastifyRequest): boolean {
+  const hostname = req.hostname;
+  const ip = req.ip;
+
+  // Check hostname
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+    return true;
+  }
+
+  // Check IP address (including IPv6 mapped IPv4)
+  if (ip === '127.0.0.1' || ip === '::1' || ip?.startsWith('::ffff:127.')) {
+    return true;
+  }
+
+  return false;
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
     authUser?: {
@@ -48,13 +69,15 @@ const plugin: FastifyPluginAsync = async (app) => {
     }
     const auth = req.headers.authorization;
 
-    // Dev mock user
-    if (!auth && process.env.NODE_ENV !== 'production') {
+    // Dev mock user - ONLY for localhost requests in non-production
+    // Security: Prevents accidental admin access if NODE_ENV is misconfigured
+    if (!auth && process.env.NODE_ENV !== 'production' && isLocalRequest(req)) {
       req.authUser = {
         uid: 'dev-user',
         role: 'admin',
         claims: { uid: 'dev-user', role: 'admin', admin: true } as any,
       };
+      req.log.debug({ ip: req.ip, hostname: req.hostname }, 'auth: dev-user granted (localhost)');
       return;
     }
 
@@ -151,12 +174,14 @@ const plugin: FastifyPluginAsync = async (app) => {
       } catch (jwtError) {
         req.log.debug({ err: jwtError }, 'auth:jwt_fallback_failed');
         // If invalid and we're in development, fall back to dev user for local testing.
-        if (process.env.NODE_ENV !== 'production') {
+        // Security: Only allow from localhost
+        if (process.env.NODE_ENV !== 'production' && isLocalRequest(req)) {
           req.authUser = {
             uid: 'dev-user',
             role: 'admin',
             claims: { uid: 'dev-user', role: 'admin', admin: true } as any,
           };
+          req.log.debug({ ip: req.ip }, 'auth: dev-user fallback (jwt failed, localhost)');
           return;
         }
         // In production, reject.
@@ -165,12 +190,14 @@ const plugin: FastifyPluginAsync = async (app) => {
       }
     }
     // No fallback secret configured. In development, permit dev-user so storage works locally.
-    if (process.env.NODE_ENV !== 'production') {
+    // Security: Only allow from localhost
+    if (process.env.NODE_ENV !== 'production' && isLocalRequest(req)) {
       req.authUser = {
         uid: 'dev-user',
         role: 'admin',
         claims: { uid: 'dev-user', role: 'admin', admin: true } as any,
       };
+      req.log.debug({ ip: req.ip }, 'auth: dev-user granted (no JWT_SECRET, localhost)');
       return;
     }
   });
