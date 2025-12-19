@@ -8,7 +8,7 @@ export const getBuildDir = (id: string) =>
   path.join(BUNDLE_ROOT, 'builds', id);
 
 export function getBundleDir(id: string) {
-  return path.join(BUNDLE_ROOT, 'builds', id, 'bundle');
+  return path.join(BUNDLE_ROOT, 'builds', id, 'build');
 }
 
 export function getLlmReportPath(id: string) {

@@ -1314,7 +1314,7 @@ async function runBundleBuildProcess(
         <script type="module" src="/shims/storage.js"></script>
         <script src="/shims/localstorage.js"></script>
       `;
-      const baseHref = `/builds/${buildId}/bundle/`;
+      const baseHref = `/builds/${buildId}/build/`;
       html = stripDisallowedScripts(html);
       html = injectBaseHref(html, baseHref);
       if (html.includes('</head>')) {
