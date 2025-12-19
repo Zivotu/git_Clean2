@@ -450,9 +450,10 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
 
   const closeDetails = useCallback(() => setSelectedApp(null), []);
 
+  // Reload listings on mount and when user authentication state changes (for likedByMe status)
   useEffect(() => {
     reloadListings({ silent: true });
-  }, [reloadListings]);
+  }, [reloadListings, user?.uid]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !PUBLIC_API_URL) return;
