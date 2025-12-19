@@ -744,6 +744,50 @@
         "trending": "Trend"
       }
     },
+    "Workshop": {
+      "badge": "KOSTENLOS",
+      "button": "FÜR WORKSHOP ANMELDEN",
+      "title": "Wie man seine App an einem Tag erstellt und veröffentlicht",
+      "subtitle": "Kostenlose Schulung für Anfänger",
+      "countdown": {
+        "label": "Verbleibende Zeit:",
+        "days": "{days} Tage",
+        "hours": "{hours} Stunden",
+        "minutes": "{min} Minuten"
+      },
+      "features": {
+        "live": "Live auf Zoom",
+        "duration": "2 Stunden Schulung",
+        "free": "Völlig kostenlos",
+        "beginners": "Für Anfänger"
+      },
+      "form": {
+        "title": "Anmeldung zum kostenlosen Workshop",
+        "email": "E-Mail-Adresse",
+        "emailPlaceholder": "deine@email.com",
+        "submit": "Anmeldung absenden",
+        "submitting": "Wird gesendet...",
+        "success": "Erfolgreich angemeldet! Zoom-Link wird an Ihre E-Mail gesendet.",
+        "error": "Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
+        "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+      },
+      "details": {
+        "when": "Wann?",
+        "date": "23. Dezember 2025",
+        "time": "20:00 Uhr MEZ",
+        "what": "Was wirst du lernen?",
+        "topics": [
+          "Wie man KI (ChatGPT, Google Gemini) zur App-Erstellung nutzt",
+          "Wie man eine App auf Thesara in 3 Klicks veröffentlicht",
+          "Wie man die erste App monetarisiert",
+          "Live Q&A - alle Fragen willkommen"
+        ],
+        "backToHome": "Zurück zur Startseite",
+        "daysUnit": "Tage",
+        "hoursUnit": "Stunden",
+        "privacyNote": "Wir verwenden Ihre E-Mail nur zum Versenden des Workshop-Links. Sie wird nicht an Dritte weitergegeben."
+      }
+    },
     "sidebar": {
       "roboMessage": "TUTORIAL\nVon\nder\nIdee\nzur\nApp\nauf\nThesara",
       "title": "Thesara Space v2.0",

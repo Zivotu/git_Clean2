@@ -3,6 +3,8 @@ import Image from 'next/image';
 import { Rocket, HelpCircle, Clock, LayoutDashboard, User, Play, ArrowRight, Sparkles } from 'lucide-react';
 import { playHref, appDetailsHref } from '@/lib/urls';
 import { type BetaApp, type ListingLabels } from '@/components/BetaAppCard';
+import NeonWorkshopButton from '@/app/components/NeonWorkshopButton';
+
 
 type HomeHeroProps = {
     isDark: boolean;
@@ -40,16 +42,16 @@ export default function HomeHero({
     return (
         <section
             className={`overflow-hidden rounded-3xl border transition-colors duration-300 ${isDark
-                    ? 'border-[#27272A] bg-gradient-to-br from-[#020617] via-[#18181B] to-[#4C1D95]'
-                    : 'border-slate-200 bg-gradient-to-br from-slate-50 via-white to-violet-100'
+                ? 'border-[#27272A] bg-gradient-to-br from-[#020617] via-[#18181B] to-[#4C1D95]'
+                : 'border-slate-200 bg-gradient-to-br from-slate-50 via-white to-violet-100'
                 }`}
         >
             <div className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center lg:justify-between lg:py-4">
                 <div className="flex-1">
                     <div
                         className={`mb-1 inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs font-medium backdrop-blur ${isDark
-                                ? 'bg-black/10 text-zinc-200'
-                                : 'bg-white/50 text-slate-700 shadow-sm border border-slate-200/50'
+                            ? 'bg-black/10 text-zinc-200'
+                            : 'bg-white/50 text-slate-700 shadow-sm border border-slate-200/50'
                             }`}
                     >
                         <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#A855F7]/80 text-[9px]">
@@ -81,13 +83,17 @@ export default function HomeHero({
                         <Link
                             href="/tutorial"
                             className={`inline-flex items-center gap-2 rounded-full border px-6 py-3 text-sm font-semibold transition-colors ${isDark
-                                    ? 'border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700'
-                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                ? 'border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700'
+                                : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                                 }`}
                         >
                             <HelpCircle className="h-4 w-4" />
                             <span>{tNav('tutorials') || 'Vodiči'}</span>
                         </Link>
+                        <NeonWorkshopButton
+                            label={tBeta('Workshop.button', 'PRIJAVI SE NA TRENING')}
+                            href="/workshop"
+                        />
                     </div>
 
                     {/* 3 Steps Visual */}
@@ -165,8 +171,8 @@ export default function HomeHero({
                                             </div>
                                             <span
                                                 className={`rounded-full px-2 py-1 text-[11px] font-medium ${isDark
-                                                        ? 'bg-emerald-500/10 text-emerald-400'
-                                                        : 'bg-emerald-50 text-emerald-600'
+                                                    ? 'bg-emerald-500/10 text-emerald-400'
+                                                    : 'bg-emerald-50 text-emerald-600'
                                                     }`}
                                             >
                                                 {curatedLabel}
@@ -239,8 +245,8 @@ export default function HomeHero({
                                         </div>
                                         <span
                                             className={`rounded-full px-2 py-1 text-[11px] font-medium ${isDark
-                                                    ? 'bg-emerald-500/10 text-emerald-400'
-                                                    : 'bg-emerald-50 text-emerald-600'
+                                                ? 'bg-emerald-500/10 text-emerald-400'
+                                                : 'bg-emerald-50 text-emerald-600'
                                                 }`}
                                         >
                                             {curatedLabel}
@@ -275,8 +281,8 @@ export default function HomeHero({
                     {/* Compact Promotion Warning Banner */}
                     <div
                         className={`relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3 text-sm leading-tight ${isDark
-                                ? 'border-amber-900/50 bg-amber-900/10 text-amber-200/80'
-                                : 'border-amber-200 bg-amber-50 text-amber-900/80'
+                            ? 'border-amber-900/50 bg-amber-900/10 text-amber-200/80'
+                            : 'border-amber-200 bg-amber-50 text-amber-900/80'
                             }`}
                     >
                         <div

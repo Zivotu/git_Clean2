@@ -15,6 +15,8 @@ export interface GoldenBookCountdown {
   daysTotal?: number;
 }
 
+const isTestEnv = process.env.NODE_ENV === 'test';
+
 export interface WebConfig {
   API_URL: string;
   SAFE_PUBLISH_ENABLED: boolean;
@@ -38,6 +40,9 @@ export interface WebConfig {
 
 function must(value: string | undefined, key: string): string {
   if (value === undefined || value === '') {
+    if (isTestEnv) {
+      return `test-${key.toLowerCase()}`;
+    }
     throw new Error(`Missing environment variable ${key}`);
   }
   return value;

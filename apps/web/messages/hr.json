@@ -797,7 +797,51 @@
     },
     "empty": {
       "noResults": "Nema rezultata za taj upit. Pokušaj promijeniti filtere.",
-      "tryAdjust": "Pokušaj promijeniti tagove ili pretragu.",
+      "tryAdjust": "Pokušaj promijeniti tagove ili pretragu."
+    },
+    "Workshop": {
+      "badge": "BESPLATNO",
+      "button": "PRIJAVI SE NA TRENING",
+      "title": "Kako izgraditi i objaviti svoju aplikaciju u jednom danu",
+      "subtitle": "Besplatna edukacija za početnike",
+      "countdown": {
+        "label": "Preostalo vrijeme:",
+        "days": "{days} dana",
+        "hours": "{hours} sati",
+        "minutes": "{min} minuta"
+      },
+      "features": {
+        "live": "Uživo na Zoomu",
+        "duration": "2 sata treninga",
+        "free": "Potpuno besplatno",
+        "beginners": "Za početnike"
+      },
+      "form": {
+        "title": "Prijava na besplatni trening",
+        "email": "Email adresa",
+        "emailPlaceholder": "tvoj@email.com",
+        "submit": "Pošalji prijavu",
+        "submitting": "Šaljem...",
+        "success": "Uspješno si prijavljen/a! Link za Zoom će ti stići na email.",
+        "error": "Došlo je do greške. Pokušaj ponovo.",
+        "invalidEmail": "Molimo unesi važeću email adresu."
+      },
+      "details": {
+        "when": "Kad?",
+        "date": "23. prosinca 2025.",
+        "time": "20:00h CET",
+        "what": "Što ćeš naučiti?",
+        "topics": [
+          "Kako koristiti AI (ChatGPT, Google Gemini) za kreiranje aplikacija",
+          "Kako objaviti aplikaciju na Thesari u 3 klika",
+          "Kako monetizirati svoju prvu aplikaciju",
+          "Live Q&A - sva pitanja dobrodošla"
+        ],
+        "backToHome": "Povratak na početnu",
+        "daysUnit": "dana",
+        "hoursUnit": "sati",
+        "privacyNote": "Tvoj email koristimo samo za slanje linka. Neće biti prosljeđen trećim stranama."
+      },
       "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
     },
     "filters": {

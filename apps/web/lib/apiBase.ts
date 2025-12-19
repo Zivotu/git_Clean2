@@ -1,7 +1,33 @@
 // apps/web/lib/apiBase.ts
 
+const THESARA_API_HOST = 'api.thesara.space';
+
 function stripTrailingSlash(u: string): string {
   return u.replace(/\/+$/, '');
+}
+
+export function normalizeApiUrl(raw?: string | null): string {
+  const fallback = '/api';
+  if (!raw) return fallback;
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+  const withoutSlash = stripTrailingSlash(trimmed);
+  try {
+    const parsed = new URL(withoutSlash);
+    const isThesaraApiHost = parsed.hostname === THESARA_API_HOST;
+    if (isThesaraApiHost) {
+      const path = stripTrailingSlash(parsed.pathname || '/');
+      if (path === '' || path === '/') {
+        return `${parsed.origin}/api`;
+      }
+      if (path === '/api') {
+        return `${parsed.origin}/api`;
+      }
+    }
+    return `${parsed.origin}${parsed.pathname}${parsed.search}${parsed.hash}`.replace(/\/+$/, '');
+  } catch {
+    return withoutSlash || fallback;
+  }
 }
 
 /**

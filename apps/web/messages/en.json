@@ -719,7 +719,44 @@
   },
   "BetaHome": {
     "sidebar": {
-      "roboMessage": "TUTORIAL\nFrom\nIdea\nto a\nPublished\nApp\non\nThesara"
+      "roboMessage": "TUTORIAL\nFrom\nIdea\nto a\nPublished\nApp\non\nThesara",
+      "title": "Thesara Space v2.0",
+      "subtitle": "From AI chat to your mini application.",
+      "nav": {
+        "discover": "Discover",
+        "games": "Games",
+        "productivity": "Productivity",
+        "myApps": "My Apps",
+        "paidApps": "Paid Apps",
+        "myProjects": "Projects",
+        "myCreators": "Creators",
+        "feelingLucky": "Feeling Lucky"
+      },
+      "creatorMode": {
+        "badge": "Creator Mode",
+        "title": "From AI chat to your mini app",
+        "description": "Create a game or tool, upload it, and share it with the entire community.",
+        "steps": {
+          "0": {
+            "title": "Chat with AI",
+            "text": "Ask the assistant to deliver a mini application."
+          },
+          "1": {
+            "title": "Download code or bundle",
+            "text": "Download ZIP or just copy the code if the tool doesn't offer download."
+          },
+          "2": {
+            "title": "Publish on Thesara",
+            "text": "Upload, confirm, and click Play."
+          }
+        },
+        "memory": {
+          "title": "Memory & Rooms",
+          "detail1": "Extra memory that LLMs don't have.",
+          "detail2": "Activate rooms when you want multiple users with persistent states."
+        },
+        "cta": "Publish your app"
+      }
     },
     "steps": {
       "1": {
@@ -760,6 +797,118 @@
       "tag": {
         "trending": "Trending"
       }
+    },
+    "Workshop": {
+      "badge": "FREE",
+      "button": "SUBSCRIBE TO WORKSHOP",
+      "title": "How to Build and Publish Your App in One Day",
+      "subtitle": "Free training for beginners",
+      "countdown": {
+        "label": "Time remaining:",
+        "days": "{days} days",
+        "hours": "{hours} hours",
+        "minutes": "{min} minutes"
+      },
+      "features": {
+        "live": "Live on Zoom",
+        "duration": "2 hour training",
+        "free": "Completely free",
+        "beginners": "For beginners"
+      },
+      "form": {
+        "title": "Register for free workshop",
+        "email": "Email address",
+        "emailPlaceholder": "your@email.com",
+        "submit": "Submit registration",
+        "submitting": "Sending...",
+        "success": "Successfully registered! Zoom link will be sent to your email.",
+        "error": "An error occurred. Please try again.",
+        "invalidEmail": "Please enter a valid email address."
+      },
+      "details": {
+        "when": "When?",
+        "date": "December 23rd, 2025",
+        "time": "8:00 PM CET",
+        "what": "What will you learn?",
+        "topics": [
+          "How to use AI (ChatGPT, Google Gemini) to create apps",
+          "How to publish an app on Thesara in 3 clicks",
+          "How to monetize your first app",
+          "Live Q&A - all questions welcome"
+        ],
+        "backToHome": "Back to Home",
+        "daysUnit": "days",
+        "hoursUnit": "hours",
+        "privacyNote": "We only use your email to send the workshop link. It will not be shared with third parties."
+      }
+    },
+    "hero": {
+      "badge": "Discover Amazing Mini-Apps & Games",
+      "random": {
+        "label": "Random Pick",
+        "details": "View details"
+      },
+      "actions": {
+        "submit": "Submit App"
+      },
+      "badges": {
+        "curated": "Curated"
+      },
+      "card": {
+        "description": "Build collections of AI-powered experiences and share them with a link.",
+        "stats": {
+          "apps": "{count}+ Mini-Apps",
+          "favorites": "{count} favorites"
+        }
+      }
+    },
+    "PromoCode": {
+      "featuredLabel": "Featured",
+      "learnMore": "Learn More"
+    },
+    "view": {
+      "gridLabel": "Grid",
+      "decreaseGrid": "Show fewer cards per row",
+      "increaseGrid": "Show more cards per row"
+    },
+    "sort": {
+      "newest": "Newest",
+      "popular": "Most loved",
+      "alpha": "Alphabetical",
+      "label": "Sort by"
+    },
+    "metrics": {
+      "liveUsage": "Live usage",
+      "apps": "Published apps",
+      "members": "Community members",
+      "runs": "Total runs"
+    },
+    "empty": {
+      "noResults": "No results for that query. Try adjusting the filters.",
+      "tryAdjust": "Try adjusting tags or search.",
+      "beFirst": "Be the first to publish a mini app."
+    },
+    "filters": {
+      "tagsHeading": "Popular tags",
+      "clear": "Reset filters",
+      "all": "All",
+      "trending": "Trending"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "retry": "Try again"
+    },
+    "errors": {
+      "listings": "Unable to refresh the feed. Please try again."
+    },
+    "sections": {
+      "trending": {
+        "count": "{count} apps"
+      }
+    },
+    "search": {
+      "liveStats": "{apps} live apps · {plays} plays",
+      "placeholder": "Search apps, creators, or prompts..."
     }
   },
   "Toasts": {

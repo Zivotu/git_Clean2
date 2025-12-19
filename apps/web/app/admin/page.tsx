@@ -120,7 +120,7 @@ type TimelineEntry = { state: BuildState; at: number };
 
 type ConfirmActionType = 'approve' | 'delete' | 'force-delete' | 'restore' | 'refresh';
 type PendingConfirmAction = { type: ConfirmActionType; item: ReviewItem };
-type AdminTabKey = 'apps' | 'users' | 'ambassador' | 'admins' | 'emailTemplates';
+type AdminTabKey = 'apps' | 'users' | 'ambassador' | 'admins' | 'emailTemplates' | 'storage';
 const reviewStatuses = ['all', 'pending', 'approved', 'rejected', 'deleted'] as const;
 type ReviewStatus = (typeof reviewStatuses)[number];
 
@@ -196,6 +196,11 @@ export default function AdminDashboard() {
   const [newTemplateId, setNewTemplateId] = useState('');
   const [newTemplateSubject, setNewTemplateSubject] = useState('');
   const [newTemplateBody, setNewTemplateBody] = useState('');
+  // Storage maintenance state
+  const [storageStats, setStorageStats] = useState<any | null>(null);
+  const [storageLoading, setStorageLoading] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
+
 
   const { messages } = useI18n();
   const tAdmin = useCallback(
@@ -248,6 +253,7 @@ export default function AdminDashboard() {
       { id: 'ambassador', label: tAdmin('tabs.ambassadorProgram') },
       { id: 'admins', label: tAdmin('tabs.admins') },
       { id: 'emailTemplates', label: tAdmin('tabs.emailTemplates') },
+      { id: 'storage', label: 'Storage' },
     ],
     [tAdmin],
   );
@@ -758,6 +764,42 @@ export default function AdminDashboard() {
     }
   };
 
+  const loadStorageStats = useCallback(async () => {
+    setStorageLoading(true);
+    setStorageError(null);
+    try {
+      const data = await apiGet<any>('/admin/maintenance/builds', { auth: true });
+      setStorageStats(data);
+    } catch (e) {
+      console.error(e);
+      setStorageError('Failed to load storage stats');
+    } finally {
+      setStorageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (adminTab === 'storage' && !storageStats && !storageLoading) {
+      loadStorageStats();
+    }
+  }, [adminTab, storageStats, storageLoading, loadStorageStats]);
+
+  const handlePruneStorage = async () => {
+    if (!confirm('Are you sure you want to delete orphaned builds? This cannot be undone.')) return;
+    setStorageLoading(true);
+    setStorageError(null);
+    try {
+      const data = await apiPost<any>('/admin/maintenance/builds/prune', {}, { auth: true });
+      setStorageStats(data);
+      alert(`Pruned ${data.orphanedBuilds} builds.`);
+    } catch (e) {
+      console.error(e);
+      setStorageError('Failed to prune storage');
+    } finally {
+      setStorageLoading(false);
+    }
+  };
+
   const filtered = items.filter((it) =>
     (it.title || '').toLowerCase().includes(search.toLowerCase()) ||
     (it.ownerEmail || '').toLowerCase().includes(search.toLowerCase()),
@@ -1246,14 +1288,14 @@ export default function AdminDashboard() {
                                   </div>
                                   <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{email}</span>
                                 </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => setPendingAdminRemoval(email)}
-                                    disabled={adminSettingsSaving}
-                                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors disabled:opacity-50"
-                                    title={tAdmin('adminSettings.remove')}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
+                                <button
+                                  type="button"
+                                  onClick={() => setPendingAdminRemoval(email)}
+                                  disabled={adminSettingsSaving}
+                                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                  title={tAdmin('adminSettings.remove')}
+                                >
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </li>
                             ))}
@@ -1564,6 +1606,144 @@ export default function AdminDashboard() {
                           </button>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+              {adminTab === 'storage' && (
+                <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-6 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-1">Storage Management</h2>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Manage build artifacts and reclaim disk space.</p>
+                      </div>
+                      <button
+                        onClick={loadStorageStats}
+                        className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-700 transition-colors"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${storageLoading ? 'animate-spin' : ''}`} />
+                      </button>
+                    </div>
+
+                    <div className="p-6">
+                      {storageError && (
+                        <div className="mb-6 rounded-lg border border-rose-200 dark:border-rose-900/30 bg-rose-50 dark:bg-rose-900/20 px-4 py-3 text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                          {storageError}
+                        </div>
+                      )}
+
+                      {storageLoading && !storageStats && (
+                        <div className="py-12 flex justify-center text-slate-500">
+                          <RefreshCw className="h-6 w-6 animate-spin" />
+                        </div>
+                      )}
+
+                      {storageStats && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                          <div className="bg-slate-50 dark:bg-zinc-800/50 rounded-lg p-4 border border-slate-200 dark:border-zinc-700">
+                            <label className="text-xs text-slate-500 uppercase font-semibold">Total Builds</label>
+                            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{storageStats.totalBuilds}</div>
+                          </div>
+                          <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-lg p-4 border border-emerald-100 dark:border-emerald-900/30">
+                            <label className="text-xs text-emerald-600 dark:text-emerald-400 uppercase font-semibold">Active Builds</label>
+                            <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{storageStats.activeBuilds}</div>
+                          </div>
+                          <div className="bg-amber-50 dark:bg-amber-900/10 rounded-lg p-4 border border-amber-100 dark:border-amber-900/30">
+                            <label className="text-xs text-amber-600 dark:text-amber-400 uppercase font-semibold">Orphaned Builds</label>
+                            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{storageStats.orphanedBuilds}</div>
+                          </div>
+                          <div className="bg-rose-50 dark:bg-rose-900/10 rounded-lg p-4 border border-rose-100 dark:border-rose-900/30">
+                            <label className="text-xs text-rose-600 dark:text-rose-400 uppercase font-semibold">Reclaimable Space</label>
+                            <div className="text-2xl font-bold text-rose-700 dark:text-rose-400">
+                              {(storageStats.reclaimableBytes / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {storageStats && storageStats.orphanedBuilds > 0 && (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-lg p-4 flex items-start justify-between gap-4">
+                          <div className="text-sm text-amber-800 dark:text-amber-200">
+                            <p className="font-semibold mb-1">Ready to Cleanup?</p>
+                            <p>Found <strong>{storageStats.orphanedBuilds}</strong> orphaned builds older than 7 days. Pruning will delete these folders permanently.</p>
+                          </div>
+                          <button
+                            onClick={handlePruneStorage}
+                            disabled={storageLoading}
+                            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-medium shadow-sm transition-colors flex items-center gap-2 whitespace-nowrap"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Prune Builds
+                          </button>
+                        </div>
+                      )}
+
+                      {storageStats && storageStats.orphanedBuilds === 0 && (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-800/20 rounded-lg border border-slate-200 dark:border-zinc-800 border-dashed">
+                          <Check className="h-8 w-8 mx-auto mb-2 text-emerald-500" />
+                          <p>Storage is optimized. No orphaned builds found.</p>
+                        </div>
+                      )}
+
+                      {storageStats?.details && (
+                        <div className="mt-8">
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4">Build Details</h3>
+                          <div className="rounded-lg border border-slate-200 dark:border-zinc-700 overflow-hidden overflow-x-auto">
+                            <table className="min-w-full text-sm text-left">
+                              <thead className="bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-slate-400 font-medium">
+                                <tr>
+                                  <th className="px-4 py-3 whitespace-nowrap">Status</th>
+                                  <th className="px-4 py-3 whitespace-nowrap">App</th>
+                                  <th className="px-4 py-3 whitespace-nowrap">Build ID</th>
+                                  <th className="px-4 py-3 whitespace-nowrap">Size</th>
+                                  <th className="px-4 py-3 whitespace-nowrap">Last Modified</th>
+                                  <th className="px-4 py-3 whitespace-nowrap">Note</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200 dark:divide-zinc-700 bg-white dark:bg-zinc-900">
+                                {storageStats.details.map((detail: any) => (
+                                  <tr key={detail.id} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                    <td className="px-4 py-3">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase
+                                        ${detail.status === 'active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                          detail.status === 'orphaned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' :
+                                            'bg-slate-100 text-slate-800 dark:bg-zinc-800 dark:text-slate-400'
+                                        }`}>
+                                        {detail.status}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      {detail.appName ? (
+                                        <div className="flex flex-col">
+                                          <span className="font-medium text-slate-900 dark:text-slate-100">{detail.appName}</span>
+                                          <span className="text-xs text-slate-500 font-mono">{detail.appId}</span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-slate-400">-</span>
+                                      )}
+                                    </td>
+                                    <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                                      {detail.id}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-mono">
+                                      {(detail.size / 1024 / 1024).toFixed(2)} MB
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                                      {new Date(detail.mtime).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-slate-500 italic">
+                                      {detail.orphanedReason || '-'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
                     </div>
                   </div>
                 </section>
