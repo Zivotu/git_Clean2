@@ -33,6 +33,15 @@ function createChildEnv(overrides?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return env;
 }
 
+function formatNpmError(message: string): string {
+  if (/EACCES/i.test(message) || /permission denied/i.test(message)) {
+    const hint =
+      'Permission denied while writing npm cache. On the server run: sudo chown -R $(whoami):$(whoami) ~/.npm';
+    return `${message}\n${hint}`;
+  }
+  return message;
+}
+
 async function resolveRedisConnection(): Promise<ConnectionOptions | null> {
   if (REDIS_URL) {
     const url = new URL(REDIS_URL);
@@ -128,12 +137,15 @@ async function runBuildProcess(buildId: string): Promise<void> {
 
   // Install npm dependencies in buildDir
   console.log(`[worker] Installing dependencies in ${buildDir}...`);
+  const npmCacheDir = path.join(buildDir, '.npm-cache');
+  await fs.mkdir(npmCacheDir, { recursive: true });
   const installEnv: NodeJS.ProcessEnv = {
     NODE_ENV: 'development',
     npm_config_production: 'false',
     YARN_PRODUCTION: 'false',
     pnpm_config_prod: 'false',
     BUN_INSTALL_DEV_DEPENDENCIES: '1',
+    npm_config_cache: npmCacheDir,
   };
 
   await new Promise<void>((resolve, reject) => {
@@ -164,7 +176,8 @@ async function runBuildProcess(buildId: string): Promise<void> {
         console.error(`[worker] npm install failed with code ${code}`);
         if (output) console.error(`[worker] npm stdout:`, output.trim());
         if (errorOutput) console.error(`[worker] npm stderr:`, errorOutput.trim());
-        reject(new Error(`npm install failed with code ${code}: ${errorOutput || output}`));
+        const msg = `npm install failed with code ${code}: ${errorOutput || output}`;
+        reject(new Error(formatNpmError(msg)));
       }
     });
     
@@ -243,13 +256,14 @@ async function runBuildProcess(buildId: string): Promise<void> {
           cwd: buildDir,
           shell: true,
           windowsHide: true,
-          env: createChildEnv(),
+          env: createChildEnv({ npm_config_cache: npmCacheDir }),
         });
         npm.stdout?.on('data', (d) => (output += d.toString()));
         npm.stderr?.on('data', (d) => (errorOutput += d.toString()));
         npm.on('close', (code) => {
           if (code === 0) return resolve();
-          reject(new Error(`npm install ${toInstall.join(' ')} failed: ${errorOutput || output}`));
+          const msg = `npm install ${toInstall.join(' ')} failed: ${errorOutput || output}`;
+          reject(new Error(formatNpmError(msg)));
         });
         npm.on('error', reject);
       });
