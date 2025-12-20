@@ -259,7 +259,14 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const sandboxFlags = useMemo(() => {
-    const flags = ['allow-scripts', 'allow-forms', 'allow-same-origin', 'allow-downloads'];
+    const flags = [
+      'allow-scripts',
+      'allow-forms',
+      'allow-same-origin',
+      'allow-downloads',
+      'allow-popups',
+      'allow-popups-to-escape-sandbox',
+    ];
     if (securityPolicy?.sandbox?.allowModals) {
       flags.push('allow-modals');
     }

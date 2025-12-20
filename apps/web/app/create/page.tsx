@@ -7,6 +7,7 @@ import {
   useRef,
   useCallback,
   ChangeEvent,
+  MouseEvent,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
@@ -723,7 +724,11 @@ export default function CreatePage() {
     [longDescription, screenshots],
   );
 
-  const publish = async (skipStorageWarning = false) => {
+  const publish = async (
+    skipStorageWarningInput?: boolean | MouseEvent<HTMLButtonElement>,
+  ) => {
+    const skipStorageWarning =
+      typeof skipStorageWarningInput === 'boolean' ? skipStorageWarningInput : false;
     setPublishError('');
     setAuthError('');
     setBundleError('');

@@ -375,4 +375,32 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   app.get('/admin/email-templates/:id/fallback', { preHandler: [requireRole('admin')] }, getFallbackEmailTemplateHandler);
   app.get('/api/admin/email-templates/:id/fallback', { preHandler: [requireRole('admin')] }, getFallbackEmailTemplateHandler);
+
+  const getStorageStatsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { scanBuilds } = await import('../lib/maintenance.js');
+      const stats = await scanBuilds();
+      return reply.send(stats);
+    } catch (err) {
+      req.log.error({ err }, 'get_storage_stats_failed');
+      return reply.code(500).send({ error: 'failed_to_scan' });
+    }
+  };
+
+  app.get('/admin/maintenance/builds', { preHandler: [requireRole('admin')] }, getStorageStatsHandler);
+  app.get('/api/admin/maintenance/builds', { preHandler: [requireRole('admin')] }, getStorageStatsHandler);
+
+  const pruneBuildsHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { pruneBuilds } = await import('../lib/maintenance.js');
+      const stats = await pruneBuilds(false); // Valid execution
+      return reply.send(stats);
+    } catch (err) {
+      req.log.error({ err }, 'prune_builds_failed');
+      return reply.code(500).send({ error: 'failed_to_prune' });
+    }
+  };
+
+  app.post('/admin/maintenance/builds/prune', { preHandler: [requireRole('admin')] }, pruneBuildsHandler);
+  app.post('/api/admin/maintenance/builds/prune', { preHandler: [requireRole('admin')] }, pruneBuildsHandler);
 }
