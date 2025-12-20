@@ -250,11 +250,11 @@ async function runJob(job: Job): Promise<void> {
             const artifacts = {
               previewIndex: {
                 exists: true,
-                url: `/review/builds/${id}/bundle/index.html`,
+                url: `/builds/${id}/bundle/index.html`,
               },
               bundle: {
                 exists: true,
-                url: `/review/builds/${id}/bundle/app.bundle.js`,
+                url: `/builds/${id}/bundle/app.bundle.js`,
               },
             };
             await writeJson(path.join(dir, 'artifacts.json'), artifacts);

@@ -379,7 +379,7 @@ export async function getBuildArtifacts(id: string): Promise<BuildArtifacts> {
 
   let previewIndex: ArtifactInfo;
   if (bundleIndexExists) {
-    previewIndex = { exists: true, url: `/review/builds/${id}/bundle/index.html` };
+    previewIndex = { exists: true, url: `/builds/${id}/bundle/index.html` };
   } else if (legacyPreviewExists) {
     previewIndex = { exists: true, url: `/review/previews/${id}/index.html` };
   } else {

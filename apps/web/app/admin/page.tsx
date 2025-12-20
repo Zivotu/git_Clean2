@@ -402,7 +402,7 @@ export default function AdminDashboard() {
 
       // Use the direct bundle URL if available (bundle-first), otherwise fallback
       const previewUrl = idx.previewIndex?.exists
-        ? joinUrl(PUBLIC_API_URL, idx.previewIndex.url)
+        ? resolvePreviewUrl(idx.previewIndex.url || '')
         : resolvePreviewUrl(match?.previewUrl);
 
       const preview = previewUrl || joinUrl(PUBLIC_API_URL, '/assets/preview-placeholder.svg');

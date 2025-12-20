@@ -447,7 +447,7 @@ export default async function reviewRoutes(app: FastifyInstance) {
     let previewIndex: { exists: boolean; url?: string };
     try {
       await fs.access(bundleIndexPath);
-      previewIndex = { exists: true, url: `/review/builds/${buildId}/bundle/index.html` };
+      previewIndex = { exists: true, url: `/builds/${buildId}/bundle/index.html` };
     } catch {
       // 2. Fallback: provjeri postoji li legacy preview
       const legacyPreviewPath = path.join(PREVIEW_ROOT, buildId, 'index.html');
