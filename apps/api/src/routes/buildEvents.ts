@@ -225,4 +225,5 @@ async function handler(
 
 export default async function registerBuildEvents(fastify: FastifyInstance) {
   fastify.get('/api/build/:buildId/events', ROUTE_SCHEMA, handler);
+  fastify.get('/api/review/builds/:buildId/events', ROUTE_SCHEMA, handler);
 }

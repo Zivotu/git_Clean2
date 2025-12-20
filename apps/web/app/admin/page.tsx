@@ -331,7 +331,10 @@ export default function AdminDashboard() {
     setPreviewSrc(null);
   };
 
-  const previewLink = currentBuildId
+  const buildPreviewLink = currentBuildId
+    ? resolvePreviewUrl(`/builds/${currentBuildId}/build/index.html`)
+    : null;
+  const bundlePreviewLink = currentBuildId
     ? resolvePreviewUrl(`/builds/${currentBuildId}/bundle/index.html`)
     : null;
   const manifestLink =
@@ -1854,10 +1857,16 @@ export default function AdminDashboard() {
                           <Download className="h-4 w-4" />
                           Download Bundle
                         </button>
-                        {previewLink && (
-                          <a href={previewLink} target="_blank" className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors">
+                        {buildPreviewLink && (
+                          <a href={buildPreviewLink} target="_blank" className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors">
                             <ExternalLink className="h-4 w-4" />
-                            Preview
+                            Preview (build)
+                          </a>
+                        )}
+                        {bundlePreviewLink && (
+                          <a href={bundlePreviewLink} target="_blank" className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors">
+                            <ExternalLink className="h-4 w-4" />
+                            Bundle HTML
                           </a>
                         )}
                         {manifestLink && (
