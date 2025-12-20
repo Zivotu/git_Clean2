@@ -133,8 +133,12 @@ function timelineClass(state: BuildState): string {
   return 'timeline-step timeline-step-active';
 }
 function BuildTimeline({ buildId }: { buildId: string }) {
-  const API = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
-  const { events, status, error } = useBuildSse(`${API}/review/builds/${buildId}/events`);
+  const apiBase =
+    (PUBLIC_API_URL && PUBLIC_API_URL.trim()) ||
+    (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '') ||
+    '/api';
+  const eventsUrl = joinUrl(apiBase, `/review/builds/${buildId}/events`);
+  const { events, status, error } = useBuildSse(eventsUrl);
   return (
     <div className="mt-3 border rounded p-3">
       <div className="text-sm opacity-70">SSE: {status}{error ? ` — ${error}` : ''}</div>
@@ -328,7 +332,7 @@ export default function AdminDashboard() {
   };
 
   const previewLink = currentBuildId
-    ? joinUrl(PUBLIC_API_URL, `/review/builds/${currentBuildId}/index.html`)
+    ? resolvePreviewUrl(`/builds/${currentBuildId}/bundle/index.html`)
     : null;
   const manifestLink =
     artifacts?.manifest?.exists && artifacts.manifest.url
