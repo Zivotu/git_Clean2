@@ -33,6 +33,7 @@ import createxProxy from './routes/createxProxy.js';
 import recenzijeRoutes from './routes/recenzije.js';
 import feedbackRoutes from './routes/feedback.js';
 import partnershipRoutes from './routes/partnership.js';
+import workshopRoutes from './routes/workshop.js';
 import teamApplicationsRoutes from './routes/teamApplications.js';
 import roomsRoutes from './routes/rooms.js';
 import roomsStorageRoutes from './routes/roomsStorage.js';
@@ -826,6 +827,7 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
   await app.register(recenzijeRoutes);
   await app.register(feedbackRoutes);
   await app.register(partnershipRoutes);
+  await app.register(workshopRoutes);
   await app.register(teamApplicationsRoutes);
   await app.register(roomsRoutes);
   await app.register(roomsStorageRoutes);
@@ -948,8 +950,8 @@ export async function start(): Promise<void> {
   const { app } = await createServer();
   const enableWorker = process.env.CREATEX_WORKER_ENABLED === 'true';
   const inlineLocalDevWorker = process.env.LOCAL_DEV_WORKER_INLINE === 'true';
-  const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => {} };
-  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => {} };
+  const buildWorker = enableWorker ? startCreatexBuildWorker() : { close: async () => { } };
+  const bundleWorker = enableWorker ? startBundleBuildWorker() : { close: async () => { } };
   const localDevWorker = inlineLocalDevWorker ? startLocalDevWorker() : null;
 
   const shutdown = async (signal: string) => {
@@ -991,7 +993,7 @@ export async function start(): Promise<void> {
         const diagDir = path.join(process.cwd(), '.diag');
         fs.mkdirSync(diagDir, { recursive: true });
         fs.writeFileSync(path.join(diagDir, 'api-port.txt'), String(port));
-      } catch {}
+      } catch { }
 
       listened = true;
       break;
@@ -1020,7 +1022,7 @@ export async function start(): Promise<void> {
 
     try {
       await app.close();
-    } catch {}
+    } catch { }
 
     throw error;
   }
