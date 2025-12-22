@@ -1,4 +1,4 @@
-import { API_URL } from '@/lib/config';
+import { API_URL, PUBLIC_API_URL } from '@/lib/config';
 
 function normalizePath(path: string): string {
   return path.startsWith('/') ? path : `/${path}`;
@@ -33,10 +33,24 @@ const STATIC_API_PATHS = ['/uploads/', '/builds/', '/public/builds/', '/review/b
 function getApiOrigin(): string {
   const explicitOrigin = (process.env.NEXT_PUBLIC_API_ORIGIN || '').trim().replace(/\/+$/, '');
   if (explicitOrigin) return explicitOrigin;
+
+  // Always prefer public API URL for generating public links/previews
+  if (PUBLIC_API_URL) {
+    try {
+      // If PUBLIC_API_URL is absolute (e.g. https://thesara.space/api), use its origin
+      // If it is relative (e.g. /api), accessing .origin on a new URL(string) might fail if base not provided
+      // But usually PUBLIC_API_URL in prod is absolute.
+      if (/^https?:\/\//i.test(PUBLIC_API_URL)) {
+        return new URL(PUBLIC_API_URL).origin;
+      }
+    } catch { }
+  }
+
+  // Fallback to runtime API_URL (internal) only if public failed, though unlikely for public assets
   if (API_URL) {
     try {
       return new URL(API_URL).origin;
-    } catch {}
+    } catch { }
   }
   return '';
 }
@@ -55,9 +69,14 @@ function buildApiAssetUrl(resourcePath: string): string {
   }
 
   let pathname = '/';
-  if (API_URL) {
+  // Use the same URL source for partial path as we did for origin
+  const sourceUrl = PUBLIC_API_URL || API_URL;
+  if (sourceUrl) {
     try {
-      const parsed = new URL(API_URL);
+      const parsed = new URL(sourceUrl, 'http://dummy.base');
+      // Passing dummy base to handle relative PUBLIC_API_URL safely if needed, 
+      // though typically we care about pathname logic here.
+      // If sourceUrl is absolute, dummy base is ignored.
       pathname = parsed.pathname;
     } catch {
       pathname = '/';

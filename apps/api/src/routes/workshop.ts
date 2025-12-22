@@ -75,17 +75,18 @@ export default async function workshopRoutes(app: FastifyInstance) {
                 auth: { user, pass },
             });
 
-            const subjectLine = 'EDUKACIJA - PRIJAVA';
+            const subjectLine = 'WORKSHOP - REGISTRATION';
             const lines = [
-                'Hvala na prijavi za radionicu!',
+                'Thank you for registering for the workshop!',
                 '',
-                'Datum: 29. prosinca 2025.',
-                'Vrijeme: 20:00 CET',
+                'Date: December 29th, 2025',
+                'Time: 8:00 PM CET',
                 '',
-                'Link za Zoom će biti poslan naknadno.', // Generic message for now, or I can add the link if I had it.
-                'Vidimo se!',
+                'The Zoom link will be sent to your email shortly. Please keep an eye on your inbox!',
                 '',
-                'Thesara Tim'
+                'See you there!',
+                '',
+                'Thesara Team'
             ].join('\n');
 
             // Wait, "Kopiraj logiku iz obrazaca s naslovnice" might mean "Use the same SMTP settings".
