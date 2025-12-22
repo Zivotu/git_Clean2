@@ -1324,6 +1324,15 @@ async function runBundleBuildProcess(
       }
       await fs.writeFile(indexPath, html, 'utf8');
       console.log(`[bundle-worker] Injected storage shim + base href into index.html.`);
+
+      // FIX: Ensure referenced index.css exists to prevent 404/MIME errors common in some build tool templates
+      if (html.includes('href="./index.css"') || html.includes('href="index.css"')) {
+        const cssPath = path.join(buildDir, 'index.css');
+        if (!(await fileExists(cssPath))) {
+          await fs.writeFile(cssPath, '/* empty css shim */', 'utf8');
+          console.log(`[bundle-worker] Created empty index.css shim because it was referenced but missing.`);
+        }
+      }
     } catch (err) {
       console.warn(`[bundle-worker] Could not inject shims into ${indexPath}.`, err);
       // This might not be a fatal error if the app doesn't need storage.
