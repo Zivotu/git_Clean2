@@ -30,13 +30,23 @@ export default function NeonWorkshopButton({ label, href, isDark = true }: NeonW
         return () => clearInterval(interval);
     }, []);
 
+    // For light mode, we want a solid purple background (0.9 opacity) to contrast with the light page.
+    // For dark mode, we keep the original transparent neon look (0.1 opacity).
+    const bgOpacity = isDark ? 0.1 : 0.9;
+    const hoverBgOpacity = isDark ? 0.2 : 1.0;
+
+    // In light mode with solid purple bg, the text needs less shadow or a different shadow.
+    // Actually white text on purple is good. 
+    // But the icon color needs to be white if background is solid purple.
+    const iconColor = isDark ? `rgb(${mainRgb})` : '#FFF';
+
     return (
         <Link
             href={href}
             className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full border-2 px-6 py-3 text-sm font-bold transition-all hover:scale-105"
             style={{
                 borderColor: `rgba(${mainRgb}, ${glowIntensity})`,
-                background: `linear-gradient(135deg, rgba(${mainRgb}, 0.1), rgba(${secondaryRgb}, 0.1))`,
+                background: `linear-gradient(135deg, rgba(${mainRgb}, ${bgOpacity}), rgba(${secondaryRgb}, ${bgOpacity}))`,
                 boxShadow: `0 0 ${20 * glowIntensity}px rgba(${mainRgb}, 0.6), 0 0 ${40 * glowIntensity}px rgba(${secondaryRgb}, 0.4)`,
             }}
         >
@@ -44,7 +54,7 @@ export default function NeonWorkshopButton({ label, href, isDark = true }: NeonW
             <div
                 className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
                 style={{
-                    background: `linear-gradient(135deg, rgba(${mainRgb}, 0.2), rgba(${secondaryRgb}, 0.2))`,
+                    background: `linear-gradient(135deg, rgba(${mainRgb}, ${hoverBgOpacity}), rgba(${secondaryRgb}, ${hoverBgOpacity}))`,
                 }}
             />
 
@@ -52,8 +62,8 @@ export default function NeonWorkshopButton({ label, href, isDark = true }: NeonW
             <Sparkles
                 className="relative z-10 h-5 w-5 animate-pulse"
                 style={{
-                    color: `rgb(${mainRgb})`,
-                    filter: `drop-shadow(0 0 ${8 * glowIntensity}px rgba(${mainRgb}, 0.8))`
+                    color: iconColor,
+                    filter: `drop-shadow(0 0 ${8 * glowIntensity}px rgba(${isDark ? mainRgb : '255,255,255'}, 0.8))`
                 }}
             />
 
