@@ -56,9 +56,9 @@ export default function WorkshopPage() {
             tWorkshop('details.topics.2', 'Kako monetizirati svoju prvu aplikaciju'),
             tWorkshop('details.topics.3', 'Live Q&A - sva pitanja dobrodošla'),
         ],
-        backToHome: tWorkshop('backToHome', 'Povratak na početnu'),
-        daysUnit: tWorkshop('daysUnit', 'dana'),
-        hoursUnit: tWorkshop('hoursUnit', 'sati'),
+        backToHome: tWorkshop('details.backToHome', 'Povratak na početnu'),
+        daysUnit: tWorkshop('details.daysUnit', 'dana'),
+        hoursUnit: tWorkshop('details.hoursUnit', 'sati'),
         privacyNote: tWorkshop('details.privacyNote', 'Tvoj email koristimo samo za slanje linka. Neće biti prosljeđen trećim stranama.'),
         languageNote: tWorkshop('details.languageNote', 'Napomena: Radionica će se održati na engleskom jeziku.'),
     };
