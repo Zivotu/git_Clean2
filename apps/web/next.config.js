@@ -122,15 +122,24 @@ const baseConfig = {
               const adScriptHosts = [
                 'https://pagead2.googlesyndication.com',
                 'https://www.googletagservices.com',
+                'https://www.googletagmanager.com',
+                'https://www.google-analytics.com',
+                'https://www.clarity.ms',
+                'https://cdn.tailwindcss.com',
               ];
               const adFrameHosts = [
                 'https://googleads.g.doubleclick.net',
                 'https://tpc.googlesyndication.com',
+                'https://www.googletagmanager.com',
               ];
               const adImgHosts = [
                 'https://pagead2.googlesyndication.com',
                 'https://tpc.googlesyndication.com',
                 'https://googleads.g.doubleclick.net',
+                'https://www.google-analytics.com',
+                'https://www.googletagmanager.com',
+                'https://www.clarity.ms',
+                'https://c.clarity.ms',
               ];
 
               const devConnect = isDev ? ' http://127.0.0.1:8789 http://localhost:8789' : '';
@@ -144,7 +153,7 @@ const baseConfig = {
               const policies = [
                 "default-src 'self'",
                 `script-src ${scriptSrc}`,
-                "style-src 'self' 'unsafe-inline'",
+                "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
                 `connect-src ${connectSrc}${devConnect}`,
                 `frame-src ${frameSrc}`,
                 `img-src ${imgSrc}${devImg}`,

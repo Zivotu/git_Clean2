@@ -701,6 +701,12 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       const buf = await readFile(path.join(rootDir, wildcard));
       return reply.send(buf);
     } catch (err) {
+      // Serve empty CSS if missing to avoid MIME errors and 404s
+      if (ext === '.css') {
+        req.log?.info?.({ buildId, file: wildcard }, 'serving_empty_css_fallback');
+        return reply.type('text/css; charset=utf-8').send('/* empty */');
+      }
+
       // Fallback: attempt to serve the same file from `bundle/` directory for local dev builds
       const bundleRoot = path.join(config.BUNDLE_STORAGE_PATH, 'builds', buildId, 'bundle');
       try {
@@ -719,7 +725,6 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       }
     }
   });
-
   // Serve top-level manifest when requested under the `build/` prefix.
   // Some clients request `/builds/:id/build/manifest_v1.json` while the
   // canonical file is stored at `.../builds/:id/manifest_v1.json`. Provide a
