@@ -88,7 +88,7 @@ export default function WorkshopPageClient({ translations: t }: WorkshopPageClie
         }
     };
 
-    const workshopDate = new Date('2026-01-29T20:00:00');
+    const workshopDate = new Date('2025-12-29T20:00:00');
     const now = new Date();
     const timeDiff = workshopDate.getTime() - now.getTime();
     const daysLeft = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));

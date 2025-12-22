@@ -28,7 +28,7 @@ export default async function workshopRoutes(app: FastifyInstance) {
         await db.collection('workshop-registrations').add({
             email: email.toLowerCase(),
             registeredAt: new Date().toISOString(),
-            workshopDate: '2026-01-29T20:00:00', // Updated date
+            workshopDate: '2025-12-29T20:00:00', // Updated date
             locale: req.headers['accept-language']?.split(',')[0] || 'hr',
             userAgent: req.headers['user-agent'] || '',
         });
@@ -79,7 +79,7 @@ export default async function workshopRoutes(app: FastifyInstance) {
             const lines = [
                 'Hvala na prijavi za radionicu!',
                 '',
-                'Datum: 29. siječnja 2026.',
+                'Datum: 29. prosinca 2025.',
                 'Vrijeme: 20:00 CET',
                 '',
                 'Link za Zoom će biti poslan naknadno.', // Generic message for now, or I can add the link if I had it.
@@ -102,7 +102,7 @@ export default async function workshopRoutes(app: FastifyInstance) {
                     from,
                     to: 'activity@thesara.space',
                     subject: `New Workshop Registration: ${email}`,
-                    text: `User ${email} registered for workshop on 2026-01-29.`,
+                    text: `User ${email} registered for workshop on 2025-12-29.`,
                 });
             } catch (err) {
                 req.log.error({ err }, 'workshop_email_failed');
