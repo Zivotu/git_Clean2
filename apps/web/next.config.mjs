@@ -133,6 +133,7 @@ const baseConfig = {
                 'https://www.googletagmanager.com',
                 'https://www.google-analytics.com',
                 'https://www.clarity.ms',
+                'https://scripts.clarity.ms',
                 'https://cdn.tailwindcss.com',
               ];
               const adFrameHosts = [
@@ -162,9 +163,11 @@ const baseConfig = {
               connectSrc.add('https://www.google-analytics.com');
               connectSrc.add('https://region1.google-analytics.com');
               connectSrc.add('https://www.googletagmanager.com');
+              connectSrc.add('https://www.google.com'); // For /ccm/collect
+
               const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins, 'blob:', ...adFrameHosts]);
               adFrameHosts.forEach((origin) => connectSrc.add(origin));
-              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', ...adImgHosts]);
+              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', 'https://firebasestorage.googleapis.com', 'https://www.google.com', ...adImgHosts]);
               if (isDev) {
                 imgSrc.add('http://127.0.0.1:8788');
                 imgSrc.add('http://localhost:8788');
