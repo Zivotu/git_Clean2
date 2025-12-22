@@ -9,16 +9,32 @@ const SplashScreen = () => {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (localStorage.getItem('hasSeenSplashScreen') === 'true') {
+    // Check if user has seen the splash screen (optional: change key to reset for new campaign)
+    // For now keeping the same key as requested, but we can update to 'hasSeenSplashScreen_v2' if needed.
+    if (localStorage.getItem('hasSeenWorkshopSplash') === 'true') {
       setVisible(false);
       return;
     }
+
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setImageSrc('/assets/WorkShop_1_vert.jpg');
+      } else {
+        setImageSrc('/assets/WorkShop_1_horiz.jpg');
+      }
+    };
+
+    // Initial check
+    handleResize();
+
     setVisible(true);
-    setImageSrc('/assets/Thesara_ChristmasPresent_1.jpg');
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleClick = () => {
-    localStorage.setItem('hasSeenSplashScreen', 'true');
+    localStorage.setItem('hasSeenWorkshopSplash', 'true');
     setVisible(false);
   };
 
