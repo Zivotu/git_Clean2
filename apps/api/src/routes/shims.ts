@@ -17,7 +17,6 @@ export default async function shims(app: FastifyInstance) {
 
   app.get('/shims/rooms.js', async (_req, reply) => {
     reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
-    reply.header('Access-Control-Allow-Origin', '*');
     reply.header('Cache-Control', 'public, max-age=3600');
     reply.type('application/javascript').send(ROOMS_CLIENT_SHIM);
   });

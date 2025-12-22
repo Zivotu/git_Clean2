@@ -99,11 +99,11 @@ const baseConfig = {
   async headers() {
     return [
       {
-        source: '/play/:path*',
+        source: '/:path*',
         headers: [
-          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
           { key: 'Permissions-Policy', value: PERMISSIONS_POLICY_VALUE },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
           {
             key: 'Content-Security-Policy',
             value: (() => {
@@ -120,6 +120,8 @@ const baseConfig = {
                 'https://firestore.googleapis.com',
                 'https://identitytoolkit.googleapis.com',
                 'https://securetoken.googleapis.com',
+                'https://*.googleapis.com',
+                'https://*.gstatic.com',
               ];
               if (isDev && process.env.NEXT_PUBLIC_ENABLE_DEV_PARENT_FIREBASE === '1') {
                 firebaseOrigins.push('https://www.googleapis.com');
@@ -130,10 +132,13 @@ const baseConfig = {
                 'https://www.googletagservices.com',
                 'https://www.googletagmanager.com',
                 'https://www.google-analytics.com',
+                'https://www.clarity.ms',
+                'https://cdn.tailwindcss.com',
               ];
               const adFrameHosts = [
                 'https://googleads.g.doubleclick.net',
                 'https://tpc.googlesyndication.com',
+                'https://www.googletagmanager.com',
               ];
               const adImgHosts = [
                 'https://pagead2.googlesyndication.com',
@@ -141,7 +146,8 @@ const baseConfig = {
                 'https://googleads.g.doubleclick.net',
                 'https://www.google-analytics.com',
                 'https://www.googletagmanager.com',
-                'https://region1.google-analytics.com',
+                'https://www.clarity.ms',
+                'https://c.clarity.ms',
               ];
 
               const scriptSrc = ["'self'", "'unsafe-inline'", ...adScriptHosts];
@@ -167,7 +173,7 @@ const baseConfig = {
               const policies = [
                 "default-src 'self'",
                 `script-src ${Array.from(new Set(scriptSrc)).join(' ')}`,
-                "style-src 'self' 'unsafe-inline'",
+                "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com",
                 `connect-src ${Array.from(connectSrc).join(' ')}`,
                 `frame-src ${Array.from(frameSrc).join(' ')}`,
                 `img-src ${Array.from(imgSrc).join(' ')}`,
@@ -176,6 +182,12 @@ const baseConfig = {
               return policies.join('; ');
             })(),
           },
+        ],
+      },
+      {
+        source: '/play/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         ],
       },
     ];
