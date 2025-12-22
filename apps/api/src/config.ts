@@ -112,7 +112,7 @@ function parseOptionalMs(value?: string): number | undefined {
 
 export function getConfig() {
   const nodeEnv = process.env.NODE_ENV;
-  const PORT = parseNumberEnv('PORT', 8789);
+  const PORT = parseNumberEnv('PORT', 8788);
   const PUBLIC_BASE = process.env.PUBLIC_BASE || `http://127.0.0.1:${PORT}`;
   const WEB_BASE = process.env.WEB_BASE || 'http://localhost:3000';
   const STRIPE_SUCCESS_URL =
@@ -250,8 +250,8 @@ export function getConfig() {
     STORAGE_DRIVER,
     PUBLIC_BASE,
     APPS_BASE_URL: process.env.APPS_BASE_URL || `${PUBLIC_BASE}/play`,
-      WEB_BASE,
-      SAFE_PUBLISH_ENABLED: process.env.SAFE_PUBLISH_ENABLED === 'true',
+    WEB_BASE,
+    SAFE_PUBLISH_ENABLED: process.env.SAFE_PUBLISH_ENABLED === 'true',
     INJECT_SESSION_SDK,
     LLM_REVIEW_ENABLED,
     LLM_PROVIDER,
@@ -261,12 +261,12 @@ export function getConfig() {
     AUTH_DEBUG,
     LLM_ENDPOINT,
     REQUIRE_PUBLISH_APPROVAL,
-      SANDBOX_SUBDOMAIN_ENABLED: process.env.SANDBOX_SUBDOMAIN_ENABLED !== 'false',
-      SANDBOX_BASE_DOMAIN: process.env.SANDBOX_BASE_DOMAIN,
-      ROOMS_ENABLED: process.env.ROOMS_ENABLED === 'true',
-      COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
-      IP_SALT,
-      REACT_VERSION: process.env.REACT_VERSION || '18.2.0',
+    SANDBOX_SUBDOMAIN_ENABLED: process.env.SANDBOX_SUBDOMAIN_ENABLED !== 'false',
+    SANDBOX_BASE_DOMAIN: process.env.SANDBOX_BASE_DOMAIN,
+    ROOMS_ENABLED: process.env.ROOMS_ENABLED === 'true',
+    COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
+    IP_SALT,
+    REACT_VERSION: process.env.REACT_VERSION || '18.2.0',
     HTTPS_KEY: process.env.HTTPS_KEY,
     HTTPS_CERT: process.env.HTTPS_CERT,
     ALLOWED_ORIGINS:
@@ -411,8 +411,8 @@ export function getConfig() {
     PUBLISH_CSP_AUTOFIX: publishCspAutofix,
     PUBLISH_CSP_AUTOFIX_STRICT: publishCspAutofixStrict,
     PUBLISH_VENDOR_MAX_DOWNLOAD_BYTES: Math.max(0, publishVendorMaxMb * 1024 * 1024),
-  PUBLISH_VENDOR_TIMEOUT_MS: publishVendorTimeoutMs,
-  SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE: SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE,
+    PUBLISH_VENDOR_TIMEOUT_MS: publishVendorTimeoutMs,
+    SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE: SAFE_PUBLISH_ENFORCE_ROOMS_BRIDGE,
 
   };
 }

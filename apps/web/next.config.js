@@ -5,7 +5,7 @@ const SAFE_PUBLISH_ENABLED = process.env.SAFE_PUBLISH_ENABLED === 'true';
 const isDev = process.env.NODE_ENV !== 'production';
 const APPS_HOST = (process.env.NEXT_PUBLIC_APPS_HOST || 'https://apps.thesara.space').replace(/\/+$/, '');
 // API_BASE without /api suffix for routes served directly (shims, builds, etc.)
-const API_BASE = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8789/api').replace(/\/api$/, '');
+const API_BASE = (process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8788/api').replace(/\/api$/, '');
 // API_URL with /api suffix for standard API routes
 const API_URL = API_BASE + '/api';
 
