@@ -93,6 +93,7 @@ export default function HomeHero({
                         <NeonWorkshopButton
                             label={tBeta('Workshop.button', 'PRIJAVI SE NA TRENING')}
                             href="/workshop"
+                            isDark={isDark}
                         />
                     </div>
 

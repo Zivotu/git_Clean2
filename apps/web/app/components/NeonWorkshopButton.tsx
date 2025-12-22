@@ -6,10 +6,22 @@ import { useEffect, useState } from 'react';
 type NeonWorkshopButtonProps = {
     label: string;
     href: string;
+    isDark?: boolean;
 };
 
-export default function NeonWorkshopButton({ label, href }: NeonWorkshopButtonProps) {
+export default function NeonWorkshopButton({ label, href, isDark = true }: NeonWorkshopButtonProps) {
     const [glowIntensity, setGlowIntensity] = useState(1);
+
+    // Colors
+    // Green: 34, 197, 94 (#22C55E)
+    // Purple: 168, 85, 247 (#A855F7)
+
+    // Dark Mode: Green Primary, Purple Secondary
+    // Light Mode: Purple Primary, Green Secondary (or maybe keep purple/purple?)
+    // User asked for "Purple with white letters" in light mode.
+
+    const mainRgb = isDark ? '34, 197, 94' : '168, 85, 247';
+    const secondaryRgb = isDark ? '168, 85, 247' : '34, 197, 94';
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -23,16 +35,16 @@ export default function NeonWorkshopButton({ label, href }: NeonWorkshopButtonPr
             href={href}
             className="group relative inline-flex items-center gap-2 overflow-hidden rounded-full border-2 px-6 py-3 text-sm font-bold transition-all hover:scale-105"
             style={{
-                borderColor: `rgba(34, 197, 94, ${glowIntensity})`,
-                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(168, 85, 247, 0.1))',
-                boxShadow: `0 0 ${20 * glowIntensity}px rgba(34, 197, 94, 0.6), 0 0 ${40 * glowIntensity}px rgba(168, 85, 247, 0.4)`,
+                borderColor: `rgba(${mainRgb}, ${glowIntensity})`,
+                background: `linear-gradient(135deg, rgba(${mainRgb}, 0.1), rgba(${secondaryRgb}, 0.1))`,
+                boxShadow: `0 0 ${20 * glowIntensity}px rgba(${mainRgb}, 0.6), 0 0 ${40 * glowIntensity}px rgba(${secondaryRgb}, 0.4)`,
             }}
         >
             {/* Animated gradient background */}
             <div
                 className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
                 style={{
-                    background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(168, 85, 247, 0.2))',
+                    background: `linear-gradient(135deg, rgba(${mainRgb}, 0.2), rgba(${secondaryRgb}, 0.2))`,
                 }}
             />
 
@@ -40,8 +52,8 @@ export default function NeonWorkshopButton({ label, href }: NeonWorkshopButtonPr
             <Sparkles
                 className="relative z-10 h-5 w-5 animate-pulse"
                 style={{
-                    color: '#22C55E',
-                    filter: `drop-shadow(0 0 ${8 * glowIntensity}px rgba(34, 197, 94, 0.8))`
+                    color: `rgb(${mainRgb})`,
+                    filter: `drop-shadow(0 0 ${8 * glowIntensity}px rgba(${mainRgb}, 0.8))`
                 }}
             />
 
@@ -50,7 +62,7 @@ export default function NeonWorkshopButton({ label, href }: NeonWorkshopButtonPr
                 className="relative z-10 uppercase tracking-wide"
                 style={{
                     color: '#FFF',
-                    textShadow: `0 0 ${10 * glowIntensity}px rgba(34, 197, 94, 0.8), 0 0 ${20 * glowIntensity}px rgba(168, 85, 247, 0.6)`
+                    textShadow: `0 0 ${10 * glowIntensity}px rgba(${mainRgb}, 0.8), 0 0 ${20 * glowIntensity}px rgba(${secondaryRgb}, 0.6)`
                 }}
             >
                 {label}
@@ -61,7 +73,7 @@ export default function NeonWorkshopButton({ label, href }: NeonWorkshopButtonPr
                 className="absolute inset-0 rounded-full opacity-75 transition-opacity group-hover:opacity-100"
                 style={{
                     background: 'transparent',
-                    border: '1px solid rgba(34, 197, 94, 0.5)',
+                    border: `1px solid rgba(${mainRgb}, 0.5)`,
                     animation: 'neon-pulse 2s infinite',
                 }}
             />
@@ -69,13 +81,13 @@ export default function NeonWorkshopButton({ label, href }: NeonWorkshopButtonPr
             <style jsx>{`
                 @keyframes neon-pulse {
                     0%, 100% {
-                        box-shadow: 0 0 5px rgba(34, 197, 94, 0.5), 
-                                    0 0 10px rgba(34, 197, 94, 0.3);
+                        box-shadow: 0 0 5px rgba(${mainRgb}, 0.5), 
+                                    0 0 10px rgba(${mainRgb}, 0.3);
                     }
                     50% {
-                        box-shadow: 0 0 15px rgba(34, 197, 94, 0.8), 
-                                    0 0 30px rgba(34, 197, 94, 0.5),
-                                    0 0 40px rgba(168, 85, 247, 0.3);
+                        box-shadow: 0 0 15px rgba(${mainRgb}, 0.8), 
+                                    0 0 30px rgba(${mainRgb}, 0.5),
+                                    0 0 40px rgba(${secondaryRgb}, 0.3);
                     }
                 }
             `}</style>
