@@ -18,7 +18,7 @@ function flatten(obj: any, prefix = ''): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj || {})) {
     const key = prefix ? `${prefix}.${k}` : k;
-    if (v && typeof v === 'object' && !Array.isArray(v)) {
+    if (v && typeof v === 'object') {
       Object.assign(out, flatten(v as any, key));
     } else {
       out[key] = String(v);
