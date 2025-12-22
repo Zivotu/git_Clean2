@@ -792,6 +792,11 @@ export function Slider(p:any){return React.createElement('input',{type:'range',.
       const buf = await readFile(path.join(rootDir, wildcard));
       return reply.send(buf);
     } catch (err) {
+      // Serve empty CSS if missing to avoid MIME errors and 404s
+      if (ext === '.css') {
+        req.log?.info?.({ buildId, file: wildcard }, 'serving_empty_css_fallback');
+        return reply.type('text/css; charset=utf-8').send('/* empty */');
+      }
       req.log?.warn?.({ err, buildId, file: wildcard }, 'build_asset_not_found');
       return reply.code(404).send({ error: 'not_found' });
     }
