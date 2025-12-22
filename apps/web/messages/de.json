@@ -785,7 +785,8 @@
         "backToHome": "Zurück zur Startseite",
         "daysUnit": "Tage",
         "hoursUnit": "Stunden",
-        "privacyNote": "Wir verwenden Ihre E-Mail nur zum Versenden des Workshop-Links. Sie wird nicht an Dritte weitergegeben."
+        "privacyNote": "Wir verwenden Ihre E-Mail nur zum Versenden des Workshop-Links. Sie wird nicht an Dritte weitergegeben.",
+        "languageNote": "Hinweis: Der Workshop wird auf Englisch abgehalten."
       }
     },
     "sidebar": {

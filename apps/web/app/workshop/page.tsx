@@ -59,7 +59,8 @@ export default function WorkshopPage() {
         backToHome: tWorkshop('backToHome', 'Povratak na početnu'),
         daysUnit: tWorkshop('daysUnit', 'dana'),
         hoursUnit: tWorkshop('hoursUnit', 'sati'),
-        privacyNote: tWorkshop('privacyNote', 'Tvoj email koristimo samo za slanje linka. Neće biti prosljeđen trećim stranama.'),
+        privacyNote: tWorkshop('details.privacyNote', 'Tvoj email koristimo samo za slanje linka. Neće biti prosljeđen trećim stranama.'),
+        languageNote: tWorkshop('details.languageNote', 'Napomena: Radionica će se održati na engleskom jeziku.'),
     };
 
     return <WorkshopPageClient translations={translations} />;

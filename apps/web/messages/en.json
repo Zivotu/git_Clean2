@@ -839,7 +839,8 @@
         "backToHome": "Back to Home",
         "daysUnit": "days",
         "hoursUnit": "hours",
-        "privacyNote": "We only use your email to send the workshop link. It will not be shared with third parties."
+        "privacyNote": "We only use your email to send the workshop link. It will not be shared with third parties.",
+        "languageNote": "Note: The workshop will be held in English."
       }
     },
     "hero": {

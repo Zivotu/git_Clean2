@@ -840,7 +840,8 @@
         "backToHome": "Povratak na početnu",
         "daysUnit": "dana",
         "hoursUnit": "sati",
-        "privacyNote": "Tvoj email koristimo samo za slanje linka. Neće biti prosljeđen trećim stranama."
+        "privacyNote": "Tvoj email koristimo samo za slanje linka. Neće biti prosljeđen trećim stranama.",
+        "languageNote": "Napomena: Radionica će se održati na engleskom jeziku."
       },
       "beFirst": "Budi prvi koji će objaviti mini aplikaciju."
     },
