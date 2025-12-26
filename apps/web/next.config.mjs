@@ -165,10 +165,11 @@ const baseConfig = {
               connectSrc.add('https://region1.analytics.google.com');
               connectSrc.add('https://www.googletagmanager.com');
               connectSrc.add('https://www.google.com'); // For /ccm/collect
+              connectSrc.add('https://www.googleapis.com');
 
               const frameSrc = new Set([appsHost, apiOrigin, ...devApiOrigins, 'blob:', ...adFrameHosts]);
               adFrameHosts.forEach((origin) => connectSrc.add(origin));
-              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', 'https://firebasestorage.googleapis.com', 'https://www.google.com', ...adImgHosts]);
+              const imgSrc = new Set(["'self'", 'data:', 'blob:', 'https://lh3.googleusercontent.com', 'https://firebasestorage.googleapis.com', 'https://www.google.com', 'https://www.google.hr', 'https://region1.analytics.google.com', 'https://www.google.ad', ...adImgHosts]);
               if (isDev) {
                 imgSrc.add('http://127.0.0.1:8788');
                 imgSrc.add('http://localhost:8788');
