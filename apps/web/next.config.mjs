@@ -159,6 +159,7 @@ const baseConfig = {
 
               const connectSrc = new Set(["'self'", apiOrigin, ...devApiOrigins, ...firebaseOrigins]);
               adScriptHosts.forEach((origin) => connectSrc.add(origin));
+              adImgHosts.forEach((origin) => connectSrc.add(origin));
               // Allow GA/GTM connect
               connectSrc.add('https://www.google-analytics.com');
               connectSrc.add('https://region1.google-analytics.com');
