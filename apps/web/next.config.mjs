@@ -149,6 +149,7 @@ const baseConfig = {
                 'https://www.googletagmanager.com',
                 'https://www.clarity.ms',
                 'https://c.clarity.ms',
+                'https://v.clarity.ms',
               ];
 
               const scriptSrc = ["'self'", "'unsafe-inline'", ...adScriptHosts];
