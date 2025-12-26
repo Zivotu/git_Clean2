@@ -162,6 +162,7 @@ const baseConfig = {
               // Allow GA/GTM connect
               connectSrc.add('https://www.google-analytics.com');
               connectSrc.add('https://region1.google-analytics.com');
+              connectSrc.add('https://region1.analytics.google.com');
               connectSrc.add('https://www.googletagmanager.com');
               connectSrc.add('https://www.google.com'); // For /ccm/collect
 
