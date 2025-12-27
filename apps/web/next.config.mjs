@@ -137,6 +137,7 @@ const baseConfig = {
                 'https://cdn.tailwindcss.com',
                 'https://stats.g.doubleclick.net',
                 'https://googleads.g.doubleclick.net',
+                'https://apis.google.com',
               ];
               const adFrameHosts = [
                 'https://googleads.g.doubleclick.net',
