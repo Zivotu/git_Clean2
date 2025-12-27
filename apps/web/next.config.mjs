@@ -102,6 +102,7 @@ const baseConfig = {
         source: '/:path*',
         headers: [
           { key: 'Referrer-Policy', value: 'no-referrer' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
           { key: 'Permissions-Policy', value: PERMISSIONS_POLICY_VALUE },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           {
@@ -143,6 +144,7 @@ const baseConfig = {
                 'https://googleads.g.doubleclick.net',
                 'https://tpc.googlesyndication.com',
                 'https://www.googletagmanager.com',
+                'https://*.firebaseapp.com',
               ];
               const adImgHosts = [
                 'https://pagead2.googlesyndication.com',
@@ -155,7 +157,7 @@ const baseConfig = {
                 'https://v.clarity.ms',
               ];
 
-              const scriptSrc = ["'self'", "'unsafe-inline'", ...adScriptHosts];
+              const scriptSrc = ["'self'", "'unsafe-inline'", ...adScriptHosts, 'https://*.firebaseapp.com'];
               if (isDev) {
                 // unsafe-eval is needed for dev mode's sourcemaps.
                 scriptSrc.push("'unsafe-eval'", ...devApiOrigins);
@@ -164,6 +166,7 @@ const baseConfig = {
               const connectSrc = new Set(["'self'", apiOrigin, ...devApiOrigins, ...firebaseOrigins]);
               adScriptHosts.forEach((origin) => connectSrc.add(origin));
               adImgHosts.forEach((origin) => connectSrc.add(origin));
+              connectSrc.add('https://*.firebaseapp.com');
               // Allow GA/GTM connect
               connectSrc.add('https://www.google-analytics.com');
               connectSrc.add('https://region1.google-analytics.com');
