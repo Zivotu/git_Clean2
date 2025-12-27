@@ -149,6 +149,7 @@ export default function RegisterPage() {
               placeholder={field("password")}
               value={form.password}
               onChange={handleChange}
+              autoComplete="new-password"
               className="w-full rounded-md border border-gray-300 px-3 py-2"
             />
             <input
@@ -158,6 +159,7 @@ export default function RegisterPage() {
               placeholder={field("confirmPassword")}
               value={form.confirmPassword}
               onChange={handleChange}
+              autoComplete="new-password"
               className="w-full rounded-md border border-gray-300 px-3 py-2"
             />
           </div>

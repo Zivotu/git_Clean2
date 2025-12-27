@@ -135,6 +135,8 @@ const baseConfig = {
                 'https://www.clarity.ms',
                 'https://scripts.clarity.ms',
                 'https://cdn.tailwindcss.com',
+                'https://stats.g.doubleclick.net',
+                'https://googleads.g.doubleclick.net',
               ];
               const adFrameHosts = [
                 'https://googleads.g.doubleclick.net',
