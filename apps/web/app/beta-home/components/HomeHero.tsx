@@ -90,11 +90,11 @@ export default function HomeHero({
                             <HelpCircle className="h-4 w-4" />
                             <span>{tNav('tutorials') || 'Vodiči'}</span>
                         </Link>
-                        <NeonWorkshopButton
+                        {/* <NeonWorkshopButton
                             label={tBeta('Workshop.button', 'PRIJAVI SE NA TRENING')}
                             href="/workshop"
                             isDark={isDark}
-                        />
+                        /> */}
                     </div>
 
                     {/* 3 Steps Visual */}

@@ -867,13 +867,12 @@ export default function PlayPageClient({ app }: { app: AppRecord }) {
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {roomsError
             ? roomsError
-            : 'Odaberi demo sobu ili unesi vlastiti naziv i PIN kako bi nastavio/la s aplikacijom.'}
+            : messages['Rooms.errors.selectOrEnterPrompt'] ??
+            'Odaberi demo sobu ili unesi vlastiti naziv i PIN kako bi nastavio/la s aplikacijom.'}
         </div>
       </div>
     )
   }
-
-
 
   const isReady = !loading && !!bootstrap && !error
   const showOverlay = !isReady || !minLoadTimePassed || !gameReady

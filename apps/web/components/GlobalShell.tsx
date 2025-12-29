@@ -14,7 +14,7 @@ export default function GlobalShell({ children }: { children: React.ReactNode })
             className={`min-h-screen w-full transition-colors duration-300 ${isDark ? 'bg-[#09090B] text-zinc-100' : 'bg-[#F8FAFC] text-slate-900'
                 }`}
         >
-            <SplashScreen />
+            {/* <SplashScreen /> */}
 
             <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-6 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-10 lg:px-10">
                 <SidePanel
