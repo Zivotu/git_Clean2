@@ -1185,7 +1185,8 @@
     "demoButton": "Vrati se na demo (PIN 1111)",
     "errors": {
       "missingCredentials": "Unesite naziv sobe i PIN.",
-      "generic": "Rad sa sobama privremeno nije dostupan."
+      "generic": "Rad sa sobama privremeno nije dostupan.",
+      "selectOrEnterPrompt": "Odaberi demo sobu ili unesi vlastiti naziv i PIN kako bi nastavio/la s aplikacijom."
     }
   },
   "MyProjectsPage": {

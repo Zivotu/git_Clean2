@@ -1258,7 +1258,8 @@
     "demoButton": "Zum Demo-Raum zurückkehren (PIN 1111)",
     "errors": {
       "missingCredentials": "Gib einen Raumnamen und PIN an.",
-      "generic": "Die Arbeit mit Räumen ist derzeit nicht möglich."
+      "generic": "Die Arbeit mit Räumen ist derzeit nicht möglich.",
+      "selectOrEnterPrompt": "Wählen Sie einen Demo-Raum oder geben Sie Ihren eigenen Namen und PIN ein, um mit der Anwendung fortzufahren."
     }
   },
   "MyProjectsPage": {

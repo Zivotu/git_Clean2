@@ -1265,7 +1265,8 @@
     "demoButton": "Return to demo (PIN 1111)",
     "errors": {
       "missingCredentials": "Enter a room name and PIN.",
-      "generic": "Working with rooms is temporarily unavailable."
+      "generic": "Working with rooms is temporarily unavailable.",
+      "selectOrEnterPrompt": "Select a demo room or enter your own name and PIN to continue with the application."
     }
   },
   "MyProjectsPage": {
