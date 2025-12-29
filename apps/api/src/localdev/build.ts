@@ -288,7 +288,7 @@ async function dockerAvailable(): Promise<boolean> {
 async function runDocker(projectDir: string, allowScripts: boolean, log: Logger): Promise<void> {
   const ok = await dockerAvailable();
   if (!ok) {
-        const allowFallback = process.env.DEV_ALLOW_NATIVE_FALLBACK === 'true';
+    const allowFallback = process.env.DEV_ALLOW_NATIVE_FALLBACK === 'true';
     if (allowFallback) {
       log('[localdev] Docker not available, falling back to native build (DEV_ALLOW_NATIVE_FALLBACK=true)');
       return runNative(projectDir, allowScripts, log);
