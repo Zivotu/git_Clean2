@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Box, Package, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 import { useT } from '@/lib/i18n-provider';
 import ErrorBackground from './ErrorBackground';
 
@@ -82,11 +83,13 @@ export default function ProgressModal({
             <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6 text-white relative overflow-hidden">
               <div className="flex items-center justify-between">
                 {/* Thesara Logo - Left */}
-                <div className="w-12 h-12 flex-shrink-0">
-                  <img
+                <div className="w-12 h-12 flex-shrink-0 relative">
+                  <Image
                     src="/Thesara_Logo.png"
                     alt="Thesara Logo"
-                    className="w-full h-full object-contain opacity-90"
+                    fill
+                    className="object-contain opacity-90"
+                    sizes="48px"
                   />
                 </div>
 
@@ -103,10 +106,12 @@ export default function ProgressModal({
 
                 {/* Robot Error Graphic - Right (bigger, fills header) */}
                 <div className="relative h-24 w-24 flex-shrink-0">
-                  <img
+                  <Image
                     src="/Robo_error_1.png"
                     alt="Error Robot"
-                    className="w-full h-full object-contain"
+                    fill
+                    className="object-contain"
+                    sizes="96px"
                   />
                 </div>
               </div>
