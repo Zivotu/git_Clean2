@@ -15,7 +15,7 @@ export function getLocalDevConfig() {
   const hostedAppsDir = path.join(storageRoot, 'hosted-apps');
   const logsDir = path.join(storageRoot, 'logs');
 
-  const DEV_BUILD_MODE = (process.env.DEV_BUILD_MODE || 'native') as BuildMode;
+  const DEV_BUILD_MODE = (process.env.DEV_BUILD_MODE || 'docker') as BuildMode;
   const DEV_BUILD_TIMEOUT_MS = Number(process.env.DEV_BUILD_TIMEOUT_MS || 15 * 60 * 1000);
   const DEV_LOG_TAIL_LINES = Number(process.env.DEV_LOG_TAIL_LINES || 200);
   const DEV_QUEUE_CONCURRENCY = Number(process.env.DEV_QUEUE_CONCURRENCY || 1);

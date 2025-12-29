@@ -39,7 +39,7 @@ function run(cmd: string, args: string[], opts: { cwd: string; env?: NodeJS.Proc
     let killed = false;
     let to: NodeJS.Timeout | undefined;
     if (opts.timeoutMs && opts.timeoutMs > 0) {
-      to = setTimeout(() => { killed = true; try { p.kill('SIGKILL'); } catch {}; reject(new Error('timeout')); }, opts.timeoutMs);
+      to = setTimeout(() => { killed = true; try { p.kill('SIGKILL'); } catch { }; reject(new Error('timeout')); }, opts.timeoutMs);
     }
     p.stdout?.on('data', (d) => log(d.toString()));
     p.stderr?.on('data', (d) => log(d.toString()));
@@ -126,7 +126,7 @@ async function runNative(projectDir: string, allowScripts: boolean, log: Logger)
     if (typeof parsed?.packageManager === 'string') {
       packageManagerField = parsed.packageManager;
     }
-  } catch {}
+  } catch { }
 
   const pickFromField = (field: string) => {
     if (field.startsWith('npm')) return 'npm';
@@ -167,11 +167,14 @@ async function runNative(projectDir: string, allowScripts: boolean, log: Logger)
     installEnv.YARN_IGNORE_DEPENDENCY_SCRIPTS = '1';
   }
   const buildEnv: NodeJS.ProcessEnv = { ...installEnv };
-  delete buildEnv.npm_config_ignore_scripts;
-  delete buildEnv.NPM_CONFIG_IGNORE_SCRIPTS;
-  delete buildEnv.YARN_IGNORE_DEPENDENCY_SCRIPTS;
+  // SECURITY: Do NOT enable scripts for user-supplied builds. 
+  // We explicitly keep the ignore_scripts flags set in installEnv.
+  // delete buildEnv.npm_config_ignore_scripts;
+  // delete buildEnv.NPM_CONFIG_IGNORE_SCRIPTS;
+  // delete buildEnv.YARN_IGNORE_DEPENDENCY_SCRIPTS;
+
   // Ensure pnpm via corepack if available
-  try { await run('corepack', ['enable'], { cwd: projectDir, env: installEnv }, () => {}); } catch {}
+  try { await run('corepack', ['enable'], { cwd: projectDir, env: installEnv }, () => { }); } catch { }
 
   const runTimed = (cmd: string, args: string[], env: NodeJS.ProcessEnv) =>
     run(cmd, args, { cwd: projectDir, env, timeoutMs: DEV_BUILD_TIMEOUT_MS }, log);
@@ -218,10 +221,10 @@ async function runNative(projectDir: string, allowScripts: boolean, log: Logger)
   await runTimed(installCmd, installCommandArgs, installEnv);
   // Ensure vite is available if project references it
   try {
-    const viteConfigCandidates = ['vite.config.ts','vite.config.js','vite.config.mjs','vite.config.cjs'];
+    const viteConfigCandidates = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.cjs'];
     let hasViteConfig = false;
     for (const f of viteConfigCandidates) {
-      try { await fsp.access(path.join(projectDir, f)); hasViteConfig = true; break; } catch {}
+      try { await fsp.access(path.join(projectDir, f)); hasViteConfig = true; break; } catch { }
     }
     let mentionsVite = false;
     try {
@@ -229,44 +232,44 @@ async function runNative(projectDir: string, allowScripts: boolean, log: Logger)
       const pj = JSON.parse(pkgRaw || '{}');
       const buildScript = typeof pj?.scripts?.build === 'string' ? pj.scripts.build : ' ';
       mentionsVite = /\bvite\b/.test(buildScript);
-    } catch {}
+    } catch { }
     const viteBin = path.join(projectDir, 'node_modules', '.bin', process.platform === 'win32' ? 'vite.cmd' : 'vite');
     let viteExists = false;
-    try { await fsp.access(viteBin); viteExists = true; } catch {}
+    try { await fsp.access(viteBin); viteExists = true; } catch { }
     if ((hasViteConfig || mentionsVite) && !viteExists) {
-      const installVite = (mgr: PackageManager) => mgr === 'yarn' ? ['add','-D','vite'] : mgr === 'pnpm' ? ['add','-D','vite'] : ['install','-D','vite'];
+      const installVite = (mgr: PackageManager) => mgr === 'yarn' ? ['add', '-D', 'vite'] : mgr === 'pnpm' ? ['add', '-D', 'vite'] : ['install', '-D', 'vite'];
       log('[localdev] vite missing -> installing devDependency');
       await runTimed(pkgManager, installVite(pkgManager), buildEnv);
     }
-  } catch {}
+  } catch { }
   await (async () => {
-  // If Vite is referenced but missing, install it as devDependency and retry build
-  try {
-    await runTimed(pkgManager, runCommand, buildEnv);
-  } catch (e) {
+    // If Vite is referenced but missing, install it as devDependency and retry build
     try {
-      const hasViteConfig = (await (async () => {
-        const files = ['vite.config.ts','vite.config.js','vite.config.mjs','vite.config.cjs'];
-        for (const f of files) {
-          try { await require('node:fs').promises.access(require('node:path').join(projectDir,f)); return true; } catch {}
+      await runTimed(pkgManager, runCommand, buildEnv);
+    } catch (e) {
+      try {
+        const hasViteConfig = (await (async () => {
+          const files = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs', 'vite.config.cjs'];
+          for (const f of files) {
+            try { await require('node:fs').promises.access(require('node:path').join(projectDir, f)); return true; } catch { }
+          }
+          return false;
+        })());
+        const scripts = JSON.parse(await require('node:fs').promises.readFile(require('node:path').join(projectDir, 'package.json'), 'utf8'))?.scripts || {};
+        const mentionsVite = typeof scripts.build === 'string' && /\bvite\b/.test(scripts.build);
+        const bin = require('node:path').join(projectDir, 'node_modules', '.bin', process.platform === 'win32' ? 'vite.cmd' : 'vite');
+        let binMissing = false;
+        try { await require('node:fs').promises.access(bin); } catch { binMissing = true; }
+        if ((hasViteConfig || mentionsVite) && binMissing) {
+          const installVite = (mgr: any) => mgr === 'yarn' ? ['add', '-D', 'vite'] : mgr === 'pnpm' ? ['add', '-D', 'vite'] : ['install', '-D', 'vite'];
+          log('[localdev] vite missing -> installing devDependency');
+          await runTimed(pkgManager, installVite(pkgManager), buildEnv);
         }
-        return false;
-      })());
-      const scripts = JSON.parse(await require('node:fs').promises.readFile(require('node:path').join(projectDir,'package.json'),'utf8'))?.scripts || {};
-      const mentionsVite = typeof scripts.build==='string' && /\bvite\b/.test(scripts.build);
-      const bin = require('node:path').join(projectDir,'node_modules','.bin', process.platform==='win32' ? 'vite.cmd' : 'vite');
-      let binMissing = false;
-      try { await require('node:fs').promises.access(bin); } catch { binMissing = true; }
-      if ((hasViteConfig || mentionsVite) && binMissing) {
-        const installVite = (mgr)=> mgr==='yarn' ? ['add','-D','vite'] : mgr==='pnpm' ? ['add','-D','vite'] : ['install','-D','vite'];
-        log('[localdev] vite missing -> installing devDependency');
-        await runTimed(pkgManager, installVite(pkgManager), buildEnv);
-      }
-    } catch {}
-    await runTimed(pkgManager, runCommand, buildEnv);
+      } catch { }
+      await runTimed(pkgManager, runCommand, buildEnv);
+    }
   }
-  }
-)();
+  )();
 }
 
 async function dockerAvailable(): Promise<boolean> {
@@ -285,8 +288,12 @@ async function dockerAvailable(): Promise<boolean> {
 async function runDocker(projectDir: string, allowScripts: boolean, log: Logger): Promise<void> {
   const ok = await dockerAvailable();
   if (!ok) {
-    log('[localdev] Docker not available, falling back to native build');
-    return runNative(projectDir, allowScripts, log);
+        const allowFallback = process.env.DEV_ALLOW_NATIVE_FALLBACK === 'true';
+    if (allowFallback) {
+      log('[localdev] Docker not available, falling back to native build (DEV_ALLOW_NATIVE_FALLBACK=true)');
+      return runNative(projectDir, allowScripts, log);
+    }
+    throw new Error('Docker not available - native build disabled for security (set DEV_ALLOW_NATIVE_FALLBACK=true to allow native fallback)');
   }
   const env = { ...process.env, IGNORE_SCRIPTS: allowScripts ? '0' : '1' };
   const args = [
@@ -294,7 +301,7 @@ async function runDocker(projectDir: string, allowScripts: boolean, log: Logger)
     '--memory=2g', '--cpus=1.5', '--pids-limit=256', '--cap-drop=ALL', '--security-opt', 'no-new-privileges', '--read-only',
     '--tmpfs', '/tmp:exec,mode=1777',
     '-e', `IGNORE_SCRIPTS=${allowScripts ? '0' : '1'}`,
-    '-v', `${projectDir.replace(/\\/g, '/') }:/workspace`,
+    '-v', `${projectDir.replace(/\\/g, '/')}:/workspace`,
     'thesara/buildkit:node20'
   ];
   log(`[localdev] docker ${args.join(' ')}`);
@@ -317,11 +324,3 @@ export async function runBuild(projectDir: string, mode: BuildMode, allowScripts
   if (mode === 'docker') return runDocker(projectDir, allowScripts, log);
   return runNative(projectDir, allowScripts, log);
 }
-
-
-
-
-
-
-
-
