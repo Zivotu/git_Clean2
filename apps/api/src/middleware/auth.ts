@@ -33,7 +33,7 @@ function maskAuthorizationHeader(header: string | undefined | null) {
  */
 function isLocalRequest(req: FastifyRequest): boolean {
   // Hardening: if request was proxied (nginx adds X-Forwarded-For), this is NOT a local-only request.
-  if (request.headers['x-forwarded-for'] || request.headers['x-real-ip'] || request.headers['forwarded']) {
+  if (req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.headers['forwarded']) {
     return false;
   }
   const hostname = req.hostname;
@@ -73,9 +73,10 @@ const plugin: FastifyPluginAsync = async (app) => {
     }
     const auth = req.headers.authorization;
 
-    // Dev mock user - ONLY for localhost requests in non-production
+    // Dev mock user - ONLY for localhost requests in non-production, and ONLY if explicitly enabled
     // Security: Prevents accidental admin access if NODE_ENV is misconfigured
-    if (!auth && process.env.NODE_ENV !== 'production' && isLocalRequest(req)) {
+    const allowBackdoor = process.env.ENABLE_DEV_AUTH_BACKDOOR === 'true';
+    if (!auth && process.env.NODE_ENV !== 'production' && isLocalRequest(req) && allowBackdoor) {
       req.authUser = {
         uid: 'dev-user',
         role: 'admin',
