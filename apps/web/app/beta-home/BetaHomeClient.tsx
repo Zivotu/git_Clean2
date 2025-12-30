@@ -662,7 +662,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
         />
       </main>
 
-      {showEarlyAccessPopup && earlyAccessCampaign?.isActive && (
+      {/* {showEarlyAccessPopup && earlyAccessCampaign?.isActive && (
         <EarlyAccessPopup
           isDark={isDark}
           popupTitle={popupTitle}
@@ -673,7 +673,7 @@ export default function BetaHomeClient({ initialItems = [] }: BetaHomeClientProp
           handleSubmitClick={handleSubmitClick}
           dismissEarlyAccessPopup={dismissEarlyAccessPopup}
         />
-      )}
+      )} */}
 
       <BetaDetailsModal app={selectedApp} onClose={closeDetails} isDark={isDark} labels={listingLabels} />
       <PartnershipModal open={showPartnership} onClose={() => setShowPartnership(false)} />
