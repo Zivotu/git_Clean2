@@ -487,7 +487,7 @@ async function prepareInstallPlan(
     return {
       manager,
       installCommand: 'npm',
-      installArgs: ['ci', '--include=dev'],
+      installArgs: ['ci', '--include=dev', '--ignore-scripts'],
       buildCommand: 'npm',
       buildArgs: ['run', 'build'],
       installEnv: {
@@ -510,7 +510,7 @@ async function prepareInstallPlan(
     return {
       manager,
       installCommand: 'pnpm',
-      installArgs: ['install', '--frozen-lockfile'],
+      installArgs: ['install', '--frozen-lockfile', '--ignore-scripts'],
       buildCommand: 'pnpm',
       buildArgs: ['run', 'build'],
       installEnv: INSTALL_ENV_OVERRIDES,
@@ -522,7 +522,7 @@ async function prepareInstallPlan(
     return {
       manager,
       installCommand: 'yarn',
-      installArgs: ['install', '--frozen-lockfile'],
+      installArgs: ['install', '--frozen-lockfile', '--ignore-scripts'],
       buildCommand: 'yarn',
       buildArgs: ['run', 'build'],
       installEnv: INSTALL_ENV_OVERRIDES,
@@ -533,7 +533,7 @@ async function prepareInstallPlan(
   return {
     manager: 'bun',
     installCommand: 'bun',
-    installArgs: ['install', '--frozen-lockfile'],
+    installArgs: ['install', '--frozen-lockfile', '--ignore-scripts'],
     buildCommand: 'bun',
     buildArgs: ['run', 'build'],
     installEnv: INSTALL_ENV_OVERRIDES,

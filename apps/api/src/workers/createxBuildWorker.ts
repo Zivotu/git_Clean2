@@ -71,7 +71,7 @@ function queueDisabled(): QueueDisabledError {
 }
 
 function createNoopHandle(): BuildWorkerHandle {
-  return { close: async () => {} };
+  return { close: async () => { } };
 }
 
 export async function enqueueCreatexBuild(buildId: string = randomUUID()): Promise<string> {
@@ -151,22 +151,22 @@ async function runBuildProcess(buildId: string): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     let output = '';
     let errorOutput = '';
-    
-    const npm = spawn('npm', ['install', '--no-audit', '--loglevel=error'], { 
+
+    const npm = spawn('npm', ['install', '--ignore-scripts', '--no-audit', '--loglevel=error'], {
       cwd: buildDir, // Install in buildDir where package.json is
-      shell: true,
+      shell: process.platform === 'win32',
       windowsHide: true,
       env: createChildEnv(installEnv),
     });
-    
+
     npm.stdout?.on('data', (data) => {
       output += data.toString();
     });
-    
+
     npm.stderr?.on('data', (data) => {
       errorOutput += data.toString();
     });
-    
+
     npm.on('close', (code) => {
       if (code === 0) {
         console.log(`[worker] npm install completed successfully`);
@@ -180,7 +180,7 @@ async function runBuildProcess(buildId: string): Promise<void> {
         reject(new Error(formatNpmError(msg)));
       }
     });
-    
+
     npm.on('error', (err) => {
       console.error(`[worker] npm process error:`, err);
       reject(err);
@@ -208,7 +208,7 @@ async function runBuildProcess(buildId: string): Promise<void> {
       while ((mm = re.exec(text)) !== null) {
         addSpec((mm[1] || mm[2] || '').trim());
       }
-    } catch {}
+    } catch { }
     return Array.from(out);
   };
 
@@ -251,10 +251,10 @@ async function runBuildProcess(buildId: string): Promise<void> {
       await new Promise<void>((resolve, reject) => {
         let output = '';
         let errorOutput = '';
-        const args = ['install', '--no-audit', '--loglevel=error', ...toInstall.map((n) => `${n}@${catalog[n]}`)];
+        const args = ['install', '--ignore-scripts', '--no-audit', '--loglevel=error', ...toInstall.map((n) => `${n}@${catalog[n]}`)];
         const npm = spawn('npm', args, {
           cwd: buildDir,
-          shell: true,
+          shell: process.platform === 'win32',
           windowsHide: true,
           env: createChildEnv({ npm_config_cache: npmCacheDir }),
         });
@@ -306,26 +306,26 @@ export function startCreatexBuildWorker(): BuildWorkerHandle {
           // keep frontend UX consistent: treat preparing as bundling
           sseEmitter.emit(buildId, 'status', { status: 'bundling' });
           // reflect state in filesystem model for admin
-          try { await updateBuild(buildId, { state: 'build', progress: 20, error: undefined }); } catch {}
+          try { await updateBuild(buildId, { state: 'build', progress: 20, error: undefined }); } catch { }
 
           await runBuildProcess(buildId);
 
           // update FS build state so it appears as pending review in admin
-          try { await updateBuild(buildId, { state: 'pending_review', progress: 100 }); } catch {}
+          try { await updateBuild(buildId, { state: 'pending_review', progress: 100 }); } catch { }
 
           // include listingId in final event for client redirect (from build-info.json)
           let listingId: string | null = null;
           try {
             const info = await getBuildData(buildId);
             listingId = (info?.listingId ? String(info.listingId) : null);
-          } catch {}
+          } catch { }
           sseEmitter.emit(buildId, 'final', { status: 'success', buildId, listingId });
 
         } catch (err: any) {
           console.error('[worker] Build job failed:', err);
           console.error('[worker] Full error object:', JSON.stringify(err, null, 2));
           const reason = err?.message || 'Unknown error';
-          try { await updateBuild(buildId, { state: 'failed', progress: 100, error: reason }); } catch {}
+          try { await updateBuild(buildId, { state: 'failed', progress: 100, error: reason }); } catch { }
           sseEmitter.emit(buildId, 'final', { status: 'failed', reason, buildId });
         }
       },
@@ -348,6 +348,6 @@ export function startCreatexBuildWorker(): BuildWorkerHandle {
 
   let handle: BuildWorkerHandle = createNoopHandle();
   startWorker().then(h => { handle = h; }).catch(err => console.error("Failed to start build worker", err));
-  
+
   return { async close() { await handle.close(); } };
 }

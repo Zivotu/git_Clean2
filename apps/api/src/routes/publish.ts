@@ -185,6 +185,10 @@ export default async function publishRoutes(app: FastifyInstance) {
       return reply.code(400).send({ ok: false, error: 'invalid payload' });
     }
 
+    if (body.inlineCode.length > 1024 * 1024) {
+      return reply.code(400).send({ ok: false, error: 'code_too_large', message: 'Inline code exceeds 1MB limit.' });
+    }
+
     const appId = (body as any).id != null ? String((body as any).id) : undefined;
     const buildId = randomUUID();
 

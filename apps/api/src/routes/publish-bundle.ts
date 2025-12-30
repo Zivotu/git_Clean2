@@ -271,7 +271,16 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       throw err;
     }
 
-    // 1. Handle multipart upload
+    // 1. Admin Authorization Gate (Protect against large payload DoS)
+    const isAdmin =
+      (req as any).authUser?.role === 'admin' || (req as any).authUser?.claims?.admin === true;
+
+    if (!isAdmin) {
+      req.log.warn({ uid }, 'publish-bundle:forbidden_non_admin');
+      return reply.code(403).send({ ok: false, error: 'admin_required', message: 'Only admins can publish bundles.' });
+    }
+
+    // 2. Handle multipart upload
     const data = await req.file();
     if (!data) {
       return reply.code(400).send({ ok: false, error: 'no_file_uploaded' });
@@ -284,15 +293,15 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     const llmApiKey = llmApiKeyRaw ? llmApiKeyRaw.slice(0, 400) : undefined;
     const skipStorageWarning = parseBooleanFlag((data.fields.skipStorageWarning as any)?.value);
 
-    // 2. Authentication & Authorization (copied from publish.ts)
+    // 3. Ownership Logic (already confirmed admin)
     const apps = await readApps();
     const owned = apps.filter((a) => a.author?.uid === uid || (a as any).ownerUid === uid);
     const idxOwned = appId ? owned.findIndex((a) => a.id === appId || a.slug === appId) : -1;
     const existingOwned = idxOwned >= 0 ? owned[idxOwned] : undefined;
-    const isAdmin =
-      (req as any).authUser?.role === 'admin' || (req as any).authUser?.claims?.admin === true;
 
-    if (!existingOwned && !isAdmin) {
+    // Admin can edit anyone's app, so no specialized logic needed here beyond what was present.
+
+    if (!existingOwned) {
       const ents = await listEntitlements(uid);
       const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
       const cfg = getConfig();
