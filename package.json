@@ -14,7 +14,8 @@
     "db:push": "pnpm --filter @thesara/api exec cross-env DATABASE_URL=\"file:../../.devdata/sqlite.db\" prisma db push",
     "ir:scan": "node scripts/ir_scan.mjs --report ir_local_report/ioc_findings.md",
     "ir:hooks": "node scripts/ir_hooks_audit.mjs --report ir_local_report/hooks_audit.md",
-    "ir:report": "pnpm ir:scan && pnpm ir:hooks"
+    "ir:report": "pnpm ir:scan && pnpm ir:hooks",
+    "security:scan": "node scripts/ioc-scan.js"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
@@ -35,4 +36,3 @@
     }
   }
 }
-
