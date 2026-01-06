@@ -67,6 +67,8 @@ export type Listing = {
     capabilities?: { storage?: { roomsMode?: RoomsMode } };
     customAssets?: CustomAssetRecord[];
     buildId?: string;
+    pendingBuildId?: string;
+    pendingVersion?: string;
     bundlePublicUrl?: string;
     apiKey?: string;
 };
@@ -166,6 +168,7 @@ export function useAppDetails() {
     const [loading, setLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [hasFetched, setHasFetched] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [saving, setSaving] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -628,6 +631,11 @@ export function useAppDetails() {
         [item, likeBusy, router, buildHeaders, liked, user]
     );
 
+    const refreshListing = useCallback(() => {
+        setRefreshTrigger((prev) => prev + 1);
+    }, []);
+
+
     const normalizeScreenshotInput = useCallback((raw: string) => {
         const trimmed = (raw ?? '').toString().trim();
         if (!trimmed) return '';
@@ -769,7 +777,7 @@ export function useAppDetails() {
         return () => {
             controller.abort();
         };
-    }, [normalizedSlug, buildHeaders, userId, router, normalizeScreenshotState]);
+    }, [normalizedSlug, buildHeaders, userId, router, normalizeScreenshotState, refreshTrigger]);
 
     const imgSrc = useMemo(() => {
         const shouldForcePlaceholder = Boolean(item?.status && !isPublished && !canViewUnpublished);
@@ -1707,6 +1715,7 @@ export function useAppDetails() {
         setToast,
         authorHandle,
         playListing,
+        refreshListing,
         title,
         setTitle,
         description,

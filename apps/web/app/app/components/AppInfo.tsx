@@ -5,6 +5,7 @@ import Avatar from '@/components/Avatar';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAppDetails } from '../hooks/useAppDetails';
 import BuildBadges from './BuildBadges';
+import PendingVersionNotice from './PendingVersionNotice';
 
 type AppInfoProps = {
     details: ReturnType<typeof useAppDetails>;
@@ -12,12 +13,20 @@ type AppInfoProps = {
 
 export default function AppInfo({ details }: AppInfoProps) {
     const { isDark } = useTheme();
-    const { item, tApp, authorHandle } = details;
+    const { item, tApp, authorHandle, canEdit, refreshListing } = details;
 
     if (!item) return null;
 
+    const hasPendingVersion = canEdit && !!item.pendingBuildId;
+
+
+
     return (
         <div className="space-y-6">
+            {hasPendingVersion && (
+                <PendingVersionNotice onRefresh={refreshListing} tApp={tApp} />
+            )}
+
             <div className={`rounded-2xl border shadow-lg p-6 ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-gray-200'}`}>
                 <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>{tApp('AppDetails.info.about', undefined, 'About App')}</h2>
                 {item.description ? (
