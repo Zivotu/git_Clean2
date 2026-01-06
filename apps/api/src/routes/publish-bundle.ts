@@ -271,14 +271,9 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
       throw err;
     }
 
-    // 1. Admin Authorization Gate (Protect against large payload DoS)
+    // 1. Check if user is admin (will be used later for authorization)
     const isAdmin =
       (req as any).authUser?.role === 'admin' || (req as any).authUser?.claims?.admin === true;
-
-    if (!isAdmin) {
-      req.log.warn({ uid }, 'publish-bundle:forbidden_non_admin');
-      return reply.code(403).send({ ok: false, error: 'admin_required', message: 'Only admins can publish bundles.' });
-    }
 
     // 2. Handle multipart upload
     const data = await req.file();
@@ -293,14 +288,38 @@ export default async function publishBundleRoutes(app: FastifyInstance) {
     const llmApiKey = llmApiKeyRaw ? llmApiKeyRaw.slice(0, 400) : undefined;
     const skipStorageWarning = parseBooleanFlag((data.fields.skipStorageWarning as any)?.value);
 
-    // 3. Ownership Logic (already confirmed admin)
+    // 3. Ownership and Authorization Logic
     const apps = await readApps();
     const owned = apps.filter((a) => a.author?.uid === uid || (a as any).ownerUid === uid);
     const idxOwned = appId ? owned.findIndex((a) => a.id === appId || a.slug === appId) : -1;
     const existingOwned = idxOwned >= 0 ? owned[idxOwned] : undefined;
 
-    // Admin can edit anyone's app, so no specialized logic needed here beyond what was present.
+    // Authorization check: If updating an existing app (appId provided)
+    if (appId) {
+      const existingApp = apps.find((a) => a.id === appId || a.slug === appId);
 
+      if (!existingApp) {
+        return reply.code(404).send({
+          ok: false,
+          error: 'app_not_found',
+          message: 'Specified app ID does not exist.',
+        });
+      }
+
+      // Check if user owns this app OR is admin
+      const isOwner = existingApp.author?.uid === uid || (existingApp as any).ownerUid === uid;
+
+      if (!isOwner && !isAdmin) {
+        req.log.warn({ uid, appId }, 'publish-bundle:forbidden_not_owner');
+        return reply.code(403).send({
+          ok: false,
+          error: 'not_owner',
+          message: 'You can only update your own applications.',
+        });
+      }
+    }
+
+    // For new apps (no appId): check user limits
     if (!existingOwned) {
       const ents = await listEntitlements(uid);
       const gold = ents.some((e) => e.feature === 'isGold' && e.active !== false);
