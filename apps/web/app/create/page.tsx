@@ -129,6 +129,10 @@ const createFallbacks: Record<string, Record<string, string>> = {
     customGraphicLabel: 'Choose your own graphic',
     shortVideoButton: 'Thesara Short Video',
     advancedAssetsSizeError: 'Image is larger than 100kb. Please select a smaller image.',
+    storageWarningTitle: 'Storage Warning',
+    storageWarningCancel: 'Cancel',
+    storageWarningContinue: 'Continue anyway',
+    storageWarningLearnMore: 'Learn more about storage',
   },
   hr: {
     bundlePreviewHint: 'Nakon uspješnog builda dobit ćeš lokalni preview prije administratorskog pregleda.',
@@ -189,6 +193,10 @@ const createFallbacks: Record<string, Record<string, string>> = {
     customGraphicLabel: 'Odaberi vlastitu grafiku',
     shortVideoButton: 'Thesara kratki video',
     advancedAssetsSizeError: 'Slika je veća od 100kb. Molimo odaberite manju sliku.',
+    storageWarningTitle: 'Upozorenje o pohrani',
+    storageWarningCancel: 'Odustani',
+    storageWarningContinue: 'Nastavi svejedno',
+    storageWarningLearnMore: 'Saznaj više o pohrani',
   },
   de: {
     bundlePreviewHint:
@@ -251,6 +259,10 @@ const createFallbacks: Record<string, Record<string, string>> = {
     customGraphicLabel: 'Eigene Grafik wählen',
     shortVideoButton: 'Thesara Kurzvideo',
     advancedAssetsSizeError: 'Das Bild ist größer als 100kb. Bitte wählen Sie ein kleineres Bild.',
+    storageWarningTitle: 'Speicherhinweis',
+    storageWarningCancel: 'Abbrechen',
+    storageWarningContinue: 'Trotzdem fortfahren',
+    storageWarningLearnMore: 'Mehr über Speicher erfahren',
   },
 };
 
@@ -412,6 +424,7 @@ export default function CreatePage() {
 
   const [showStorageWarningModal, setShowStorageWarningModal] = useState(false);
   const [storageWarningMessage, setStorageWarningMessage] = useState('');
+  const [storageWarningDocsUrl, setStorageWarningDocsUrl] = useState<string | null>(null);
 
 
   const { status: buildStatus, reason: buildError, listingId, errorAnalysis, errorFixPrompt } = useBuildEvents(currentBuildId);
@@ -858,6 +871,7 @@ export default function CreatePage() {
               void refreshTermsStatus();
             } else if (err.code === 'storage_usage_missing') {
               setStorageWarningMessage(err.message || 'Nedostaje korištenje pohrane.');
+              setStorageWarningDocsUrl((err as any).docsUrl || null);
               setShowStorageWarningModal(true);
             } else {
               setPublishError(err.message || 'Upload nije uspio.');
@@ -966,6 +980,7 @@ export default function CreatePage() {
           void refreshTermsStatus();
         } else if (err.code === 'storage_usage_missing') {
           setStorageWarningMessage(err.message || 'Nedostaje korištenje pohrane.');
+          setStorageWarningDocsUrl((err as any).docsUrl || null);
           setShowStorageWarningModal(true);
         } else {
           const code = err.code as string | undefined;
@@ -1046,16 +1061,28 @@ export default function CreatePage() {
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/50" onClick={() => setShowStorageWarningModal(false)} />
         <div className="relative z-10 w-full max-w-md rounded-2xl bg-white shadow-2xl border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold mb-2 text-amber-600">Upozorenje o pohrani</h3>
+          <h3 className="text-xl font-semibold mb-2 text-amber-600">{tCreate('storageWarningTitle')}</h3>
           <p className="text-sm text-gray-700 mb-4">
             {storageWarningMessage}
           </p>
+          {storageWarningDocsUrl && (
+            <p className="text-sm mb-4">
+              <a
+                href={storageWarningDocsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-emerald-600 hover:text-emerald-700 underline"
+              >
+                {tCreate('storageWarningLearnMore')}
+              </a>
+            </p>
+          )}
           <div className="flex gap-2 justify-end">
             <button
               onClick={() => setShowStorageWarningModal(false)}
               className="rounded-lg border px-4 py-2 text-gray-700 hover:bg-gray-50"
             >
-              Odustani
+              {tCreate('storageWarningCancel')}
             </button>
             <button
               onClick={() => {
@@ -1064,7 +1091,7 @@ export default function CreatePage() {
               }}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-white shadow-sm hover:bg-emerald-700"
             >
-              Nastavi svejedno
+              {tCreate('storageWarningContinue')}
             </button>
           </div>
         </div>
