@@ -19,7 +19,7 @@ import {
 import type { BuildState } from '../models/Build.js';
 import { getConfig, LLM_REVIEW_ENABLED } from '../config.js';
 import { BUNDLE_ROOT, PREVIEW_ROOT } from '../paths.js';
-import { readApps, writeApps, updateApp, type AppRecord } from '../db.js';
+import { readApps, writeApps, updateApp, getAppByIdOrSlug, type AppRecord } from '../db.js';
 import { prisma } from '../db.js';
 import { runLlmReviewForBuild } from '../llmReview.js';
 import { computeNextVersion } from '../lib/versioning.js';
@@ -765,6 +765,21 @@ export default async function reviewRoutes(app: FastifyInstance) {
           appId: app.id,
           buildIdWritten: payload.buildId
         }, 'approve_after_updateApp');
+
+        // VERIFICATION: Read back the app to confirm buildId was written
+        try {
+          const verifyApp = await getAppByIdOrSlug(app.id);
+          req.log.info({
+            appId: app.id,
+            expectedBuildId: payload.buildId,
+            actualBuildId: verifyApp?.buildId,
+            buildIdMatch: verifyApp?.buildId === payload.buildId,
+            pendingBuildId: verifyApp?.pendingBuildId,
+            status: verifyApp?.status
+          }, 'approve_verification_read_back');
+        } catch (verifyErr) {
+          req.log.error({ err: verifyErr, appId: app.id }, 'approve_verification_failed');
+        }
 
         try {
           const { ensureListingTranslations } = await import('../lib/translate.js');

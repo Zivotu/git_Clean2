@@ -70,7 +70,7 @@ export default async function publicRoutes(app: FastifyInstance) {
       .filter(Boolean)
       .map((x) => encodeURIComponent(x))
       .join('/');
-  
+
   // Diagnostics: Verify build availability across storage backends
   // Requires admin privileges (ID token with admin=true or role=admin)
   app.get('/diag/build/:id', async (req, reply) => {
@@ -79,7 +79,7 @@ export default async function publicRoutes(app: FastifyInstance) {
     // Lightweight auth: allow only admins
     try {
       await ensureAuthUid(req as any);
-    } catch {}
+    } catch { }
     const isAdmin = (req as any)?.authUser?.role === 'admin' || ((req as any)?.authUser as any)?.claims?.admin === true;
     if (!isAdmin) return reply.code(403).send({ error: 'forbidden' });
 
@@ -175,7 +175,7 @@ export default async function publicRoutes(app: FastifyInstance) {
         const [meta] = await file.getMetadata();
         if (meta.contentType) reply.type(meta.contentType);
         if (meta.cacheControl) reply.header('Cache-Control', meta.cacheControl);
-      } catch {}
+      } catch { }
       return reply.send(file.createReadStream());
     });
   } else {
@@ -184,14 +184,14 @@ export default async function publicRoutes(app: FastifyInstance) {
     app.get('/public/builds/*', async (req, reply) => {
       const rest = (req.params as any)['*'] as string;
       const cleanRest = (rest || '').replace(/^\/+/, '').replace(/\/{2,}/g, '/');
-      
+
       // Parse buildId and file path: :buildId/file.ext or :buildId/build/file.ext
       const parts = cleanRest.split('/');
       if (parts.length < 1) return reply.code(404).send({ error: 'invalid_path' });
-      
+
       const buildId = parts[0];
       const filePath = parts.slice(1).join('/') || 'index.html';
-      
+
       // If filePath already starts with 'build/', don't add it again
       const targetPath = filePath.startsWith('build/') ? filePath : `build/${filePath}`;
       const targetUrl = appendQuery(
@@ -216,41 +216,75 @@ export default async function publicRoutes(app: FastifyInstance) {
     try {
       const apps = (await readApps()).filter((a) => !a.deletedAt);
       const item = apps.find((a) => a.slug === id || String(a.id) === id) as
-        | (AppRecord & { buildId?: string })
+        | (AppRecord & { buildId?: string; pendingBuildId?: string })
         | undefined;
+
+      // DEBUG: Log which app was found and its buildId status
+      if (item) {
+        req.log?.info?.({
+          requestedId: id,
+          foundAppId: item.id,
+          foundAppSlug: item.slug,
+          buildId: item.buildId,
+          pendingBuildId: item.pendingBuildId,
+          status: item.status,
+          hasBuildId: Boolean(item.buildId),
+          hasPendingBuildId: Boolean(item.pendingBuildId)
+        }, '[PLAY_DEBUG] App found, checking buildId');
+      } else {
+        req.log?.warn?.({ requestedId: id }, '[PLAY_DEBUG] App not found');
+      }
+
       if (item?.buildId) {
         bumpPlayCount(item.id, req);
         const mapped = item.buildId;
+
+        req.log?.info?.({
+          appId: item.id,
+          slug: item.slug,
+          usingBuildId: mapped,
+          buildIdType: typeof mapped,
+          buildIdLength: mapped.length
+        }, '[PLAY_DEBUG] Redirecting to buildId');
+
         // Prefer bucket-hosted public files if present
         try {
           const bucket = getBucket();
           const file = bucket.file(`builds/${mapped}/index.html`);
           const [exists] = await file.exists();
           if (exists) {
+            req.log?.info?.({ mapped, target: `/public/builds/${encSeg(mapped)}/index.html` }, '[PLAY_DEBUG] Using bucket build');
             return tempRedirect(
               reply,
               appendQuery(`/public/builds/${encSeg(mapped)}/index.html`, req),
             );
           }
-        } catch {}
+        } catch { }
         const dir = getBuildDir(mapped);
         // Prefer bundled output; fall back to root if missing
         try {
           await fs.access(path.join(dir, 'bundle', 'index.html'));
+          req.log?.info?.({ mapped, target: `/builds/${encSeg(mapped)}/bundle/` }, '[PLAY_DEBUG] Using local bundle build');
           return tempRedirect(reply, appendQuery(`/builds/${encSeg(mapped)}/bundle/`, req));
-        } catch {}
+        } catch { }
         try {
           await fs.access(path.join(dir, 'index.html'));
+          req.log?.info?.({ mapped, target: `/builds/${encSeg(mapped)}/` }, '[PLAY_DEBUG] Using local root build');
           return tempRedirect(reply, appendQuery(`/builds/${encSeg(mapped)}/`, req));
-        } catch {}
+        } catch { }
+        req.log?.info?.({ mapped, target: `/review/builds/${encSeg(mapped)}/` }, '[PLAY_DEBUG] Falling back to review build');
         return tempRedirect(reply, appendQuery(`/review/builds/${encSeg(mapped)}/`, req));
       }
       const byBuild = apps.find((a) => a.buildId === id);
       if (byBuild) {
         bumpPlayCount(byBuild.id, req);
+        req.log?.info?.({ id, foundById: byBuild.id }, '[PLAY_DEBUG] Found by buildId, redirecting');
         return tempRedirect(reply, appendQuery(`/play/${encSeg(byBuild.id)}/`, req));
       }
-    } catch {}
+    } catch (err) {
+      req.log?.error?.({ err, id }, '[PLAY_DEBUG] Error in /play/:id');
+    }
+    req.log?.warn?.({ id }, '[PLAY_DEBUG] No app or build found, returning 404');
     return reply.code(404).send({ error: 'not_found' });
   });
   app.get('/play/:id/*', async (req: FastifyRequest, reply: FastifyReply) => {
@@ -284,7 +318,7 @@ export default async function publicRoutes(app: FastifyInstance) {
               appendQuery(`/public/builds/${encSeg(mapped)}/${encRestSafe}`, req),
             );
           }
-        } catch {}
+        } catch { }
         const dir = getBuildDir(mapped);
         try {
           await fs.access(path.join(dir, 'bundle', rest));
@@ -292,18 +326,18 @@ export default async function publicRoutes(app: FastifyInstance) {
             reply,
             appendQuery(`/builds/${encSeg(mapped)}/bundle/${encRestSafe}`, req),
           );
-        } catch {}
+        } catch { }
         try {
           await fs.access(path.join(dir, rest));
+          return tempRedirect(
+            reply,
+            appendQuery(`/builds/${encSeg(mapped)}/${encRestSafe}`, req),
+          );
+        } catch { }
         return tempRedirect(
           reply,
-          appendQuery(`/builds/${encSeg(mapped)}/${encRestSafe}`, req),
+          appendQuery(`/review/builds/${encSeg(mapped)}/${encRestSafe}`, req),
         );
-        } catch {}
-    return tempRedirect(
-      reply,
-      appendQuery(`/review/builds/${encSeg(mapped)}/${encRestSafe}`, req),
-    );
       }
       const byBuild = apps.find((a) => a.buildId === id);
       if (byBuild) {
@@ -312,7 +346,7 @@ export default async function publicRoutes(app: FastifyInstance) {
           appendQuery(`/play/${encSeg(byBuild.id)}/${encRestSafe}`, req),
         );
       }
-    } catch {}
+    } catch { }
     return reply.code(404).send({ error: 'not_found' });
   });
 
@@ -374,7 +408,7 @@ export default async function publicRoutes(app: FastifyInstance) {
         const role = claims.role || (claims.admin ? 'admin' : 'user');
         req.authUser = { uid: decoded.uid, role, claims: decoded };
         return;
-      } catch {}
+      } catch { }
     }
 
     const ownerUid = readOwnerFromSignedCookie(req);
@@ -391,7 +425,7 @@ export default async function publicRoutes(app: FastifyInstance) {
         const claims: any = decoded;
         const role = claims.role || (claims.admin ? 'admin' : 'user');
         req.authUser = { uid: decoded.uid, role, claims: decoded };
-      } catch {}
+      } catch { }
     }
   }
 
@@ -458,11 +492,11 @@ export default async function publicRoutes(app: FastifyInstance) {
             try {
               await fs.access(bundleIndex);
               return id;
-            } catch {}
+            } catch { }
             try {
               await fs.access(rootIndex);
               return id;
-            } catch {}
+            } catch { }
           }
         } catch {
           // ignore unreadable or unparsable build-info
@@ -480,11 +514,11 @@ export default async function publicRoutes(app: FastifyInstance) {
         try {
           await fs.access(bundleIndex);
           return id;
-        } catch {}
+        } catch { }
         try {
           await fs.access(rootIndex);
           return id;
-        } catch {}
+        } catch { }
       }
     } catch (err) {
       // ignore and return undefined
@@ -552,23 +586,23 @@ export default async function publicRoutes(app: FastifyInstance) {
       const lang = String((req.headers['accept-language'] || '')).toLowerCase();
       const starts = (p: string) => lang.startsWith(p);
       const locale = starts('hr') ? 'hr' : starts('de') ? 'de' : 'en';
-      const t = (key: 'title'|'lead'|'cta'|'home') => {
+      const t = (key: 'title' | 'lead' | 'cta' | 'home') => {
         if (locale === 'hr') {
           return key === 'title' ? 'Potrebna je potvrda za probnu verziju'
             : key === 'lead' ? 'Ovo je probna (trial) verzija dostupna isključivo uz važeći kod.'
-            : key === 'cta' ? 'Pročitaj kako do koda (FAQ)'
-            : 'Nazad na naslovnicu';
+              : key === 'cta' ? 'Pročitaj kako do koda (FAQ)'
+                : 'Nazad na naslovnicu';
         }
         if (locale === 'de') {
           return key === 'title' ? 'Bestätigung für Testversion erforderlich'
             : key === 'lead' ? 'Dies ist eine Testversion (Trial), die nur mit gültigem Code verfügbar ist.'
-            : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
-            : 'Zur Startseite';
+              : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
+                : 'Zur Startseite';
         }
         return key === 'title' ? 'Trial access required'
           : key === 'lead' ? 'This is a trial version available only with a valid code.'
-          : key === 'cta' ? 'Learn how to get a code (FAQ)'
-          : 'Back to Home';
+            : key === 'cta' ? 'Learn how to get a code (FAQ)'
+              : 'Back to Home';
       };
       const wantsHtml = String(req.headers['accept'] || '').includes('text/html');
       if (wantsHtml) {
@@ -605,16 +639,16 @@ export default async function publicRoutes(app: FastifyInstance) {
       const file = bucket.file(`builds/${buildId}/index.html`);
       const [exists] = await file.exists();
       if (exists) return tempRedirect(reply, `/public/builds/${encSeg(buildId)}/index.html`);
-    } catch {}
+    } catch { }
     const dir = getBuildDir(buildId);
     try {
       await fs.access(path.join(dir, 'bundle', 'index.html'));
       return tempRedirect(reply, `/builds/${encSeg(buildId)}/bundle/`);
-    } catch {}
+    } catch { }
     try {
       await fs.access(path.join(dir, 'index.html'));
       return tempRedirect(reply, `/builds/${encSeg(buildId)}/`);
-    } catch {}
+    } catch { }
     return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/`);
   };
   app.get('/app/:slug', appBySlugHandler);
@@ -655,23 +689,23 @@ export default async function publicRoutes(app: FastifyInstance) {
       const lang = String((req.headers['accept-language'] || '')).toLowerCase();
       const starts = (p: string) => lang.startsWith(p);
       const locale = starts('hr') ? 'hr' : starts('de') ? 'de' : 'en';
-      const t = (key: 'title'|'lead'|'cta'|'home') => {
+      const t = (key: 'title' | 'lead' | 'cta' | 'home') => {
         if (locale === 'hr') {
           return key === 'title' ? 'Potrebna je potvrda za probnu verziju'
             : key === 'lead' ? 'Ovo je probna (trial) verzija dostupna isključivo uz važeći kod.'
-            : key === 'cta' ? 'Pročitaj kako do koda (FAQ)'
-            : 'Nazad na naslovnicu';
+              : key === 'cta' ? 'Pročitaj kako do koda (FAQ)'
+                : 'Nazad na naslovnicu';
         }
         if (locale === 'de') {
           return key === 'title' ? 'Bestätigung für Testversion erforderlich'
             : key === 'lead' ? 'Dies ist eine Testversion (Trial), die nur mit gültigem Code dostupna ist.'
-            : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
-            : 'Zur Startseite';
+              : key === 'cta' ? 'Wie erhalte ich den Code? (FAQ)'
+                : 'Zur Startseite';
         }
         return key === 'title' ? 'Trial access required'
           : key === 'lead' ? 'This is a trial version available only with a valid code.'
-          : key === 'cta' ? 'Learn how to get a code (FAQ)'
-          : 'Back to Home';
+            : key === 'cta' ? 'Learn how to get a code (FAQ)'
+              : 'Back to Home';
       };
       const wantsHtml = String(req.headers['accept'] || '').includes('text/html');
       if (wantsHtml) {
@@ -708,16 +742,16 @@ export default async function publicRoutes(app: FastifyInstance) {
       const file = bucket.file(`builds/${buildId}/index.html`);
       const [exists] = await file.exists();
       if (exists) return tempRedirect(reply, `/public/builds/${encSeg(buildId)}/${encRest(rest)}`);
-    } catch {}
+    } catch { }
     const dir = getBuildDir(buildId);
     try {
       await fs.access(path.join(dir, 'bundle', 'index.html'));
       return tempRedirect(reply, `/builds/${encSeg(buildId)}/bundle/${encRest(rest)}`);
-    } catch {}
+    } catch { }
     try {
       await fs.access(path.join(dir, 'index.html'));
       return tempRedirect(reply, `/builds/${encSeg(buildId)}/${encRest(rest)}`);
-    } catch {}
+    } catch { }
     return tempRedirect(reply, `/review/builds/${encSeg(buildId)}/${encRest(rest)}`);
   };
   app.get('/app/:slug/*', appBySlugWildcardHandler);
