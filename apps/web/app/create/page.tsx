@@ -12,7 +12,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import CreateRedesign from './CreateRedesign';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiAuthedPost, ApiError, apiPatch, apiPost } from '@/lib/api';
 import { useAuth, getDisplayName } from '@/lib/auth';
 import ProgressModal, { type BuildState as ProgressModalState } from '@/components/ProgressModal';
@@ -405,6 +405,10 @@ export default function CreatePage() {
 
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editingSlug = searchParams?.get('slug') || null;
+  const [existingAppLoaded, setExistingAppLoaded] = useState(false);
+  const [loadingExistingApp, setLoadingExistingApp] = useState(false);
 
   const { status: termsStatus, accept: acceptLatestTerms, refresh: refreshTermsStatus } = useTerms();
 
@@ -481,6 +485,78 @@ export default function CreatePage() {
       setPublishTermsError(null);
     }
   }, [termsStatus?.accepted]);
+
+  // Load existing app data when updating a version
+  useEffect(() => {
+    if (!editingSlug || existingAppLoaded || loadingExistingApp) return;
+
+    const loadExistingApp = async () => {
+      setLoadingExistingApp(true);
+      try {
+        const response = await fetch(`/api/listing/${encodeURIComponent(editingSlug)}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          console.warn('Failed to load existing app:', response.status);
+          setLoadingExistingApp(false);
+          return;
+        }
+
+        const data = await response.json();
+        const app = data?.item;
+
+        if (!app) {
+          setLoadingExistingApp(false);
+          return;
+        }
+
+        // Populate form with existing data
+        setManifest(prev => ({
+          ...prev,
+          name: app.title || '',
+          description: app.description || '',
+        }));
+
+        setLongDescription(app.longDescription || '');
+
+        // Load translations
+        const translations = app.translations || {};
+        setTrEn({
+          title: translations.en?.title || '',
+          description: translations.en?.description || '',
+        });
+        setTrDe({
+          title: translations.de?.title || '',
+          description: translations.de?.description || '',
+        });
+        setTrHr({
+          title: translations.hr?.title || '',
+          description: translations.hr?.description || '',
+        });
+
+        // Load rooms mode
+        if (app.capabilities?.storage?.roomsMode) {
+          setRoomsMode(app.capabilities.storage.roomsMode);
+        }
+
+        // Load tags
+        if (Array.isArray(app.tags)) {
+          setSelectedTags(app.tags);
+        }
+
+        setExistingAppLoaded(true);
+        setLoadingExistingApp(false);
+      } catch (error) {
+        console.error('Error loading existing app:', error);
+        setLoadingExistingApp(false);
+      }
+    };
+
+    loadExistingApp();
+  }, [editingSlug, existingAppLoaded, loadingExistingApp]);
+
 
   const handleSubmissionTypeChange = (value: SubmissionType) => {
     setSubmissionType(value);
@@ -805,7 +881,7 @@ export default function CreatePage() {
         setBuildStep('queued');
         setPublishing(true);
         try {
-          const appId = deriveAppId(manifest.name || bundleFile.name);
+          const appId = editingSlug || deriveAppId(manifest.name || bundleFile.name);
           const form = new FormData();
           form.append('title', manifest.name || bundleFile.name);
           form.append('description', manifest.description || '');
@@ -920,6 +996,7 @@ export default function CreatePage() {
         title: manifest.name,
         description: manifest.description,
         tags: selectedTags,
+        ...(editingSlug ? { id: editingSlug } : {}),
         ...(Object.keys(translations).length ? { translations } : {}),
         author: {
           uid: user.uid || '',
